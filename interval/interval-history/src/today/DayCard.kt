@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.today
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,7 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,9 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -75,6 +75,7 @@ import dev.justinsmith.interval.timer.restDayFlow
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -93,11 +94,12 @@ import org.jetbrains.compose.resources.stringResource
 // one raised Start, and what can wait behind a quiet button.
 
 /**
- * Today in order: what is done, ticked, then each step still to do, numbered where there is more than one thing
- * to the day. The first step is the one to do now: what it is, opening a look at it, over its Start (the tab's one
- * raised button), its Log it for a sport, and on a taxed day ([easier]) the easier plan to start the program's day
- * with. The steps after it are rows with a quiet button each; the program's day stood back behind a class says it
- * is for spare time. Under them, the one thing after today.
+ * Today in order, a row a step with a hairline between: what is done, ticked, then each step still to do, numbered
+ * where there is more than one thing to the day. The first step is the one to do now: what it is, opening a look
+ * at it, over its Start (the tab's one raised button, in the day's colour, [TodayPlan.kind]'s tone, with how long
+ * it runs), its Log it for a sport, and on a taxed day ([easier]) the easier plan to start the program's day
+ * with. The steps after it are rows with a quiet button each, the buttons one width; the program's day stood back
+ * behind a class says it is for spare time. Under them, past a last hairline, the one thing after today.
  */
 @Composable
 internal fun DayCard(
@@ -108,22 +110,29 @@ internal fun DayCard(
     modifier: Modifier = Modifier,
 ) {
     val numbered = plan.done.size + plan.steps.size > 1
+    val tone = toneColor(plan.kind.tone)
     DayColumn(modifier) {
         plan.done.forEach { DoneRow(it, rail = numbered, last = false) }
         plan.steps.forEachIndexed { index, item ->
             val last = index == plan.steps.lastIndex
             val number = (plan.done.size + index + 1).takeIf { numbered }
             if (index == 0) {
-                LeadStep(item, number, last, easier, actions, onLook)
+                LeadStep(item, number, last, easier, tone, actions, onLook)
             } else {
                 LaterStep(item, number, last, plan.spare(item), actions)
             }
         }
-        UpNextLater(
-            listOfNotNull(plan.next) + plan.later,
-            Modifier.padding(top = Spacing.space12),
-            count = 1,
-        )
+        ThenLine(listOfNotNull(plan.next) + plan.later)
+    }
+}
+
+/** The one thing after what the card holds, under a hairline: "Then Sat · HIIT 30/30". Nothing with none. */
+@Composable
+private fun ThenLine(later: List<UpNextItem>) {
+    if (later.isEmpty()) return
+    Column {
+        HorizontalDivider(color = IntervalTheme.palette.line)
+        UpNextLater(later, Modifier.padding(vertical = Spacing.space12), count = 1)
     }
 }
 
@@ -135,7 +144,7 @@ internal fun DoneCard(done: List<DoneStep>, modifier: Modifier = Modifier) {
             stringResource(Res.string.home_done_today),
             style = IntervalTheme.type.value,
             color = IntervalTheme.palette.text,
-            modifier = Modifier.padding(bottom = Spacing.space12).semantics { heading() },
+            modifier = Modifier.padding(top = Spacing.space12, bottom = Spacing.space4).semantics { heading() },
         )
         done.forEachIndexed { index, step -> DoneRow(step, rail = true, last = index == done.lastIndex) }
     }
@@ -201,6 +210,7 @@ internal fun NextCard(
             },
             name = upNextName(next),
             detail = joined(listOfNotNull(upNextMeta(next), upNextFigure(next))),
+            modifier = Modifier.padding(vertical = Spacing.space12),
             onClick = look,
             onClickLabel = described,
         ) {
@@ -224,7 +234,7 @@ internal fun NextCard(
                 is UpNextItem.SportDay -> Unit
             }
         }
-        UpNextLater(later, Modifier.padding(top = Spacing.space12), count = 1)
+        ThenLine(later)
     }
 }
 
@@ -241,7 +251,7 @@ private fun logSport(sport: Sport, actions: HomeActions): () -> Unit {
     return { actions.onLogSport(sport, logged) }
 }
 
-/** The card the day is laid out on. */
+/** The card the day is laid out on: its rows keep their own room above and below, so a hairline sits between. */
 @Composable
 private fun DayColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
@@ -249,7 +259,7 @@ private fun DayColumn(modifier: Modifier = Modifier, content: @Composable Column
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(IntervalTheme.palette.surface)
-            .padding(Spacing.space16),
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
         content = content,
     )
 }
@@ -265,6 +275,7 @@ private fun LeadStep(
     number: Int?,
     last: Boolean,
     easier: Boolean,
+    tone: Color,
     actions: HomeActions,
     onLook: () -> Unit,
 ) {
@@ -273,7 +284,7 @@ private fun LeadStep(
     val day = (item as? UpNextItem.Lift)?.takeUnless { it.resume }?.programDay
     val offered = easier && day != null
     var eased by rememberSaveable { mutableStateOf(true) }
-    Step(number?.let { StepState.Now(it) }, last) {
+    Step(number?.let { StepState.Now(it) }, last, tone = tone) {
         val look = item.preview()?.let { onLook }
         val described = stringResource(Res.string.preview_open_cd, upNextTitle(item))
         Column(
@@ -305,7 +316,13 @@ private fun LeadStep(
         val button = Modifier.fillMaxWidth().padding(top = Spacing.space12)
         val start = stringResource(Res.string.history_start)
         when (item) {
-            is UpNextItem.Planned -> StartButton({ actions.onStart(item.name, item.config) }, button, label = start)
+            is UpNextItem.Planned -> StartButton(
+                { actions.onStart(item.name, item.config) },
+                button,
+                label = start,
+                trailing = upNextLength(item),
+                color = tone,
+            )
 
             is UpNextItem.Lift -> {
                 val program = item.programDay?.program?.key
@@ -324,14 +341,20 @@ private fun LeadStep(
                         day != null -> stringResource(Res.string.home_start_day, day.number)
                         else -> stringResource(Res.string.home_start_session)
                     },
+                    color = tone,
                 )
             }
 
             is UpNextItem.SportDay -> LogSportButton(item.sport, actions, button)
 
             // Started as any workout is, and known for the flow it is by its shape.
-            is UpNextItem.Flow ->
-                StartButton({ actions.onStart(item.flow.name, item.flow.config) }, button, label = start)
+            is UpNextItem.Flow -> StartButton(
+                { actions.onStart(item.flow.name, item.flow.config) },
+                button,
+                label = start,
+                trailing = upNextLength(item),
+                color = tone,
+            )
         }
         item.movablePlan?.let { planId ->
             QuietTextButton(
@@ -380,16 +403,20 @@ private fun LaterStep(item: UpNextItem, number: Int?, last: Boolean, spare: Bool
                 is UpNextItem.Flow -> workoutDescription(item.flow.config)
             },
         ) {
+            // One width, so the buttons down the card end level and start level.
+            val pill = Modifier.widthIn(min = IntervalSizes.stepButton)
             when (item) {
                 is UpNextItem.SportDay -> StartPill(
                     primary = false,
                     onClick = logSport(item.sport, actions),
+                    modifier = pill,
                     label = stringResource(Res.string.sport_log_it),
                 )
 
                 is UpNextItem.Lift -> StartPill(
                     primary = false,
                     onClick = { actions.onStartLift(item.programDay?.program?.key.takeUnless { item.resume }) },
+                    modifier = pill,
                     label = stringResource(
                         when {
                             item.resume -> Res.string.home_resume_session
@@ -400,10 +427,13 @@ private fun LaterStep(item: UpNextItem, number: Int?, last: Boolean, spare: Bool
                 )
 
                 is UpNextItem.Planned ->
-                    StartPill(primary = false, onClick = { actions.onStart(item.name, item.config) })
+                    StartPill(primary = false, onClick = { actions.onStart(item.name, item.config) }, modifier = pill)
 
-                is UpNextItem.Flow ->
-                    StartPill(primary = false, onClick = { actions.onStart(item.flow.name, item.flow.config) })
+                is UpNextItem.Flow -> StartPill(
+                    primary = false,
+                    onClick = { actions.onStart(item.flow.name, item.flow.config) },
+                    modifier = pill,
+                )
             }
         }
     }
@@ -493,7 +523,7 @@ private fun QuietRow(
     }
 }
 
-/** How a step's dot is drawn: ticked, the one to do now, or one for later; the last two by their number. */
+/** How a step's mark is drawn: ticked, the one to do now, or one for later; the last two by their number. */
 private sealed interface StepState {
     data object Done : StepState
 
@@ -503,75 +533,54 @@ private sealed interface StepState {
 }
 
 /**
- * One step of the day: its dot at the start, joined to the next step's by a line down the card unless it is the
- * [last], and its content beside it. With no [state] the day has one thing to it, and the step is its content alone.
+ * One step of the day: its mark at the start and its content beside it, with a hairline under it unless it is the
+ * [last]. With no [state] the day has one thing to it, and the step is its content alone. [tone] is the day's
+ * colour, which the step to do now wears.
  */
 @Composable
 private fun Step(
     state: StepState?,
     last: Boolean,
     modifier: Modifier = Modifier,
+    tone: Color = IntervalTheme.palette.accent,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val line = IntervalTheme.palette.line
-    Row(
-        modifier
-            .fillMaxWidth()
-            .then(
-                if (state != null && !last) {
-                    Modifier.drawBehind {
-                        val x = Sizes.icon.toPx() / 2
-                        drawLine(
-                            line,
-                            Offset(x, Sizes.icon.toPx() + Spacing.space4.toPx()),
-                            Offset(x, size.height - Spacing.space4.toPx()),
-                            strokeWidth = Sizes.border.toPx(),
-                            cap = StrokeCap.Round,
-                        )
-                    }
-                } else {
-                    Modifier
-                },
-            ),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        state?.let { StepDot(it) }
-        Column(
-            Modifier.weight(1f).then(if (last) Modifier else Modifier.padding(bottom = Spacing.space16)),
-            content = content,
-        )
+    Column(modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = Spacing.space12),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+        ) {
+            state?.let { StepMark(it, tone) }
+            Column(Modifier.weight(1f), content = content)
+        }
+        if (!last) HorizontalDivider(color = IntervalTheme.palette.line)
     }
 }
 
-/** A step's dot: the accent and a check once done, the accent and its number for the one to do now, a ring after. */
+/**
+ * A step's mark, in the room two digits take: a check on the accent once done, its number in the day's colour for
+ * the one to do now ("01"), dim for one after.
+ */
 @Composable
-private fun StepDot(state: StepState, modifier: Modifier = Modifier) {
+private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val filled = state !is StepState.Later
-    Box(
-        modifier
-            .size(Sizes.icon)
-            .clip(CircleShape)
-            .then(
-                if (filled) {
-                    Modifier.background(palette.accent)
-                } else {
-                    Modifier.border(Sizes.border, palette.textDim, CircleShape)
-                },
-            )
-            // The order is read from the rows themselves; a done row says so as its state.
-            .clearAndSetSemantics {},
-        contentAlignment = Alignment.Center,
-    ) {
+    // The order is read from the rows themselves; a done row says so as its state.
+    Box(modifier.width(IntervalSizes.stepNumber).clearAndSetSemantics {}) {
         when (state) {
-            StepState.Done ->
+            StepState.Done -> Box(
+                Modifier.size(Sizes.icon).clip(CircleShape).background(palette.accent),
+                contentAlignment = Alignment.Center,
+            ) {
                 Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.chipIcon))
+            }
 
-            is StepState.Now ->
-                Text(state.number.toString(), style = IntervalTheme.type.caption, color = palette.onAccent)
+            is StepState.Now -> Text(stepNumber(state.number), style = IntervalTheme.type.value, color = tone)
 
             is StepState.Later ->
-                Text(state.number.toString(), style = IntervalTheme.type.caption, color = palette.textDim)
+                Text(stepNumber(state.number), style = IntervalTheme.type.value, color = palette.textDim)
         }
     }
 }
+
+/** A step's number in two digits, so the ninth and the tenth take the same room. */
+private fun stepNumber(number: Int): String = number.toString().padStart(2, '0')

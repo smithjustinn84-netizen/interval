@@ -1,11 +1,10 @@
 package dev.justinsmith.interval.today
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.home_coach_done
 import dev.justinsmith.interval.history.resources.home_coach_done_goal
@@ -30,28 +29,47 @@ import dev.justinsmith.interval.history.resources.home_day_sport
 import dev.justinsmith.interval.history.resources.home_day_strength
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.lift.domain.ReadinessReason
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The line over the day, as a coach would open it: the day and what kind it is ("Thursday · class day"), and
- * under it the one thing worth saying of it, where there is one ([note]): that it is a day to take easier and
- * why, that it is the mat's and to loosen up first, that it is done, that rest is part of the week. On a plain
- * training day the kind is all it says.
+ * The line over the title, as a coach would open the day: the day and what kind it is ("Thursday · class day").
+ * On a plain training day it is all Today says of it.
  */
 @Composable
-internal fun CoachLine(weekday: Int?, kind: DayKind, note: CoachNote?, modifier: Modifier = Modifier) {
+internal fun DayCaption(weekday: Int?, kind: DayKind, modifier: Modifier = Modifier) {
+    val kindText = dayKindText(kind)
+    Text(
+        weekday?.let { stringResource(Res.string.home_day_caption, weekdayText(it), kindText) } ?: kindText,
+        style = IntervalTheme.type.caption,
+        color = IntervalTheme.palette.textDim,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/**
+ * The one thing worth saying of the day, under the title: that it is a day to take easier and why, that it is
+ * the mat's and to loosen up first, that it is done, that rest is part of the week.
+ */
+@Composable
+internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
+    Text(
+        coachText(note),
+        style = IntervalTheme.type.section,
+        color = IntervalTheme.palette.text,
+        modifier = modifier.fillMaxWidth(),
+    )
+}
+
+/** A day's tone as the theme draws it. */
+@Composable
+internal fun toneColor(tone: DayTone): Color {
     val palette = IntervalTheme.palette
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-        val kindText = dayKindText(kind)
-        Text(
-            weekday?.let { stringResource(Res.string.home_day_caption, weekdayText(it), kindText) } ?: kindText,
-            style = IntervalTheme.type.caption,
-            color = palette.textDim,
-        )
-        note?.let { Text(coachText(it), style = IntervalTheme.type.section, color = palette.text) }
+    return when (tone) {
+        DayTone.Accent -> palette.accent
+        DayTone.Work -> palette.workMark
+        DayTone.Rest -> palette.restMark
     }
 }
 

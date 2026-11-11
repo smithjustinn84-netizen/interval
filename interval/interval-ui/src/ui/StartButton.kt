@@ -24,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -44,10 +45,12 @@ fun StartButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     label: String = stringResource(Res.string.common_start_workout),
+    trailing: String? = null,
+    color: Color = IntervalTheme.palette.accent,
 ) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius18
-    val glow = palette.accent.copy(alpha = Opacity.START_SHADOW)
+    val glow = color.copy(alpha = Opacity.START_SHADOW)
     val interaction = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
     var launches by remember { mutableIntStateOf(0) }
@@ -56,7 +59,7 @@ fun StartButton(
         if (launches > 0) {
             key(launches) {
                 Burst(
-                    listOf(palette.accent),
+                    listOf(color),
                     Modifier.matchParentSize().requiredSize(IntervalSizes.launchBurst),
                     stroke = IntervalSizes.launchStroke,
                     durationMillis = Motion.LAUNCH_MILLIS,
@@ -70,7 +73,7 @@ fun StartButton(
                 .pressScale(interaction)
                 .shadow(elevation = IntervalSizes.startElevation, shape = shape, ambientColor = glow, spotColor = glow)
                 .clip(shape)
-                .background(palette.accent)
+                .background(color)
                 .clickable(interactionSource = interaction, indication = LocalIndication.current, role = Role.Button) {
                     haptics.performHapticFeedback(HapticFeedbackType.Confirm)
                     launches++
@@ -90,7 +93,10 @@ fun StartButton(
                 label,
                 style = IntervalTheme.type.value,
                 color = palette.onAccent,
+                // With its length at the far end, the label takes the room between and the two stand apart.
+                modifier = if (trailing != null) Modifier.weight(1f) else Modifier,
             )
+            trailing?.let { Text(it, style = IntervalTheme.type.value, color = palette.onAccent) }
         }
     }
 }

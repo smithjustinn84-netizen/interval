@@ -62,6 +62,12 @@ object IntervalSizes {
     /** The swatch of a kind's colour over a look before Start. */
     val kindSwatch = 16.dp
 
+    /** A step's number on Today's day card: the room two digits take, so the steps' words start level. */
+    val stepNumber = 32.dp
+
+    /** The least width of a later step's quiet button on Today, so "Log it" and "Do it now" end level. */
+    val stepButton = 104.dp
+
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 

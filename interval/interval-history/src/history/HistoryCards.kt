@@ -270,7 +270,8 @@ internal fun StartPill(
             .surfaceButton(interaction, Corners.full, if (primary) palette.accent else palette.surfaceVariant, onClick)
             .padding(horizontal = Spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        // Centred, for a pill held wider than its words.
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
     ) {
         val ink = if (primary) palette.onAccent else palette.text
         if (primary) Icon(IntervalIcons.Play, null, tint = ink, modifier = Modifier.size(Sizes.chipIcon))

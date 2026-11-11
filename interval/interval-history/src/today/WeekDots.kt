@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
@@ -64,6 +65,7 @@ import dev.justinsmith.interval.ui.weekdayText
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import kotlin.math.hypot
 
 /**
  * This week in a line: "This week" over how it stands against the goal ("2 of 4 done", "Goal met"), with the
@@ -104,10 +106,11 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
 }
 
 /**
- * Monday to Sunday as a dot a day: filled and checked in its kind's colour once done (the accent for a session on
- * Lift, the work mark for an interval workout, the rest mark for mobility, dim for a sport day alone), outlined in
- * the accent while planned, a dim fill with a slash once missed, and the surface for a rest day; today's is
- * ringed in the text colour. Under each is its initial, and its sport's short name ("BJJ", "Climb") where the
+ * Monday to Sunday as a block a day, as Log's week draws them: filled and checked in its kind's colour once done
+ * (the accent for a session on Lift, the work mark for an interval workout, the rest mark for mobility, dim for a
+ * sport day alone), outlined in the accent while planned, a dim fill with a slash once missed, and the surface for
+ * a rest day; today's is ringed in the text colour. Under each is its short name ("Mon"), and its sport's short
+ * name ("BJJ", "Climb") where the
  * week has any, kept level across the days. Each day is a button that opens it, read as the strip on Log is:
  * "Today, done, BJJ logged". A day done since Today last drew the week (a workout finished and come back
  * from, a class logged) draws its mark on, the fill sweeping round and the check landing; the days done as
@@ -141,9 +144,12 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
                     )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            weekdayText(day.weekday, WeekdayForm.Initial),
+                            weekdayText(day.weekday, WeekdayForm.Short),
                             style = IntervalTheme.type.caption,
                             color = if (day.today) palette.accent else palette.textDim,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Visible,
                         )
                         if (sports) {
                             Text(
@@ -167,9 +173,9 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
 private val doneDaysSaver = listSaver<Set<Long>, Long>(save = { it.toList() }, restore = { it.toSet() })
 
 /**
- * One day's dot, by its state; today's wears a ring whatever its state. A done day told to [drawOn] sweeps
- * its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and lands its check on a
- * spring; at once under reduced motion.
+ * One day's block, by its state, as wide as its day's column; today's wears a ring whatever its state. A done
+ * day told to [drawOn] sweeps its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and
+ * lands its check on a spring; at once under reduced motion.
  */
 @Composable
 private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Modifier = Modifier) {
@@ -191,19 +197,30 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
             check.snapTo(1f)
         }
     }
-    val ring = if (day.today) Modifier.border(Sizes.border, palette.text, CircleShape) else Modifier
+    val shape = Corners.radius12
+    val ring = if (day.today) Modifier.border(Sizes.border, palette.text, shape) else Modifier
     val fill = doneColor(day)
     Box(
         modifier
-            .size(Sizes.weekBarMark)
-            .clip(CircleShape)
+            .fillMaxWidth()
+            .height(Sizes.weekBarMark)
+            .clip(shape)
             .then(
                 when (day.state) {
                     DayState.Done -> Modifier.drawBehind {
-                        drawArc(fill, Angles.TWELVE_O_CLOCK, Angles.FULL_TURN * sweep.value, useCenter = true)
+                        // A circle round the block's corners, so the sweep fills it to its edges as it closes.
+                        val radius = hypot(size.width, size.height) / 2
+                        drawArc(
+                            fill,
+                            Angles.TWELVE_O_CLOCK,
+                            Angles.FULL_TURN * sweep.value,
+                            useCenter = true,
+                            topLeft = Offset(center.x - radius, center.y - radius),
+                            size = Size(radius * 2, radius * 2),
+                        )
                     }
 
-                    DayState.Planned -> Modifier.border(Sizes.border, palette.accent, CircleShape)
+                    DayState.Planned -> Modifier.border(Sizes.border, palette.accent, shape)
 
                     DayState.Missed -> Modifier.background(palette.surfaceVariant).missedSlash(palette.textDim)
 

@@ -105,6 +105,20 @@ sealed interface CoachNote {
     data object RestDay : CoachNote
 }
 
+/**
+ * The colour a day goes by, from its kind: the accent for strength, as Lift is marked everywhere, and for a
+ * sport's day and a day done; the work mark for conditioning; the rest mark for mobility and a rest day.
+ */
+enum class DayTone { Accent, Work, Rest }
+
+/** The tone this kind of day takes: its Start and its step's number are drawn in it. */
+val DayKind.tone: DayTone
+    get() = when (this) {
+        DayKind.Conditioning -> DayTone.Work
+        DayKind.Mobility, DayKind.Rest -> DayTone.Rest
+        is DayKind.SportDay, DayKind.Strength, DayKind.Done -> DayTone.Accent
+    }
+
 /** The kind of day this plan makes today. */
 val TodayPlan.kind: DayKind
     get() {

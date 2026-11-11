@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -55,7 +56,9 @@ class HomeFlowScreenTest {
         onNodeWithText("Before class").assertIsDisplayed()
         onNodeWithText("Up next · Today").assertDoesNotExist()
         onNodeWithText("Before rolling").assertIsDisplayed()
-        onNodeWithText("Mobility · 6 moves · before BJJ · 9:00").assertIsDisplayed()
+        onNodeWithText("Mobility · 6 moves · before BJJ").assertIsDisplayed()
+        // How long it runs is on its Start, not in the line over it.
+        onNode(hasText("Start") and hasText("9:00")).assertIsDisplayed()
         // The day in order: the flow first under the one Start, then the class to log.
         onNodeWithText("Thursday · class day").assertIsDisplayed()
         onNodeWithText("Today is for the mat. Loosen up first.").assertIsDisplayed()
@@ -78,11 +81,11 @@ class HomeFlowScreenTest {
             HomeScreen(empty.copy(upNext = upNext, hasPlans = true), HomeActions())
         }
         onNodeWithText("Before climbing").assertIsDisplayed()
-        onNodeWithText("Mobility · 5 moves · before the wall · 5:20").assertIsDisplayed()
+        onNodeWithText("Mobility · 5 moves · before the wall").assertIsDisplayed()
         sport = Sport.Running
         waitForIdle()
         onNodeWithText("Before your run").assertIsDisplayed()
-        onNodeWithText("Mobility · 6 moves · no bell · 5:20").assertIsDisplayed()
+        onNodeWithText("Mobility · 6 moves · no bell").assertIsDisplayed()
         sport = Sport.Custom("Judo")
         waitForIdle()
         onNodeWithText("Before Judo").assertIsDisplayed()

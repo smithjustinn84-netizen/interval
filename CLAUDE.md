@@ -352,11 +352,15 @@ toolchain (`$compose.*`).
   rather than taking it, and with no workout the user planned themself the lead is the
   flow to do before the sport (`UpNextItem.Flow`, which `upNext` adds until mobility is done that day and History
   leaves out), then the sport. Today lays that out as a coach would (`today/TodayPlan.kt`, pure: `todayPlan` of the
-  agenda and what is done today, `DoneStep`s from the log's day): a line over the day saying its kind and the one
-  thing worth saying of it (`CoachLine`, from `TodayPlan.kind` and `note`: a taxed day and why, a sport's day, done,
-  a rest day; nothing on a plain training day), then the day in order on one card (`today/DayCard.kt`: what is done
-  ticked, the first step under the tab's one raised Start or Log it, the steps after it behind quiet buttons, the
-  program's day stood back behind a class under "If there is time"). With no step left the day says so (`DoneCard`),
+  agenda and what is done today, `DoneStep`s from the log's day): over the title the day and its kind (`DayCaption`,
+  `TabGrid`'s `eyebrow`), under it the one thing worth saying of it (`CoachLine`, from `TodayPlan.note`: a taxed day
+  and why, a sport's day, done, a rest day; nothing on a plain training day), the week as a block a day
+  (`WeekDots`), then the day in order on one card (`today/DayCard.kt`, a row a step with a hairline between: what is
+  done ticked, the first step numbered "01" over the tab's one raised Start, which says how long it runs, or Log it,
+  the steps after it behind quiet buttons of one width, the program's day stood back behind a class under "If there
+  is time"). The day goes by a colour, its kind's tone (`DayKind.tone`, pure: the accent for strength, a sport's day
+  and a day done, the work mark for conditioning, the rest mark for mobility and rest; `toneColor`), which its
+  Start and the number of the step to do now are drawn in. With no step left the day says so (`DoneCard`),
   a day with none and nothing done is a rest day (`RestCard`, offering `restDayFlow`), and what comes after stands
   back with "Do it today" (`NextCard`): never a raised Start for another day. Once a class is logged the program's
   unplanned day stands back still (`TodayPlan.waiting`), so the day is done. On a taxed day Today says why and

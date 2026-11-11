@@ -120,6 +120,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- Today, tidied. The day and its kind ("Thursday · class day") sit over the title. The week is a block a day
+  under its short name, as Log draws it. The day's card is a row a step with a hairline between, each step
+  numbered "01", "02"; the quiet buttons down it are one width, and what comes after today stands under a last
+  hairline. Start says how long the workout runs ("Start 9:00"), which the line over it no longer does, and takes
+  the day's colour with the number of the step to do now: the accent on a strength or a sport's day, the work
+  colour on a conditioning day, the rest colour on a mobility day.
 - Today lays the day out in order, as a coach would. A line under the title says what kind of day it is and the one
   thing worth saying of it. The day is one card: what is done is ticked, the step to do now is under the one Start,
   and the steps after it have quiet buttons, the program's day on a class day under "If there is time". Once nothing

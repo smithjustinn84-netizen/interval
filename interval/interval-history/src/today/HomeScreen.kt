@@ -33,7 +33,6 @@ import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.flowKeyOf
 import dev.justinsmith.interval.history.preview
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_edit_plan
 import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_kind_conditioning
@@ -222,8 +221,9 @@ class HomeActions(
 )
 
 /**
- * Today, laid out as a coach would: a line saying what kind of day it is and the one thing worth saying of it
- * ([CoachLine]), the week in a line and a dot a day, then the day in order ([DayCard]: what is done ticked off, the
+ * Today, laid out as a coach would: over the title what kind of day it is ([DayCaption]) and under it the one
+ * thing worth saying of it ([CoachLine]), the week in a line and a block a day,
+ * then the day in order ([DayCard]: what is done ticked off, the
  * step to do now under the tab's one raised Start, the steps after it behind quiet buttons). Once today's steps
  * are done it says so ([DoneCard]), a day with none is a rest day ([RestCard]), and what comes after stands back
  * with a quiet button ([NextCard]); with nothing to come, the ways to a plan, or a word that the plan is done for
@@ -243,12 +243,26 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
     val agenda = remember(state.upNext) { state.agenda }
     val plan = state.plan
     // The line over the day, once there is a day to speak of: a plan, or something done.
-    val coached = !state.loading && (state.hasPlans || plan.done.isNotEmpty())
+    val coached = state.coached
+    val note = state.coachNote()
+    // Level with the title, which starts the same way in from the window's edge.
+    val coachPadding = Modifier.padding(horizontal = Spacing.space16)
     TabGrid(
         stringResource(Res.string.home_title),
         modifier,
         actions = { SettingsAction(actions.onOpenSettings) },
-        header = if (coached) ({ Coach(state) }) else null,
+        header = note?.let { { CoachLine(it, coachPadding.padding(bottom = Spacing.space8)) } },
+        eyebrow = if (coached) {
+            {
+                DayCaption(
+                    state.week.firstOrNull { it.today }?.weekday,
+                    plan.kind,
+                    coachPadding.padding(top = Spacing.space8),
+                )
+            }
+        } else {
+            null
+        },
     ) {
         if (state.loading) return@TabGrid
         item(key = "week") {
@@ -290,18 +304,6 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
     }
 }
 
-/** The line over the day: its kind, and what there is to say of it by the week's goal and Lift's reading. */
-@Composable
-private fun Coach(state: HomeUiState) {
-    val goal = state.weekGoal.goal
-    CoachLine(
-        state.week.firstOrNull { it.today }?.weekday,
-        state.plan.kind,
-        state.plan.note(state.taxed, goalMet = goal != null && state.weekGoal.count >= goal),
-        Modifier.padding(horizontal = Spacing.space20).padding(bottom = Spacing.space8),
-    )
-}
-
 /**
  * The day's cards: its steps while any is left, else that it is done or a rest day; and with no step left, what
  * comes after standing back, or with nothing to come the ways to a plan.
@@ -327,6 +329,15 @@ private fun LazyStaggeredGridScope.dayItems(
             else -> NothingPlanned(actions, card)
         }
     }
+}
+
+/** Whether there is a day to speak of: a plan, or something done. */
+private val HomeUiState.coached: Boolean get() = !loading && (hasPlans || plan.done.isNotEmpty())
+
+/** The one thing worth saying of the day, by the week's goal and Lift's reading; null with nothing to say. */
+private fun HomeUiState.coachNote(): CoachNote? {
+    val goal = weekGoal.goal
+    return if (coached) plan.note(taxed, goalMet = goal != null && weekGoal.count >= goal) else null
 }
 
 private const val LEAD = "lead"
@@ -374,14 +385,13 @@ internal fun upNextTitle(next: UpNextItem): String = when (next) {
     is UpNextItem.SportDay -> sportTitle(next.sport)
 }
 
-/** The line under it: the workout's shape and length, or about how long the program's day takes, its day and lifts. */
+/**
+ * The line under it: the workout's shape, or about how long the program's day takes, its day and lifts. A
+ * workout's length is on its Start ([upNextLength]).
+ */
 @Composable
 internal fun upNextDetail(next: UpNextItem): String = when (next) {
-    is UpNextItem.Planned -> stringResource(
-        Res.string.common_joined,
-        workoutDescription(next.config),
-        formatClock(next.config.totalSeconds),
-    )
+    is UpNextItem.Planned -> workoutDescription(next.config)
 
     is UpNextItem.Lift -> next.programDay?.let { day ->
         // How long comes first: it is what Today is asked.
@@ -390,9 +400,14 @@ internal fun upNextDetail(next: UpNextItem): String = when (next) {
 
     is UpNextItem.SportDay -> stringResource(Res.string.sport_counts)
 
-    is UpNextItem.Flow -> joined(
-        listOfNotNull(workoutDescription(next.flow.config), next.flow.note, formatClock(next.totalSeconds)),
-    )
+    is UpNextItem.Flow -> joined(listOfNotNull(workoutDescription(next.flow.config), next.flow.note))
+}
+
+/** How long what leads runs, for its Start to say: a workout's or a flow's clock; a session's is only about. */
+internal fun upNextLength(next: UpNextItem): String? = when (next) {
+    is UpNextItem.Planned -> formatClock(next.config.totalSeconds)
+    is UpNextItem.Flow -> formatClock(next.totalSeconds)
+    is UpNextItem.Lift, is UpNextItem.SportDay -> null
 }
 
 /** Nothing up next: what Today is waiting for, and the ways to give it one, Set up's four answers first. */

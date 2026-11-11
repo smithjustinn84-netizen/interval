@@ -87,7 +87,8 @@ fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
  * scene has taken the system's and the navigation bar's share already, so nothing is left to keep out of.
  * [bottomBar] stays pinned under the grid, over the same lanes, for an action that must never scroll away
  * (Lift's Start). [header] sits across the grid under the title, for what a tab shares with its neighbours
- * (Train's pillars).
+ * (Train's pillars), and [eyebrow] over the title, for a line that says what the title is of today (Today's day
+ * and its kind).
  */
 @Composable
 fun TabGrid(
@@ -97,6 +98,7 @@ fun TabGrid(
     actions: @Composable RowScope.() -> Unit = {},
     bottomBar: (@Composable () -> Unit)? = null,
     header: (@Composable () -> Unit)? = null,
+    eyebrow: (@Composable () -> Unit)? = null,
     content: LazyStaggeredGridScope.() -> Unit,
 ) {
     val safe = WindowInsets.safeDrawing
@@ -119,6 +121,7 @@ fun TabGrid(
                 modifier = Modifier.fillMaxWidth().weight(1f),
                 contentPadding = PaddingValues(bottom = if (under) Spacing.space24 + foot else Spacing.space8),
             ) {
+                eyebrow?.let { item(key = "tab-eyebrow", span = StaggeredGridItemSpan.FullLine) { it() } }
                 item(key = "title", span = StaggeredGridItemSpan.FullLine) {
                     TitleBar(title, navigation = navigation ?: {}, actions = actions)
                 }

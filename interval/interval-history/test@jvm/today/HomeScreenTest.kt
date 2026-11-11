@@ -31,6 +31,7 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.flowBefore
+import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
@@ -155,6 +156,8 @@ class HomeScreenTest {
         onNodeWithText("Up next · Today").assertIsDisplayed()
         onNodeWithText("1 of 3 done").assertIsDisplayed()
         onNodeWithText("Then tomorrow · Tabata").assertIsDisplayed()
+        // The Start says how long the workout runs.
+        onNode(hasText("Start") and hasText(formatClock(hiitPreset.config.totalSeconds))).assertIsDisplayed()
         onNodeWithText("Start").performClick()
         assertEquals(listOf("HIIT 30/30"), started)
     }
