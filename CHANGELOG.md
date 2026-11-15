@@ -35,9 +35,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   swings.
 - A flow for every day, "Daily five": cat-cow, the hip flexor lunge, the deep squat, thread the needle and the
   downward dog in five minutes. Five minutes picked on Today offers it.
-- Three more shipped flows, two for BJJ. "Core for falls" (7 min, before training) is Mark Wildman's four foundations
+- Three more shipped flows, two for BJJ. "Core for falls" (6 min, before training) is Mark Wildman's four foundations
   of the core: the spinal rock and the same-side shoulder roll it builds to, the sit-up, the cross touch and the
-  V-up across. "Before rolling" (9 min) drills the hip escape, the bridge and roll, the technical stand-up, the
+  V-up across, none for more than 50 seconds, with a cobra after the sit-ups to let the front of the trunk out. "Before rolling" (9 min) drills the hip escape, the bridge and roll, the technical stand-up, the
   90/90 switch, the sit-out and the world's greatest stretch, and is now the flow Today leads with before a BJJ
   class. "After rolling" (12 min) opens the hips and back with the butterfly, the frog, the pigeon, the lying
   twist, thread the needle and child's pose. The ten new moves are Lift exercises on the mat, each with a figure,
@@ -120,6 +120,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- "Core on the mat" is 11 minutes, not 18, and far easier on the trunk. Each move runs about its classical count, 40 to 50
+  seconds curled up in place of two minutes (the hundred 0:50 from 1:40, the roll-up 0:50 from 2:00), the hundred is
+  cued with the knees bent over the hips and the roll-up with the knees soft, and a spine stretch forward sits
+  between the leg stretches and the criss-cross, so no more than two curled moves run on end. One finished before
+  this keeps its place in the Log as mobility, without the flow's name.
 - Today, tidied. The day and its kind ("Thursday · class day") sit over the title. The week is a block a day
   under its short name, as Log draws it. The day's card is a row a step with a hairline between, each step
   numbered "01", "02"; the quiet buttons down it are one width, and what comes after today stands under a last

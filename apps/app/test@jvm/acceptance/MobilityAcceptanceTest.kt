@@ -57,14 +57,14 @@ class MobilityAcceptanceTest {
         startFlow()
 
         seePhase("Get ready")
-        seeMove("The hundred", "Move 1 of 9")
+        seeMove("The hundred", "Move 1 of 10")
         seeMoveFigure("The hundred")
         letTimePass(11.seconds)
         seePhase("Move")
         openMoveFigure("The hundred")
         seeMoveShownByFigure("The hundred")
         closeMovePage()
-        seeMove("The hundred", "Move 1 of 9")
+        seeMove("The hundred", "Move 1 of 10")
     }
 
     @Test

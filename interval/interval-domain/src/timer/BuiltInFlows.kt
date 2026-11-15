@@ -99,14 +99,14 @@ val builtInFlows: List<Flow> = listOf(
         moves = listOf(
             Move(
                 "Spinal rock",
-                seconds = 70,
+                seconds = 50,
                 cue = "Chest up, then round into a C and rock back, head off the mat. Rock up to sitting.",
                 held = false,
                 exercise = "SpinalRock",
             ),
             Move(
                 "Shoulder roll",
-                seconds = 45,
+                seconds = 40,
                 cue = "Same hand and foot forward. Tuck the head, roll over the shoulder and come all the way up.",
                 sided = true,
                 held = false,
@@ -114,21 +114,23 @@ val builtInFlows: List<Flow> = listOf(
             ),
             Move(
                 "Sit-up",
-                seconds = 70,
+                seconds = 45,
                 cue = "Lie flat, ribs open. Close the ribs, sit all the way up and extend the spine.",
                 held = false,
                 exercise = "SitUp",
             ),
+            // The front of the trunk let out between the sit-ups and the two that follow.
+            cobra(seconds = 30),
             Move(
                 "Cross touch",
-                seconds = 60,
+                seconds = 45,
                 cue = "One leg long and straight, elbow to the opposite knee. Side to side, core on.",
                 held = false,
                 exercise = "CrissCross",
             ),
             Move(
                 "V-up across",
-                seconds = 75,
+                seconds = 45,
                 cue = "Lie open, hands down. Close the ribs, sit up into a V and touch the opposite foot.",
                 held = false,
                 exercise = "CrossVUp",
@@ -250,62 +252,71 @@ val builtInFlows: List<Flow> = listOf(
     ),
 )
 
-// Each is one of Lift's mat exercises, named by its key, so the flow shows it by Lift's figure and cues.
+// Each is one of Lift's mat exercises, named by its key, so the flow shows it by Lift's figure and cues. A move is
+// about its classical count, six to ten slow ones, not a minute and more of it: under a minute curled up, and
+// never more than two such moves on end before one that lets the front of the trunk out (the circles, the spine
+// stretch, swimming), so nothing is held long enough to cramp.
 private val corePilates: List<Move>
     get() = listOf(
         pilates(
             "The hundred",
             "Hundred",
-            100,
-            "Head and shoulders up, legs long. Pump the arms: in for five, out for five.",
+            50,
+            "Head and shoulders up, knees bent over the hips. Pump the arms: in for five, out for five.",
         ),
         pilates(
             "Roll-up",
             "RollUp",
-            120,
-            "Arms overhead, roll up one bone at a time to reach past your toes, and back down.",
+            50,
+            "Arms overhead, knees soft. Roll up a bone at a time to reach past your toes, and back down.",
         ),
         pilates(
             "Single-leg circles",
             "SingleLegCircles",
-            60,
+            35,
             "One leg to the ceiling, hips still. Circle it across, down and round.",
             true,
         ),
         pilates(
             "Rolling like a ball",
             "RollingLikeABall",
-            90,
+            45,
             "Hold the shins, chin down. Roll back to the shoulders and up to balance.",
         ),
         pilates(
             "Single-leg stretch",
             "SingleLegStretch",
-            120,
+            40,
             "Head up, one knee in, the other leg long. Change legs with each breath.",
         ),
         pilates(
             "Double-leg stretch",
             "DoubleLegStretch",
-            120,
+            40,
             "Curl in, then reach arms and legs long. Circle the arms back to the shins.",
+        ),
+        pilates(
+            "Spine stretch forward",
+            "SpineStretchForward",
+            75,
+            "Sit tall, legs apart, feet flexed. Round forward, reaching ahead, then stack back up.",
         ),
         pilates(
             "Criss-cross",
             "CrissCross",
-            120,
+            40,
             "Hands behind the head, elbow to the far knee, the other leg long. Slowly.",
         ),
         pilates(
             "Swimming",
             "Swimming",
-            90,
+            50,
             "Face down, arms and legs long and lifted. Flutter the opposite arm and leg.",
         ),
         pilates(
             "Side kicks",
             "SideKickSeries",
-            50,
+            45,
             "On your side, hips stacked. Top leg kicks forward twice, then sweeps back.",
             true,
         ),

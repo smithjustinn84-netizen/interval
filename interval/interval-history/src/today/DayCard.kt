@@ -287,18 +287,8 @@ private fun LeadStep(
     Step(number?.let { StepState.Now(it) }, last, tone = tone) {
         val look = item.preview()?.let { onLook }
         val described = stringResource(Res.string.preview_open_cd, upNextTitle(item))
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .then(
-                    if (look != null) {
-                        Modifier.clickable(onClickLabel = described, onClick = look)
-                    } else {
-                        Modifier
-                    },
-                ),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-        ) {
+        val tap = if (look != null) Modifier.clickable(onClickLabel = described, onClick = look) else Modifier
+        Column(Modifier.fillMaxWidth().then(tap), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(upNextCaption(item), style = IntervalTheme.type.caption, color = palette.textDim)
             Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
             Text(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)

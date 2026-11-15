@@ -125,7 +125,7 @@ class WorkoutFlowScreenTest {
         onNodeWithContentDescription("How The hundred goes").performClick()
         waitForIdle()
 
-        onNodeWithText("Move 1 of 9 · 1:40 · Moved through").assertExists()
+        onNodeWithText("Move 1 of 10 · 0:50 · Moved through").assertExists()
         onNodeWithContentDescription("The hundred, shown by a figure").assertExists()
         onNodeWithText("Back to the moves").performClick()
         waitForIdle()

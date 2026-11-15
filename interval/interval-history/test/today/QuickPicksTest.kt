@@ -73,7 +73,8 @@ class QuickPicksTest {
         assertEquals(listOf(false, false, true), five.map { it.mobility })
         assertEquals(300, five.last().totalSeconds)
         assertEquals("Spine and hamstrings", builtInPresets.fitting(10, onTimer).names().last())
-        assertEquals("Core on the mat", builtInPresets.fitting(20, onTimer).names().last())
+        assertEquals("Core on the mat", builtInPresets.fitting(11, onTimer).names().last())
+        assertEquals("After rolling", builtInPresets.fitting(20, onTimer).names().last())
         assertEquals("Full reset", builtInPresets.fitting(30, onTimer).names().last())
         // With no preset that fits, a flow that does is still offered.
         assertEquals(listOf("Daily five"), emptyList<Preset>().fitting(5, onTimer).names())

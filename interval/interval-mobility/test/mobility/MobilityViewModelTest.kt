@@ -21,7 +21,7 @@ class MobilityViewModelTest : MainDispatcherTest() {
             listOf(
                 "Hips and shoulders" to "8:00",
                 "Wrists and fingers" to "5:00",
-                "Core for falls" to "7:00",
+                "Core for falls" to "6:00",
                 "Before rolling" to "9:00",
             ),
             state.before.named(),
@@ -30,7 +30,7 @@ class MobilityViewModelTest : MainDispatcherTest() {
             listOf(
                 "Daily five" to "5:00",
                 "Spine and hamstrings" to "10:00",
-                "Core on the mat" to "18:00",
+                "Core on the mat" to "11:00",
                 "After rolling" to "12:00",
                 "Full reset" to "25:00",
             ),
