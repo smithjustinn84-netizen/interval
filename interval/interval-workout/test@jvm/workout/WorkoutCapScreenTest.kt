@@ -61,6 +61,7 @@ class WorkoutCapScreenTest {
         onNodeWithText("Best: 14").assertExists()
         onNodeWithText("This round 0:40 · 1:28 a round").assertExists()
         onNodeWithText("Round 6 · 12:00 left").assertExists()
+        onNodeWithText("Last round", substring = true).assertDoesNotExist()
     }
 
     @Test
@@ -91,6 +92,8 @@ class WorkoutCapScreenTest {
         onNodeWithContentDescription("Add ten seconds").assertExists()
         onNodeWithContentDescription("Back to previous interval").assertExists()
         onNodeWithText("Round done").assertIsNotEnabled()
+        onNodeWithText("Round 1 · ", substring = true).assertExists()
+        onNodeWithText("Round 1 of", substring = true).assertDoesNotExist()
     }
 
     @Test

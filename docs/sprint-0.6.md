@@ -325,6 +325,11 @@ ticket 6.
 - As built: the Timer makes a cap from a button on the Work and Rounds sheets rather than a segmented switch over
   the rows; import refuses a malformed cap rather than clamping it; Health writes the cap as one segment; on iOS
   the minute calls sound only with the app open.
+- Run on `amper-37` 2026-11-17, every step as written, from a fresh install. The speech engine spoke as the cap
+  ended with the screen locked, but an emulator's words can't be heard from its log, so the "Time. 2 rounds."
+  wording rests on `CuePlaybackTest`. The run found a cap read as the workout's last round: "Last round — finish
+  strong" under its clock, "Last round" said as it began and "Round 1 of 1" while getting ready. A cap's work is no
+  longer the last round (`Cue.PhaseStarted.lastRound`, `NextUp`), and getting ready says "Round 1 · 5:08 left".
 
 --- cut line ---
 

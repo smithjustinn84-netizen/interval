@@ -259,7 +259,7 @@ private fun WorkoutState.flowNow(flow: Flow): FlowNow {
 /** What follows this interval in the course: its length, the round or the set it starts. */
 private fun WorkoutState.nextUp(): NextUp? {
     if (phase == Phase.CoolDown || phase == Phase.Done) return null
-    val next = Course.next(this) ?: return NextUp.LastRound
+    val next = Course.next(this) ?: return NextUp.LastRound.takeUnless { inCap }
     val clock = formatClock(next.seconds)
     return when (next.phase) {
         Phase.WarmUp -> NextUp.WarmUp(clock)

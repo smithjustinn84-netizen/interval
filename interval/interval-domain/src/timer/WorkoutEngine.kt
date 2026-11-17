@@ -231,7 +231,8 @@ object WorkoutEngine {
 
     private fun started(config: IntervalConfig, interval: Interval): Step {
         val state = enter(config, interval)
-        val lastRound = interval.phase == Phase.Work && state.isLastRound
+        // A cap is one long work, not the last of a count: "Last round" would say so for its whole length.
+        val lastRound = interval.phase == Phase.Work && state.isLastRound && !state.inCap
         val sets = config.blocks[interval.block].sets
         val set = interval.set.takeIf { interval.phase == Phase.Work && interval.round == 1 && sets > 1 }
         val opensBlock = interval.phase == Phase.Work && interval.set == 1 && interval.round == 1

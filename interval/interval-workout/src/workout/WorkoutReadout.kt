@@ -102,7 +102,7 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
 
         bookend -> stringResource(Res.string.workout_status_left, state.sessionLeft)
 
-        state.cap?.live == true -> stringResource(
+        state.cap != null -> stringResource(
             Res.string.workout_status_cap,
             state.cap.rounds + 1,
             state.sessionLeft,

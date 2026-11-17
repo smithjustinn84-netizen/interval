@@ -103,6 +103,13 @@ class TimeCapTest {
     }
 
     @Test
+    fun `a cap's work is never called the last round`() {
+        val start = WorkoutEngine.tick(WorkoutEngine.start(cap).state, 10_000)
+        val work = start.cues.filterIsInstance<Cue.PhaseStarted>().single { it.phase == Phase.Work }
+        assertFalse(work.lastRound)
+    }
+
+    @Test
     fun `plain work calls no minutes left`() {
         val plain = IntervalConfig(prepSeconds = 0, workSeconds = 600, restSeconds = 0, rounds = 1)
         val step = WorkoutEngine.tick(WorkoutEngine.start(plain).state, 599_000)
