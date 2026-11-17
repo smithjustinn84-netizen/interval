@@ -17,17 +17,15 @@ import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.ui.IntervalTheme
 
 /**
- * [values] as a line, oldest first, spread evenly across the width and scaled from [min] at the bottom to [max] at
- * the top (all at mid height when they are equal): the first point a quiet dot, the latest one in the accent, and
- * each point in [marks], by its place, a dashed rule top to bottom with a quiet dot (where a lift went to another
- * bell). An exercise's best each session on its page. It reads as one node, [description] its words for a screen
- * reader.
+ * A line through [heights], oldest first, spread evenly across the width, each from 0 at the bottom to 1 at the top:
+ * the first point a quiet dot, the latest one in the accent, and each point in [marks], by its place, a dashed rule
+ * top to bottom with a quiet dot where the line starts again (a lift gone to another bell, whose stretch is scaled
+ * on its own). An exercise's best each session on its page. It reads as one node, [description] its words for a
+ * screen reader.
  */
 @Composable
 fun Sparkline(
-    values: List<Float>,
-    min: Float,
-    max: Float,
+    heights: List<Float>,
     description: String,
     modifier: Modifier = Modifier,
     marks: List<Int> = emptyList(),
@@ -45,15 +43,14 @@ fun Sparkline(
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,
                 )
-                val span = max - min
-                val step = if (values.size > 1) (size.width - 2 * dot) / (values.size - 1) else 0f
-                val points = values.mapIndexed { i, value ->
-                    val share = if (span > 0f) (value - min) / span else HALF
-                    Offset(dot + i * step, dot + (size.height - 2 * dot) * (1 - share))
+                val step = if (heights.size > 1) (size.width - 2 * dot) / (heights.size - 1) else 0f
+                val points = heights.mapIndexed { i, height ->
+                    Offset(dot + i * step, dot + (size.height - 2 * dot) * (1 - height))
                 }
                 val path = Path().apply {
-                    points.firstOrNull()?.let { moveTo(it.x, it.y) }
-                    points.drop(1).forEach { lineTo(it.x, it.y) }
+                    points.forEachIndexed { i, point ->
+                        if (i == 0 || i in marks) moveTo(point.x, point.y) else lineTo(point.x, point.y)
+                    }
                 }
                 val marked = marks.mapNotNull { points.getOrNull(it) }
                 val dash = PathEffect.dashPathEffect(floatArrayOf(DASH, DASH))
@@ -71,5 +68,4 @@ fun Sparkline(
     )
 }
 
-private const val HALF = 0.5f
 private const val DASH = 8f

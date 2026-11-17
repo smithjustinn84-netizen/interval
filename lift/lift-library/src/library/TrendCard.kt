@@ -30,9 +30,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The exercise's best each session as a line, oldest first, the latest in the accent: the best set's weight times
- * reps, the reps or the hold as the trend counts it, each move to another bell marked, with where it started under
- * it. Under the records on the
- * exercise's page.
+ * reps, the reps or the hold as the trend counts it, each move to another bell marked and its stretch scaled on its
+ * own, with where it started under it. Under the records on the exercise's page.
  */
 @Composable
 internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
@@ -54,9 +53,7 @@ internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
             )
         }
         Sparkline(
-            values = trend.points.map { it.value.toFloat() },
-            min = trend.min.toFloat(),
-            max = trend.max.toFloat(),
+            heights = trend.heights.map { it.toFloat() },
             description = stringResource(Res.string.detail_trend_cd, values.joinToString()),
             marks = trend.bellChanges,
         )

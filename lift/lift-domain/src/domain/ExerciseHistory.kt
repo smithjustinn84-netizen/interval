@@ -99,6 +99,23 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
             points.indices.drop(1).filter { points[it].kg != points[it - 1].kg }
         }
 
+    /**
+     * Each point's height on the line, from 0 at the bottom to 1 at the top, scaled within its own bell: the points
+     * between one [bellChanges] and the next run from their lowest to their highest, so the reps climbing at each
+     * bell show, not one bell's work against another's. A stretch all of one value, or of one point, sits at half.
+     * The other measures are one stretch.
+     */
+    val heights: List<Double>
+        get() {
+            val starts = listOf(0) + bellChanges + points.size
+            return starts.zipWithNext().flatMap { (from, until) ->
+                val stretch = points.subList(from, until).map { it.value }
+                val low = stretch.min()
+                val span = stretch.max() - low
+                stretch.map { if (span > 0.0) (it - low) / span else HALF }
+            }
+        }
+
     val latest: Double get() = points.last().value
 }
 
@@ -134,3 +151,5 @@ fun exerciseTrend(exercise: Exercise, sessions: List<PastSession>): Trend? {
 }
 
 private const val MIN_TREND_SESSIONS = 2
+
+private const val HALF = 0.5
