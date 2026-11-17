@@ -83,6 +83,12 @@ class HealthWorkoutsTest {
         assertEquals(HealthMove.Row, BuiltInExercise.InvertedRow.healthMove)
         assertEquals(HealthMove.PullUp, BuiltInExercise.ChinUp.healthMove)
         assertEquals(HealthMove.Lunge, BuiltInExercise.StepUp.healthMove)
+        assertEquals(HealthMove.Lunge, BuiltInExercise.WalkingLunge.healthMove)
+        assertEquals(HealthMove.Row, BuiltInExercise.RenegadeRow.healthMove)
+        assertEquals(HealthMove.Stretching, BuiltInExercise.Pigeon.healthMove)
+        assertEquals(HealthMove.Stretching, BuiltInExercise.FrogStretch.healthMove)
+        assertEquals(HealthMove.Other, BuiltInExercise.Hundred.healthMove)
+        assertEquals(HealthMove.Other, BuiltInExercise.HipEscape.healthMove)
         assertEquals(HealthMove.HipThrust, BuiltInExercise.GluteBridge.healthMove)
         assertEquals(HealthMove.Burpee, BuiltInExercise.Burpee.healthMove)
         assertEquals(HealthMove.MountainClimber, BuiltInExercise.MountainClimber.healthMove)
@@ -92,6 +98,12 @@ class HealthWorkoutsTest {
         assertEquals(HealthMove.Other, BuiltInExercise.BandPullApart.healthMove)
         assertEquals(HealthMove.Weightlifting, custom(Equipment.Kettlebell).healthMove)
         assertEquals(HealthMove.Other, custom(Equipment.Mat).healthMove)
+    }
+
+    @Test
+    fun `every stretch held for a time on the mat is stretching but the Pilates swimming`() {
+        val held = BuiltInExercise.entries.filter { it.equipment == Equipment.Mat && it.measure == Measure.Time }
+        assertEquals(listOf(BuiltInExercise.Swimming), held.filter { it.healthMove != HealthMove.Stretching })
     }
 
     private fun custom(equipment: Equipment) = CustomExercise(

@@ -73,15 +73,16 @@ private val BuiltInExercise.builtInMove: HealthMove
 
         BuiltInExercise.BarbellBenchPress, BuiltInExercise.BandChestPress -> HealthMove.BenchPress
 
-        BuiltInExercise.Row, BuiltInExercise.BarbellRow, BuiltInExercise.InvertedRow, BuiltInExercise.BandSeatedRow,
+        BuiltInExercise.Row, BuiltInExercise.RenegadeRow, BuiltInExercise.BarbellRow, BuiltInExercise.InvertedRow,
+        BuiltInExercise.BandSeatedRow,
         -> HealthMove.Row
 
         BuiltInExercise.PullUp, BuiltInExercise.ChinUp, BuiltInExercise.BandLatPulldown -> HealthMove.PullUp
 
         BuiltInExercise.Plank, BuiltInExercise.SidePlank, BuiltInExercise.HollowHold -> HealthMove.Plank
 
-        BuiltInExercise.RackedLunge, BuiltInExercise.SplitSquat, BuiltInExercise.ReverseLunge,
-        BuiltInExercise.BulgarianSplitSquat, BuiltInExercise.StepUp,
+        BuiltInExercise.RackedLunge, BuiltInExercise.WalkingLunge, BuiltInExercise.SplitSquat,
+        BuiltInExercise.ReverseLunge, BuiltInExercise.BulgarianSplitSquat, BuiltInExercise.StepUp,
         -> HealthMove.Lunge
 
         BuiltInExercise.GluteBridge, BuiltInExercise.SingleLegGluteBridge -> HealthMove.HipThrust
@@ -89,6 +90,16 @@ private val BuiltInExercise.builtInMove: HealthMove
         BuiltInExercise.Burpee -> HealthMove.Burpee
 
         BuiltInExercise.MountainClimber -> HealthMove.MountainClimber
+
+        // The mobility flows' stretches, held for a time; the Pilates and floor drills stay other work.
+        BuiltInExercise.HipSwitch, BuiltInExercise.HipFlexorLunge, BuiltInExercise.DeepSquat,
+        BuiltInExercise.WorldsGreatestStretch, BuiltInExercise.ThreadTheNeedle, BuiltInExercise.ShoulderCircles,
+        BuiltInExercise.WristCircles, BuiltInExercise.PalmsDownFingersBack, BuiltInExercise.BacksOfTheHands,
+        BuiltInExercise.FingerPulls, BuiltInExercise.ForearmStretch, BuiltInExercise.CatCow,
+        BuiltInExercise.ChildsPose, BuiltInExercise.Cobra, BuiltInExercise.DownwardDog, BuiltInExercise.HalfSplit,
+        BuiltInExercise.ForwardFold, BuiltInExercise.Pigeon, BuiltInExercise.LyingTwist, BuiltInExercise.Butterfly,
+        BuiltInExercise.FrogStretch,
+        -> HealthMove.Stretching
 
         else -> equipment.healthMove
     }
