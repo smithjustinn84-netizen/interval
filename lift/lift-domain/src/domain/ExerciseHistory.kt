@@ -100,6 +100,13 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
         }
 
     /**
+     * The bell of each stretch of a [TrendMeasure.Work] trend, in kg, oldest first: the first point's, then each of
+     * [bellChanges]'. Empty for the other measures.
+     */
+    val bells: List<Double>
+        get() = if (measure != TrendMeasure.Work) emptyList() else (listOf(0) + bellChanges).map { points[it].kg }
+
+    /**
      * Each point's height on the line, from 0 at the bottom to 1 at the top, scaled within its own bell: the points
      * between one [bellChanges] and the next run from their lowest to their highest, so the reps climbing at each
      * bell show, not one bell's work against another's. A stretch all of one value, or of one point, sits at half.

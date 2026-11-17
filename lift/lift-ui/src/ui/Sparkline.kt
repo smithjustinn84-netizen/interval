@@ -14,13 +14,18 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.text.drawText
+import androidx.compose.ui.text.rememberTextMeasurer
 import dev.justinsmith.interval.ui.IntervalTheme
 
 /**
  * A line through [heights], oldest first, spread evenly across the width, each from 0 at the bottom to 1 at the top:
  * the first point a quiet dot, the latest one in the accent, and each point in [marks], by its place, a dashed rule
  * top to bottom with a quiet dot where the line starts again (a lift gone to another bell, whose stretch is scaled
- * on its own). An exercise's best each session on its page. It reads as one node, [description] its words for a
+ * on its own), and each of [labels], one a stretch from the first point and then each mark's, over its stretch's
+ * start in a band above the line (one that would run into the label before it is left out). An exercise's best each
+ * session on its page. It reads as one node, [description] its words for a
  * screen reader.
  */
 @Composable
@@ -29,12 +34,15 @@ fun Sparkline(
     description: String,
     modifier: Modifier = Modifier,
     marks: List<Int> = emptyList(),
+    labels: List<String> = emptyList(),
 ) {
     val palette = IntervalTheme.palette
+    val measurer = rememberTextMeasurer()
+    val labelStyle = IntervalTheme.type.caption.copy(color = palette.textDim)
     Spacer(
         modifier
             .fillMaxWidth()
-            .height(LiftSizes.sparkline)
+            .height(if (labels.isEmpty()) LiftSizes.sparkline else LiftSizes.sparkline + LiftSizes.sparklineLabels)
             .semantics { contentDescription = description }
             .drawWithCache {
                 val dot = LiftSizes.sparklineDot.toPx() / 2
@@ -43,9 +51,13 @@ fun Sparkline(
                     cap = StrokeCap.Round,
                     join = StrokeJoin.Round,
                 )
+                val top = if (labels.isEmpty()) 0f else LiftSizes.sparklineLabels.toPx()
                 val step = if (heights.size > 1) (size.width - 2 * dot) / (heights.size - 1) else 0f
                 val points = heights.mapIndexed { i, height ->
-                    Offset(dot + i * step, dot + (size.height - 2 * dot) * (1 - height))
+                    Offset(dot + i * step, top + dot + (size.height - top - 2 * dot) * (1 - height))
+                }
+                val placed = placeLabels(labels, listOf(0) + marks, points, size.width) {
+                    measurer.measure(it, labelStyle)
                 }
                 val path = Path().apply {
                     points.forEachIndexed { i, point ->
@@ -59,6 +71,7 @@ fun Sparkline(
                     marked.forEach {
                         drawLine(palette.line, Offset(it.x, 0f), Offset(it.x, size.height), rule, pathEffect = dash)
                     }
+                    placed.forEach { (text, at) -> drawText(text, topLeft = at) }
                     if (points.size > 1) drawPath(path, palette.accent, style = stroke)
                     points.firstOrNull()?.let { drawCircle(palette.textDim, dot, it) }
                     marked.forEach { drawCircle(palette.textDim, dot, it) }
@@ -66,6 +79,28 @@ fun Sparkline(
                 }
             },
     )
+}
+
+/**
+ * Each label over its stretch's start, by [starts], the place of each stretch's first point: kept inside the width,
+ * and left out where it would run into the one before.
+ */
+private fun placeLabels(
+    labels: List<String>,
+    starts: List<Int>,
+    points: List<Offset>,
+    width: Float,
+    measure: (String) -> TextLayoutResult,
+): List<Pair<TextLayoutResult, Offset>> {
+    var end = 0f
+    return labels.zip(starts).mapNotNull { (label, start) ->
+        val point = points.getOrNull(start) ?: return@mapNotNull null
+        val text = measure(label)
+        val x = point.x.coerceAtMost(width - text.size.width).coerceAtLeast(0f)
+        if (end > 0f && x < end) return@mapNotNull null
+        end = x + text.size.width + text.size.height
+        text to Offset(x, 0f)
+    }
 }
 
 private const val DASH = 8f

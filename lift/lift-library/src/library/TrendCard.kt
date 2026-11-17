@@ -17,6 +17,7 @@ import dev.justinsmith.lift.domain.TrendPoint
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.detail_trend
+import dev.justinsmith.lift.library.resources.detail_trend_bell
 import dev.justinsmith.lift.library.resources.detail_trend_cd
 import dev.justinsmith.lift.library.resources.detail_trend_from
 import dev.justinsmith.lift.library.resources.detail_trend_from_bells
@@ -30,8 +31,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The exercise's best each session as a line, oldest first, the latest in the accent: the best set's weight times
- * reps, the reps or the hold as the trend counts it, each move to another bell marked and its stretch scaled on its
- * own, with where it started under it. Under the records on the exercise's page.
+ * reps, the reps or the hold as the trend counts it, each bell's stretch scaled on its own, named over its start and
+ * marked where it begins, with where it started under it. Under the records on the exercise's page.
  */
 @Composable
 internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
@@ -56,6 +57,7 @@ internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
             heights = trend.heights.map { it.toFloat() },
             description = stringResource(Res.string.detail_trend_cd, values.joinToString()),
             marks = trend.bellChanges,
+            labels = trend.bells.map { stringResource(Res.string.detail_trend_bell, formatKg(it)) },
         )
         Text(
             stringResource(
