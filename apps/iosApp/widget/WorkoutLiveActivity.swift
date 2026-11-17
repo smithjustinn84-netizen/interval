@@ -20,7 +20,8 @@ struct WorkoutLiveActivity: Widget {
             let state = context.state
             let stale = context.isStale
             return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
+                // The title takes the room the clock leaves: the leading region goes first.
+                DynamicIslandExpandedRegion(.leading, priority: 1) {
                     ActivityTitle(state: state, stale: stale)
                         .padding(.leading, 4)
                 }
@@ -98,6 +99,7 @@ struct ActivityTitle: View {
             }
         }
         .lineLimit(1)
+        .minimumScaleFactor(0.75)
     }
 }
 
