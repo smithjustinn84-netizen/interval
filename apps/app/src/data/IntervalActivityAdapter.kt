@@ -10,6 +10,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.IntervalSnatches
+import dev.justinsmith.lift.domain.PerceivedEffort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -67,4 +68,6 @@ private fun HistoryEntry.asIntervalWorkout(presets: List<Preset>) = IntervalWork
     finishedAtEpochMillis,
     elapsedSeconds,
     snatches?.let { IntervalSnatches(it.perSet, it.bellKg, workEnds(), presets.matching(config)?.name) },
+    // The two sides' scales are one, 1 to 5, each kept by its level.
+    effort?.let { felt -> PerceivedEffort.entries.first { it.level == felt.level } },
 )

@@ -163,7 +163,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),
-                     the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it, and the month's four weeks, `GripLoad.weeks`) and how ready the lifter is (`Readiness.kt`), a
+                     the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it, and the month's four weeks, `GripLoad.weeks`) and how ready the lifter is (`Readiness.kt`,
+                     the interval workouts' efforts in it), a
                      taxed day's easier plan (`Autoregulate.kt`), the safety lines (`Safety.kt`: `SafetyLine`, and
                      `firstAtBell`, a thrown lift's first set at a bell new to it), density and pace (`Density.kt`, only from sets
                      logged as done), the challenges and totals (`Benchmarks.kt`) and the tests (`Tests.kt`: a
@@ -174,7 +175,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
                      saying whether it was grappling, each workout's snatches as counted (`IntervalSnatches`, read as
-                     sets by `snatchSets`), and the body weight; `app` binds it),
+                     sets by `snatchSets`), each workout's effort as said on its summary (read by readiness through
+                     `efforts`), and the body weight; `app` binds it),
                      `LiftActivity` (what the interval side reads of Lift, the bells owned among it;
                      `SessionRepository` is it), `LiftReadiness` (why today is a taxed day by Lift's reading,
                      whether the program's day ahead can be eased, and easing the session just started; Today

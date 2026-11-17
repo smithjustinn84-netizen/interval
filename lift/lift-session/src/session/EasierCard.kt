@@ -12,6 +12,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.session_easier_conditioning
 import dev.justinsmith.lift.session.resources.session_easier_grip
 import dev.justinsmith.lift.session.resources.session_easier_hard
 import dev.justinsmith.lift.session.resources.session_easier_lighter_day
@@ -37,6 +38,7 @@ internal fun EasierCard(offer: EasierOffer, onUse: () -> Unit, modifier: Modifie
             )
             val why = when (offer.reason) {
                 ReadinessReason.HardSession -> Res.string.session_easier_hard
+                ReadinessReason.HardConditioning -> Res.string.session_easier_conditioning
                 ReadinessReason.Mat -> Res.string.session_easier_mat
                 ReadinessReason.Grip -> Res.string.session_easier_grip
             }

@@ -1,7 +1,8 @@
 <journey name="Lift: an easier day">
   <description>
     After a session that felt very hard, Lift's next session on the program offers an easier day before its first
-    set, and Today says the day is one to take easier and starts it eased. Run on a fresh install with a bell owned.
+    set, and Today says the day is one to take easier and starts it eased. A 15:15 felt all out does the same. Run on a
+    fresh install with a bell owned.
   </description>
   <actions>
     <action>On Train's Strength pillar, tap "Follow a program", find "20 minutes beside BJJ", open it and tap "Follow this program"</action>
@@ -11,5 +12,7 @@
     <action>Tap "Use it" and verify that the card goes and Up next counts 12 sets of the Armor Building Complex, not 15</action>
     <action>Finish the session without a "Very hard" and tap "Drop" on "Keep today's changes?"</action>
     <action>Clear the app and repeat the first three steps (the switch left on), then tap "Start day 1, easier" on Today instead: verify that Lifting opens with the day already eased ("1 of 12 sets") and no "Easier today" card</action>
+    <action>Clear the app, follow "20 minutes beside BJJ" again, then on Train's Conditioning pillar start "15:15 MVO2", end it after a round, pick "All out" under "How was it?" and tap "Done"</action>
+    <action>Tap the "Today" tab and verify "A workout in the last two days felt very hard. Take today a notch easier." and the button "Start day 1, easier"; on Train's Strength pillar tap "Start day 1" and verify the "Easier today" card says "A conditioning workout felt very hard, and it was two days ago at most"</action>
   </actions>
 </journey>

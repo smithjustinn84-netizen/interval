@@ -126,6 +126,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- An interval workout said to have felt very hard or all out now makes the next two days ones to take easier, as a
+  Lift session does. Today says "A workout in the last two days felt very hard" and offers the program's day eased,
+  Lift's session offers its easier day, and the voice says "Stop a rep early". Before, a hard 15:15 counted for
+  nothing the next morning.
 - "Core on the mat" is 11 minutes, not 18, and far easier on the trunk. Each move runs about its classical count, 40 to 50
   seconds curled up in place of two minutes (the hundred 0:50 from 1:40, the roll-up 0:50 from 2:00), the hundred is
   cued with the knees bent over the hips and the roll-up with the knees soft, and a spine stretch forward sits

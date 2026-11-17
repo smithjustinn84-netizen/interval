@@ -11,6 +11,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SportDay
+import dev.justinsmith.lift.data.efforts
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Attempt
 import dev.justinsmith.lift.domain.Equipment
@@ -141,7 +142,9 @@ class TestsViewModel(
                     },
                 )
             },
-            taxed = readiness(sessions, grappling, grip, now, timestamps::dayNumber).readiness == Readiness.Taxed,
+            taxed =
+            readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber).readiness ==
+                Readiness.Taxed,
             inProgress = active != null,
         )
     }

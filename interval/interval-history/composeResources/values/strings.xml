@@ -272,6 +272,7 @@
     <string name="home_day_rest">rest day</string>
     <string name="home_day_done">done</string>
     <string name="home_coach_hard">The last session felt very hard. Take today a notch easier.</string>
+    <string name="home_coach_conditioning">A workout in the last two days felt very hard. Take today a notch easier.</string>
     <string name="home_coach_mat">The mat, and a grip that has done more than usual this week. Take today a notch easier.</string>
     <string name="home_coach_grip">The grip has done a lot more this week than in the weeks before. Take today a notch easier.</string>
     <string name="home_coach_sport_flow">Today is for %1$s. Loosen up first.</string>

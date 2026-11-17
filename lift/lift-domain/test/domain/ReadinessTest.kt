@@ -17,7 +17,10 @@ class ReadinessTest {
         sessions: List<LiftSession> = emptyList(),
         grappling: List<Long> = emptyList(),
         grip: GripLoad = GripLoad(),
-    ) = readiness(sessions, grappling, grip, now, dayOf)
+        conditioning: List<WorkoutEffort> = emptyList(),
+    ) = readiness(sessions, grappling, conditioning, grip, now, dayOf)
+
+    private fun workout(hoursAgo: Long, effort: PerceivedEffort) = WorkoutEffort(now - hoursAgo * HOUR_MILLIS, effort)
 
     @Test
     fun `a very hard session within two days taxes today`() {
@@ -32,6 +35,32 @@ class ReadinessTest {
         )
         assertEquals(Readiness.Normal, check(listOf(session(now - 50 * HOUR_MILLIS, PerceivedEffort.AllOut))).readiness)
         assertEquals(Readiness.Normal, check(listOf(session(now - 10 * HOUR_MILLIS, PerceivedEffort.Hard))).readiness)
+    }
+
+    @Test
+    fun `an interval workout felt very hard or all out within two days taxes today`() {
+        val hard = ReadinessCheck(Readiness.Taxed, ReadinessReason.HardConditioning)
+        assertEquals(hard, check(conditioning = listOf(workout(10, PerceivedEffort.AllOut))))
+        assertEquals(hard, check(conditioning = listOf(workout(44, PerceivedEffort.VeryHard))))
+        assertEquals(Readiness.Normal, check(conditioning = listOf(workout(50, PerceivedEffort.AllOut))).readiness)
+        assertEquals(Readiness.Normal, check(conditioning = listOf(workout(10, PerceivedEffort.Hard))).readiness)
+    }
+
+    @Test
+    fun `an easy workout after an all-out one still leaves today taxed`() {
+        val workouts = listOf(workout(2, PerceivedEffort.Easy), workout(20, PerceivedEffort.AllOut))
+        assertEquals(Readiness.Taxed, check(conditioning = workouts).readiness)
+    }
+
+    @Test
+    fun `a very hard session is the reason before a very hard workout`() {
+        assertEquals(
+            ReadinessCheck(Readiness.Taxed, ReadinessReason.HardSession),
+            check(
+                listOf(session(now - 30 * HOUR_MILLIS, PerceivedEffort.VeryHard)),
+                conditioning = listOf(workout(10, PerceivedEffort.AllOut)),
+            ),
+        )
     }
 
     @Test

@@ -1,6 +1,9 @@
 package dev.justinsmith.interval.acceptance
 
 import androidx.compose.ui.test.hasText
+import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
@@ -9,6 +12,7 @@ import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
+import dev.justinsmith.interval.model.PerceivedEffort as IntervalEffort
 
 /**
  * `journeys/today.xml`: the app opens on Today, which leads to the plan, starts what is up next, or starts a
@@ -149,6 +153,23 @@ class TodayAcceptanceTest {
         see("Start EMOM")
         see(hasText("1 of 12 sets", substring = true))
         sessionIsEased()
+    }
+
+    @Test
+    fun `after an all-out interval workout today says so and offers the program's day easier`() = acceptanceScenario(
+        storage = FakeStorage().apply {
+            // A 15:15 finished an hour before the clock's start, said to have been all out.
+            val history = repository(WallClock { -HOUR_MILLIS }).history
+            val uid = history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
+            history.reflectOnWorkout(uid, IntervalEffort.AllOut, note = "")
+        },
+        lift = FakeLiftStorage().apply {
+            following.row.value = FollowingEntity(programId = ProgramId.BjjKettlebell.name, startedAtEpochMillis = 0)
+        },
+    ) {
+        seeCoachSays("strength day", "A workout in the last two days felt very hard. Take today a notch easier.")
+        see("Easier today")
+        see("Start day 1, easier")
     }
 }
 

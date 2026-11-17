@@ -4,10 +4,12 @@ import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.efforts
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
@@ -18,7 +20,6 @@ import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.ReadinessCheck
 import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SessionPlan
-import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.easier
 import dev.justinsmith.lift.domain.gripLoad
 import dev.justinsmith.lift.domain.lighterDayThan
@@ -40,10 +41,11 @@ data class EasierOffer(val reason: ReadinessReason, val lighterDay: Int? = null)
 
 /**
  * The easier day a program day's session is offered before its first set, while its plan is as programmed: how
- * ready the lifter is comes from the sessions finished, the BJJ logged ([IntervalActivity.sportDays]) and the
- * grip, 15:15's snatches in it; [use] makes today's plan easier ([SessionPlan.easier]): grinds a bell down,
- * ballistics shorter, rests by tempo. Once used, or once a set is logged, it is offered no more. It is the
- * [LiftReadiness] Today reads too: why the day is a taxed one, and whether the program's day to come can be eased.
+ * ready the lifter is comes from the sessions finished, the interval workouts felt very hard
+ * ([IntervalActivity.workouts]), the BJJ logged ([IntervalActivity.sportDays]) and the grip, 15:15's snatches in
+ * it; [use] makes today's plan easier ([SessionPlan.easier]): grinds a bell down, ballistics shorter, rests by tempo.
+ * Once used, or once a set is logged, it is offered no more. It is the [LiftReadiness] Today reads too: why the day
+ * is a taxed one, and whether the program's day to come can be eased.
  */
 class EasierDay(
     private val sessionStore: SessionStore,
@@ -67,7 +69,7 @@ class EasierDay(
         offerFor(
             dayToEase(active, day, programs),
             sessions,
-            workouts.snatchSets.sets,
+            workouts,
             sportDays.filter { it.grappling }.map { it.epochDay },
         )
     }
@@ -81,7 +83,7 @@ class EasierDay(
         intervals.sportDays,
         intervals.workouts,
     ) { sessions, sportDays, workouts ->
-        check(sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay })
+        check(sessions, workouts, sportDays.filter { it.grappling }.map { it.epochDay })
             .readiness == Readiness.Taxed
     }
 
@@ -90,7 +92,7 @@ class EasierDay(
         intervals.sportDays,
         intervals.workouts,
     ) { sessions, sportDays, workouts ->
-        val check = check(sessions, workouts.snatchSets.sets, sportDays.filter { it.grappling }.map { it.epochDay })
+        val check = check(sessions, workouts, sportDays.filter { it.grappling }.map { it.epochDay })
         check.reason?.takeIf { check.readiness == Readiness.Taxed }
     }
 
@@ -105,7 +107,7 @@ class EasierDay(
         active == null && offerFor(
             day?.takeIf { !it.program.test },
             sessions,
-            workouts.snatchSets.sets,
+            workouts,
             sportDays.filter { it.grappling }.map { it.epochDay },
         ) != null
     }
@@ -125,22 +127,29 @@ class EasierDay(
     private fun offerFor(
         today: ProgramDay?,
         sessions: List<LiftSession>,
-        alongside: List<SetLog>,
+        workouts: List<IntervalWorkout>,
         grappling: List<Long>,
     ): EasierOffer? {
         if (today == null) return null
-        val check = check(sessions, alongside, grappling)
+        val check = check(sessions, workouts, grappling)
         val reason = check.reason?.takeIf { check.readiness == Readiness.Taxed } ?: return null
         eased(today, sessions) ?: return null
         return EasierOffer(reason, today.program.lighterDayThan(today.number))
     }
 
-    /** How ready the lifter is now, from the [sessions] finished, the sets [alongside] and the [grappling] days. */
-    private fun check(sessions: List<LiftSession>, alongside: List<SetLog>, grappling: List<Long>): ReadinessCheck {
+    /**
+     * How ready the lifter is now, from the [sessions] finished, the interval [workouts] (their snatches on the grip,
+     * their efforts) and the [grappling] days.
+     */
+    private fun check(
+        sessions: List<LiftSession>,
+        workouts: List<IntervalWorkout>,
+        grappling: List<Long>,
+    ): ReadinessCheck {
         val now = clock.nowMillis()
-        val lifted = sessions.flatMap { it.sets } + alongside
+        val lifted = sessions.flatMap { it.sets } + workouts.snatchSets.sets
         val grip = gripLoad(lifted, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
-        return readiness(sessions, grappling, grip, now, timestamps::dayNumber)
+        return readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber)
     }
 
     /**

@@ -13,6 +13,7 @@ import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.SportDay
+import dev.justinsmith.lift.data.efforts
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
@@ -219,7 +220,7 @@ class TodayViewModel(
         val grip = gripLoad(lifted, grappling, today, timestamps::dayNumber)
         return TodayUiState(
             grip = grip.takeIf { it.chronic > 0 },
-            readiness = readiness(sessions, grappling, grip, now, timestamps::dayNumber),
+            readiness = readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber),
             last = last,
             lastWhen = last?.finishedAtEpochMillis?.let { at ->
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)

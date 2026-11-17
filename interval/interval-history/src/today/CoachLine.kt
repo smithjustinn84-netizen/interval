@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.interval.history.resources.Res
+import dev.justinsmith.interval.history.resources.home_coach_conditioning
 import dev.justinsmith.interval.history.resources.home_coach_done
 import dev.justinsmith.interval.history.resources.home_coach_done_goal
 import dev.justinsmith.interval.history.resources.home_coach_grip
@@ -98,6 +99,7 @@ private fun coachText(note: CoachNote): String = when (note) {
     is CoachNote.Taxed -> stringResource(
         when (note.reason) {
             ReadinessReason.HardSession -> Res.string.home_coach_hard
+            ReadinessReason.HardConditioning -> Res.string.home_coach_conditioning
             ReadinessReason.Mat -> Res.string.home_coach_mat
             ReadinessReason.Grip -> Res.string.home_coach_grip
         },

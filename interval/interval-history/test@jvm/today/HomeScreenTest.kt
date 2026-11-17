@@ -478,6 +478,19 @@ class HomeScreenTest {
     }
 
     @Test
+    fun `a day taxed by a very hard workout says the workout was`() = runUiTest {
+        val day = program(ProgramId.PressLadders).day(3)
+        val state = empty.copy(
+            upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)),
+            hasPlans = true,
+            taxed = ReadinessReason.HardConditioning,
+        )
+        setThemedContent { HomeScreen(state, HomeActions()) }
+
+        onNodeWithText("A workout in the last two days felt very hard. Take today a notch easier.").assertIsDisplayed()
+    }
+
+    @Test
     fun `on a day with its plan the picks fold to a row that opens them`() = runUiTest {
         val state = empty.copy(
             minutes = 20,

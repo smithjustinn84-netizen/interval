@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.data.SetEntity
@@ -44,13 +45,14 @@ class EasierDayTest {
             )
         }
     }
+    private val intervals = FakeIntervalActivity()
     private val easier by lazy {
         EasierDay(
             repository.sessions,
             repository.sets,
             repository.programs,
             repository.gear,
-            FakeIntervalActivity(),
+            intervals,
             FixedTimestampFormatter,
             { NOW },
         )
@@ -94,5 +96,17 @@ class EasierDayTest {
         easier.useEasier()
         assertNotNull(repository.sessions.active.value?.plan)
         assertFalse(easier.easierAhead.first())
+    }
+
+    @Test
+    fun `after an all-out interval workout the day is taxed and the program's day ahead can be eased`() = runTest {
+        intervals.workouts.value = listOf(
+            IntervalWorkout("15:15", NOW - HOUR_MILLIS, 1_195, effort = PerceivedEffort.AllOut),
+        )
+        repository.programs.follow(ProgramKey.BuiltIn(ProgramId.BjjKettlebell))
+
+        assertEquals(ReadinessReason.HardConditioning, easier.taxedBy.first())
+        assertTrue(easier.taxed.first())
+        assertTrue(easier.easierAhead.first())
     }
 }

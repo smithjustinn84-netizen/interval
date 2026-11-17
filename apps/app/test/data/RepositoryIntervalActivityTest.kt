@@ -8,12 +8,16 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.SportDay
+import dev.justinsmith.lift.data.efforts
+import dev.justinsmith.lift.domain.PerceivedEffort
+import dev.justinsmith.lift.domain.WorkoutEffort
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import dev.justinsmith.interval.model.PerceivedEffort as IntervalEffort
 
 class RepositoryIntervalActivityTest {
     private val storage = FakeStorage()
@@ -66,5 +70,17 @@ class RepositoryIntervalActivityTest {
         assertEquals("15:15 MVO2", snatches.source)
         assertEquals(40, snatches.setEnds.size)
         assertEquals(25_000L, snatches.setEnds.first())
+    }
+
+    @Test
+    fun `Lift sees how hard a workout felt once it is said`() {
+        val repository = storage.repository(WallClock { 1_000L })
+        val uid = repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        assertNull(activity.workouts.value.single().effort)
+
+        repository.history.reflectOnWorkout(uid, IntervalEffort.AllOut, note = "")
+        assertEquals(PerceivedEffort.AllOut, activity.workouts.value.single().effort)
+        assertEquals(listOf(WorkoutEffort(1_000L, PerceivedEffort.AllOut)), activity.workouts.value.efforts)
     }
 }

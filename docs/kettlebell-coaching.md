@@ -23,6 +23,8 @@ A custom lift's movement is worked out from its equipment and how it is measured
 
 **Readiness** (`Readiness.kt`): Fresh, Normal or Taxed. It is worked out from what is logged:
 - the last session's effort;
+- any interval workout of the app's felt very hard or more within two days (`WorkoutEffort`, through
+  `IntervalActivity`'s `efforts`), so a 15:15 all out counts as a hard session does and a later easy one hides none;
 - BJJ logged today or yesterday on top of a grip above the weeks before; the days come through `IntervalActivity` with their sport;
 - the grip load.
 
@@ -160,7 +162,8 @@ The built-ins are curated for someone who trains a sport as well, BJJ first, and
   (burpees on the minute).
 - **A bell overhead starts light** (`startingBellKg`): presses, the get-up, the windmill, the halo and the
   bottoms-up carry open at the lightest bell owned, or 8 kg with none said.
-- **Recovery is given two days**: a very hard session taxes the next 48 hours (`Readiness.kt`).
+- **Recovery is given two days**: a very hard session, or a very hard interval workout, taxes the next 48 hours
+  (`Readiness.kt`).
 - **Presets and flows are added, never retimed**: a finished workout is named by its shape. Mat rounds (5 × 5:00)
   and Swings on the minute (10 × 0:20) sit beside the five; Daily five is the flow for every day.
 

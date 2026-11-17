@@ -52,6 +52,7 @@
     <string name="summary_how_was_it">How was it?</string>
     <string name="session_easier_title">Easier today</string>
     <string name="session_easier_hard">Your last session felt very hard, and it was a day and a half ago at most</string>
+    <string name="session_easier_conditioning">A conditioning workout felt very hard, and it was two days ago at most</string>
     <string name="session_easier_mat">BJJ today or yesterday, and your grip has done more than usual this week</string>
     <string name="session_easier_grip">Your grip has done a lot more this week than in the weeks before</string>
     <string name="session_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>
