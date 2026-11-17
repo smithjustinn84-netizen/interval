@@ -60,12 +60,12 @@ class TimerViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `a described workout goes onto the Timer but keeps the get-ready countdown`() {
+    fun `an applied config goes onto the Timer but keeps the get-ready countdown`() {
         settings.updateConfig { it.copy(prepSeconds = 15) }
-        val described =
+        val config =
             IntervalConfig(prepSeconds = 0, workSeconds = 45, restSeconds = 15, rounds = 12, activity = Activity.Rower)
-        viewModel.useDescribed(described)
-        assertEquals(described.copy(prepSeconds = 15), settings.config.value)
+        viewModel.applyConfig(config)
+        assertEquals(config.copy(prepSeconds = 15), settings.config.value)
     }
 
     @Test

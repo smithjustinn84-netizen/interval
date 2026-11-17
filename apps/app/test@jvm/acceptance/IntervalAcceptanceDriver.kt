@@ -207,7 +207,6 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** The Timer's page: its Start, and a Back to the presets it was opened from. */
     fun seeTimer() {
         see("Start workout")
-        see(hasContentDescription("Describe a workout") and hasClickAction())
         see(hasContentDescription("Back") and hasClickAction())
     }
 

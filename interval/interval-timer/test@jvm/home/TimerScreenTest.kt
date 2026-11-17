@@ -50,7 +50,7 @@ class TimerScreenTest {
     private val sets = mutableListOf<Pair<ConfigField, Int>>()
     private val saved = mutableListOf<Preset>()
     private val activities = mutableListOf<Activity>()
-    private val described = mutableListOf<IntervalConfig>()
+    private val applied = mutableListOf<IntervalConfig>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -63,7 +63,7 @@ class TimerScreenTest {
             onOpenSettings = { calls += "settings" },
             onSeeAllPresets = { calls += "see all" },
             onSetActivity = { activities += it },
-            onUseDescription = { described += it },
+            onApplyConfig = { applied += it },
         )
     }
 

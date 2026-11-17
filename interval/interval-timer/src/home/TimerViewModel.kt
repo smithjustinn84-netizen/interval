@@ -58,8 +58,8 @@ class TimerViewModel(private val settingsStore: SettingsStore, private val prese
         settingsStore.updateConfig { it.withValue(field, value) }
     }
 
-    /** Puts a workout read from words onto the Timer, keeping the get-ready countdown, as a preset does. */
-    fun useDescribed(config: IntervalConfig) {
+    /** Puts [config] onto the Timer, keeping the get-ready countdown, as a preset does. */
+    fun applyConfig(config: IntervalConfig) {
         settingsStore.updateConfig { config.copy(prepSeconds = it.prepSeconds) }
     }
 

@@ -49,7 +49,6 @@ import dev.justinsmith.interval.home.resources.common_prep_line
 import dev.justinsmith.interval.home.resources.timer_all_presets_cd
 import dev.justinsmith.interval.home.resources.timer_block
 import dev.justinsmith.interval.home.resources.timer_block_rest
-import dev.justinsmith.interval.home.resources.timer_describe_cd
 import dev.justinsmith.interval.home.resources.timer_edit_blocks
 import dev.justinsmith.interval.home.resources.timer_save_as_preset_cd
 import dev.justinsmith.interval.home.resources.timer_title
@@ -90,16 +89,14 @@ import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The title, after Back ([onBack]) where the Timer is a page, with + to save a shape no preset has yet, the way
- * to describe a workout in words, and the settings gear. The + grows in as the
- * shape leaves the presets behind and shrinks away as it lands on one, the gear sliding over to make
- * room, so the bar never jumps.
+ * The title, after Back ([onBack]) where the Timer is a page, with + to save a shape no preset has yet,
+ * and the settings gear. The + grows in as the shape leaves the presets behind and shrinks away as it lands
+ * on one, the gear sliding over to make room, so the bar never jumps.
  */
 @Composable
 internal fun TimerTitleBar(
     canSavePreset: Boolean,
     onSave: () -> Unit,
-    onDescribe: () -> Unit,
     onOpenSettings: () -> Unit,
     onBack: (() -> Unit)? = null,
 ) {
@@ -113,7 +110,6 @@ internal fun TimerTitleBar(
         ) {
             IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
         }
-        IconAction(IntervalIcons.Describe, stringResource(Res.string.timer_describe_cd), onDescribe)
         SettingsAction(onOpenSettings)
     }
 }

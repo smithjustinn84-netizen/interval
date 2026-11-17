@@ -72,7 +72,7 @@ fun TimerRoute(
         onOpenSettings = onOpenSettings,
         onSeeAllPresets = onSeeAllPresets,
         onSetActivity = viewModel::setActivity,
-        onUseDescription = viewModel::useDescribed,
+        onApplyConfig = viewModel::applyConfig,
         modifier = modifier,
         onBack = onBack,
     )
@@ -82,10 +82,9 @@ fun TimerRoute(
  * The Timer: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
  * (hold to run), the sets, the warm-up and the cool-down as a row of chips under them, and Start within thumb
  * reach beside the way to the presets, all over the lanes. Tapping a value opens its edit sheet for the quick
- * picks, and for what changes it: the ladder on the work's, the rest between sets on the sets'. The title
- * bar opens [DescribeSheet], whose workout goes to [onUseDescription] or, through the preset editor,
- * [onSavePreset]. A page pushed from the presets, it has a Back ([onBack]) and keeps inside the safe area itself,
- * the lanes filling the window behind.
+ * picks, and for what changes it: the ladder on the work's, the rest between sets on the sets'. A page pushed
+ * from the presets, it has a Back ([onBack]) and keeps inside the safe area itself, the lanes filling the
+ * window behind.
  */
 @Composable
 fun TimerScreen(
@@ -98,7 +97,7 @@ fun TimerScreen(
     onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
     onSetActivity: (Activity) -> Unit = {},
-    onUseDescription: (IntervalConfig) -> Unit = {},
+    onApplyConfig: (IntervalConfig) -> Unit = {},
     onBack: (() -> Unit)? = null,
 ) {
     var choosingActivity by rememberSaveable { mutableStateOf(false) }
@@ -110,15 +109,13 @@ fun TimerScreen(
     var draft by rememberPresetDraft()
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     val onEditBlocks = { draft = PresetDraft.timer(state.config) }
-    var describing by rememberSaveable { mutableStateOf(false) }
-    val onDescribe = { describing = true }
     BoxWithConstraints(modifier.fillMaxSize().background(IntervalTheme.palette.background)) {
         if (isLandscape) {
             // Sideways: the total and Start on the left, the three rows on the right, the lanes under both.
             SetupLanes(Modifier.matchParentSize())
             Row(Modifier.fillMaxSize().safeDrawingPadding(), horizontalArrangement = Arrangement.Center) {
                 Column(Modifier.width(Sizes.setupColumnLandscape).fillMaxHeight()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings, onBack)
+                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings, onBack)
                     Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
                     StartRow(onStart, onSeeAllPresets, Modifier.padding(Spacing.space16))
@@ -147,7 +144,7 @@ fun TimerScreen(
             val column = Modifier.align(Alignment.TopCenter).safeDrawingPadding().widthIn(max = Sizes.contentWide)
             Box(column.fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
-                    TimerTitleBar(state.canSavePreset, onSave, onDescribe, onOpenSettings, onBack)
+                    TimerTitleBar(state.canSavePreset, onSave, onOpenSettings, onBack)
                     TimerBody(state, expandRows, onStep, onEdit, onEditActivity, onEditBlocks, Modifier.weight(1f))
                     StartRow(
                         onStart,
@@ -169,17 +166,14 @@ fun TimerScreen(
             onDismiss = { choosingActivity = false },
         )
     }
-    if (describing) {
-        DescribeSheet(state, onUseDescription, { draft = PresetDraft.saveCurrent(it) }) { describing = false }
-    }
     PresetEditorHost(
         draft = draft,
         onDraftChange = { draft = it },
         prepSeconds = state.config.prepSeconds,
         presets = state.presets,
-        // The Timer's own workout, shaped in the editor, goes back on the Timer as a described one does.
+        // The Timer's own workout, shaped in the editor, goes back on the Timer.
         onSave = { opened, preset ->
-            if (opened.mode == EditorMode.Timer) onUseDescription(preset.config) else onSavePreset(preset)
+            if (opened.mode == EditorMode.Timer) onApplyConfig(preset.config) else onSavePreset(preset)
         },
     )
 }
