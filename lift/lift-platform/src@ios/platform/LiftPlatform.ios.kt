@@ -28,7 +28,7 @@ fun liftPlatformModule(): Module = module {
         Room.databaseBuilder<LiftDatabase>(name = "${requireNotNull(directory)}/$LIFT_DATABASE")
     }
     single<Beeper> { ToneBeeper(get()) }
-    single<SessionKeepAlive> { IosSessionKeepAlive(get()) }.withOptions {
+    single<SessionKeepAlive> { IosSessionKeepAlive(get(), get()) }.withOptions {
         onClose { (it as? IosSessionKeepAlive)?.release() }
     }
 }

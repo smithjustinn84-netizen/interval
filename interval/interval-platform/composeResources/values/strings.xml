@@ -20,6 +20,9 @@
     <string name="notification_set_round">Set %1$d of %2$d · Round %3$d of %4$d</string>
     <string name="notification_workout_block_text">%1$s · Block %2$d of %3$d · %4$s</string>
     <string name="notification_block_round">Block %1$d of %2$d · %3$s</string>
+    <!-- The workout's Live Activity on iOS: once its interval is over with the app away, and what its second clock is of. -->
+    <string name="activity_stale">Open the app for where you are</string>
+    <string name="activity_run">Workout</string>
     <string name="notification_channel_reminders">Planned workouts</string>
     <string name="notification_channel_reminders_description">A reminder at the time you chose, on each day with a workout planned.</string>
     <string name="reminder_body_one">Planned today · %1$s</string>

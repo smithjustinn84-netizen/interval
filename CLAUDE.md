@@ -89,7 +89,9 @@ core/
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
-                     `AppInfo`, `Sharer`, `Speaker` (the device's voice, both sides', and `SpokenLines`, which
+                     `AppInfo`, `Sharer`, `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
+                     iOS's Lock Screen and Dynamic Island, worded and timed, and the `LiveActivityRelay` iosApp points
+                     at Swift's), `Speaker` (the device's voice, both sides', and `SpokenLines`, which
                      words a side's lines one at a time), `ToneSynth` and `TonePlayer` (the app's six tones,
                      both sides', and each platform's player of them), `HealthStore` (`Health.kt`: the workout both sides hand it as they finish;
                      Android's is
@@ -236,7 +238,10 @@ apps/
                      the `interval://` scheme), Assets, and the Home Screen and Lock Screen widget:
                      `widget/WeekWidget.swift`, a Swift-only WidgetKit target beside `app` (the toolchain allows one
                      target with its Kotlin phase), fed the week by
-                     `WidgetFeed.kt` as a `WeekSnapshot` (app's `data/`) JSON in the App Group's defaults
+                     `WidgetFeed.kt` as a `WeekSnapshot` (app's `data/`) JSON in the App Group's defaults; and the
+                     Live Activity of the workout or a Lift run (`widget/WorkoutLiveActivity.swift`, drawn from
+                     `shared/IntervalActivity.swift`, the one file both targets compile), which `src/LiveActivities.swift`
+                     starts, changes and ends as `WidgetFeed.kt` hands it a `LiveActivityState` (app's `data/`) JSON
 
 tooling/
   detekt-plugin      Toolchain task plugin: runs detekt with Compose rules across modules (`./kotlin check detekt`)
@@ -440,7 +445,15 @@ toolchain (`$compose.*`).
   `androidApp`'s manifest as `specialUse`), which reaches the session as the `ActiveWorkout` port (`KoinComponent`):
   it shows its `status` and its Pause and End act on it. iOS schedules a local notification per phase change ahead
   (`WorkoutEngine.upcomingChanges`, pure, through `ActiveWorkout.upcomingChanges`) as the app leaves the screen,
-  and drops them on return; its actual says why not background audio. Desktop keeps nothing.
+  and drops them on return; its actual says why not background audio. It is a Live Activity too, from `start()`
+  (iOS starts one only with the app on screen) to `stop()`: `workoutActivity` (pure, `interval-platform`) times the
+  interval and the whole workout from the changes ahead, which the system counts down alone; suspended, the app
+  can't change it, so past the interval's end it is stale and says to open the app, the workout's clock and bar
+  still right. The notifications stay: an activity makes no sound. Its Pause (or Resume) and End are App Intents
+  (`apps/iosApp/shared/WorkoutIntents.swift`, `LiveActivityIntent`s, which run in the app's process) calling
+  `WidgetFeed.kt`'s `toggleWorkoutPause`/`endWorkout` on the `ActiveWorkout`; both, like the notification's, catch
+  the ticker up first (`WorkoutTicker.catchUp`), since a woken app's ticker hasn't ticked since it left the screen,
+  and a resume with the app away schedules its notifications again. Desktop keeps nothing.
   Lift's timers go the same way. A session is started by whatever pushes `Lifting` (`SessionStore.startSession`:
   Train's Strength pillar, History, the shortcut in `App.kt`), never by `SessionViewModel`, which only reads; its page
   restored with no session behind it closes (`sessionGone`). A session carries its program and day
@@ -455,8 +468,8 @@ toolchain (`$compose.*`).
   the session (finish, discard, Leave), when the `Lifting` key leaves the back stack (`App.kt`, through the
   `ActiveTimers` port) or when the task is swiped away. Whichever runs is kept off screen through `SessionKeepAlive`
   (`lift/lift-platform/src/platform/`, a `TimerRun` with its end): Android's `TimerService` holds the CPU awake and
-  counts the run down in a notification while the timers beep; iOS schedules one notification for the run's end;
-  desktop nothing. The run going is saved on the session in progress (`SavedTimer`, its `timer` column) at each
+  counts the run down in a notification while the timers beep; iOS schedules one notification for the run's end and
+  shows the run as a Live Activity (`liftActivity`, counting down to its end); desktop nothing. The run going is saved on the session in progress (`SavedTimer`, its `timer` column) at each
   change of course, and `SessionViewModel` restores it once as the session opens, by the wall clock (one over meanwhile is
   dropped, never played out); it does so from the screen because only an app on show may start the service. The
   Log sheet's draft is in the entry's `SavedStateHandle`. The notification helpers both services share are

@@ -12,12 +12,15 @@ rather than copying the list forward. What is in a sprint is in that sprint's fi
   the launcher shortcuts already use.
 - **iOS signing and an Apple team.** iOS builds and tests in CI, but nothing is signed or shipped to the App
   Store. *Brings it in:* an Apple Developer account, and a decision to ship on iOS.
+- **A Live Activity that follows each phase on iOS.** With the app suspended its Live Activity can't learn of the
+  next interval, so past the current one's end it shows only the whole workout's clock. *Brings it in:* the Apple
+  team above, and a push service to update it at each change.
 - **Screenshot tests and coverage.** The Kotlin Toolchain (0.13) supports neither ([testing.md](testing.md)).
   *Brings it in:* the toolchain supporting them.
 
 ## Planned, not yet scheduled
 
-Nothing at present: the last item here, the stretches' figures, landed on 2026-11-08.
+Nothing at present: the last item here, Pause and End on iOS's Live Activity, landed on 2026-11-16.
 
 ## Left out on purpose
 

@@ -12,6 +12,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the same bell climb ("Latest 16 kg × 12", "From 16 kg × 5"), and a dashed rule marks each move to another
   bell, where the line falls for a heavier one. Lift's Grip card charts the last four weeks, this
   one against a dashed usual week, and fills this week in when it is too much, too soon.
+- Live Activities (iOS): a running workout shows on the Lock Screen and in the Dynamic Island, the interval counting
+  down in its phase's colour, with the round under it and the whole workout's time left over a bar of its
+  intervals. Lift's rest, EMOM, hold or density block counts down to its end the same way. With the app away the
+  phone can't be told of the next interval, so once one ends the activity says to open the app, while the
+  workout's own clock and bar carry on; the sound at each change is still the notification's. Pause (or Resume)
+  and End work from it, as from Android's notification: a pause lands where the workout really is, and a resume
+  with the app away has its notifications scheduled again.
 - A plan moves to another day when its own won't do. A missed one has "Move" on its row in the Log, and today's
   workout has "Not today" under its Start. Either opens the week ahead, each day saying what it holds, with the
   first free day picked, and moves it there with Undo. The day it left reads "Moved to Saturday" instead of

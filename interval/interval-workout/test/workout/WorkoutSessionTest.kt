@@ -644,6 +644,29 @@ class WorkoutSessionTest : MainDispatcherTest(StandardTestDispatcher()) {
     }
 
     @Test
+    fun `paused from off screen the workout stops where the clock says it is`() = runTest(dispatcher) {
+        // iOS's Live Activity wakes the suspended app and pauses before its ticker has ticked again.
+        val time = TestTimeSource()
+        val controls: ActiveWorkout = openWorkout(timeSource = time)
+        time += 7.seconds
+        controls.togglePause()
+        val status = controls.status.value!!
+        assertTrue(status.paused)
+        assertEquals(Phase.Rest, status.phase)
+        assertEquals("0:03", status.clock)
+    }
+
+    @Test
+    fun `ended from off screen the workout counts the time away first`() = runTest(dispatcher) {
+        val time = TestTimeSource()
+        val session = openWorkout(timeSource = time)
+        // The first round's work done while away: it is recorded, not dropped.
+        time += 6.seconds
+        (session as ActiveWorkout).end()
+        assertEquals(1, repository.history.history.value.size)
+    }
+
+    @Test
     fun `the changes ahead are read from where the workout stands and stop with it`() = runTest(dispatcher) {
         val session = openWorkout()
         val controls: ActiveWorkout = session

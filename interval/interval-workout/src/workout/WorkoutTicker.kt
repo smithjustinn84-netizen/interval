@@ -8,6 +8,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.TimeSource
 
@@ -24,27 +25,44 @@ class WorkoutTicker(
 ) {
     private var job: Job? = null
 
+    /** When the time was last handed on, and to what; null while stopped. */
+    private var mark: ComparableTimeMark? = null
+    private var onElapsed: ((Long) -> Unit)? = null
+
     val running: Boolean get() = job?.isActive == true
 
     /** Calls [onElapsed] with the milliseconds since the last call (or since now) at each tick, until [stop]. */
     fun start(onElapsed: (Long) -> Unit) {
         stop()
         // Marked now, not once the coroutine gets to run: the time until then counts too.
-        var last = timeSource.markNow()
+        mark = timeSource.markNow()
+        this.onElapsed = onElapsed
         job = scope.launch {
             while (isActive) {
                 delay(TICK_MILLIS)
-                val now = timeSource.markNow()
-                val elapsed = (now - last).inWholeMilliseconds
-                last += elapsed.milliseconds
-                onElapsed(elapsed)
+                catchUp()
             }
         }
+    }
+
+    /**
+     * Hands on the time since the last tick now, rather than at the next: for an action that must see the workout as
+     * it stands this instant, such as a pause from iOS's Live Activity in an app woken from suspension, whose ticker
+     * hasn't ticked since it left the screen. Nothing while stopped.
+     */
+    fun catchUp() {
+        val since = mark ?: return
+        val handOn = onElapsed ?: return
+        val elapsed = since.elapsedNow().inWholeMilliseconds
+        mark = since + elapsed.milliseconds
+        handOn(elapsed)
     }
 
     fun stop() {
         job?.cancel()
         job = null
+        mark = null
+        onElapsed = null
     }
 
     /** The process is going: nothing ticks again. */

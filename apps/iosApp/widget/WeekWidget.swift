@@ -324,7 +324,15 @@ struct StartButton: View {
     }
 }
 
+/// The extension's widgets: the week, and the Live Activity of the workout or a Lift run (`WorkoutLiveActivity.swift`).
 @main
+struct IntervalWidgets: WidgetBundle {
+    var body: some Widget {
+        WeekWidget()
+        WorkoutLiveActivity()
+    }
+}
+
 struct WeekWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: "WeekWidget", provider: WeekProvider()) { entry in

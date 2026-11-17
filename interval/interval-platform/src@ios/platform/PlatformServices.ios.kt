@@ -7,6 +7,8 @@ import androidx.room.RoomDatabase
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.data.AppDatabase
 import dev.justinsmith.interval.platform.resources.Res
+import dev.justinsmith.interval.platform.resources.activity_run
+import dev.justinsmith.interval.platform.resources.activity_stale
 import dev.justinsmith.interval.platform.resources.notification_block_round
 import dev.justinsmith.interval.platform.resources.notification_round
 import dev.justinsmith.interval.platform.resources.notification_set_round
@@ -18,6 +20,9 @@ import dev.justinsmith.interval.platform.resources.phase_rest
 import dev.justinsmith.interval.platform.resources.phase_set_rest
 import dev.justinsmith.interval.platform.resources.phase_warm_up
 import dev.justinsmith.interval.platform.resources.phase_work
+import dev.justinsmith.interval.platform.resources.workout_end
+import dev.justinsmith.interval.platform.resources.workout_pause
+import dev.justinsmith.interval.platform.resources.workout_resume
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.UpcomingChange
@@ -44,7 +49,9 @@ import platform.Foundation.NSNotificationCenter
 import platform.Foundation.NSOperationQueue
 import platform.Foundation.NSURL
 import platform.Foundation.NSUserDomainMask
+import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
+import platform.UIKit.UIApplicationState
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
@@ -63,7 +70,9 @@ fun platformModule(): Module = module {
         onClose { it?.release() }
     }
     // Lazily: the workout it reads is the workout feature's session, which takes this keeper in turn.
-    single<BackgroundWorkout> { IosBackgroundWorkout(lazy { get<ActiveWorkout>() }) }.withOptions {
+    single<BackgroundWorkout> {
+        IosBackgroundWorkout(lazy { get<ActiveWorkout>() }, get(), get(), lazy { get<StatusColors>() })
+    }.withOptions {
         onClose { (it as? IosBackgroundWorkout)?.release() }
     }
     single<PlanReminders> { IosPlanReminders(get()) }
@@ -87,10 +96,22 @@ fun platformModule(): Module = module {
  * between cues. Apple's review guideline 2.5.4 rejects that use of the mode, and the Playback category would
  * end the mixing with the user's music and the ringer switch's say over the cues that Ambient gives.
  *
+ * The workout is a Live Activity too, from [start] to [stop] ([LiveActivities.WORKOUT]): the Lock Screen and the
+ * Dynamic Island show the phase with its interval counting down, and the whole workout's time left over its bar,
+ * which the system counts by itself ([workoutActivity]). It is started from here because iOS starts one only while
+ * the app is on screen, and changed at each change of phase, round, pause or length the app sees, and again as
+ * it leaves the screen. Suspended, the app can't change it: past the interval's end it is stale and says to open the
+ * app, while the workout's clock and bar stay right.
+ *
  * Observes `UIApplication`'s own notifications rather than a scene's: the app has one scene, and these say
  * when the whole app is away.
  */
-private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : BackgroundWorkout {
+private class IosBackgroundWorkout(
+    private val active: Lazy<ActiveWorkout>,
+    private val live: LiveActivities,
+    private val clock: WallClock,
+    private val colors: Lazy<StatusColors>,
+) : BackgroundWorkout {
     private val log = Logger.withTag("IosBackgroundWorkout")
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val center: UNUserNotificationCenter get() = UNUserNotificationCenter.currentNotificationCenter()
@@ -103,6 +124,12 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
 
     /** Bumped by each scheduling and each clear, so a scheduling overtaken by a clear adds nothing after it. */
     private var generation = 0
+
+    /** What of the status the Live Activity was last shown for; null while it shows nothing. */
+    private var shownShape: List<Any?>? = null
+
+    /** The Live Activity's words being read: overtaken by the next change, or by [stop]. */
+    private var showing: Job? = null
 
     private val observers = listOf(
         observe(UIApplicationDidEnterBackgroundNotification) { leftScreen() },
@@ -129,7 +156,15 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
         following = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             active.value.status.filterNotNull().collect { now ->
                 if (now.paused && status?.paused == false) clear()
+                val resumedAway = !now.paused && status?.paused == true && away()
                 status = now
+                // Resumed from the Live Activity with the app off screen: its notifications are scheduled again.
+                if (resumedAway) leftScreen()
+                val shape = now.shape()
+                if (shape != shownShape) {
+                    shownShape = shape
+                    showActivity(now)
+                }
             }
         }
     }
@@ -138,12 +173,60 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
         following?.cancel()
         following = null
         status = null
+        showing?.cancel()
+        showing = null
+        shownShape = null
+        live.end(LiveActivities.WORKOUT)
         clear()
     }
+
+    /**
+     * What the Live Activity changes with: not the clock, which the system counts, but where in the workout it is
+     * and how long it runs (time added).
+     */
+    private fun WorkoutStatus.shape(): List<Any?> =
+        listOf(phase, paused, round, set, block, blockRest, step, outline.totalSeconds)
+
+    /** Shows [shown] as the Live Activity, timed from the changes ahead as they stand once its words are read. */
+    private fun showActivity(shown: WorkoutStatus) {
+        showing?.cancel()
+        showing = scope.launch {
+            val flow = shown.flow
+            val step = shown.step
+            val words = WorkoutActivityWords(
+                title = if (flow != null && step != null) {
+                    flowTitle(shown.phase, step)
+                } else {
+                    getString(if (shown.blockRest) Res.string.phase_block_rest else shown.phase.title())
+                },
+                detail = if (flow != null) {
+                    step?.let { flowCount(it) }
+                } else if (shown.phase != Phase.Done) {
+                    roundText(shown.phase, shown.block, shown.set, shown.round, shown)
+                } else {
+                    null
+                },
+                staleTitle = getString(Res.string.activity_stale),
+                runLabel = getString(Res.string.activity_run),
+                toggleLabel = getString(if (shown.paused) Res.string.workout_resume else Res.string.workout_pause),
+                endLabel = getString(Res.string.workout_end),
+            )
+            val latest = status ?: return@launch
+            live.show(
+                LiveActivities.WORKOUT,
+                workoutActivity(latest, active.value.upcomingChanges(), clock.nowMillis(), colors.value, words),
+            )
+        }
+    }
+
+    private fun away(): Boolean =
+        UIApplication.sharedApplication.applicationState == UIApplicationState.UIApplicationStateBackground
 
     /** The app is going to the background: the changes ahead, read now, become the system's to announce. */
     private fun leftScreen() {
         val shown = status ?: return
+        // Timed afresh: the clock it was shown with has run on since.
+        showActivity(shown)
         // Empty while paused or over: nothing to announce.
         val changes = active.value.upcomingChanges().takeIf { it.isNotEmpty() } ?: return
         center.removePendingNotificationRequestsWithIdentifiers(identifiers)
@@ -190,18 +273,22 @@ private class IosBackgroundWorkout(private val active: Lazy<ActiveWorkout>) : Ba
      * Its round, of the rounds and sets of its own block ([shown]'s blocks in a workout of blocks, with the block
      * first); none in the warm-up and cool-down, outside the rounds.
      */
-    private suspend fun body(change: UpcomingChange, shown: WorkoutStatus): String? {
-        if (change.phase == Phase.WarmUp || change.phase == Phase.CoolDown) return null
-        val block = shown.blocks.getOrNull(change.block)
+    private suspend fun body(change: UpcomingChange, shown: WorkoutStatus): String? =
+        roundText(change.phase, change.block, change.set, change.round, shown)
+
+    /** The round of [set] of [block] in [phase], as [body] words it; the Live Activity's line under the phase too. */
+    private suspend fun roundText(phase: Phase, blockIndex: Int, set: Int, round: Int, shown: WorkoutStatus): String? {
+        if (phase == Phase.WarmUp || phase == Phase.CoolDown) return null
+        val block = shown.blocks.getOrNull(blockIndex)
         val rounds = block?.rounds ?: shown.rounds
         val sets = block?.sets ?: shown.sets
-        val round = if (sets > 1) {
-            getString(Res.string.notification_set_round, change.set, sets, change.round, rounds)
+        val text = if (sets > 1) {
+            getString(Res.string.notification_set_round, set, sets, round, rounds)
         } else {
-            getString(Res.string.notification_round, change.round, rounds)
+            getString(Res.string.notification_round, round, rounds)
         }
-        if (block == null) return round
-        return getString(Res.string.notification_block_round, change.block + 1, shown.blocks.size, round)
+        if (block == null) return text
+        return getString(Res.string.notification_block_round, blockIndex + 1, shown.blocks.size, text)
     }
 
     private fun clear() {

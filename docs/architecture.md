@@ -354,6 +354,20 @@ flowchart TD
   - Rather than maintaining power-draining background audio sessions, iOS schedules local notifications (`UNUserNotificationCenter`)
     in advance for each upcoming interval or rest expiration. Returning to the app cancels remaining scheduled alerts.
   - Plan reminders display in-app banner alerts if due while the app is foregrounded (`UNUserNotificationCenterDelegate` in `iosApp.swift`).
+  - **Live Activities**: the running workout and Lift's rest, EMOM, hold or density block on the Lock Screen and in
+    the Dynamic Island. Kotlin works out what each shows, worded and timed (`LiveActivityContent`, core-platform;
+    `workoutActivity` in interval-platform, `liftActivity` in lift-platform), and hands it to Swift as JSON
+    (`LiveActivityState`, `apps/app/src/data/`) through `startWidgetFeed`'s closures, since ActivityKit is Swift
+    alone; `LiveActivities.swift` starts, changes and ends it, and the widget extension draws it
+    (`WorkoutLiveActivity.swift`, over `shared/IntervalActivity.swift`, compiled by both targets). iOS starts one only
+    with the app on screen, and a suspended app can't change one, so everything that moves is the system's own
+    timer text and progress: the interval counting down, the whole workout's time left over its phase-coloured bar.
+    Past the interval's end the activity is stale (its `staleDate`) and asks for the app, the workout's clock still
+    right. Without push (no Apple team) nothing better is possible; the per-phase notifications stay, since an
+    activity is silent. Leftovers from a run before are ended at launch. The workout's activity has Pause (or
+    Resume) and End, `LiveActivityIntent`s (`shared/WorkoutIntents.swift`) that run in the app's process, woken if
+    need be, and act on the `ActiveWorkout` through `WidgetFeed.kt`, the ticker caught up first
+    (`WorkoutTicker.catchUp`).
   - **Home Screen widget (`WeekWidget.swift`)**: a Swift-only WidgetKit extension, the Xcode project's second target
     (`apps/iosApp/widget/`; the toolchain allows one target with its Kotlin build phase, so the extension links no
     Kotlin). The app writes each `WeekStandingSource` standing as a `WeekSnapshot` JSON (`apps/app/src/data/`) to the

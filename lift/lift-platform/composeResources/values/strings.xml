@@ -6,6 +6,8 @@
     <string name="timer_channel_description">A rest between sets, an EMOM, rounds in a time cap or a hold, counting down while the app is off screen</string>
     <string name="rest_title">Resting</string>
     <string name="emom_title">EMOM · minute %1$d of %2$d</string>
+    <!-- iOS's Live Activity, which can't change by the minute with the app away: the whole EMOM. -->
+    <string name="emom_activity_title">EMOM · %1$d min</string>
     <string name="hold_title">Holding</string>
     <string name="density_title">Rounds in a time cap</string>
     <string name="timer_left">%1$s left</string>

@@ -20,8 +20,23 @@ final class AppDelegate: UIResponder, UIApplicationDelegate, UNUserNotificationC
             delegate.show(in: scene)
         }
         UNUserNotificationCenter.current().delegate = self
-        // The Home Screen widget's week, kept current from here on (`WidgetFeed.kt`): WidgetKit is Swift alone.
-        WidgetFeedKt.startWidgetFeed { WidgetCenter.shared.reloadTimelines(ofKind: weekWidgetKind) }
+        // Before the container starts: a workout it restores shows its own.
+        LiveActivities.endLeftovers()
+        // The workout's Live Activity's buttons (`WorkoutIntents.swift`), which run here.
+        WorkoutControls.togglePause = { WidgetFeedKt.toggleWorkoutPause() }
+        WorkoutControls.end = { WidgetFeedKt.endWorkout() }
+        // The Home Screen widget's week, kept current from here on (`WidgetFeed.kt`), and the workout's and Lift's
+        // timers' Live Activities: WidgetKit and ActivityKit are Swift alone. Kotlin calls on the main thread; the
+        // hop keeps each call in order behind the one before.
+        WidgetFeedKt.startWidgetFeed(
+            reload: { WidgetCenter.shared.reloadTimelines(ofKind: weekWidgetKind) },
+            showActivity: { key, json in
+                DispatchQueue.main.async { MainActor.assumeIsolated { LiveActivities.show(key: key, json: json) } }
+            },
+            endActivity: { key in
+                DispatchQueue.main.async { MainActor.assumeIsolated { LiveActivities.end(key: key) } }
+            }
+        )
         return true
     }
 

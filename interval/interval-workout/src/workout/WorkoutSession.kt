@@ -106,6 +106,8 @@ class WorkoutSession(
     }
 
     override fun togglePause() {
+        // Off screen (iOS's Live Activity) the ticker may not have ticked for minutes: pause where the clock says.
+        ticker.catchUp()
         val current = run?.takeUnless { it.over } ?: return
         val now = clock.nowMillis()
         if (current.running) {
@@ -144,6 +146,7 @@ class WorkoutSession(
      * every round is done: ending there finishes the workout, as its end would.
      */
     override fun end() {
+        ticker.catchUp()
         val current = run?.takeUnless { it.over } ?: return
         when {
             current.engine.phase == Phase.CoolDown -> skip()
