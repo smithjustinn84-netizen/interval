@@ -11,6 +11,7 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.asPlan
@@ -97,6 +98,18 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         assertEquals(hiit.config.workSeconds, repository.settings.config.value.workSeconds)
         viewModel.planOnce(viewModel.state.value.choices.single().preset.asPlan(), TODAY + 2)
         assertEquals("HIIT 30/30", (repository.plans.planned.value.single().workout as PlanWorkout.Interval).name)
+    }
+
+    @Test
+    fun `a time cap shows its rounds and one counted by hand none`() {
+        val cap = IntervalConfig(workSeconds = 600, restSeconds = 0, rounds = 1, capped = true)
+        val rounds = listOf(CapRound(0, 70_000), CapRound(0, 150_000))
+        repository.history.recordWorkout(cap, elapsedSeconds = 610, capRounds = rounds)
+        repository.history.logWorkout(cap, noonOf(TODAY - 1))
+        val counted = requireNotNull(viewModel(id = 1).state.value.workout).caps.single()
+        assertEquals(2, counted.rounds)
+        assertEquals(75_000L, counted.paceMillis)
+        assertEquals(emptyList(), requireNotNull(viewModel(id = 2).state.value.workout).caps)
     }
 
     @Test

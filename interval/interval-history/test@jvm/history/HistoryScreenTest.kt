@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.tabataPreset
@@ -620,8 +621,8 @@ class HistoryScreenTest {
             )
         }
         onNodeWithText("Add workout").performClick()
-        onNodeWithText("HIIT 30/30").performClick()
-        onNode(hasText("Add to plan") and hasClickAction()).performClick()
+        onNodeWithText("HIIT 30/30").performScrollTo().performClick()
+        onNode(hasText("Add to plan") and hasClickAction()).performScrollTo().performClick()
         assertEquals(listOf("once HIIT 30/30 20743"), events)
     }
 

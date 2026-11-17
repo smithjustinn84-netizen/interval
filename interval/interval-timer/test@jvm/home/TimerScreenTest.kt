@@ -51,6 +51,7 @@ class TimerScreenTest {
     private val saved = mutableListOf<Preset>()
     private val activities = mutableListOf<Activity>()
     private val applied = mutableListOf<IntervalConfig>()
+    private val capped = mutableListOf<Boolean>()
 
     @Composable
     private fun Screen(state: TimerUiState = state()) {
@@ -64,7 +65,32 @@ class TimerScreenTest {
             onSeeAllPresets = { calls += "see all" },
             onSetActivity = { activities += it },
             onApplyConfig = { applied += it },
+            onCapChange = { capped += it },
         )
+    }
+
+    @Test
+    fun `the work's sheet makes the workout a time cap`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("0:40").performClick()
+        onNodeWithText("Time cap: as many rounds as you can").performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(listOf(true), capped)
+    }
+
+    @Test
+    fun `a time cap is one row with no sets and its sheet goes back to work and rest`() = runUiTest {
+        val cap = IntervalConfig(prepSeconds = 10, workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true)
+        setThemedContent { Screen(state(cap)) }
+        onNodeWithText("Time cap").assertExists()
+        onNodeWithText("Rounds").assertDoesNotExist()
+        onNodeWithText("Sets", substring = true).assertDoesNotExist()
+        onNodeWithContentDescription("A longer cap").performClick()
+        onNodeWithText("20:00").performClick()
+        onNodeWithText("Back to work and rest").performScrollTo().performClick()
+        waitForIdle()
+        assertEquals(listOf(ConfigField.Cap to 1), steps)
+        assertEquals(listOf(false), capped)
     }
 
     @Test

@@ -28,6 +28,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_calories_value
+import dev.justinsmith.interval.history.resources.history_cap_rounds
 import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_kind_conditioning
 import dev.justinsmith.interval.history.resources.history_kind_mobility
@@ -54,6 +55,7 @@ import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.workoutDescription
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -253,6 +255,7 @@ internal fun HistoryRow(
         Column(Modifier.weight(1f)) {
             val detail = listOfNotNull(
                 kindLead(item),
+                item.capRounds?.let { pluralStringResource(Res.plurals.history_cap_rounds, it, it) },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.effort?.let { effortWord(it) },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },

@@ -79,6 +79,7 @@ import dev.justinsmith.interval.workout.resources.phase_work
 import dev.justinsmith.interval.workout.resources.workout_paused
 import dev.justinsmith.interval.workout.resources.workout_status
 import dev.justinsmith.interval.workout.resources.workout_status_block
+import dev.justinsmith.interval.workout.resources.workout_status_cap
 import dev.justinsmith.interval.workout.resources.workout_status_left
 import dev.justinsmith.interval.workout.resources.workout_status_move
 import dev.justinsmith.interval.workout.resources.workout_status_set
@@ -100,6 +101,12 @@ internal fun RoundStatus(state: WorkoutUiState, modifier: Modifier = Modifier) {
         step != null -> stringResource(Res.string.workout_status_move, step.number, step.of, state.sessionLeft)
 
         bookend -> stringResource(Res.string.workout_status_left, state.sessionLeft)
+
+        state.cap?.live == true -> stringResource(
+            Res.string.workout_status_cap,
+            state.cap.rounds + 1,
+            state.sessionLeft,
+        )
 
         state.sets > 1 -> stringResource(
             Res.string.workout_status_set,
@@ -234,7 +241,12 @@ internal fun LandscapeReadout(
                 Text(nextText, style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
             }
             RoundStatus(state)
-            RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
+            val cap = state.cap
+            if (cap == null) {
+                RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
+            } else {
+                CapTally(cap, Modifier.padding(top = Spacing.space4), centered = false)
+            }
             TapHint(state)
         }
     }

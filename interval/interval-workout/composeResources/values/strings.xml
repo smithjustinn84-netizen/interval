@@ -33,6 +33,33 @@
     <string name="workout_status_block">Block %1$d of %2$d · %3$s</string>
     <string name="workout_status_left">%1$s left</string>
     <string name="workout_status_move">Move %1$d of %2$d · %3$s left</string>
+    <!-- A time cap under way: the round being done, and the cap's time left. -->
+    <string name="workout_status_cap">Round %1$d · %2$s left</string>
+    <plurals name="workout_cap_rounds">
+        <item quantity="one">%1$d round</item>
+        <item quantity="other">%1$d rounds</item>
+    </plurals>
+    <string name="workout_cap_best">Best: %1$d</string>
+    <!-- Under the rounds: how long the round under way has run, and the average round so far. -->
+    <string name="workout_cap_pace">This round %1$s · %2$s a round</string>
+    <string name="workout_cap_round_time">This round %1$s</string>
+    <string name="workout_round_done">Round done</string>
+    <string name="workout_undo_round">Undo</string>
+    <string name="workout_undo_round_cd">Take back the last round</string>
+    <plurals name="workout_end_progress_cap">
+        <item quantity="one">%1$d round done. It is saved to your log.</item>
+        <item quantity="other">%1$d rounds done. They are saved to your log.</item>
+    </plurals>
+    <!-- The summary of a time cap: its rounds in its minutes, or a new best. -->
+    <plurals name="workout_summary_cap">
+        <item quantity="one">%1$d round in %2$d min</item>
+        <item quantity="other">%1$d rounds in %2$d min</item>
+    </plurals>
+    <plurals name="workout_summary_cap_best">
+        <item quantity="one">New best: %1$d round in %2$d min</item>
+        <item quantity="other">New best: %1$d rounds in %2$d min</item>
+    </plurals>
+    <string name="workout_summary_cap_pace">%1$s a round · fastest %2$s · slowest %3$s</string>
     <string name="flow_hold">Hold</string>
     <string name="flow_move">Move</string>
     <string name="flow_switch_sides">Switch sides</string>

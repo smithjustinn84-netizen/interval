@@ -46,7 +46,9 @@ import kotlinx.coroutines.flow.Flow
  * switches hands each work ([PresetEntity.alternateHands]), not in rows from before; version 16 about how many
  * snatches a set a workout held and the bell ([HistoryEntity.snatchesPerSet], [HistoryEntity.snatchBellKg]), none
  * in rows from before; version 17 the day a one-off plan was moved from ([PlannedEntity.movedFromDay]), none in
- * rows from before.
+ * rows from before; version 18 whether a workout's, preset's or plan's first block is a time cap
+ * ([HistoryEntity.capped]) and the rounds done in a workout's caps ([HistoryEntity.capRounds]), neither in rows
+ * from before.
  */
 @Database(
     entities = [
@@ -56,7 +58,7 @@ import kotlinx.coroutines.flow.Flow
         SportLogEntity::class,
         FlowEntity::class,
     ],
-    version = 17,
+    version = 18,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -73,6 +75,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 14, to = 15),
         AutoMigration(from = 15, to = 16),
         AutoMigration(from = 16, to = 17),
+        AutoMigration(from = 17, to = 18),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -389,6 +392,10 @@ data class HistoryEntity(
     /** About how many snatches a set and the bell, as the lifter counted them; both null until counted. */
     @ColumnInfo(name = "snatches_per_set") val snatchesPerSet: Int? = null,
     @ColumnInfo(name = "snatch_bell_kg") val snatchBellKg: Double? = null,
+    /** The first block is a time cap; false in rows from before version 18. */
+    @ColumnInfo(defaultValue = "0") val capped: Boolean = false,
+    /** The rounds done in its caps, a JSON list ([encodeCapRounds]); null for none counted. */
+    @ColumnInfo(name = "cap_rounds") val capRounds: String? = null,
 )
 
 @Entity(tableName = "preset")
@@ -413,6 +420,8 @@ data class PresetEntity(
     @ColumnInfo(name = "block_rest_seconds", defaultValue = "0") val blockRestSeconds: Int = 0,
     /** As [dev.justinsmith.interval.timer.Preset.alternateHands]. */
     @ColumnInfo(name = "alternate_hands", defaultValue = "0") val alternateHands: Boolean = false,
+    /** As [HistoryEntity.capped]. */
+    @ColumnInfo(defaultValue = "0") val capped: Boolean = false,
 )
 
 /**
@@ -450,6 +459,8 @@ data class PlannedEntity(
     val sport: String? = null,
     /** A one-off's `PlanSchedule.Once.movedFromDay`; null in rows from before version 17. */
     @ColumnInfo(name = "moved_from_day") val movedFromDay: Long? = null,
+    /** As [HistoryEntity.capped]. */
+    @ColumnInfo(defaultValue = "0") val capped: Boolean = false,
 )
 
 /**

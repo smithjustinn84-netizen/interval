@@ -101,9 +101,18 @@ private fun IntervalConfig.export() = ConfigExport(
     setRestSeconds = setRestSeconds,
     workStepSeconds = workStepSeconds,
     then = then.map {
-        IntervalBlockExport(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+        IntervalBlockExport(
+            it.workSeconds,
+            it.restSeconds,
+            it.rounds,
+            it.sets,
+            it.setRestSeconds,
+            it.workStepSeconds,
+            it.capped,
+        )
     },
     blockRestSeconds = blockRestSeconds,
+    capped = capped,
 )
 
 private fun Preset.export() = PresetExport(id, name, config.export(), alternateHands)
@@ -129,6 +138,7 @@ private fun HistoryEntry.export() =
         peakBpm,
         snatches?.perSet,
         snatches?.bellKg,
+        capRounds?.map { CapRoundExport(it.block, it.atMillis) },
     )
 
 private fun PlannedWorkout.export(): PlannedExport {

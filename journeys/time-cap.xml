@@ -1,0 +1,19 @@
+<journey name="Time cap">
+  <description>
+    Make the Timer a five-minute time cap, tap a few rounds, take one back, lock the screen and hear the cap's end,
+    then see the rounds on the summary and in the Log. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
+    <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets</action>
+    <action>Tap the "Work" row and, on its sheet, tap "Time cap: as many rounds as you can"; verify that the Timer shows one "Time cap" row reading 20:00, with no "Rest", "Rounds" or "Sets"</action>
+    <action>Tap the "Time cap" row, tap the quick pick "5:00", then "Done", and verify that the total reads 5:10</action>
+    <action>Tap "Start workout" and verify "Get ready", then "Work" with "Round 1" and "0 rounds" under the ring, a big "Round done" button and "Undo" in Back's place, with no "+10s"</action>
+    <action>Tap "Round done" three times, a few seconds apart, and verify that the count rolls up to "3 rounds" and a line reads "This round" with a time and "a round" with the average</action>
+    <action>Tap "Undo" and verify "2 rounds"</action>
+    <action>Pull down the notification shade and verify that the workout's notification reads "Work · 2 rounds done" under the clock</action>
+    <action>Lock the screen and wait for the cap to end, about five minutes; verify that "Time. 2 rounds. Done. Nice work" is heard</action>
+    <action>Unlock and verify that the summary reads "2 rounds in 5 min" with a line of the average, fastest and slowest round, and "Saved to your log"</action>
+    <action>Tap "Done", go back to the presets, open the "Log" tab and verify that the workout's row says "2 rounds"; tap it and verify "Rounds in 5 min" reads 2 with "A round" beside it</action>
+  </actions>
+</journey>

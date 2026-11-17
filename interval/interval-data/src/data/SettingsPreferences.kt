@@ -28,6 +28,7 @@ private val SET_REST = intPreferencesKey("set_rest")
 private val WORK_STEP = intPreferencesKey("work_step")
 private val THEN_BLOCKS = stringPreferencesKey("then_blocks")
 private val BLOCK_REST = intPreferencesKey("block_rest")
+private val CAPPED = booleanPreferencesKey("capped")
 private val ACTIVITY = stringPreferencesKey("activity")
 
 private val CUE_SOUND = booleanPreferencesKey("cue_sound")
@@ -65,6 +66,7 @@ internal fun Preferences.toConfig(): IntervalConfig {
         workStepSeconds = this[WORK_STEP] ?: defaults.workStepSeconds,
         then = decodeBlocks(this[THEN_BLOCKS]),
         blockRestSeconds = this[BLOCK_REST] ?: defaults.blockRestSeconds,
+        capped = this[CAPPED] ?: defaults.capped,
     )
 }
 
@@ -81,6 +83,7 @@ internal fun MutablePreferences.write(config: IntervalConfig) {
     this[WORK_STEP] = config.workStepSeconds
     this[THEN_BLOCKS] = encodeBlocks(config.then)
     this[BLOCK_REST] = config.blockRestSeconds
+    this[CAPPED] = config.capped
 }
 
 internal fun Preferences.toCueSettings(): CueSettings {

@@ -8,6 +8,7 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.CourseSpan
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
@@ -83,6 +84,33 @@ class SettingsRepositoryTest {
 
         repository().settings.saveWorkoutProgress(null)
         assertNull(repository().settings.workoutProgress.value)
+    }
+
+    @Test
+    fun `a time cap under way keeps its rounds through a restart`() {
+        val config = IntervalConfig(workSeconds = 600, restSeconds = 60, rounds = 1, capped = true)
+            .withBlocks(listOf(Block.capOf(600, 60), Block.capOf(300)))
+        val state = WorkoutEngine.tick(WorkoutEngine.start(config).state, 200_000).state
+        val progress = WorkoutProgress(
+            id = 9,
+            state = state,
+            running = true,
+            ended = false,
+            activeMillis = 200_000,
+            workMillis = 190_000,
+            week = null,
+            atEpochMillis = 1_700_000_000_000,
+            capRounds = listOf(CapRound(0, 70_000), CapRound(0, 150_000)),
+        )
+        repository().settings.saveWorkoutProgress(progress)
+        assertEquals(progress, repository().settings.workoutProgress.value)
+    }
+
+    @Test
+    fun `the timer keeps a time cap through a restart`() {
+        val cap = IntervalConfig(workSeconds = 900, restSeconds = 0, rounds = 1, capped = true)
+        repository().settings.updateConfig { cap }
+        assertEquals(cap, repository().settings.config.value)
     }
 
     @Test

@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.data
 
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -77,6 +78,7 @@ class HistoryRepository(
         endedEarly: Boolean,
         workSeconds: Int?,
         startedAtEpochMillis: Long?,
+        capRounds: List<CapRound>?,
     ): String {
         val now = clock.nowMillis()
         val uid = ids.newId()
@@ -88,6 +90,7 @@ class HistoryRepository(
                 endedEarly,
                 workSeconds,
                 startedAtEpochMillis = startedAtEpochMillis,
+                capRounds = capRounds,
             )
         writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
         return uid

@@ -35,20 +35,23 @@ fun List<Preset>.alternateHands(config: IntervalConfig): Boolean = matching(conf
 
 /**
  * Whether a finished workout of [config] is asked about how many snatches a set it held: kettlebell intervals that
- * switch hands, 15:15 MVO2 or one of the user's own with the switch on, which Lift counts as snatches.
+ * switch hands, 15:15 MVO2 or one of the user's own with the switch on, which Lift counts as snatches. Never one
+ * with a time cap: its work is one interval, not a set a work, so Lift could not read it as sets.
  */
 fun List<Preset>.asksSnatches(config: IntervalConfig): Boolean =
-    config.activity == Activity.Kettlebell && alternateHands(config)
+    config.activity == Activity.Kettlebell && !config.hasCap && alternateHands(config)
 
 /**
  * The name a preset gets when the user gives it none: its shape, "40/20 ×6", with a whole number of
  * minutes as "1m", a ladder's first and last work, "20→60/10 ×5" ("1m→3m" when both are whole minutes), and
- * its sets when it has more than one, "20/10 ×8, 4 sets"; a sequence its blocks one after another,
- * "20/10 ×8, then 1m/30 ×5". A stored name rather than a label, so it is built here, like a clock string.
+ * its sets when it has more than one, "20/10 ×8, 4 sets"; a time cap its minutes, "20m cap"; a sequence its blocks
+ * one after another, "20/10 ×8, then 1m/30 ×5". A stored name rather than a label, so it is built here, like a clock
+ * string.
  */
 fun IntervalConfig.defaultPresetName(): String = blocks.joinToString(", then ") { it.name() }
 
 private fun Block.name(): String {
+    if (capped) return "${nameLabel(workSeconds)} cap"
     val work = if (isLadder) ladderLabel(workSeconds, workOf(rounds)) else nameLabel(workSeconds)
     val rounds = "$work/${nameLabel(restSeconds)} ×$rounds"
     return if (sets > 1) "$rounds, $sets sets" else rounds
@@ -135,5 +138,10 @@ val builtInPresets: List<Preset> = listOf(
             rounds = 10,
             activity = Activity.Kettlebell,
         ),
+    ),
+    // As many rounds as you can in twenty minutes: a circuit of the user's own, each round tapped as it is done.
+    Preset(
+        "20-minute cap",
+        IntervalConfig(prepSeconds = 10, workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true),
     ),
 )

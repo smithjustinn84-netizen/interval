@@ -202,7 +202,7 @@ private class IosBackgroundWorkout(
                 detail = if (flow != null) {
                     step?.let { flowCount(it) }
                 } else if (shown.phase != Phase.Done) {
-                    roundText(shown.phase, shown.block, shown.set, shown.round, shown)
+                    roundText(shown.phase, shown.block, shown.set, shown.round, shown, shown.capRounds)
                 } else {
                     null
                 },
@@ -274,12 +274,30 @@ private class IosBackgroundWorkout(
      * first); none in the warm-up and cool-down, outside the rounds.
      */
     private suspend fun body(change: UpcomingChange, shown: WorkoutStatus): String? =
-        roundText(change.phase, change.block, change.set, change.round, shown)
+        roundText(change.phase, change.block, change.set, change.round, shown, capRounds = null)
 
-    /** The round of [set] of [block] in [phase], as [body] words it; the Live Activity's line under the phase too. */
-    private suspend fun roundText(phase: Phase, blockIndex: Int, set: Int, round: Int, shown: WorkoutStatus): String? {
+    /**
+     * The round of [set] of [block] in [phase], as [body] words it; the Live Activity's line under the phase too. A
+     * cap's work has no round of so many: the [capRounds] done in it, or, ahead with none known, the cap itself.
+     */
+    private suspend fun roundText(
+        phase: Phase,
+        blockIndex: Int,
+        set: Int,
+        round: Int,
+        shown: WorkoutStatus,
+        capRounds: Int?,
+    ): String? {
         if (phase == Phase.WarmUp || phase == Phase.CoolDown) return null
         val block = shown.blocks.getOrNull(blockIndex)
+        if (blockIndex in shown.caps && phase == Phase.Work) {
+            val cap = capRounds?.let { capRoundsText(it) } ?: capAheadText()
+            return if (block == null) {
+                cap
+            } else {
+                getString(Res.string.notification_block_round, blockIndex + 1, shown.blocks.size, cap)
+            }
+        }
         val rounds = block?.rounds ?: shown.rounds
         val sets = block?.sets ?: shown.sets
         val text = if (sets > 1) {

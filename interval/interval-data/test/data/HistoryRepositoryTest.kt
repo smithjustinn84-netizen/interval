@@ -6,10 +6,12 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.SequentialIds
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.estimateCalories
@@ -69,6 +71,33 @@ class HistoryRepositoryTest {
         assertFalse(full.endedEarly)
         assertEquals(7, early.elapsedSeconds)
         assertTrue(early.endedEarly)
+    }
+
+    @Test
+    fun `a time cap keeps its rounds and one with none counted keeps none`() {
+        val cap = IntervalConfig(workSeconds = 600, restSeconds = 0, rounds = 1, capped = true)
+        val rounds = listOf(CapRound(0, 70_000), CapRound(0, 150_000))
+        repository().history.recordWorkout(cap, elapsedSeconds = 610, capRounds = rounds)
+        clock += 1
+        repository().history.recordWorkout(cap, elapsedSeconds = 610, capRounds = emptyList())
+        clock += 1
+        repository().history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
+        val (plain, none, counted) = repository().history.history.value
+        assertEquals(cap, counted.config)
+        assertEquals(rounds, counted.capRounds)
+        assertEquals(emptyList(), none.capRounds)
+        assertEquals(null, plain.capRounds)
+    }
+
+    @Test
+    fun `a preset of a cap is a cap after a restart`() {
+        val cap = IntervalConfig(workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true)
+            .withBlocks(listOf(Block.capOf(1200, 120), Block.capOf(600)))
+        repository().apply {
+            settings.updateConfig { cap }
+            saveCurrentAsPreset("Two caps")
+        }
+        assertEquals(cap.blocks, repository().presets.customPresets.value.single().config.blocks)
     }
 
     @Test

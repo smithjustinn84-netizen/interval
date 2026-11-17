@@ -11,6 +11,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import androidx.sqlite.execSQL
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
@@ -455,6 +456,38 @@ class StorageTest {
     }
 
     @Test
+    fun `a version 17 database keeps its workouts presets and plans uncapped and caps them from then on`() {
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            V17_SCHEMA.forEach(connection::execSQL)
+            connection.execSQL(
+                "INSERT INTO history (finished_at, prep_seconds, work_seconds, rest_seconds, rounds, " +
+                    "elapsed_seconds, ended_early, activity, uid, updated_at) " +
+                    "VALUES ($NOW, 10, 1200, 0, 1, 1210, 0, 'General', 'w', $NOW)",
+            )
+            connection.execSQL(
+                "INSERT INTO preset (name, prep_seconds, work_seconds, rest_seconds, rounds) " +
+                    "VALUES ('Long', 10, 1200, 0, 1)",
+            )
+            connection.execSQL("PRAGMA user_version = 17")
+        }
+        val cap = IntervalConfig(prepSeconds = 10, workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true)
+        withApp { repository ->
+            val workout = repository.history.history.value.single()
+            assertEquals(false, workout.config.capped)
+            assertEquals(null, workout.capRounds)
+            assertEquals(false, repository.presets.customPresets.value.single().config.capped)
+
+            repository.history.recordWorkout(cap, elapsedSeconds = 1210, capRounds = listOf(CapRound(0, 90_000)))
+            settled(repository) { it.history.history.value.size == 2 }
+        }
+        withApp { repository ->
+            val capped = repository.history.history.value.first { it.config.capped }
+            assertEquals(cap, capped.config)
+            assertEquals(listOf(CapRound(0, 90_000)), capped.capRounds)
+        }
+    }
+
+    @Test
     fun `deleted workouts stay on disk as tombstones`() {
         withApp { repository ->
             repeat(3) { repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = it + 1) }
@@ -802,6 +835,15 @@ private val V15_SCHEMA = listOf(
     "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
         "'6b9d2f9ff87e13df65aa44eb8a746024')",
 )
+
+/** Version 17 as 0.6 built it (no release shipped it): version 16 and the day a one-off plan was moved from. */
+private val V17_SCHEMA by lazy {
+    V16_SCHEMA.dropLast(1) + listOf(
+        "ALTER TABLE `planned` ADD COLUMN `moved_from_day` INTEGER",
+        "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, " +
+            "'0211d81eb9b19b9fc8c0091161c0efa7')",
+    )
+}
 
 /** Version 16 as 0.6 built it (no release shipped it): version 15 and a workout's snatches. */
 private val V16_SCHEMA = V15_SCHEMA.dropLast(1) + listOf(

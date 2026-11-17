@@ -35,6 +35,8 @@ import kotlinx.coroutines.launch
  * this ViewModel, which goes with the screen when Android destroys it in the background; it ends only when the
  * page leaves the back stack.
  */
+// One per control, as the session has them, and the summary's.
+@Suppress("detekt.TooManyFunctions")
 class WorkoutViewModel(
     /** The route's: the workout this page shows, and the saved progress it picks up after the process died. */
     private val id: Long,
@@ -96,7 +98,7 @@ class WorkoutViewModel(
         history: List<HistoryEntry>,
         lifted: LiftSide,
     ): WorkoutUiState {
-        val shown = toUiState(presets, flows)
+        val shown = toUiState(presets, flows, history)
         if (entryUid == null || !presets.asksSnatches(config)) return shown
         // Its own entry, in History by now, holds this count or none, so the last one said stands either way.
         return shown.copy(
@@ -131,6 +133,10 @@ class WorkoutViewModel(
     fun back() = session.back()
 
     fun addTime() = session.addTime()
+
+    fun roundDone() = session.roundDone()
+
+    fun undoRound() = session.undoRound()
 
     /**
      * Stops before the last round: records what was done and shows the summary. Without a finished round there is

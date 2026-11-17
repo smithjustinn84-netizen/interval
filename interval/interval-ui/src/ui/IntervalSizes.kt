@@ -83,6 +83,9 @@ object IntervalSizes {
     /** A phase's colour stripe at the start of a field row, and a history mark's width. */
     val stripe = 6.dp
 
+    /** A time cap's Round done: the workout's biggest target, for a tap mid-effort without looking. */
+    val roundDone = 96.dp
+
     /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */
     val roundMarkWidth = 24.dp
     val roundMarkHeight = 6.dp

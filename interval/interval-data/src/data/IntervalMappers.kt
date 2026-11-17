@@ -29,6 +29,7 @@ private fun intervalConfig(
     workStepSeconds: Int,
     thenBlocks: String,
     blockRestSeconds: Int,
+    capped: Boolean,
 ) = IntervalConfig.sanitized(
     prepSeconds = prepSeconds,
     workSeconds = workSeconds,
@@ -42,6 +43,7 @@ private fun intervalConfig(
     workStepSeconds = workStepSeconds,
     then = decodeBlocks(thenBlocks),
     blockRestSeconds = blockRestSeconds,
+    capped = capped,
 )
 
 internal const val LIFT_PROGRAM_DAY = "program_day"
@@ -99,6 +101,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
         workStepSeconds,
         thenBlocks,
         blockRestSeconds,
+        capped,
     ),
     elapsedSeconds = elapsedSeconds,
     endedEarly = endedEarly,
@@ -110,6 +113,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     averageBpm = averageBpm,
     peakBpm = peakBpm,
     snatches = SnatchCount.of(snatchesPerSet, snatchBellKg),
+    capRounds = decodeCapRounds(capRounds),
 )
 
 internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = HistoryEntity(
@@ -139,6 +143,8 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     peakBpm = peakBpm,
     snatchesPerSet = snatches?.perSet,
     snatchBellKg = snatches?.bellKg,
+    capped = config.capped,
+    capRounds = encodeCapRounds(capRounds),
 )
 
 internal fun PresetEntity.toDomain() =
@@ -157,6 +163,7 @@ internal fun PresetEntity.toDomain() =
             workStepSeconds,
             thenBlocks,
             blockRestSeconds,
+            capped,
         ),
         id = id,
         alternateHands = alternateHands,
@@ -178,6 +185,7 @@ internal fun Preset.toEntity() = PresetEntity(
     blockRestSeconds = config.blockRestSeconds,
     activity = config.activity.name,
     alternateHands = alternateHands,
+    capped = config.capped,
 )
 
 /**
@@ -210,6 +218,7 @@ internal fun PlannedEntity.toDomain(): PlannedWorkout? {
                 workStepSeconds,
                 thenBlocks,
                 blockRestSeconds,
+                capped,
             ),
             presetId,
         )
@@ -254,5 +263,6 @@ internal fun PlannedWorkout.toEntity(): PlannedEntity {
         },
         sport = sport?.key,
         movedFromDay = movedFromDay,
+        capped = config?.capped ?: false,
     )
 }

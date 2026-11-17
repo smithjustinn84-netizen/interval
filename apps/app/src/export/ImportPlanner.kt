@@ -2,6 +2,7 @@ package dev.justinsmith.interval.export
 
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
@@ -17,6 +18,7 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.toKg
@@ -264,9 +266,18 @@ private fun ConfigExport.toDomain(): IntervalConfig {
         workStepSeconds = workStepSeconds,
         // Each block refuses a value out of its range, as the fields above do.
         then = then.map {
-            IntervalBlock(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+            IntervalBlock(
+                it.workSeconds,
+                it.restSeconds,
+                it.rounds,
+                it.sets,
+                it.setRestSeconds,
+                it.workStepSeconds,
+                it.capped,
+            )
         },
         blockRestSeconds = blockRestSeconds,
+        capped = capped,
     )
 }
 
@@ -280,9 +291,10 @@ private fun WorkoutExport.toDomain(): HistoryEntry {
     requireHeartRate(averageBpm, peakBpm)
     val snatches = SnatchCount.of(snatchesPerSet, snatchBellKg)
     require((snatchesPerSet == null && snatchBellKg == null) || snatches != null) { "snatches" }
+    val config = config.toDomain()
     return HistoryEntry(
         finishedAtEpochMillis,
-        config.toDomain(),
+        config,
         elapsedSeconds,
         endedEarly,
         workActiveSeconds,
@@ -291,6 +303,15 @@ private fun WorkoutExport.toDomain(): HistoryEntry {
         averageBpm = averageBpm,
         peakBpm = peakBpm,
         snatches = snatches,
+        capRounds = capRounds?.map { CapRound(it.block, it.atMillis) }?.also { rounds ->
+            // Each in a block that is a cap, within it and in order, or the file is refused as a value out of range is.
+            rounds.groupBy { it.block }.forEach { (block, own) ->
+                val cap = config.blocks.getOrNull(block)
+                val at = own.map { it.atMillis }
+                val within = cap != null && cap.capped && at.all { it <= cap.workSeconds * MILLIS_PER_SECOND }
+                require(within && at == at.sorted()) { "a cap's rounds" }
+            }
+        },
     )
 }
 

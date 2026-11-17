@@ -37,8 +37,19 @@ class SpeechTextTest {
             Speech.Side(FlowSide.Right) to "Right side",
             Speech.Begin to "Begin",
             Speech.SwitchSides to "Switch sides",
+            Speech.Left(5) to "5 minutes left",
+            Speech.Left(1) to "One minute left",
+            Speech.CapOver(14, Speech.Rest) to "Time. 14 rounds. Rest",
+            Speech.CapOver(1, Speech.Finished) to "Time. 1 round. Done. Nice work",
         )
         for ((speech, words) in lines) assertEquals(words, speech.text())
+    }
+
+    @Test
+    fun `a cap's notification says the rounds done`() = runBlocking {
+        assertEquals("5 rounds done", capRoundsText(5))
+        assertEquals("1 round done", capRoundsText(1))
+        assertEquals("As many rounds as you can", capAheadText())
     }
 
     @Test

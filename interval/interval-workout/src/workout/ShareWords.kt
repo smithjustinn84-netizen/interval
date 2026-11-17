@@ -24,7 +24,12 @@ internal fun workoutShareText(state: WorkoutUiState): String {
         presetNameOrCustom(state.presetName),
         workoutDescription(state.config),
     )
-    val counted = stringResource(Res.string.workout_stat_rounds_value, state.countDone, state.countOf)
+    // A time cap's rounds have no count to be out of: "14 rounds".
+    val counted = if (state.caps.isNotEmpty()) {
+        state.capRounds.toString()
+    } else {
+        stringResource(Res.string.workout_stat_rounds_value, state.countDone, state.countOf)
+    }
     val figures = stringResource(
         if (state.flow != null) Res.string.share_workout_moves else Res.string.share_workout_figures,
         counted,

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -27,6 +28,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.home.resources.Res
 import dev.justinsmith.interval.home.resources.timer_add_block
+import dev.justinsmith.interval.home.resources.timer_make_cap
+import dev.justinsmith.interval.home.resources.timer_make_intervals
 import dev.justinsmith.interval.presets.EditorMode
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
@@ -73,6 +76,7 @@ fun TimerRoute(
         onSeeAllPresets = onSeeAllPresets,
         onSetActivity = viewModel::setActivity,
         onApplyConfig = viewModel::applyConfig,
+        onCapChange = viewModel::setCapped,
         modifier = modifier,
         onBack = onBack,
     )
@@ -99,6 +103,7 @@ fun TimerScreen(
     onSetActivity: (Activity) -> Unit = {},
     onApplyConfig: (IntervalConfig) -> Unit = {},
     onBack: (() -> Unit)? = null,
+    onCapChange: (Boolean) -> Unit = {},
 ) {
     var choosingActivity by rememberSaveable { mutableStateOf(false) }
     val onEditActivity = { choosingActivity = true }
@@ -157,7 +162,8 @@ fun TimerScreen(
     }
     editing?.let { field ->
         val addBlock = { draft = PresetDraft.timer(state.config.withBlockAdded()).also { editingName = null } }
-        TimerValueSheet(field, state, onStep, onSet, onAddBlock = addBlock, onDismiss = { editingName = null })
+        val setCap = { capped: Boolean -> onCapChange(capped).also { editingName = null } }
+        TimerValueSheet(field, state, onStep, onSet, addBlock, onDismiss = { editingName = null }, onCapChange = setCap)
     }
     if (choosingActivity) {
         ActivitySheet(
@@ -191,6 +197,7 @@ private fun TimerValueSheet(
     onSet: (ConfigField, Int) -> Unit,
     onAddBlock: () -> Unit,
     onDismiss: () -> Unit,
+    onCapChange: (Boolean) -> Unit = {},
 ) {
     val config = state.config
     ValueSheet(
@@ -202,7 +209,14 @@ private fun TimerValueSheet(
         onDismiss = onDismiss,
     ) {
         when {
-            field == ConfigField.Work -> LadderField(config, onStep = { onStep(ConfigField.WorkStep, it) })
+            field == ConfigField.Work -> Column {
+                LadderField(config, onStep = { onStep(ConfigField.WorkStep, it) })
+                CapSwitch(capped = false, onCapChange)
+            }
+
+            field == ConfigField.Rounds -> CapSwitch(capped = false, onCapChange)
+
+            field == ConfigField.Cap -> CapSwitch(capped = true, onCapChange)
 
             field == ConfigField.Sets -> Column {
                 if (config.sets > 1) {
@@ -215,6 +229,17 @@ private fun TimerValueSheet(
                 )
             }
         }
+    }
+}
+
+/** The way between the two kinds of workout, on the sheets of what each has: a time cap, or work and rest again. */
+@Composable
+private fun CapSwitch(capped: Boolean, onCapChange: (Boolean) -> Unit) {
+    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        QuietTextButton(
+            stringResource(if (capped) Res.string.timer_make_intervals else Res.string.timer_make_cap),
+            onClick = { onCapChange(!capped) },
+        )
     }
 }
 

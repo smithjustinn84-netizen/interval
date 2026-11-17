@@ -42,6 +42,7 @@ class WorkoutRecorder(
             endedEarly,
             workSeconds = run.workSeconds,
             startedAtEpochMillis = run.startedAt,
+            capRounds = run.capRounds.takeIf { run.config.hasCap },
         )
         health.record(healthWorkout(run, endedAt = run.openSince))
         return run.copy(week = week, entryUid = uid)

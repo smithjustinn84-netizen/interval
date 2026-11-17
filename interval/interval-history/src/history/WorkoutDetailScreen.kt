@@ -27,6 +27,10 @@ import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.detail_average_heart_rate
 import dev.justinsmith.interval.history.resources.detail_bpm_value
+import dev.justinsmith.interval.history.resources.detail_cap_block
+import dev.justinsmith.interval.history.resources.detail_cap_pace
+import dev.justinsmith.interval.history.resources.detail_cap_rounds
+import dev.justinsmith.interval.history.resources.detail_cap_splits
 import dev.justinsmith.interval.history.resources.detail_close_cd
 import dev.justinsmith.interval.history.resources.detail_delete_confirm
 import dev.justinsmith.interval.history.resources.detail_delete_menu
@@ -45,10 +49,14 @@ import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.notice_workout_deleted
+import dev.justinsmith.interval.model.CapScore
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.platform.Sharer
+import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
+import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
+import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -249,6 +257,7 @@ private fun DetailFigures(workout: FinishedWorkout) {
             Stat(stringResource(Res.string.detail_work), workout.work, accent = true)
             workout.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
         }
+        workout.caps.forEach { cap -> CapFigures(cap, block = cap.block.takeIf { workout.config.isSequence }) }
         workout.heartRate?.let { heartRate ->
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Stat(
@@ -271,6 +280,47 @@ private fun DetailFigures(workout: FinishedWorkout) {
             )
             workout.effort?.let { Text(effortWord(it), style = IntervalTheme.type.value, color = palette.text) }
             workout.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
+        }
+    }
+}
+
+/**
+ * A time cap's rounds and the average round, with the fastest and slowest under them; in a sequence, after its
+ * [block] (0-based).
+ */
+@Composable
+private fun CapFigures(cap: CapScore, block: Int?) {
+    val palette = IntervalTheme.palette
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        block?.let {
+            Text(
+                stringResource(Res.string.detail_cap_block, it + 1),
+                style = IntervalTheme.type.caption,
+                color = palette.textDim,
+            )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            Stat(
+                stringResource(Res.string.detail_cap_rounds, cap.capSeconds / SECONDS_PER_MINUTE),
+                cap.rounds.toString(),
+                accent = true,
+            )
+            cap.paceMillis?.let {
+                Stat(stringResource(Res.string.detail_cap_pace), formatClock((it / MILLIS_PER_SECOND).toInt()))
+            }
+        }
+        val fastest = cap.fastestMillis
+        val slowest = cap.slowestMillis
+        if (fastest != null && slowest != null && cap.rounds > 1) {
+            Text(
+                stringResource(
+                    Res.string.detail_cap_splits,
+                    formatClock((fastest / MILLIS_PER_SECOND).toInt()),
+                    formatClock((slowest / MILLIS_PER_SECOND).toInt()),
+                ),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
         }
     }
 }

@@ -32,6 +32,8 @@ data class HistoryItem(
     /** How hard it felt and a note on it, as said on its summary; null for none. */
     val effort: PerceivedEffort? = null,
     val note: String? = null,
+    /** The rounds done in its time caps, as they were counted; null for a workout with none counted. */
+    val capRounds: Int? = null,
 )
 
 /** One day's workouts, and the sports logged on it. [dayNumber] is its epoch day. */

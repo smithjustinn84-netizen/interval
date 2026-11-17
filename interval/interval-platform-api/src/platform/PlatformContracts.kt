@@ -52,6 +52,14 @@ sealed interface Speech {
 
     data object Halfway : Speech
 
+    /** [minutes] left of a time cap: "Five minutes", "One minute". */
+    data class Left(val minutes: Int) : Speech
+
+    /**
+     * A time cap over, with the [rounds] done in it, then [then], the line of what comes next: "Time. 14 rounds. Rest".
+     */
+    data class CapOver(val rounds: Int, val then: Speech) : Speech
+
     data object Finished : Speech
 
     /** A flow's next move, as its change-over starts: "Next: Cat-cow". [name] is the move's own, said as it is. */
@@ -102,6 +110,10 @@ data class WorkoutStatus(
     /** The flow the workout is, null for any other, and the move it is in or about to start ([Flow.stepAt]). */
     val flow: Flow? = null,
     val step: FlowStep? = null,
+    /** In a time cap, the rounds done in it so far, said in place of the round of so many; null outside one. */
+    val capRounds: Int? = null,
+    /** The blocks (0-based) that are time caps, whose rounds are not counted ahead. */
+    val caps: Set<Int> = emptySet(),
 )
 
 /**

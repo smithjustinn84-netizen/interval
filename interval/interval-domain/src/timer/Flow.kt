@@ -148,7 +148,7 @@ val IntervalConfig.isFlowShaped: Boolean
         (blocks.size == 1 || blockRestSeconds == Flow.MOVE_CHANGE_SECONDS) && blocks.all { it.isMoveShaped }
 
 private val Block.isMoveShaped: Boolean
-    get() = sets == 1 && workStepSeconds == 0 &&
+    get() = !capped && sets == 1 && workStepSeconds == 0 &&
         ((rounds == 1 && restSeconds == 0) || (rounds == 2 && restSeconds == Flow.SIDE_CHANGE_SECONDS))
 
 private const val OWN_KEY_PREFIX = "own-"

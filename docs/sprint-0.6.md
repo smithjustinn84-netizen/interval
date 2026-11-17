@@ -304,6 +304,28 @@ ticket 6.
   `AppDataImporterTest`, `HistoryViewModelTest`, `HistoryScreenTest`, `HomeViewModelTest`, `HomeScreenTest` and
   `MovePlanAcceptanceTest` pass, and `journeys/move-plan.xml` runs on `amper-37`.
 
+**15. A time cap on the Timer** (added during the sprint, from below the cut line) · M
+- A block can be a time cap (`Block.capped`, `IntervalConfig.capped` for the first): its work is the cap, in whole
+  minutes from 1 to 60, one round of one set, so it runs on the engine as one Work interval and `Course` needs
+  nothing new. `Cue.Left` calls five minutes and one minute left. Work's sheet on the Timer makes the workout one,
+  the editor any block of a sequence; switching kind resets the block to that kind's default. A "20-minute cap"
+  preset ships.
+- Rounds are whole, each a tap of Round done (`CapRound`: the block and the active millis into it, pauses out),
+  taken only in a running cap's work, saved at each tap, with Undo in Back's place; Enter is a round and Backspace
+  undoes it. A cap takes neither Back nor added time, and Back never re-enters one that has ended.
+- The screen shows the rounds rolling up, the best of the same shape (`bestRounds`) and this round's time beside
+  the average; the end says "Time. 14 rounds."; the summary "14 rounds in 20 min" or a new best, with the average,
+  fastest and slowest round; the Log the rounds on the row and the page; the notification the rounds done.
+- `HistoryEntry.capRounds` is the `cap_rounds` JSON column (`AppDatabase` version 18, with `capped` on history,
+  preset and planned), null for none counted; the export carries `capped` and `capRounds` at schema 13 and refuses
+  rounds outside a cap or out of order. A cap is never asked about snatches nor shaped like a flow.
+- Done when: `TimeCapTest`, `CapRoundsTest`, `CapSessionTest`, `WorkoutCapScreenTest`, `StorageTest` (a version-17
+  database), `AppDataImporterTest` and `TimeCapAcceptanceTest` pass, and `journeys/time-cap.xml` runs on
+  `amper-37`.
+- As built: the Timer makes a cap from a button on the Work and Rounds sheets rather than a segmented switch over
+  the rows; import refuses a malformed cap rather than clamping it; Health writes the cap as one segment; on iOS
+  the minute calls sound only with the app open.
+
 --- cut line ---
 
 **6. Describe reads "then"** (0.5's ticket 4, unchanged) · S
@@ -321,9 +343,6 @@ ticket 6.
   sheet shows a row a block (`DescribeSheet`, its field up to 160 characters), and `SequenceAcceptanceTest` types
   one onto the Timer. A part giving a rest and no work joins the one before ("40 on then 20 off x8" is one block),
   and in a sequence a bare "1:00 between" said of a block of one set is the rest between blocks.
-
-Also below it:
-- A density block for the interval side, the Timer's own "as many rounds as you can".
 
 ## Explicitly not this sprint
 

@@ -4,12 +4,14 @@ import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.cue_begin
 import dev.justinsmith.interval.platform.resources.cue_block_rest
 import dev.justinsmith.interval.platform.resources.cue_block_work
+import dev.justinsmith.interval.platform.resources.cue_cap_over
 import dev.justinsmith.interval.platform.resources.cue_cool_down
 import dev.justinsmith.interval.platform.resources.cue_finished
 import dev.justinsmith.interval.platform.resources.cue_get_ready
 import dev.justinsmith.interval.platform.resources.cue_halfway
 import dev.justinsmith.interval.platform.resources.cue_last_round_work
 import dev.justinsmith.interval.platform.resources.cue_left_side
+import dev.justinsmith.interval.platform.resources.cue_minutes_left
 import dev.justinsmith.interval.platform.resources.cue_next_move
 import dev.justinsmith.interval.platform.resources.cue_rest
 import dev.justinsmith.interval.platform.resources.cue_right_side
@@ -23,6 +25,7 @@ import dev.justinsmith.interval.platform.resources.cue_work
 import dev.justinsmith.interval.timer.FlowSide
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import org.jetbrains.compose.resources.getPluralString
 import org.jetbrains.compose.resources.getString
 
 /** The words for this line, in the app's language: "Last round. Work", or the countdown's number. */
@@ -55,6 +58,10 @@ internal suspend fun Speech.text(): String = when (this) {
     Speech.CoolDown -> getString(Res.string.cue_cool_down)
 
     Speech.Halfway -> getString(Res.string.cue_halfway)
+
+    is Speech.Left -> getPluralString(Res.plurals.cue_minutes_left, minutes, minutes)
+
+    is Speech.CapOver -> getPluralString(Res.plurals.cue_cap_over, rounds, rounds, then.text())
 
     Speech.Finished -> getString(Res.string.cue_finished)
 

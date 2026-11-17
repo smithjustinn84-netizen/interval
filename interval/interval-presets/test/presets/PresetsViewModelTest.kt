@@ -46,6 +46,7 @@ class PresetsViewModelTest : MainDispatcherTest() {
                 "HIIT 30/30",
                 "Long efforts",
                 "15:15 MVO2",
+                "20-minute cap",
                 "Mat rounds",
             ),
             state.builtIn.map { it.preset.name },

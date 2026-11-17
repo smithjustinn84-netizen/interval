@@ -33,6 +33,11 @@ data class IntervalConfig(
     val then: List<Block> = emptyList(),
     /** The rest between one block and the next, 0 for the block's ordinary rest. */
     val blockRestSeconds: Int = 0,
+    /**
+     * The first block is a time cap ([Block.capped]): [workSeconds] is the cap, in whole minutes, and [rounds] and
+     * [sets] are 1, with no ladder.
+     */
+    val capped: Boolean = false,
 ) {
     init {
         require(prepSeconds in PREP_RANGE) { "Get ready of $prepSeconds s" }
@@ -47,6 +52,8 @@ data class IntervalConfig(
         require(workOf(rounds) in WORK_RANGE) { "Last round's work of ${workOf(rounds)} s" }
         require(then.size < MAX_BLOCKS) { "${then.size + 1} blocks" }
         require(blockRestSeconds in BLOCK_REST_RANGE) { "Block rest of $blockRestSeconds s" }
+        // The first block checks a cap's own rules as it is made.
+        check(!capped || blocks.first().capped)
     }
 
     /**
@@ -54,10 +61,13 @@ data class IntervalConfig(
      * and ladder as the first, then [then]. Worked out on each read, as [init] reads it.
      */
     val blocks: List<Block>
-        get() = listOf(Block(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)) + then
+        get() = listOf(Block(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds, capped)) + then
 
     /** A workout of more than one block. */
     val isSequence: Boolean get() = then.isNotEmpty()
+
+    /** A block of it is a time cap, whose rounds are counted as they are done. */
+    val hasCap: Boolean get() = capped || then.any { it.capped }
 
     /**
      * This config with [blocks] in place of its own: the first in its fields, the others [then]. One block keeps no
@@ -72,6 +82,7 @@ data class IntervalConfig(
             sets = first.sets,
             setRestSeconds = first.setRestSeconds,
             workStepSeconds = first.workStepSeconds,
+            capped = first.capped,
             then = blocks.drop(1),
             blockRestSeconds = if (blocks.size > 1) blockRestSeconds else 0,
         )
@@ -106,6 +117,12 @@ data class IntervalConfig(
         val WORK_STEP_RANGE = -300..300
         val BLOCK_REST_RANGE = 0..3600
 
+        /** A time cap's length: a minute to an hour, in whole minutes. */
+        val CAP_RANGE = 60..3600
+
+        /** The cap a block is given as it becomes one: twenty minutes. */
+        const val DEFAULT_CAP_SECONDS = 1200
+
         /** The most blocks a sequence runs. */
         const val MAX_BLOCKS = 10
 
@@ -126,8 +143,9 @@ data class IntervalConfig(
             workStepSeconds: Int = 0,
             then: List<Block> = emptyList(),
             blockRestSeconds: Int = 0,
+            capped: Boolean = false,
         ): IntervalConfig {
-            val first = Block.sanitized(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)
+            val first = Block.sanitized(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds, capped)
             return IntervalConfig(
                 prepSeconds = prepSeconds.coerceIn(PREP_RANGE),
                 warmUpSeconds = warmUpSeconds.coerceIn(WARM_UP_RANGE),
@@ -146,6 +164,7 @@ data class IntervalConfig(
         val SETS_PICKS = listOf(2, 3, 4, 5)
         val SET_REST_PICKS = listOf(30, 60, 90, 120, 180)
         val WORK_STEP_PICKS = listOf(-10, -5, 5, 10, 15, 30)
+        val CAP_PICKS = listOf(300, 600, 720, 900, 1200, 1800)
 
         /** The rest between sets a workout of sets is given when nothing names one: a minute. */
         const val DEFAULT_SET_REST_SECONDS = 60
@@ -164,6 +183,9 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
     SetRest(step = 15, range = IntervalConfig.SET_REST_RANGE, quickPicks = IntervalConfig.SET_REST_PICKS),
     WorkStep(step = 5, range = IntervalConfig.WORK_STEP_RANGE, quickPicks = IntervalConfig.WORK_STEP_PICKS),
     BlockRest(step = 15, range = IntervalConfig.BLOCK_REST_RANGE, quickPicks = IntervalConfig.SET_REST_PICKS),
+
+    /** A time cap's length, a block's work when it is [Block.capped]: in whole minutes. */
+    Cap(step = 60, range = IntervalConfig.CAP_RANGE, quickPicks = IntervalConfig.CAP_PICKS),
     ;
 
     companion object {
@@ -184,15 +206,18 @@ enum class ConfigField(val step: Int, val range: IntRange, val quickPicks: List<
         /** As [setsOf] a config, for one of its blocks. */
         fun setsOf(block: Block): List<ConfigField> = if (block.sets > 1) listOf(Sets, SetRest) else listOf(Sets)
 
-        /** The rows of one block of a sequence: its shape, its ladder and its sets. */
-        fun blockFields(block: Block): List<ConfigField> = shape + ladder + setsOf(block)
+        /** A time cap's rows: the cap, then the rest after it. */
+        val cap: List<ConfigField> = listOf(Cap, Rest)
+
+        /** The rows of one block of a sequence: its shape, its ladder and its sets; a cap's own when it is one. */
+        fun blockFields(block: Block): List<ConfigField> = if (block.capped) cap else shape + ladder + setsOf(block)
     }
 }
 
 /** The current value of [field]. */
 fun IntervalConfig.valueOf(field: ConfigField): Int = when (field) {
     ConfigField.Prep -> prepSeconds
-    ConfigField.Work -> workSeconds
+    ConfigField.Work, ConfigField.Cap -> workSeconds
     ConfigField.Rest -> restSeconds
     ConfigField.Rounds -> rounds
     ConfigField.WarmUp -> warmUpSeconds
@@ -223,6 +248,14 @@ fun IntervalConfig.stepped(field: ConfigField, direction: Int, block: Int): Inte
 fun IntervalConfig.withBlockAdded(): IntervalConfig =
     if (blocks.size >= IntervalConfig.MAX_BLOCKS) this else withBlocks(blocks + blocks.last())
 
+/** [block] (0-based) as a time cap, or, with [capped] false, as rounds of work and rest: each kind's own default. */
+fun IntervalConfig.withCapped(capped: Boolean, block: Int = 0): IntervalConfig =
+    withBlocks(
+        blocks.toMutableList().also {
+            it[block] = if (capped) it[block].asCapped() else it[block].asIntervals()
+        },
+    )
+
 /** Without [block] (0-based); the last one left stays. */
 fun IntervalConfig.withoutBlock(block: Int): IntervalConfig =
     if (blocks.size <= 1) this else withBlocks(blocks.filterIndexed { index, _ -> index != block })
@@ -245,7 +278,7 @@ fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
     fun of(own: ConfigField, current: Int) = if (own == field) value else current
     return IntervalConfig.sanitized(
         prepSeconds = of(ConfigField.Prep, prepSeconds),
-        workSeconds = of(ConfigField.Work, workSeconds),
+        workSeconds = of(ConfigField.Cap, of(ConfigField.Work, workSeconds)),
         restSeconds = of(ConfigField.Rest, restSeconds),
         rounds = of(ConfigField.Rounds, rounds),
         warmUpSeconds = of(ConfigField.WarmUp, warmUpSeconds),
@@ -256,6 +289,7 @@ fun IntervalConfig.withValue(field: ConfigField, value: Int): IntervalConfig {
         workStepSeconds = of(ConfigField.WorkStep, workStepSeconds),
         then = then,
         blockRestSeconds = of(ConfigField.BlockRest, blockRestSeconds),
+        capped = capped,
     )
 }
 
@@ -271,14 +305,14 @@ fun ConfigField.format(value: Int): String = when {
 
 /**
  * Same work, rest and rounds, ladder, warm-up and cool-down, sets and the rest between them, the blocks after the
- * first and the rest between blocks. The get-ready countdown is
+ * first and the rest between blocks, and the first a time cap or not. The get-ready countdown is
  * an app setting rather than part of a workout's shape, so presets match and apply regardless of it.
  */
 fun IntervalConfig.sameShape(other: IntervalConfig): Boolean =
     workSeconds == other.workSeconds && restSeconds == other.restSeconds && rounds == other.rounds &&
         warmUpSeconds == other.warmUpSeconds && coolDownSeconds == other.coolDownSeconds &&
         sets == other.sets && setRestSeconds == other.setRestSeconds && workStepSeconds == other.workStepSeconds &&
-        then == other.then && blockRestSeconds == other.blockRestSeconds
+        then == other.then && blockRestSeconds == other.blockRestSeconds && capped == other.capped
 
 /** Moves [field] one step in [direction] (+1 or -1), clamped to the field's range. */
 fun IntervalConfig.stepped(field: ConfigField, direction: Int): IntervalConfig =

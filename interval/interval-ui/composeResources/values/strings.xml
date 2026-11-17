@@ -17,6 +17,9 @@
     </plurals>
     <string name="config_then">%1$s, then %2$s</string>
     <string name="config_block_rest">%1$s between blocks</string>
+    <!-- A time cap: "20m cap", and with a rest after it "20m cap · 2m off". -->
+    <string name="config_cap">%1$s cap</string>
+    <string name="config_cap_rest">%1$s cap · %2$s off</string>
     <string name="config_ladder">%1$s on, %2$s a round · %3$s off · ×%4$d</string>
     <string name="config_step_up">+%1$s</string>
     <string name="config_step_down">−%1$s</string>
@@ -76,6 +79,11 @@
     <string name="field_work_step_edit">Edit ladder</string>
     <string name="field_work_step_less">Less work each round</string>
     <string name="field_work_step_more">More work each round</string>
+    <string name="field_cap_label">Time cap</string>
+    <string name="field_cap_hint">As many rounds as you can</string>
+    <string name="field_cap_edit">Edit time cap</string>
+    <string name="field_cap_less">A shorter cap</string>
+    <string name="field_cap_more">A longer cap</string>
     <string name="config_warm_up">%1$s warm-up</string>
     <string name="config_cool_down">%1$s cool-down</string>
     <string name="value_sheet_new_total">New total</string>

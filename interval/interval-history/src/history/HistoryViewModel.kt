@@ -333,6 +333,7 @@ private fun TimestampFormatter.item(
                 planned = plans.any { it.workoutId != null && it.workoutId == entry.id },
                 effort = entry.effort,
                 note = entry.note,
+                capRounds = entry.capRounds?.size?.takeIf { entry.config.hasCap },
             )
         }
 

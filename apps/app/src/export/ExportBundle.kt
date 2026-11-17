@@ -16,7 +16,8 @@ import kotlinx.serialization.Serializable
  * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
  * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`;
  * schema 12 the Lift exercise a flow's move is, `exercise`, and the day a one-off plan was moved from, `movedFromDay`,
- * the rest absent from older files). Lift's
+ * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`, the rest
+ * absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -39,7 +40,7 @@ data class ExportBundle(
     val flows: List<FlowExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 12
+        const val SCHEMA = 13
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -87,6 +88,8 @@ data class ConfigExport(
     /** A sequence's blocks after its first, which is the fields above; none, one block, and in schema 1 to 4. */
     val then: List<IntervalBlockExport> = emptyList(),
     val blockRestSeconds: Int = 0,
+    /** The first block is a time cap; false, and in files before schema 13. */
+    val capped: Boolean = false,
 )
 
 /** One block of a sequence after its first, as [ConfigExport] holds the first. */
@@ -98,6 +101,8 @@ data class IntervalBlockExport(
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
     val workStepSeconds: Int = 0,
+    /** As [ConfigExport.capped]. */
+    val capped: Boolean = false,
 )
 
 @Serializable
@@ -141,7 +146,13 @@ data class WorkoutExport(
     /** About how many snatches a set and the bell, both or neither; null for none, and in files before schema 11. */
     val snatchesPerSet: Int? = null,
     val snatchBellKg: Double? = null,
+    /** The rounds done in its time caps; null for none counted, and in files before schema 13. */
+    val capRounds: List<CapRoundExport>? = null,
 )
+
+/** A round done in a time cap: the cap's block (0-based), and how far into it, pauses left out. */
+@Serializable
+data class CapRoundExport(val block: Int, val atMillis: Long)
 
 /** A planned workout: [weekday] (1 Monday to 7 Sunday) when weekly, [epochDay] when once. */
 @Serializable

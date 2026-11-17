@@ -34,6 +34,9 @@
     <string name="preset_editor_saves_as">Saves as %1$s</string>
     <string name="preset_editor_same_shape">Same shape as %1$s</string>
     <string name="preset_editor_switch_hands">Switch hands</string>
+    <!-- A block's kind: a time cap, its rounds counted as they are done, rather than work and rest. -->
+    <string name="preset_editor_time_cap">Time cap</string>
+    <string name="preset_editor_time_cap_text">As many rounds as you can, tapped as each is done</string>
     <string name="preset_editor_switch_hands_text">Each work after the first is called with the other hand</string>
     <string name="preset_editor_timer_title">Edit workout</string>
     <string name="preset_editor_block">Block %1$d</string>

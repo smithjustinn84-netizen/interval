@@ -97,9 +97,12 @@ internal fun BottomControls(
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        BackButton(actions.onBack, Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height))
+        // A time cap runs as it was set: Undo takes Back's place, and there is no time to add.
+        val side = Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height)
+        val inCap = state.cap?.live == true
+        if (inCap) UndoRoundButton(actions.onUndoRound, side) else BackButton(actions.onBack, side)
         PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.weight(1f).heightIn(min = height))
-        AddTimeButton(actions.onAddTime, Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height))
+        if (!inCap) AddTimeButton(actions.onAddTime, side)
     }
 }
 

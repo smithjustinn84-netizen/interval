@@ -49,6 +49,8 @@ import dev.justinsmith.interval.presets.resources.preset_editor_save_as_preset
 import dev.justinsmith.interval.presets.resources.preset_editor_saves_as
 import dev.justinsmith.interval.presets.resources.preset_editor_switch_hands
 import dev.justinsmith.interval.presets.resources.preset_editor_switch_hands_text
+import dev.justinsmith.interval.presets.resources.preset_editor_time_cap
+import dev.justinsmith.interval.presets.resources.preset_editor_time_cap_text
 import dev.justinsmith.interval.presets.resources.preset_editor_timer_title
 import dev.justinsmith.interval.presets.resources.preset_editor_total
 import dev.justinsmith.interval.presets.resources.preset_name_count
@@ -67,6 +69,7 @@ import dev.justinsmith.interval.timer.storedName
 import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.timer.withBlockAdded
 import dev.justinsmith.interval.timer.withBlockMoved
+import dev.justinsmith.interval.timer.withCapped
 import dev.justinsmith.interval.timer.withValue
 import dev.justinsmith.interval.timer.withoutBlock
 import dev.justinsmith.interval.ui.AccentButton
@@ -110,7 +113,7 @@ data class PresetDraft(
     val alternateHands: Boolean = false,
 ) {
     /** Whether the preset saved from this draft switches hands: only one worked with a bell can. */
-    val handsKept: Boolean get() = alternateHands && config.activity == Activity.Kettlebell
+    val handsKept: Boolean get() = alternateHands && config.activity == Activity.Kettlebell && !config.hasCap
 
     companion object {
         /** A new, unnamed preset in [config]'s shape, to save the settings on the Timer. */
@@ -183,7 +186,10 @@ internal fun PresetEditor(
             draft.config,
             { editingKey = "0:${it.name}" },
             { choosingActivity = true },
-            hands = draft.alternateHands.takeIf { !timer && draft.config.activity == Activity.Kettlebell },
+            // A time cap's work is one interval, so it has no hands to switch between works.
+            hands = draft.alternateHands.takeIf {
+                !timer && draft.config.activity == Activity.Kettlebell && !draft.config.hasCap
+            },
             onHands = onAlternateHands,
         )
         EditorTotal(total)
@@ -302,8 +308,14 @@ private fun EditorBlocks(
                     )
                     RowDivider()
                 }
-                ConfigField.blockFields(block).forEachIndexed { row, field ->
-                    if (row > 0) RowDivider()
+                ToggleRow(
+                    stringResource(Res.string.preset_editor_time_cap),
+                    stringResource(Res.string.preset_editor_time_cap_text),
+                    checked = block.capped,
+                    onToggle = { onChangeShape { it.withCapped(!block.capped, index) } },
+                )
+                ConfigField.blockFields(block).forEach { field ->
+                    RowDivider()
                     FieldRow(field, block.valueOf(field), onClick = { onEditField(index, field) })
                 }
             }
@@ -523,9 +535,11 @@ private fun IntervalConfig.saved(): Map<String, Any?> = mapOf(
     WORK_STEP to workStepSeconds,
     // The blocks after the first, flat: a Bundle keeps an IntArray, not a list of them.
     THEN to then.flatMap {
-        listOf(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds)
+        val capped = if (it.capped) 1 else 0
+        listOf(it.workSeconds, it.restSeconds, it.rounds, it.sets, it.setRestSeconds, it.workStepSeconds, capped)
     }.toIntArray(),
     BLOCK_REST to blockRestSeconds,
+    CAPPED to capped,
 )
 
 private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
@@ -544,9 +558,18 @@ private fun Map<String, Any?>.restoredConfig(): IntervalConfig =
             .filter { it.size == BLOCK_VALUES }
             .map { values ->
                 val next = values.iterator()
-                Block.sanitized(next.next(), next.next(), next.next(), next.next(), next.next(), next.next())
+                Block.sanitized(
+                    next.next(),
+                    next.next(),
+                    next.next(),
+                    next.next(),
+                    next.next(),
+                    next.next(),
+                    capped = next.next() == 1,
+                )
             },
         blockRestSeconds = this[BLOCK_REST] as Int? ?: 0,
+        capped = this[CAPPED] as Boolean? ?: false,
     )
 
 private const val MODE = "mode"
@@ -565,4 +588,5 @@ private const val SET_REST = "set_rest"
 private const val WORK_STEP = "work_step"
 private const val THEN = "then"
 private const val BLOCK_REST = "block_rest"
-private const val BLOCK_VALUES = 6
+private const val BLOCK_VALUES = 7
+private const val CAPPED = "capped"

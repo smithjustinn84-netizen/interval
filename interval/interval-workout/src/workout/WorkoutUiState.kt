@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.workout
 
+import dev.justinsmith.interval.model.CapScore
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Course
@@ -68,6 +69,26 @@ data class FlowNow(
     val figures: Boolean = false,
 )
 
+/**
+ * A time cap as it stands on the workout screen, while the workout is in one: the [rounds] done in it, how long the
+ * round under way has run, [roundSeconds] (null outside the cap's work), the average round so far, [paceSeconds]
+ * (null before the first), the [best] of the same workout before this one (null with none counted), and whether it
+ * is [live], its work under way, so a round can be done.
+ */
+data class CapNow(
+    val rounds: Int,
+    val roundSeconds: Int?,
+    val paceSeconds: Int?,
+    val best: Int?,
+    val live: Boolean,
+)
+
+/** One time cap of the workout as done, its [score], beside the [best] of the same workout before it. */
+data class CapResult(val score: CapScore, val best: Int?) {
+    /** More rounds than ever before in it; never the first time, with nothing to beat. */
+    val newBest: Boolean get() = best != null && score.rounds > best
+}
+
 data class WorkoutUiState(
     val phase: Phase,
     val running: Boolean,
@@ -126,7 +147,14 @@ data class WorkoutUiState(
     val inBlockRest: Boolean = false,
     /** The flow the workout is, by its shape, with where it stands; null for any other workout. */
     val flow: FlowNow? = null,
+    /** The time cap the workout is in, null outside one ([Block.capped]). */
+    val cap: CapNow? = null,
+    /** Every time cap of the workout, with the rounds done in each; empty for a workout with none. */
+    val caps: List<CapResult> = emptyList(),
 ) {
+    /** The rounds done in every time cap. */
+    val capRounds: Int get() = caps.sumOf { it.score.rounds }
+
     /** What the summary counts, done and in all: a flow's moves, any other workout's rounds. */
     val countDone: Int get() = flow?.done ?: completedRounds
     val countOf: Int get() = flow?.of ?: rounds
@@ -157,8 +185,8 @@ data class WorkoutUiState(
     val isDone: Boolean get() = phase == Phase.Done || ended
     val paused: Boolean get() = !running && !isDone
 
-    /** Ending now keeps a summary and a history entry only once a round is finished. */
-    val hasProgress: Boolean get() = completedRounds > 0
+    /** Ending now keeps a summary and a history entry only once a round is finished, or one done in a cap. */
+    val hasProgress: Boolean get() = completedRounds > 0 || capRounds > 0
 
     /** The interval's last seconds are ticking down, with their beeps: the screen counts along. */
     val countingDown: Boolean get() = running && secondsLeft in 1..WorkoutEngine.COUNTDOWN_SECONDS

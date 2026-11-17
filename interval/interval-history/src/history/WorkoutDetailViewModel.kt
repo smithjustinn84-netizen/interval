@@ -8,11 +8,13 @@ import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.CapScore
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.model.scores
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices
@@ -58,6 +60,8 @@ data class FinishedWorkout(
     val heartRate: HeartRate? = null,
     /** "About how many snatches a set?", for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
+    /** Its time caps, each with the rounds done in it; empty for a workout with none counted. */
+    val caps: List<CapScore> = emptyList(),
 ) {
     /** What it is planned or repeated as: its preset's name, or its shape's. */
     val name: String get() = presetName ?: config.defaultPresetName()
@@ -184,6 +188,7 @@ class WorkoutDetailViewModel(
                 note = entry.note,
                 heartRate = entry.averageBpm?.let { average -> entry.peakBpm?.let { HeartRate(average, it) } },
                 snatches = if (names.asksSnatches(entry.config)) SnatchAsk.of(entry.snatches, history, bells) else null,
+                caps = entry.capRounds?.scores(entry.config).orEmpty(),
             )
         }
         return WorkoutDetailUiState(workout, dayChoices(today), weekdayOf(today))

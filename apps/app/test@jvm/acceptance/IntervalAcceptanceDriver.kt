@@ -317,6 +317,36 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         app.repository.history.history.value.any { it.config.workStepSeconds == step }
     }
 
+    /** Work's sheet makes the Timer's workout a time cap: one row, its rounds counted as they are done. */
+    fun makeTimeCap() {
+        tap("Work")
+        see("Quick picks")
+        tap(hasText("Time cap: as many rounds as you can") and hasClickAction())
+        see("Time cap")
+        seeNo("Rounds")
+    }
+
+    /** The time cap's row, then a quick pick on its sheet: "5:00". */
+    fun setCapTo(value: String) {
+        tap("Time cap")
+        see("Quick picks")
+        tap(value)
+        tap("Done")
+        see(hasText("Time cap") and hasText(value))
+    }
+
+    fun tapRoundDone() = tap(hasText("Round done") and hasClickAction())
+
+    fun undoRound() = tapDescribed("Take back the last round")
+
+    /** The rounds done in the cap so far, under its ring: "2 rounds". */
+    fun seeCapRounds(rounds: String) = see(rounds)
+
+    /** The workout History holds was kept as a time cap with [rounds] done in it. */
+    fun workoutKeptAsCap(rounds: Int) = waitFor("a time cap kept with $rounds rounds") {
+        app.repository.history.history.value.any { it.config.capped && it.capRounds?.size == rounds }
+    }
+
     /** The sets chip under the Timer's rows, then a quick pick on its sheet. */
     fun setSets(count: String) = setBookend("Sets", count)
 

@@ -12,6 +12,8 @@ import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.common_custom
 import dev.justinsmith.interval.ui.resources.common_joined
 import dev.justinsmith.interval.ui.resources.config_block_rest
+import dev.justinsmith.interval.ui.resources.config_cap
+import dev.justinsmith.interval.ui.resources.config_cap_rest
 import dev.justinsmith.interval.ui.resources.config_cool_down
 import dev.justinsmith.interval.ui.resources.config_description
 import dev.justinsmith.interval.ui.resources.config_ladder
@@ -64,9 +66,20 @@ fun configDescription(config: IntervalConfig): String {
     )
 }
 
-/** One block's rounds, "20s on · 10s off · ×8", with a ladder's step and its sets as [configDescription] says them. */
+/**
+ * One block's rounds, "20s on · 10s off · ×8", with a ladder's step and its sets as [configDescription] says them;
+ * a time cap's minutes, "20m cap", and its rest after when it has one, "20m cap · 2m off".
+ */
 @Composable
 fun blockDescription(block: Block): String {
+    if (block.capped) {
+        val cap = shortDurationText(block.workSeconds)
+        return if (block.restSeconds > 0) {
+            stringResource(Res.string.config_cap_rest, cap, shortDurationText(block.restSeconds))
+        } else {
+            stringResource(Res.string.config_cap, cap)
+        }
+    }
     val shape = if (block.isLadder) {
         stringResource(
             Res.string.config_ladder,

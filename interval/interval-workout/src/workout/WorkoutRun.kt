@@ -1,10 +1,16 @@
 package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.CourseSpan
+import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.WorkoutProgress
+import dev.justinsmith.interval.model.bestRounds
+import dev.justinsmith.interval.model.roundsIn
+import dev.justinsmith.interval.model.scores
+import dev.justinsmith.interval.model.withoutLastIn
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WorkoutStatus
 import dev.justinsmith.interval.timer.Flow
@@ -52,6 +58,8 @@ data class WorkoutRun(
     val note: String = "",
     /** About how many snatches a set, as counted on the summary; null until counted. */
     val snatches: SnatchCount? = null,
+    /** The rounds done in its time caps, each as it was done. */
+    val capRounds: List<CapRound> = emptyList(),
     /** The summary's words for the health store's note, as the screen put them. */
     val healthNotes: String? = null,
     /** Its heart rate as a watch recorded it in the health store, once read there: not saved, it is read again. */
@@ -124,7 +132,26 @@ data class WorkoutRun(
         effort = effort,
         note = note,
         snatches = snatches,
+        capRounds = capRounds,
     )
+
+    /** The rounds done in the time cap it is in; null outside one. */
+    val roundsInCap: Int? get() = if (engine.shape.capped) capRounds.roundsIn(engine.block) else null
+
+    /** A round is done now: kept, in the cap it is in, at the time into it. Only in a cap's work, while it runs. */
+    fun roundDone(): WorkoutRun {
+        if (over || !running || !engine.inCap) return this
+        return copy(capRounds = capRounds + CapRound(engine.block, engine.phaseMillis - engine.remainingMillis))
+    }
+
+    /** The last round done in the cap it is in, taken back, as a tap by mistake is. Only in a cap's work. */
+    fun roundUndone(): WorkoutRun = if (over ||
+        !engine.inCap
+    ) {
+        this
+    } else {
+        copy(capRounds = capRounds.withoutLastIn(engine.block))
+    }
 
     /**
      * What the notification shows of it: the phase, whether it is paused, the clock, the round and the bar, and the
@@ -147,24 +174,50 @@ data class WorkoutRun(
             shown.inBlockRest,
             flow,
             flow?.stepAt(engine),
+            roundsInCap.takeIf { engine.inCap },
+            config.blocks.indices.filterTo(mutableSetOf()) { config.blocks[it].capped },
         )
     }
 
-    /** The screen's view of it, its shape named after the one of [presets] it matches, or the one of [flows] it is. */
-    fun toUiState(presets: List<Preset>, flows: List<Flow>): WorkoutUiState = engine.toUiState(
-        running = running,
-        ended = ended,
-        presetName = presets.nameOf(config, flows),
-        flows = flows,
-        elapsedSeconds = activeSeconds,
-        presets = presets,
-        keepScreenOn = keepScreenOn,
-        calories = calories,
-        week = week,
-        leaving = leaving,
-        effort = effort,
-        note = note,
-    ).copy(heartRate = heartRate)
+    /**
+     * The screen's view of it, its shape named after the one of [presets] it matches, or the one of [flows] it is,
+     * and its time caps beside the best of the same workout in [history], its own entry left out.
+     */
+    fun toUiState(presets: List<Preset>, flows: List<Flow>, history: List<HistoryEntry> = emptyList()): WorkoutUiState =
+        engine.toUiState(
+            running = running,
+            ended = ended,
+            presetName = presets.nameOf(config, flows),
+            flows = flows,
+            elapsedSeconds = activeSeconds,
+            presets = presets,
+            keepScreenOn = keepScreenOn,
+            calories = calories,
+            week = week,
+            leaving = leaving,
+            effort = effort,
+            note = note,
+        ).copy(heartRate = heartRate).withCaps(history)
+
+    private fun WorkoutUiState.withCaps(history: List<HistoryEntry>): WorkoutUiState {
+        if (!config.hasCap) return this
+        val taps = this@WorkoutRun.capRounds
+        val before = history.filter { it.startedAtEpochMillis != startedAt }
+        val caps = taps.scores(config).map { CapResult(it, bestRounds(config, it.block, before)) }
+        val shown = caps.firstOrNull { it.score.block == engine.block }?.takeUnless { over }
+        val cap = shown?.let { result ->
+            val into = engine.phaseMillis - engine.remainingMillis
+            val last = taps.lastOrNull { it.block == engine.block }?.atMillis ?: 0L
+            CapNow(
+                rounds = result.score.rounds,
+                roundSeconds = ((into - last) / MILLIS_PER_SECOND).toInt().takeIf { engine.inCap },
+                paceSeconds = result.score.paceMillis?.let { (it / MILLIS_PER_SECOND).toInt() },
+                best = result.best,
+                live = engine.inCap,
+            )
+        }
+        return copy(cap = cap, caps = caps)
+    }
 
     /** When it ended: as its course closed, for the window its heart rate is read over. */
     val endedAt: Long get() = spans.lastOrNull()?.endEpochMillis ?: openSince
@@ -189,6 +242,7 @@ data class WorkoutRun(
                 effort = saved.effort,
                 note = saved.note,
                 snatches = saved.snatches,
+                capRounds = saved.capRounds,
                 keepScreenOn = keepScreenOn,
                 body = body,
             )

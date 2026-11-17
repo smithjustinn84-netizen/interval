@@ -339,6 +339,7 @@ opens either; they wait for the first open from the icon.
 | `warm-up-cool-down.xml` | Set a warm-up and a cool-down on the Timer, run the workout through both, and save its shape as a preset | `WarmUpCoolDownAcceptanceTest` |
 | `sets.xml` | Set two sets of three rounds with a minute between them on the Timer, run through the rest between sets, and verify the notification says the set | `SetsAcceptanceTest` |
 | `ladder.xml` | Set a climbing ladder on the Timer, run into the second round, and see its longer clock | `LadderAcceptanceTest` |
+| `time-cap.xml` | Make the Timer a five-minute cap, tap rounds and take one back, hear the cap's end with the screen off, and see the rounds on the summary and in the Log | `TimeCapAcceptanceTest` |
 | `sequence.xml` | Add a block from the Timer's Sets sheet, shape it and the rest between blocks in the editor, run into the second block (the notification says it), save it as a preset | `SequenceAcceptanceTest` (a seeded preset of two blocks run through; a block added on the Timer and run) |
 | `history.xml` | Set a weekly goal from the first run, end after a round, find it in Log and open it, see it on the month, clear the log | `HistoryAcceptanceTest` |
 | `plan-lift.xml` | Plan a session on Lift for today, start it from Up next, log a set and finish, find the plan done | `PlanLiftAcceptanceTest` |

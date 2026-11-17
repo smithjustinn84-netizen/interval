@@ -109,7 +109,8 @@ core/
 
 interval/            the interval timer
   interval-domain    packages `.timer` and `.model`: `IntervalConfig` (its `blocks` of rounds,
-                     `Block`), `Preset`, `Course` (every interval a config runs through, by block, set and
+                     `Block`, a `capped` one a time cap: one work interval, its rounds tapped as done, `CapRound`
+                     and `CapScore` in `model/CapRounds.kt`), `Preset`, `Course` (every interval a config runs through, by block, set and
                      round, which `WorkoutEngine` walks), calories, the
                      describe parser, `AppSettings`, `HistoryEntry` (its `SnatchCount`, 15:15's snatches as
                      counted, and `workEnds`), `PlannedWorkout`, `LiftWorkout`,
@@ -474,6 +475,17 @@ toolchain (`$compose.*`).
   dropped, never played out); it does so from the screen because only an app on show may start the service. The
   Log sheet's draft is in the entry's `SavedStateHandle`. The notification helpers both services share are
   `core/core-platform/src@android/platform/Notifications.kt`.
+- **Time caps**: a `Block` that is `capped` (the first block's flag is `IntervalConfig.capped`) is as many rounds as
+  you can in its `workSeconds`, whole minutes: it runs on the engine as one work interval, so `Course` and the engine
+  need nothing of their own, but for `Cue.Left` at five minutes and one left. Its rounds are taps, held on the run
+  (`WorkoutRun.capRounds`, a `CapRound` each: the block and the millis into it, pauses out, never a moment, so an
+  export keeps them), taken only in a running cap's work (`WorkoutSession.roundDone`, `undoRound`), saved at each
+  tap, since a tap is no change of course, and spoken as the cap ends (`Speech.CapOver`, "Time. 14 rounds. Rest").
+  A cap takes no Back nor added time. History keeps them (`HistoryEntry.capRounds`, the `cap_rounds` JSON column, Room
+  18; null is none counted, a hand-logged one, so it is never a best of none); the best is `bestRounds` among the
+  same shape. A cap is never asked about snatches (`asksSnatches`), nor shaped like a flow. The screen's part is
+  `WorkoutCap.kt` (`CapNow`, `CapResult` in `WorkoutUiState`); the Timer switches to one on Work's sheet, the editor
+  per block.
 - **Mobility flows**: a `Flow` (`interval-domain`, `timer/Flow.kt`) is a list of `Move`s, each named, timed, with
   a one-line cue, done on each side in turn when `sided`. It runs on the interval engine as the sequence
   `Flow.config` is (a move a block, a side a round, `Flow.SIDE_CHANGE_SECONDS` between sides and

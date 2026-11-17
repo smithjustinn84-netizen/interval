@@ -36,13 +36,14 @@ class QuickPicksTest {
             listOf("HIIT 30/30", "Swings on the minute", "Hangboard"),
             builtInPresets.fitting(10, onTimer, noFlows).names(),
         )
+        // Twenty minutes is the cap of twenty.
         assertEquals(
-            listOf("15:15 MVO2", "Long efforts", "HIIT 30/30"),
+            listOf("20-minute cap", "15:15 MVO2", "Long efforts"),
             builtInPresets.fitting(20, onTimer, noFlows).names(),
         )
         // Half an hour is five rounds on the mat.
         assertEquals(
-            listOf("Mat rounds", "15:15 MVO2", "Long efforts"),
+            listOf("Mat rounds", "20-minute cap", "15:15 MVO2"),
             builtInPresets.fitting(30, onTimer, noFlows).names(),
         )
     }
@@ -105,7 +106,7 @@ class QuickPicksTest {
     @Test
     fun `beside the program's day a preset fewer is offered`() {
         assertEquals(
-            listOf("15:15 MVO2", "Long efforts"),
+            listOf("20-minute cap", "15:15 MVO2"),
             builtInPresets.fitting(20, onTimer, noFlows, shown = 2).names(),
         )
     }

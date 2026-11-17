@@ -40,6 +40,8 @@ data class WorkoutProgress(
     val note: String = "",
     /** About how many snatches a set, as counted on the summary so far; null until counted. */
     val snatches: SnatchCount? = null,
+    /** The rounds done in its time caps so far, each kept as it is done. */
+    val capRounds: List<CapRound> = emptyList(),
 )
 
 /**

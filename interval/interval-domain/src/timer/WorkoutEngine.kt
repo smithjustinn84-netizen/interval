@@ -27,6 +27,9 @@ data class WorkoutState(
     /** The block of rounds this is in, whose sets and rounds [set] and [round] count. */
     val shape: Block get() = config.blocks[block]
 
+    /** In a time cap's work: the rounds are counted as they are done ([Block.capped]). */
+    val inCap: Boolean get() = phase == Phase.Work && shape.capped
+
     /** In the rest between one block and the next. */
     val inBlockRest: Boolean get() = config.isBlockRest(Interval(phase, set, round, 0, block))
 
@@ -53,6 +56,9 @@ sealed interface Cue {
 
     /** The midpoint of an interval longer than [WorkoutEngine.HALFWAY_MIN_SECONDS]. */
     data object Halfway : Cue
+
+    /** [minutes] left of a time cap, one of [WorkoutEngine.CAP_CALL_MINUTES], when the cap is longer than that. */
+    data class Left(val minutes: Int) : Cue
 
     /**
      * [set] is the set a work interval begins, 1-based, in a workout of sets; null for every other start. [block],
@@ -101,6 +107,9 @@ object WorkoutEngine {
     const val COUNTDOWN_SECONDS = 3
     const val HALFWAY_MIN_SECONDS = 30
     const val ADD_TIME_MILLIS = 10_000L
+
+    /** The minutes left of a time cap that are called aloud, each only in a cap longer than it. */
+    val CAP_CALL_MINUTES = listOf(5, 1)
 
     /** How far into an interval Back restarts it rather than going to the previous one. */
     const val BACK_RESTART_THRESHOLD_MILLIS = 2_000L
@@ -160,6 +169,12 @@ object WorkoutEngine {
             if (hasHalfway && !halfwayCued && after == length / 2) {
                 cues += Cue.Halfway
                 halfwayCued = true
+            }
+            if (state.inCap) {
+                CAP_CALL_MINUTES.lastOrNull { minutes ->
+                    val mark = minutes * SECONDS_PER_MINUTE
+                    length > mark && after <= mark && before > mark
+                }?.let { cues += Cue.Left(it) }
             }
         }
         return Step(state.copy(remainingMillis = left, halfwayCued = halfwayCued), cues)

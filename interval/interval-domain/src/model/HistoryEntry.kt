@@ -12,7 +12,9 @@ import dev.justinsmith.interval.timer.plannedWorkSeconds
  * stored under, null until it has been. [effort] and [note] are how it felt, as the user said on its summary;
  * null until they say. [startedAtEpochMillis] is when it began, null for one recorded before that was kept;
  * [averageBpm] and [peakBpm] its heart rate as a watch recorded it in the health store, null until read there.
- * [snatches] is about how many snatches a set it held and the bell, null until the lifter counts them.
+ * [snatches] is about how many snatches a set it held and the bell, null until the lifter counts them. [capRounds]
+ * are the rounds done in its time caps as they were done; null for one with no cap, or one whose rounds weren't
+ * counted (logged by hand), and empty for a cap run with none done.
  *
  * One done away from the app, or without the Timer, is logged after the fact by [loggedByHand]: run in full, its
  * work estimated from its plan and its start run back from the finish it was given.
@@ -30,6 +32,7 @@ data class HistoryEntry(
     val averageBpm: Int? = null,
     val peakBpm: Int? = null,
     val snatches: SnatchCount? = null,
+    val capRounds: List<CapRound>? = null,
 ) {
     /** When it began: as recorded, or for an older entry, its time run back from its finish, pauses left out. */
     val startedAt: Long get() = startedAtEpochMillis ?: (finishedAtEpochMillis - elapsedSeconds * MILLIS_PER_SECOND)

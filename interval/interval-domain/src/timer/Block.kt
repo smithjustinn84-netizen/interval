@@ -5,6 +5,9 @@ package dev.justinsmith.interval.timer
  * each round's work a ladder's step on from the one before. A workout is its bookends around its blocks
  * ([IntervalConfig.blocks]), run one after another. Whole seconds, each value in [IntervalConfig]'s ranges, or it
  * can't be made: one built from what was stored is made with [sanitized].
+ *
+ * A [capped] block is a time cap: as many rounds as fit, counted as they are done. It runs as one work interval of
+ * [workSeconds], whole minutes, then its [restSeconds] before the next block; one round of one set, no ladder.
  */
 data class Block(
     val workSeconds: Int,
@@ -15,6 +18,8 @@ data class Block(
     val setRestSeconds: Int = 0,
     /** The seconds each round works more than the one before (less when below 0), starting over with each set. */
     val workStepSeconds: Int = 0,
+    /** A time cap: one work interval of [workSeconds], its rounds counted as they are done rather than planned. */
+    val capped: Boolean = false,
 ) {
     init {
         require(workSeconds in IntervalConfig.WORK_RANGE) { "Work of $workSeconds s" }
@@ -24,6 +29,12 @@ data class Block(
         require(setRestSeconds in IntervalConfig.SET_REST_RANGE) { "Set rest of $setRestSeconds s" }
         require(workStepSeconds in IntervalConfig.WORK_STEP_RANGE) { "Ladder step of $workStepSeconds s" }
         require(workOf(rounds) in IntervalConfig.WORK_RANGE) { "Last round's work of ${workOf(rounds)} s" }
+        if (capped) {
+            require(workSeconds in IntervalConfig.CAP_RANGE && workSeconds % ConfigField.Cap.step == 0) {
+                "A cap of $workSeconds s"
+            }
+            require(rounds == 1 && sets == 1 && setRestSeconds == 0 && workStepSeconds == 0) { "A cap of rounds" }
+        }
     }
 
     /** A ladder: the rounds' work climbs or falls. */
@@ -32,9 +43,15 @@ data class Block(
     /** The work of [round] (1-based) of each set: [workSeconds], and a [workStepSeconds] more each round after. */
     fun workOf(round: Int): Int = workSeconds + (round - 1) * workStepSeconds
 
+    /** This block as a time cap of [IntervalConfig.DEFAULT_CAP_SECONDS], with no rest after it until one is set. */
+    fun asCapped(): Block = if (capped) this else capOf(IntervalConfig.DEFAULT_CAP_SECONDS)
+
+    /** This block as rounds of work and rest, the Timer's first workout's, from a cap; as it is otherwise. */
+    fun asIntervals(): Block = if (!capped) this else IntervalConfig().blocks.first()
+
     /** The value of [field], one of [FIELDS]. */
     fun valueOf(field: ConfigField): Int = when (field) {
-        ConfigField.Work -> workSeconds
+        ConfigField.Work, ConfigField.Cap -> workSeconds
         ConfigField.Rest -> restSeconds
         ConfigField.Rounds -> rounds
         ConfigField.Sets -> sets
@@ -47,12 +64,13 @@ data class Block(
     fun withValue(field: ConfigField, value: Int): Block {
         fun of(own: ConfigField, current: Int) = if (own == field) value else current
         return sanitized(
-            workSeconds = of(ConfigField.Work, workSeconds),
+            workSeconds = of(ConfigField.Cap, of(ConfigField.Work, workSeconds)),
             restSeconds = of(ConfigField.Rest, restSeconds),
             rounds = of(ConfigField.Rounds, rounds),
             sets = of(ConfigField.Sets, sets),
             setRestSeconds = of(ConfigField.SetRest, setRestSeconds),
             workStepSeconds = of(ConfigField.WorkStep, workStepSeconds),
+            capped = capped,
         )
     }
 
@@ -65,7 +83,12 @@ data class Block(
             ConfigField.Sets,
             ConfigField.SetRest,
             ConfigField.WorkStep,
+            ConfigField.Cap,
         )
+
+        /** A time cap of [seconds], taken to whole minutes in [IntervalConfig.CAP_RANGE], then [restSeconds]. */
+        fun capOf(seconds: Int, restSeconds: Int = 0): Block =
+            sanitized(workSeconds = seconds, restSeconds = restSeconds, rounds = 1, capped = true)
 
         /**
          * A block of these values, each taken to the nearest in its range, the ladder's step shortened so its last
@@ -78,7 +101,18 @@ data class Block(
             sets: Int = 1,
             setRestSeconds: Int = 0,
             workStepSeconds: Int = 0,
+            capped: Boolean = false,
         ): Block {
+            if (capped) {
+                val minute = ConfigField.Cap.step
+                val minutes = (workSeconds + minute / 2) / minute * minute
+                return Block(
+                    workSeconds = minutes.coerceIn(IntervalConfig.CAP_RANGE),
+                    restSeconds = restSeconds.coerceIn(IntervalConfig.REST_RANGE),
+                    rounds = 1,
+                    capped = true,
+                )
+            }
             val work = workSeconds.coerceIn(IntervalConfig.WORK_RANGE)
             val count = rounds.coerceIn(IntervalConfig.ROUNDS_RANGE)
             return Block(

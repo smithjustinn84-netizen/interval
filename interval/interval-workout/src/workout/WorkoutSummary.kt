@@ -354,7 +354,11 @@ private fun SummaryDetails(
                 )
                 val counted = if (state.flow != null) Res.string.workout_stat_moves else Res.string.workout_stat_rounds
                 Stat(
-                    stringResource(Res.string.workout_stat_rounds_value, countUp(state.countDone), state.countOf),
+                    if (state.caps.isNotEmpty()) {
+                        countUp(state.capRounds).toString()
+                    } else {
+                        stringResource(Res.string.workout_stat_rounds_value, countUp(state.countDone), state.countOf)
+                    },
                     stringResource(counted),
                     Modifier.weight(1f),
                 )
@@ -551,6 +555,10 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
  */
 @Composable
 private fun SummaryLines(state: WorkoutUiState, modifier: Modifier = Modifier) {
+    if (state.caps.isNotEmpty()) {
+        CapSummaryLines(state, modifier)
+        return
+    }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         val flow = state.flow
         Text(
@@ -621,7 +629,7 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
 
 /** The workout's name and shape: "Tabata · 20s on · 10s off · ×8", or "Custom · …" for one no preset has. */
 @Composable
-private fun shapeText(state: WorkoutUiState): String = stringResource(
+internal fun shapeText(state: WorkoutUiState): String = stringResource(
     Res.string.common_joined,
     presetNameOrCustom(state.presetName),
     workoutDescription(state.config),

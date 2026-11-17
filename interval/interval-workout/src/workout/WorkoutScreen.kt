@@ -78,6 +78,7 @@ import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.workout_end_confirm
 import dev.justinsmith.interval.workout.resources.workout_end_nothing
 import dev.justinsmith.interval.workout.resources.workout_end_progress
+import dev.justinsmith.interval.workout.resources.workout_end_progress_cap
 import dev.justinsmith.interval.workout.resources.workout_end_progress_moves
 import dev.justinsmith.interval.workout.resources.workout_end_title
 import dev.justinsmith.interval.workout.resources.workout_pause
@@ -99,6 +100,9 @@ internal class WorkoutActions(
     val onEnd: () -> Unit,
     /** Opens the page of the flow's move held or coming, over the running workout. */
     val onOpenMove: () -> Unit = {},
+    /** A round of the time cap is done, and the last one taken back. */
+    val onFinishRound: () -> Unit = {},
+    val onUndoRound: () -> Unit = {},
 )
 
 /**
@@ -128,6 +132,8 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
         onSkip = viewModel::skip,
         onBack = viewModel::back,
         onAddTime = viewModel::addTime,
+        onFinishRound = viewModel::roundDone,
+        onUndoRound = viewModel::undoRound,
         onRestart = viewModel::restart,
         onEndEarly = viewModel::endEarly,
         onSavePreset = viewModel::saveAsPreset,
@@ -153,7 +159,8 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
  * into its summary.
  *
  * With a keyboard (desktop, a Chromebook, a tablet's keyboard cover): Space or Enter pauses and
- * resumes, the arrow keys go back and skip, and Escape ends, the same as the End button.
+ * resumes, the arrow keys go back and skip, and Escape ends, the same as the End button. In a time cap, Enter is a
+ * round done and Backspace takes it back.
  *
  * [progress], how far through its interval the workout is, and the phase colour are providers read where they
  * are drawn: the one moves every tick and the other every frame of a crossfade, and neither recomposes the screen.
@@ -173,6 +180,8 @@ fun WorkoutScreen(
     progress: () -> Float = { 0f },
     onShare: (String) -> Unit = {},
     reflection: SummaryReflection = SummaryReflection(),
+    onFinishRound: () -> Unit = {},
+    onUndoRound: () -> Unit = {},
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
     // A flow's move read on its page while the workout runs on.
@@ -195,6 +204,17 @@ fun WorkoutScreen(
     val anchor = rememberLaneAnchor()
     // Key events only reach Compose through a focused node; take focus back after the dialog closes or summary arrives.
     LaunchedEffect(confirmingEnd, state.isDone) { if (!confirmingEnd) focus.requestFocus() }
+    // Built afresh each time: requestEnd reads this composition's state.
+    val actions = WorkoutActions(
+        onTogglePause,
+        onSkip,
+        onBack,
+        onAddTime,
+        onEnd = requestEnd,
+        onOpenMove = { readingMove = true },
+        onFinishRound = onFinishRound,
+        onUndoRound = onUndoRound,
+    )
     BoxWithConstraints(
         modifier
             .fillMaxSize()
@@ -202,29 +222,11 @@ fun WorkoutScreen(
             .focusRequester(focus)
             .onFocusChanged { rootFocused = it.isFocused }
             .focusable()
-            .workoutKeys(
-                enabled = !confirmingEnd,
-                isDone = state.isDone,
-                rootFocused = rootFocused,
-                onTogglePause = onTogglePause,
-                onBack = onBack,
-                onSkip = onSkip,
-                onEnd = requestEnd,
-                onExit = onExit,
-            ),
+            .workoutKeys(enabled = !confirmingEnd, state, rootFocused, actions, onExit),
     ) {
         val landscape = isLandscape
         WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
-        // Built afresh each time: requestEnd reads this composition's state.
-        val actions = WorkoutActions(
-            onTogglePause,
-            onSkip,
-            onBack,
-            onAddTime,
-            onEnd = requestEnd,
-            onOpenMove = { readingMove = true },
-        )
         if (state.isDone) {
             SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection)
         } else if (landscape) {
@@ -267,11 +269,20 @@ private fun MoveReading(state: WorkoutUiState, onClose: () -> Unit) {
     }
 }
 
-/** How far the workout got, as the End dialog says it: its rounds, or a flow's moves. */
+/** How far the workout got, as the End dialog says it: its rounds, a time cap's rounds done, or a flow's moves. */
 @Composable
-private fun endProgressText(state: WorkoutUiState): String = state.flow?.let {
-    pluralStringResource(Res.plurals.workout_end_progress_moves, it.of, it.done, it.of)
-} ?: pluralStringResource(Res.plurals.workout_end_progress, state.rounds, state.completedRounds, state.rounds)
+private fun endProgressText(state: WorkoutUiState): String = when {
+    state.flow != null ->
+        pluralStringResource(Res.plurals.workout_end_progress_moves, state.flow.of, state.flow.done, state.flow.of)
+
+    state.caps.isNotEmpty() -> pluralStringResource(
+        Res.plurals.workout_end_progress_cap,
+        state.capRounds,
+        state.capRounds,
+    )
+
+    else -> pluralStringResource(Res.plurals.workout_end_progress, state.rounds, state.completedRounds, state.rounds)
+}
 
 /**
  * The phase colour, crossfading as the phase changes: grey while paused, blue once done. For the
@@ -294,25 +305,26 @@ private fun phaseColor(state: WorkoutUiState, primary: Boolean): State<Color> {
 
 /**
  * Space or Enter pauses and resumes, the arrow keys go back and skip (only while the root workout surface
- * itself holds focus, so Tab/arrow navigation across controls stays intact), and Escape ends or exits.
+ * itself holds focus, so Tab/arrow navigation across controls stays intact), and Escape ends or exits. In a time
+ * cap Enter is a round done and Backspace takes it back.
  */
 private fun Modifier.workoutKeys(
     enabled: Boolean,
-    isDone: Boolean,
+    state: WorkoutUiState,
     rootFocused: Boolean,
-    onTogglePause: () -> Unit,
-    onBack: () -> Unit,
-    onSkip: () -> Unit,
-    onEnd: () -> Unit,
+    actions: WorkoutActions,
     onExit: () -> Unit,
 ): Modifier = onKeyEvent { event ->
+    val inCap = state.cap?.live == true
     val action = when {
-        isDone -> if (event.key == Key.Escape) onExit else null
-        event.key == Key.Escape -> onEnd
+        state.isDone -> if (event.key == Key.Escape) onExit else null
+        event.key == Key.Escape -> actions.onEnd
         !rootFocused -> null
-        event.key == Key.Spacebar || event.key == Key.Enter || event.key == Key.NumPadEnter -> onTogglePause
-        event.key == Key.DirectionLeft -> onBack
-        event.key == Key.DirectionRight -> onSkip
+        inCap && (event.key == Key.Enter || event.key == Key.NumPadEnter) -> actions.onFinishRound
+        inCap && event.key == Key.Backspace -> actions.onUndoRound
+        event.key == Key.Spacebar || event.key == Key.Enter || event.key == Key.NumPadEnter -> actions.onTogglePause
+        event.key == Key.DirectionLeft -> actions.onBack
+        event.key == Key.DirectionRight -> actions.onSkip
         else -> null
     }
     if (!enabled || event.type != KeyEventType.KeyDown || action == null) return@onKeyEvent false
@@ -354,11 +366,22 @@ private fun PortraitWorkout(
                 TapHint(state, Modifier.padding(top = Spacing.space12))
             }
         }
-        RoundDots(
-            state,
-            accent,
-            Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
-        )
+        val cap = state.cap
+        if (cap == null) {
+            RoundDots(
+                state,
+                accent,
+                Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
+            )
+        } else {
+            CapTally(cap, Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8))
+            RoundDoneButton(
+                state,
+                primaryFill,
+                actions.onFinishRound,
+                Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
+            )
+        }
         BottomControls(
             state = state,
             primaryFill = primaryFill,
@@ -390,7 +413,11 @@ private fun LandscapeWorkout(
             verticalArrangement = Arrangement.SpaceBetween,
         ) {
             EndPill(actions.onEnd, Modifier.fillMaxWidth())
-            BackButton(actions.onBack, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            if (state.cap?.live == true) {
+                UndoRoundButton(actions.onUndoRound, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            } else {
+                BackButton(actions.onBack, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            }
         }
         BoxWithConstraints(
             Modifier
@@ -416,7 +443,11 @@ private fun LandscapeWorkout(
         ) {
             SkipPill(actions.onSkip, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            if (state.cap?.live == true) {
+                RoundDoneButton(state, primaryFill, actions.onFinishRound, Modifier.fillMaxWidth())
+            } else {
+                AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
+            }
             PrimaryButton(
                 state,
                 primaryFill,

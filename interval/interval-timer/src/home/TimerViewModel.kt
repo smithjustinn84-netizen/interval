@@ -12,6 +12,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepped
+import dev.justinsmith.interval.timer.withCapped
 import dev.justinsmith.interval.timer.withValue
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -56,6 +57,11 @@ class TimerViewModel(private val settingsStore: SettingsStore, private val prese
 
     fun set(field: ConfigField, value: Int) {
         settingsStore.updateConfig { it.withValue(field, value) }
+    }
+
+    /** The workout as one time cap, or with [capped] false as rounds of work and rest again: each kind's default. */
+    fun setCapped(capped: Boolean) {
+        settingsStore.updateConfig { it.withCapped(capped) }
     }
 
     /** Puts [config] onto the Timer, keeping the get-ready countdown, as a preset does. */

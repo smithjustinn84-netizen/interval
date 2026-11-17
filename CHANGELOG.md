@@ -7,6 +7,14 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A time cap on the Timer: as many rounds as you can in so many minutes. Work's sheet makes the workout one, and
+  the editor makes any block of a sequence one ("10 min cap, 2 min rest, 10 min cap"). It runs as one countdown
+  with a big Round done under the ring, which counts the rounds as you tap it, with the best of the same workout
+  and the pace of the round under way beside the average; Undo takes a tap back. Five minutes and one minute left
+  are called, and the end says "Time. 14 rounds." The summary says "14 rounds in 20 min", or a new best, with the
+  average, fastest and slowest round, and the Log keeps every round's time, on the workout's row and its page.
+  A "20-minute cap" preset ships with it. The rounds survive the app being killed mid-cap, go in the export (schema
+  13), and the notification says the rounds done. A cap is never asked about snatches.
 - Progress over months at a glance. An exercise's page draws its best each session as a line over its latest 24
   sessions, not bars over 10. A lift with a bell is measured by its best set's weight times reps, so more reps at
   the same bell climb ("Latest 16 kg × 12", "From 16 kg × 5"), and a dashed rule marks each move to another

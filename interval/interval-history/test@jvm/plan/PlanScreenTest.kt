@@ -161,7 +161,7 @@ class PlanScreenTest {
         // The routine's chip says Tabata too: take the sheet's choice.
         onNode(hasText("Tabata") and isSelectable()).performClick()
         // The routine's Friday row is read "Friday" too: take the sheet's toggle.
-        onNode(hasContentDescription("Friday") and isToggleable()).performClick()
+        onNode(hasContentDescription("Friday") and isToggleable()).performScrollTo().performClick()
         clickAdd()
         assertEquals(listOf("weekly Tabata [3, 5]"), events)
     }
@@ -206,7 +206,7 @@ class PlanScreenTest {
         setThemedContent { Screen(state) }
         onNodeWithText("Add on a date").performClick()
         onNodeWithText("On the Timer").performClick()
-        onNodeWithContentDescription("Saturday · 17").performClick()
+        onNodeWithContentDescription("Saturday · 17").performScrollTo().performClick()
         clickAdd()
         assertEquals(listOf("once 40/20 ×6 ${TODAY + 2}"), events)
     }

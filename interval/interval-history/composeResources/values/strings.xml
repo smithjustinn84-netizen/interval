@@ -18,6 +18,11 @@
     <string name="history_time">Time</string>
     <string name="history_calories">Calories</string>
     <string name="history_calories_value">%1$d kcal</string>
+    <!-- A time cap's rounds on its row in the Log. -->
+    <plurals name="history_cap_rounds">
+        <item quantity="one">%1$d round</item>
+        <item quantity="other">%1$d rounds</item>
+    </plurals>
     <string name="history_ended_early">ended early</string>
     <string name="history_today">Today</string>
     <string name="history_yesterday">Yesterday</string>
@@ -165,6 +170,11 @@
     <string name="plan_describe_no_day">No day, so it stays off the plan</string>
     <string name="detail_total">Total</string>
     <string name="detail_work">Work</string>
+    <!-- A finished time cap's figures: its rounds in its minutes, the average round, the fastest and slowest. -->
+    <string name="detail_cap_rounds">Rounds in %1$d min</string>
+    <string name="detail_cap_pace">A round</string>
+    <string name="detail_cap_splits">Fastest %1$s · slowest %2$s</string>
+    <string name="detail_cap_block">Block %1$d</string>
     <string name="detail_average_heart_rate">Avg heart rate</string>
     <string name="detail_peak_heart_rate">Peak heart rate</string>
     <string name="detail_bpm_value">%1$d bpm</string>

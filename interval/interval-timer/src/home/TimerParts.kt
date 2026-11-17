@@ -211,7 +211,9 @@ internal fun ColumnScope.StepperRows(
     fillHeight: Boolean = true,
 ) {
     val ladder = ladderNote(config)
-    ConfigField.shape.forEachIndexed { index, field ->
+    // A time cap is its one length: no rest after it to time, no rounds or sets to count ahead.
+    val fields = if (config.capped) listOf(ConfigField.Cap) else ConfigField.shape
+    fields.forEachIndexed { index, field ->
         if (index > 0) Spacer(Modifier.size(Spacing.space8))
         StepperRow(
             field,
@@ -223,7 +225,8 @@ internal fun ColumnScope.StepperRows(
         )
     }
     Spacer(Modifier.size(Spacing.space8))
-    BookendRow(config, onEdit, fields = listOf(ConfigField.Sets) + ConfigField.bookends)
+    val chips = if (config.capped) ConfigField.bookends else listOf(ConfigField.Sets) + ConfigField.bookends
+    BookendRow(config, onEdit, fields = chips)
 }
 
 /**

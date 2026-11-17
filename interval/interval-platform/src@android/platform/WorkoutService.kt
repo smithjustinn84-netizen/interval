@@ -176,6 +176,7 @@ class WorkoutService :
         // The warm-up and cool-down are outside the rounds: no "Round 1 of 8" under them.
         val bookend = status.phase == Phase.WarmUp || status.phase == Phase.CoolDown
         val step = status.step
+        val capRounds = status.capRounds
         val text = when {
             // A flow says its move, and where it is among them, in place of the phase and the round.
             step != null -> getString(
@@ -185,6 +186,22 @@ class WorkoutService :
             )
 
             bookend -> phase
+
+            // A cap says the rounds done in it, after its block in a workout of blocks.
+            capRounds != null -> {
+                val rounds = capRoundsText(capRounds)
+                if (status.blocks.size > 1) {
+                    getString(
+                        Res.string.notification_workout_block_text,
+                        phase,
+                        status.block + 1,
+                        status.blocks.size,
+                        rounds,
+                    )
+                } else {
+                    getString(Res.string.common_joined, phase, rounds)
+                }
+            }
 
             // A workout of blocks says the block, then the set and round as the screen does.
             status.blocks.size > 1 -> getString(

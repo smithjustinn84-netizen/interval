@@ -8,8 +8,9 @@ import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_13_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_14_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
@@ -325,7 +326,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_13_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_14_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())
@@ -357,6 +358,39 @@ class AppDataImporterTest {
         val source = stocked()
         val file = source.file().content
         val content = file.replace("\"peakBpm\": 172", "\"peakBpm\": 900")
+        assertTrue(content != file)
+        assertEquals(
+            ImportReview.Unreadable,
+            Phone(now).importer.review(ShareableFile("x.json", "application/json", content)),
+        )
+    }
+
+    /** A phone with a preset of two time caps and a workout of it, with its rounds. */
+    private suspend fun capped(): Phone = Phone(now).apply {
+        val caps = IntervalConfig(workSeconds = 600, restSeconds = 0, rounds = 1, capped = true)
+            .withBlocks(listOf(IntervalBlock.capOf(600, 120), IntervalBlock.capOf(300)))
+        intervals.presets.savePreset(Preset("Two caps", caps))
+        intervals.history.recordWorkout(
+            caps,
+            elapsedSeconds = 1030,
+            workSeconds = 900,
+            capRounds = listOf(CapRound(0, 80_000), CapRound(0, 170_000), CapRound(1, 60_000)),
+        )
+    }
+
+    @Test
+    fun `a time cap and its rounds come across`() = runTest {
+        val source = capped()
+        val target = Phone(now + 1)
+        target.importer.import(source.file(), withSettings = false)
+        assertEquals(source.contents(), target.contents())
+        assertEquals(3, target.intervals.history.history.value.single().capRounds?.size)
+    }
+
+    @Test
+    fun `a cap's rounds out of order make the file unreadable`() = runTest {
+        val file = capped().file().content
+        val content = file.replace("\"atMillis\": 80000", "\"atMillis\": 990000")
         assertTrue(content != file)
         assertEquals(
             ImportReview.Unreadable,

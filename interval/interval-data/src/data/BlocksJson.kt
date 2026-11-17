@@ -22,11 +22,14 @@ internal class StoredBlock(
     val sets: Int = 1,
     val setRestSeconds: Int = 0,
     val workStepSeconds: Int = 0,
+    /** A time cap; false in what was stored before caps. */
+    val capped: Boolean = false,
 ) {
-    fun toDomain() = Block.sanitized(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)
+    fun toDomain() = Block.sanitized(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds, capped)
 }
 
-internal fun Block.stored() = StoredBlock(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds)
+internal fun Block.stored() =
+    StoredBlock(workSeconds, restSeconds, rounds, sets, setRestSeconds, workStepSeconds, capped)
 
 /** [blocks] as the text a column or preference holds: "[]" for none. */
 internal fun encodeBlocks(blocks: List<Block>): String = json.encodeToString(blocks.map { it.stored() })

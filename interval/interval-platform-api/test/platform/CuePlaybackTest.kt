@@ -21,6 +21,7 @@ class CuePlaybackTest {
         Cue.PhaseStarted(Phase.Work, lastRound = false, set = 2),
         Cue.PhaseStarted(Phase.SetRest, lastRound = false, block = 2),
         Cue.PhaseStarted(Phase.Work, lastRound = false, block = 2),
+        Cue.Left(5),
         Cue.Finished,
     )
 
@@ -31,6 +32,19 @@ class CuePlaybackTest {
     }
 
     private fun played(cue: Cue, settings: CueSettings) = RecordingCuePlayer().also { playCue(cue, settings, it) }
+
+    @Test
+    fun `a cap's end says its rounds before the next line but never before a count`() {
+        val player = RecordingCuePlayer()
+        playCue(Cue.Countdown(1), CueSettings(), player, capOver = 7)
+        playCue(Cue.PhaseStarted(Phase.Rest, lastRound = false), CueSettings(), player, capOver = 7)
+        assertEquals(listOf(Speech.Countdown(1), Speech.CapOver(7, Speech.Rest)), player.spoken)
+    }
+
+    @Test
+    fun `minutes left are said`() {
+        assertEquals(listOf<Speech>(Speech.Left(1)), played(Cue.Left(1), CueSettings()).spoken)
+    }
 
     @Test
     fun `no output plays while its switch is off`() {

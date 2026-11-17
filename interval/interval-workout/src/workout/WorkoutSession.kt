@@ -127,16 +127,42 @@ class WorkoutSession(
         checkpoint()
     }
 
+    /** Restarts the interval, or goes to the one before; not in a time cap, whose rounds count from its start. */
     fun back() {
-        val current = run?.takeUnless { it.over } ?: return
-        val moved = current.copy(engine = WorkoutEngine.back(current.engine))
+        val current = run?.takeUnless { it.over || it.engine.inCap } ?: return
+        val back = WorkoutEngine.back(current.engine)
+        // Never back into a cap, whose rounds are done: the interval under way starts again instead.
+        val engine = if (back.inCap) current.engine.copy(remainingMillis = current.engine.phaseMillis) else back
+        val moved = current.copy(engine = engine)
         run = if (moved.running) moved.turned(moved.engine.phase, clock.nowMillis()) else moved
         checkpoint()
     }
 
+    /** Adds time to the interval; not to a time cap, which is as long as it was set. */
     fun addTime() {
-        val current = run?.takeUnless { it.over } ?: return
+        val current = run?.takeUnless { it.over || it.engine.inCap } ?: return
         run = current.copy(engine = WorkoutEngine.addTime(current.engine))
+        checkpoint()
+    }
+
+    /**
+     * A round of the time cap under way is done: kept at once, since a round is no change of course and a process
+     * killed before the next would lose it. Nothing outside a cap's work, or while paused.
+     */
+    fun roundDone() {
+        val current = run ?: return
+        val done = current.roundDone()
+        if (done === current) return
+        run = done
+        checkpoint()
+    }
+
+    /** Takes back the last round done in the time cap under way, a tap by mistake. */
+    fun undoRound() {
+        val current = run ?: return
+        val undone = current.roundUndone()
+        if (undone == current) return
+        run = undone
         checkpoint()
     }
 
@@ -151,7 +177,7 @@ class WorkoutSession(
         when {
             current.engine.phase == Phase.CoolDown -> skip()
 
-            current.engine.completedRounds > 0 -> {
+            current.engine.completedRounds > 0 || current.capRounds.isNotEmpty() -> {
                 ticker.stop()
                 val stopped = current.copy(running = false, ended = true).turned(phase = null, clock.nowMillis())
                 run = recorder.finished(stopped, endedEarly = true)
@@ -250,7 +276,9 @@ class WorkoutSession(
     private fun applyStep(step: Step) {
         val before = run ?: return
         val next = before.stepped(step, clock.nowMillis())
-        play(step.cues, next.engine)
+        // A cap left, its time up or skipped, says the rounds done in it before what comes next.
+        val leftCap = before.engine.inCap && (!next.engine.inCap || next.engine.block != before.engine.block)
+        play(step.cues, next.engine, capOver = if (leftCap) before.roundsInCap else null)
         if (next.engine.isDone) {
             ticker.stop()
             val finished = recorder.finished(next.turned(phase = null, clock.nowMillis()), endedEarly = false)
@@ -265,14 +293,18 @@ class WorkoutSession(
 
     /**
      * Plays [cues] as the user has them switched on; in a flow, in the words of the move [state] has reached, and in
-     * a preset worked a hand at a time with every work but the workout's first a change of hands.
+     * a preset worked a hand at a time with every work but the workout's first a change of hands. [capOver] is the
+     * rounds of a time cap these cues end.
      */
-    private fun play(cues: List<Cue>, state: WorkoutState) {
+    private fun play(cues: List<Cue>, state: WorkoutState, capOver: Int? = null) {
         if (cues.isEmpty()) return
         val step = flowStore.flows.value.matching(state.config)?.stepAt(state)
         val first = state.block == 0 && state.set == 1 && state.round == 1
         val switchHands = !first && presetStore.presets.value.alternateHands(state.config)
-        cues.forEach { playCue(it, settingsStore.cueSettings.value, player, step, switchHands) }
+        cues.forEach { cue ->
+            val ends = capOver.takeIf { cue is Cue.PhaseStarted || cue == Cue.Finished }
+            playCue(cue, settingsStore.cueSettings.value, player, step, switchHands, ends)
+        }
     }
 
     /** Keeps the workout going and in view off screen, or lets it go; the platform hears of each once. */

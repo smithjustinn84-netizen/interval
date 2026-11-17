@@ -26,6 +26,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** The editor over [PresetsScreen], opened from a row's sheet, the + or the Timer card's "Save as preset". */
+@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class PresetEditorTest {
     private val saved = mutableListOf<Preset>()
     private val savedCurrent = mutableListOf<Preset>()
@@ -235,5 +236,24 @@ class PresetEditorTest {
         onNodeWithText("Switch hands").performScrollTo().performClick()
         saveInEditor()
         assertEquals(true, saved.single().alternateHands)
+    }
+
+    @Test
+    fun `a block made a time cap saves as twenty minutes and asks nothing of hands`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Activity").performScrollTo().performClick()
+        onNodeWithText("Kettlebell").performScrollTo().performClick()
+        onNodeWithText("Switch hands").performScrollTo().assertExists()
+        onNodeWithText("As many rounds as you can, tapped as each is done").performScrollTo().performClick()
+        onNodeWithText("20:00").performScrollTo().assertExists()
+        onNodeWithText("Rounds").assertDoesNotExist()
+        onNodeWithText("Switch hands").assertDoesNotExist()
+        saveInEditor()
+        val config = saved.single().config
+        assertEquals(true, config.capped)
+        assertEquals(1200, config.workSeconds)
+        assertEquals(false, saved.single().alternateHands)
     }
 }
