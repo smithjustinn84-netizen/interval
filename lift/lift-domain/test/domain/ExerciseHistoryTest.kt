@@ -125,14 +125,17 @@ class ExerciseTrendTest {
         )
         // 16 kg from 8 to 12 reps, 20 kg from 5 to 6, then back to 16 kg for one session.
         assertEquals(listOf(0.0, 1.0, 0.0, 1.0, 0.5), exerciseTrend(BuiltInExercise.Press, recent)?.heights)
-        assertEquals(listOf(16.0, 20.0, 16.0), exerciseTrend(BuiltInExercise.Press, recent)?.bells)
+        assertEquals(
+            listOf(16.0 to 12, 20.0 to 6, 16.0 to 6),
+            exerciseTrend(BuiltInExercise.Press, recent)?.latestAtBells?.map { it.kg to it.reps },
+        )
         val pushUps = listOf(
             session(3_000, set(BuiltInExercise.PushUp, 0.0, 20)),
             session(2_000, set(BuiltInExercise.PushUp, 0.0, 15)),
             session(1_000, set(BuiltInExercise.PushUp, 0.0, 10)),
         )
         assertEquals(listOf(0.0, 0.5, 1.0), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.heights)
-        assertEquals(emptyList(), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.bells)
+        assertEquals(emptyList(), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.latestAtBells)
     }
 
     @Test

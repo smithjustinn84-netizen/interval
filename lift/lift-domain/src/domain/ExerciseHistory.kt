@@ -100,11 +100,15 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
         }
 
     /**
-     * The bell of each stretch of a [TrendMeasure.Work] trend, in kg, oldest first: the first point's, then each of
-     * [bellChanges]'. Empty for the other measures.
+     * The latest point at each bell, a stretch between [bellChanges], oldest first: the last of each stretch, how far
+     * the lift got at that bell before moving on (or, at the last, so far). Empty for the other measures.
      */
-    val bells: List<Double>
-        get() = if (measure != TrendMeasure.Work) emptyList() else (listOf(0) + bellChanges).map { points[it].kg }
+    val latestAtBells: List<TrendPoint>
+        get() = if (measure != TrendMeasure.Work) {
+            emptyList()
+        } else {
+            (bellChanges.map { it - 1 } + points.lastIndex).map { points[it] }
+        }
 
     /**
      * Each point's height on the line, from 0 at the bottom to 1 at the top, scaled within its own bell: the points

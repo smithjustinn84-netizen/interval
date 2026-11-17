@@ -24,9 +24,9 @@ import dev.justinsmith.interval.ui.IntervalTheme
  * the first point a quiet dot, the latest one in the accent, and each point in [marks], by its place, a dashed rule
  * top to bottom with a quiet dot where the line starts again (a lift gone to another bell, whose stretch is scaled
  * on its own), and each of [labels], one a stretch from the first point and then each mark's, over its stretch's
- * start in a band above the line (one that would run into the label before it is left out). An exercise's best each
- * session on its page. It reads as one node, [description] its words for a
- * screen reader.
+ * start in a band above the line: its whole text where that ends before the next stretch, else its short one (left
+ * out if even that would run into the label before it). An exercise's best each session on its page. It reads as one
+ * node, [description] its words for a screen reader.
  */
 @Composable
 fun Sparkline(
@@ -34,7 +34,7 @@ fun Sparkline(
     description: String,
     modifier: Modifier = Modifier,
     marks: List<Int> = emptyList(),
-    labels: List<String> = emptyList(),
+    labels: List<SparklineLabel> = emptyList(),
 ) {
     val palette = IntervalTheme.palette
     val measurer = rememberTextMeasurer()
@@ -81,23 +81,29 @@ fun Sparkline(
     )
 }
 
+/** A stretch's label: [text] where there is room for it, [short] where there isn't. */
+data class SparklineLabel(val text: String, val short: String = text)
+
 /**
- * Each label over its stretch's start, by [starts], the place of each stretch's first point: kept inside the width,
+ * Each label over its stretch's start, by [starts], the place of each stretch's first point: its whole text where
+ * that ends before the next stretch starts (the last before the width), else its short one, kept inside the width
  * and left out where it would run into the one before.
  */
 private fun placeLabels(
-    labels: List<String>,
+    labels: List<SparklineLabel>,
     starts: List<Int>,
     points: List<Offset>,
     width: Float,
     measure: (String) -> TextLayoutResult,
 ): List<Pair<TextLayoutResult, Offset>> {
     var end = 0f
-    return labels.zip(starts).mapNotNull { (label, start) ->
-        val point = points.getOrNull(start) ?: return@mapNotNull null
-        val text = measure(label)
+    return labels.zip(starts).mapIndexedNotNull { i, (label, start) ->
+        val point = points.getOrNull(start) ?: return@mapIndexedNotNull null
+        val room = starts.getOrNull(i + 1)?.let { points.getOrNull(it)?.x } ?: width
+        val whole = measure(label.text)
+        val text = if (point.x + whole.size.width + whole.size.height <= room) whole else measure(label.short)
         val x = point.x.coerceAtMost(width - text.size.width).coerceAtLeast(0f)
-        if (end > 0f && x < end) return@mapNotNull null
+        if (end > 0f && x < end) return@mapIndexedNotNull null
         end = x + text.size.width + text.size.height
         text to Offset(x, 0f)
     }
