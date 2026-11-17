@@ -98,6 +98,23 @@ class ExerciseTrendTest {
     }
 
     @Test
+    fun `a trend marks where it went to another bell`() {
+        val recent = listOf(
+            session(4_000, set(BuiltInExercise.Press, 16.0, 6)),
+            session(3_000, set(BuiltInExercise.Press, 20.0, 5)),
+            session(2_000, set(BuiltInExercise.Press, 16.0, 12)),
+            session(1_000, set(BuiltInExercise.Press, 16.0, 8)),
+        )
+        // Up to 20 kg in the third session, back to 16 kg in the fourth.
+        assertEquals(listOf(2, 3), exerciseTrend(BuiltInExercise.Press, recent)?.bellChanges)
+        val pushUps = listOf(
+            session(2_000, set(BuiltInExercise.PushUp, 0.0, 15)),
+            session(1_000, set(BuiltInExercise.PushUp, 0.0, 12)),
+        )
+        assertEquals(emptyList(), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.bellChanges)
+    }
+
+    @Test
     fun `a tie of work goes to the heavier bell`() {
         val recent = listOf(
             session(2_000, set(BuiltInExercise.TwoHandSwing, 16.0, 15), set(BuiltInExercise.TwoHandSwing, 24.0, 10)),

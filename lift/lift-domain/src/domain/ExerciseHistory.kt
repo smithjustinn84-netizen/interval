@@ -87,6 +87,18 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
 
     val first: TrendPoint get() = points.first()
 
+    /**
+     * The points, by their place, where a [TrendMeasure.Work] trend went to another bell than the session before's:
+     * the work falls there when the bell goes up (16 kg × 12 to 20 kg × 5), which is progress, not a dip. Empty for
+     * the other measures.
+     */
+    val bellChanges: List<Int>
+        get() = if (measure != TrendMeasure.Work) {
+            emptyList()
+        } else {
+            points.indices.drop(1).filter { points[it].kg != points[it - 1].kg }
+        }
+
     val latest: Double get() = points.last().value
 }
 

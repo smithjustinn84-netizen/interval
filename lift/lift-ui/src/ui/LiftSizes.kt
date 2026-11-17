@@ -33,6 +33,7 @@ object LiftSizes {
     val sparkline = 56.dp
     val sparklineStroke = 2.dp
     val sparklineDot = 6.dp
+    val sparklineMark = 1.dp
 
     /** The grip's four weeks on Lift's Grip card: short bars under its lines. */
     val gripChart = 48.dp

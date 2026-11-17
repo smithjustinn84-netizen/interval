@@ -9,7 +9,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ### Added
 - Progress over months at a glance. An exercise's page draws its best each session as a line over its latest 24
   sessions, not bars over 10. A lift with a bell is measured by its best set's weight times reps, so more reps at
-  the same bell climb ("Latest 16 kg × 12", "From 16 kg × 5"). Lift's Grip card charts the last four weeks, this
+  the same bell climb ("Latest 16 kg × 12", "From 16 kg × 5"), and a dashed rule marks each move to another
+  bell, where the line falls for a heavier one. Lift's Grip card charts the last four weeks, this
   one against a dashed usual week, and fills this week in when it is too much, too soon.
 - A plan moves to another day when its own won't do. A missed one has "Move" on its row in the Log, and today's
   workout has "Not today" under its Start. Either opens the week ahead, each day saying what it holds, with the

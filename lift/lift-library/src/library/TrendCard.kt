@@ -19,6 +19,7 @@ import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.detail_trend
 import dev.justinsmith.lift.library.resources.detail_trend_cd
 import dev.justinsmith.lift.library.resources.detail_trend_from
+import dev.justinsmith.lift.library.resources.detail_trend_from_bells
 import dev.justinsmith.lift.library.resources.detail_trend_latest
 import dev.justinsmith.lift.library.resources.detail_trend_reps
 import dev.justinsmith.lift.library.resources.detail_trend_span
@@ -29,7 +30,8 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * The exercise's best each session as a line, oldest first, the latest in the accent: the best set's weight times
- * reps, the reps or the hold as the trend counts it, with where it started under it. Under the records on the
+ * reps, the reps or the hold as the trend counts it, each move to another bell marked, with where it started under
+ * it. Under the records on the
  * exercise's page.
  */
 @Composable
@@ -56,9 +58,13 @@ internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
             min = trend.min.toFloat(),
             max = trend.max.toFloat(),
             description = stringResource(Res.string.detail_trend_cd, values.joinToString()),
+            marks = trend.bellChanges,
         )
         Text(
-            stringResource(Res.string.detail_trend_from, values.first()),
+            stringResource(
+                if (trend.bellChanges.isEmpty()) Res.string.detail_trend_from else Res.string.detail_trend_from_bells,
+                values.first(),
+            ),
             style = IntervalTheme.type.caption,
             color = palette.textDim,
         )
