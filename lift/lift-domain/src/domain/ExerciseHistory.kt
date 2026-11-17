@@ -111,6 +111,20 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
         }
 
     /**
+     * The place of the best point at each bell, a stretch between [bellChanges], oldest first: its highest, the
+     * later of two alike, so where the lift got to its best and stayed there it is the latest. Empty for the other
+     * measures.
+     */
+    val bestAtBells: List<Int>
+        get() = if (measure != TrendMeasure.Work) {
+            emptyList()
+        } else {
+            (listOf(0) + bellChanges).zip(bellChanges + points.size).map { (from, until) ->
+                (from until until).reversed().maxBy { points[it].value }
+            }
+        }
+
+    /**
      * Each point's height on the line, from 0 at the bottom to 1 at the top, scaled within its own bell: the points
      * between one [bellChanges] and the next run from their lowest to their highest, so the reps climbing at each
      * bell show, not one bell's work against another's. A stretch all of one value, or of one point, sits at half.

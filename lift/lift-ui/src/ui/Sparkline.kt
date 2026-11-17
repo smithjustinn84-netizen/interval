@@ -35,6 +35,7 @@ fun Sparkline(
     modifier: Modifier = Modifier,
     marks: List<Int> = emptyList(),
     labels: List<SparklineLabel> = emptyList(),
+    rings: List<Int> = emptyList(),
 ) {
     val palette = IntervalTheme.palette
     val measurer = rememberTextMeasurer()
@@ -65,6 +66,8 @@ fun Sparkline(
                     }
                 }
                 val marked = marks.mapNotNull { points.getOrNull(it) }
+                val ringed = rings.mapNotNull { points.getOrNull(it) }
+                val ring = Stroke(width = LiftSizes.sparklineMark.toPx())
                 val dash = PathEffect.dashPathEffect(floatArrayOf(DASH, DASH))
                 val rule = LiftSizes.sparklineMark.toPx()
                 onDrawBehind {
@@ -76,18 +79,19 @@ fun Sparkline(
                     points.firstOrNull()?.let { drawCircle(palette.textDim, dot, it) }
                     marked.forEach { drawCircle(palette.textDim, dot, it) }
                     points.lastOrNull()?.let { drawCircle(palette.accent, dot, it) }
+                    ringed.forEach { drawCircle(palette.accent, dot * RING, it, style = ring) }
                 }
             },
     )
 }
 
-/** A stretch's label: [text] where there is room for it, [short] where there isn't. */
-data class SparklineLabel(val text: String, val short: String = text)
+/** A stretch's label: the first of [texts], longest first, that has room, else the last. */
+data class SparklineLabel(val texts: List<String>)
 
 /**
- * Each label over its stretch's start, by [starts], the place of each stretch's first point: its whole text where
- * that ends before the next stretch starts (the last before the width), else its short one, kept inside the width
- * and left out where it would run into the one before.
+ * Each label over its stretch's start, by [starts], the place of each stretch's first point: the first of its texts
+ * that ends before the next stretch starts (the last before the width), else its shortest, kept inside the width and
+ * left out where it would run into the one before.
  */
 private fun placeLabels(
     labels: List<SparklineLabel>,
@@ -98,10 +102,11 @@ private fun placeLabels(
 ): List<Pair<TextLayoutResult, Offset>> {
     var end = 0f
     return labels.zip(starts).mapIndexedNotNull { i, (label, start) ->
-        val point = points.getOrNull(start) ?: return@mapIndexedNotNull null
+        val point = points.getOrNull(start)
+        if (point == null || label.texts.isEmpty()) return@mapIndexedNotNull null
         val room = starts.getOrNull(i + 1)?.let { points.getOrNull(it)?.x } ?: width
-        val whole = measure(label.text)
-        val text = if (point.x + whole.size.width + whole.size.height <= room) whole else measure(label.short)
+        val texts = label.texts.asSequence().map(measure)
+        val text = texts.firstOrNull { point.x + it.size.width + it.size.height <= room } ?: texts.last()
         val x = point.x.coerceAtMost(width - text.size.width).coerceAtLeast(0f)
         if (end > 0f && x < end) return@mapIndexedNotNull null
         end = x + text.size.width + text.size.height
@@ -110,3 +115,4 @@ private fun placeLabels(
 }
 
 private const val DASH = 8f
+private const val RING = 1.8f

@@ -129,6 +129,7 @@ class ExerciseTrendTest {
             listOf(16.0 to 12, 20.0 to 6, 16.0 to 6),
             exerciseTrend(BuiltInExercise.Press, recent)?.latestAtBells?.map { it.kg to it.reps },
         )
+        assertEquals(listOf(1, 3, 4), exerciseTrend(BuiltInExercise.Press, recent)?.bestAtBells)
         val pushUps = listOf(
             session(3_000, set(BuiltInExercise.PushUp, 0.0, 20)),
             session(2_000, set(BuiltInExercise.PushUp, 0.0, 15)),
@@ -136,6 +137,22 @@ class ExerciseTrendTest {
         )
         assertEquals(listOf(0.0, 0.5, 1.0), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.heights)
         assertEquals(emptyList(), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.latestAtBells)
+        assertEquals(emptyList(), exerciseTrend(BuiltInExercise.PushUp, pushUps)?.bestAtBells)
+    }
+
+    @Test
+    fun `each bell's best is its highest and the later of two alike`() {
+        val recent = listOf(
+            session(5_000, set(BuiltInExercise.Press, 20.0, 5)),
+            session(4_000, set(BuiltInExercise.Press, 16.0, 10)),
+            session(3_000, set(BuiltInExercise.Press, 16.0, 12)),
+            session(2_000, set(BuiltInExercise.Press, 16.0, 12)),
+            session(1_000, set(BuiltInExercise.Press, 16.0, 8)),
+        )
+        // 16 kg's best, 12 reps twice, is the later; it fell to 10 before the move to 20 kg.
+        val trend = exerciseTrend(BuiltInExercise.Press, recent)
+        assertEquals(listOf(2, 4), trend?.bestAtBells)
+        assertEquals(listOf(16.0 to 10, 20.0 to 5), trend?.latestAtBells?.map { it.kg to it.reps })
     }
 
     @Test

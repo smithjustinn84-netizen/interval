@@ -20,7 +20,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   the same bell climb ("Latest 16 kg × 12", "From 16 kg × 5"), and a dashed rule marks each move to another
   bell, where the line starts again from the bottom: each bell's stretch is scaled on its own, so its reps climb
   rather than one bell's work showing against another's, and is named over its start with the latest at that bell
-  ("16 kg × 12", "20 kg × 8"; the bell alone where that won't fit). Lift's
+  ("16 kg × 12", "20 kg × 8"; the bell alone where that won't fit), and its best where that was higher
+  ("16 kg × 10, best 12"), ringed on the line. Lift's
   Grip card charts the last four weeks, this one against a dashed usual week, and fills this week in when it is
   too much, too soon.
 - Live Activities (iOS): a running workout shows on the Lock Screen and in the Dynamic Island, the interval counting
