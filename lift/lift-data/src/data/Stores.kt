@@ -17,6 +17,7 @@ import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.SavedTimer
+import dev.justinsmith.lift.domain.SessionAsPlanned
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
@@ -46,6 +47,12 @@ interface SessionStore {
     fun startTest(test: StrengthTest, load: Load?)
 
     fun finishSession(title: String)
+
+    /**
+     * Logs [session], done away from the app, as a finished session of day [day] of [program] under [title], beside
+     * any session in progress; returns its uid. Undone with [deleteSession].
+     */
+    fun logPastSession(program: ProgramKey, day: Int, title: String, session: SessionAsPlanned): String
 
     fun reflectOnSession(uid: String, effort: PerceivedEffort?, note: String)
 

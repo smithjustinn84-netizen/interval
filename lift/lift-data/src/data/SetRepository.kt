@@ -66,22 +66,7 @@ class SetRepository(
     override fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int?) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
-            val taken = exercise.taking(load)
-            sessionDao.insert(
-                SetEntity(
-                    0,
-                    active.uid,
-                    exercise.key,
-                    taken.kg,
-                    reps,
-                    side.takeIf { exercise.sided(taken.double) }?.name,
-                    clock.nowMillis(),
-                    taken.double,
-                    equipment = taken.equipment.name,
-                    seconds = seconds.takeIf { exercise.measure == Measure.Time },
-                    band = taken.band?.id,
-                ),
-            )
+            sessionDao.insert(setRow(active.uid, exercise, load, reps, side, seconds, clock.nowMillis()))
         }
     }
 
@@ -162,4 +147,35 @@ class SetRepository(
         _restSeconds.value = seconds
         writer.persist { bellDao.upsertRest(RestEntity(seconds = seconds)) }
     }
+}
+
+/**
+ * The row of a set of session [sessionUid], its [load] as [exercise] takes it: with two bells only if it can be, a
+ * band only for band work, a side only for a one-sided lift so done. A held exercise keeps its [seconds], dropped
+ * from any other.
+ */
+@Suppress("detekt.LongParameterList") // A set's own.
+internal fun setRow(
+    sessionUid: String,
+    exercise: Exercise,
+    load: Load,
+    reps: Int,
+    side: Side?,
+    seconds: Int?,
+    loggedAt: Long,
+): SetEntity {
+    val taken = exercise.taking(load)
+    return SetEntity(
+        0,
+        sessionUid,
+        exercise.key,
+        taken.kg,
+        reps,
+        side.takeIf { exercise.sided(taken.double) }?.name,
+        loggedAt,
+        taken.double,
+        equipment = taken.equipment.name,
+        seconds = seconds.takeIf { exercise.measure == Measure.Time },
+        band = taken.band?.id,
+    )
 }

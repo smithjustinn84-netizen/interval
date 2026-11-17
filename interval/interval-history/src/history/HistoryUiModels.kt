@@ -164,6 +164,16 @@ data class SheetPlan(
         get() = workout !is PlanWorkout.SportDay && (state == PlanState.Open || state == PlanState.Missed)
 }
 
+/**
+ * The followed program's next [day], which can be logged done as planned on any day from [from] to [today]: since the
+ * program was taken up, its days counted from then, and not before a session of it already done, so its days stay in
+ * the order they were done.
+ */
+data class LiftLog(val day: ProgramDay, val from: Long, val today: Long) {
+    /** [day], if it can be logged on [epochDay]. */
+    fun on(epochDay: Long): ProgramDay? = day.takeIf { epochDay in from..today }
+}
+
 /** The day sheet: the day a tap opened, with its plans, its workouts and the [sports] logged on it. */
 data class DaySheet(
     val epochDay: Long,
@@ -173,6 +183,11 @@ data class DaySheet(
     val workouts: List<HistoryItem>,
     val past: Boolean,
     val sports: List<Sport> = emptyList(),
+    /**
+     * The followed program's next day, while it can be logged on this day done as planned: today or a day gone by,
+     * since the program was taken up, and none of its sessions finished on a later day.
+     */
+    val liftDay: ProgramDay? = null,
 )
 
 data class HistoryUiState(
@@ -212,6 +227,8 @@ data class HistoryUiState(
     val flows: List<MobilityFlow> = emptyList(),
     /** The day of the program followed to do next, which a plan of the program's next day starts. */
     val programDay: ProgramDay? = null,
+    /** The days [programDay] can be logged on done as planned; null with none followed. */
+    val liftLog: LiftLog? = null,
     /** Not built yet: the screen waits rather than taking it for the first run. */
     val loading: Boolean = false,
 ) {

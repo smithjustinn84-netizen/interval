@@ -183,7 +183,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `LiftActivity` (what the interval side reads of Lift, the bells owned among it;
                      `SessionRepository` is it), `LiftReadiness` (why today is a taxed day by Lift's reading,
                      whether the program's day ahead can be eased, and easing the session just started; Today
-                     reads it, lift-session's `EasierDay` is it). Over
+                     reads it, lift-session's `EasierDay` is it), `LiftLogging` (the followed program's next day logged
+                     done as planned from the Log; `SessionRepository` is it). Over
                      `lift-domain` alone
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
@@ -349,7 +350,17 @@ toolchain (`$compose.*`).
   stores a plain `HistoryEntry.loggedByHand` (the whole course, work estimated, the start run back from the finish,
   which with no work time is the mark, `loggedByHand`; no column) dated `TimestampFormatter.middayOf(day)`, today's
   at the moment, and `unlogWorkout(uid)` is the notice's Undo. Nothing goes to the health store, and its page in
-  the Log reads no heart rate. Nothing of Lift's is logged that way. A plan moves to another day, one day at a
+  the Log reads no heart rate. The followed program's next day is logged the same way, done as planned (the
+  sheet's Strength side, which leads, and a planned program day's row's "Log it"), through `lift-api`'s
+  `LiftLogging` (`SessionRepository` is it): `doneAsPlanned` (`lift-domain`, `AsPlanned.kt`, pure) makes every
+  planned set at the load a session started then would suggest (`plannedLoad` over the sets finished before), a
+  density block as many rounds as it last came to, timed as the day would run (its length is its estimate), and
+  `SessionStore.logPastSession` writes it finished, with its day, beside any session in progress (none of the program
+  itself: that is its next day already); Undo deletes it. It starts no earlier than the program was taken up, which
+  its days count from (`SessionAsPlanned.within`: moved on, or squeezed in before now).
+  Nothing marks it, steps a block or goes to the health store. It is offered on a day from the one the program was
+  taken up on (`Followed.startedAtEpochMillis`, which its days count from) or the last a session of it finished,
+  whichever is later, to today (`LiftLog`, History's state). A plan moves to another day, one day at a
   time (`PlanStore.movePlanned`, with `unmovePlanned` as Undo): a missed one from its row in the Log ("Move"), today's
   from Today's "Not today", to a day of the week ahead (`plan/MovePlan.kt`'s `moveSheet`, the first free day picked,
   never earlier, never back to the day it first left; `MovePlanSheet`). A weekly plan's day becomes a one-off

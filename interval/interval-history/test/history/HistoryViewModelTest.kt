@@ -42,6 +42,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
@@ -64,6 +65,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
             repository.flows,
             repository.plans,
             repository.settings,
+            bells.sessions,
             bells.sessions,
             FixedTimestampFormatter,
             clock = { clock },
@@ -361,6 +363,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 repository.plans,
                 repository.settings,
                 bells.sessions,
+                bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
                 savedState = saved,
@@ -401,6 +404,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 repository.plans,
                 repository.settings,
                 bells.sessions,
+                bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
                 computation = main,
@@ -429,6 +433,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 repository.flows,
                 repository.plans,
                 repository.settings,
+                bells.sessions,
                 bells.sessions,
                 FixedTimestampFormatter,
                 clock = { clock },
@@ -555,6 +560,61 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(flow.name, state.sections.single().items.single().presetName)
         assertEquals(1 to 1, state.weekCount to state.weekMobility)
         assertEquals(builtInFlows, state.flows)
+    }
+
+    @Test
+    fun `the program's next day logged as planned on a day gone by goes on it and moves the program on`() {
+        at(TODAY - 5)
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        bells.programs.follow(ladders)
+        at(TODAY)
+        repository.plans.planOnce(PlanWorkout.Lift.ProgramDay, TODAY - 2)
+        viewModel.openDay(TODAY - 2)
+        val before = viewModel.state.value
+        assertEquals(TODAY - 5, before.liftLog?.from)
+        assertEquals(1, before.daySheet?.liftDay?.number)
+
+        val uid = assertNotNull(viewModel.logLiftDay("Press", TODAY - 2))
+        val session = bells.sessions.sessions.value.single()
+        assertEquals(noonOf(TODAY - 2), session.finishedAtEpochMillis)
+        assertEquals(1, session.day)
+        val state = viewModel.state.value
+        val sheet = requireNotNull(state.daySheet)
+        assertEquals(PlanState.Done, sheet.plans.single().state)
+        assertEquals("Press", sheet.workouts.single().presetName)
+        assertEquals(1, state.weekLifts)
+        assertEquals(2, state.programDay?.number)
+        // Its days stay in order: none is logged before the one just logged, nor before the program was taken up.
+        assertEquals(TODAY - 2, state.liftLog?.from)
+        assertNull(state.liftLog?.on(TODAY - 3))
+        assertNull(state.liftLog?.on(TODAY + 1))
+        assertEquals(2, state.liftLog?.on(TODAY)?.number)
+
+        viewModel.unlogLiftDay(uid)
+        assertTrue(bells.sessions.sessions.value.isEmpty())
+        assertEquals(1, viewModel.state.value.programDay?.number)
+        assertEquals(PlanState.Missed, viewModel.state.value.daySheet?.plans?.single()?.state)
+    }
+
+    @Test
+    fun `a day of the program logged as planned today is dated now and nothing is offered with none followed`() {
+        assertNull(viewModel.state.value.liftLog)
+        assertNull(viewModel.logLiftDay("Press", TODAY))
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        assertNotNull(viewModel.logLiftDay("Press", TODAY))
+        assertEquals(clock, bells.sessions.sessions.value.single().finishedAtEpochMillis)
+    }
+
+    @Test
+    fun `no day of the program is offered to log while a session of it is under way`() {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        bells.programs.follow(ladders)
+        assertNotNull(viewModel.state.value.liftLog)
+        bells.sessions.startSession(ladders)
+        assertNull(viewModel.state.value.liftLog)
+        bells.sessions.discardSession()
+        bells.sessions.startSession()
+        assertNotNull(viewModel.state.value.liftLog)
     }
 
     @Test

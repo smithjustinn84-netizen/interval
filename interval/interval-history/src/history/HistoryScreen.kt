@@ -155,6 +155,11 @@ fun HistoryRoute(
                 val uid = viewModel.logWorkout(config, day)
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogWorkout(uid) })
             },
+            onLogLift = { title, day, loggedText ->
+                viewModel.logLiftDay(title, day)?.let { uid ->
+                    notices.show(loggedText, NoticeAction(undo) { viewModel.unlogLiftDay(uid) })
+                }
+            },
             onUnlogSport = { sport, day, removedText ->
                 viewModel.unlogSport(sport, day)
                 notices.show(removedText, NoticeAction(undo) { viewModel.logSport(sport, day) })
@@ -201,6 +206,11 @@ class HistoryActions(
      * logged").
      */
     val onLogWorkout: (config: IntervalConfig, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
+    /**
+     * Logs the followed program's next day done as planned on an epoch day, as a session of this title, with the
+     * line saying so ("Press ladders logged").
+     */
+    val onLogLift: (title: String, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
     val onPlanWeekly: (PlanWorkout, Set<Int>) -> Unit = { _, _ -> },
     val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onOpenWorkout: (Long) -> Unit = {},
@@ -284,8 +294,10 @@ fun HistoryScreen(
             choices = state.choices,
             flows = state.flows,
             epochDay = day,
+            liftDay = state.liftLog?.on(day),
             onLogWorkout = actions.onLogWorkout,
             onLogSport = actions.onLogSport,
+            onLogLift = actions.onLogLift,
             onDismiss = { loggingOn = null },
         )
     }

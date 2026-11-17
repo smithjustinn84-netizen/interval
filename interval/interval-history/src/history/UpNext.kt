@@ -11,6 +11,7 @@ import dev.justinsmith.interval.timer.flowBefore
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.estimatedMinutes
 import kotlinx.coroutines.flow.Flow
@@ -28,10 +29,18 @@ internal data class Lifting(
     val programDay: ProgramDay?,
     val inProgress: Boolean,
     val restSeconds: Int = RestClock.DEFAULT_SECONDS,
+    /** The program of the session in progress, if one is and it is a program's. */
+    val activeProgram: ProgramKey? = null,
 )
 
 /** Everything done, as History reads it: the interval workouts, the sport days logged and Lift's side. */
-internal data class Logged(val history: List<HistoryEntry>, val sports: List<LoggedSport>, val lifting: Lifting)
+internal data class Logged(
+    val history: List<HistoryEntry>,
+    val sports: List<LoggedSport>,
+    val lifting: Lifting,
+    /** When the program followed was taken up; null with none. */
+    val followedSince: Long? = null,
+)
 
 /**
  * Lift's side as it changes. Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing: only a
@@ -39,7 +48,7 @@ internal data class Logged(val history: List<HistoryEntry>, val sports: List<Log
  */
 internal fun LiftActivity.lifting(): Flow<Lifting> =
     combine(sessions, programDay, active, restSeconds) { sessions, day, active, rest ->
-        Lifting(sessions, day, active != null, rest)
+        Lifting(sessions, day, active != null, rest, active?.program)
     }.distinctUntilChanged()
 
 /**

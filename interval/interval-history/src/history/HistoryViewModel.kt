@@ -30,6 +30,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
 import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.data.LiftLogging
 import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -101,6 +102,7 @@ class HistoryViewModel(
     private val planStore: PlanStore,
     private val settingsStore: SettingsStore,
     private val bells: LiftActivity,
+    private val liftLogging: LiftLogging,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -116,7 +118,7 @@ class HistoryViewModel(
     private val lifting = bells.lifting()
 
     private val built = combine(
-        combine(historyStore.history, historyStore.sportDays, lifting, ::Logged),
+        combine(historyStore.history, historyStore.sportDays, lifting, liftLogging.followedSince, ::Logged),
         planStore.planned,
         combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
         settingsStore.appSettings,
@@ -223,6 +225,20 @@ class HistoryViewModel(
     }
 
     /**
+     * Logs the followed program's next day done as planned on [epochDay] under [title], timed as [logWorkout] times
+     * a workout. Returns its uid, for Undo ([unlogLiftDay]); null with no day to log.
+     */
+    fun logLiftDay(title: String, epochDay: Long): String? {
+        val now = clock.nowMillis()
+        val finishedAt = if (epochDay == timestamps.dayNumber(now)) now else timestamps.middayOf(epochDay)
+        return liftLogging.logDayAsPlanned(title, finishedAt)
+    }
+
+    fun unlogLiftDay(uid: String) {
+        liftLogging.unlog(uid)
+    }
+
+    /**
      * The app's locale, as a language tag. The dates and times are formatted in this ViewModel, which
      * outlives a language change, so they are formatted again when it changes.
      */
@@ -243,11 +259,13 @@ class HistoryViewModel(
         view: HistoryView,
     ): HistoryUiState {
         val (history, sports, lifting) = logged
+        val followedSince = logged.followedSince
         val today = timestamps.dayNumber(clock.nowMillis())
         val lifts = lifting.sessions.asLiftWorkouts()
         val log = TrainingLog(history, planned, today, lifts, sports, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
+        val liftLog = timestamps.liftLog(today, lifting, followedSince)
 
         val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, log, today) { workout, plans ->
             timestamps.item(workout, names, body, plans)
@@ -292,11 +310,12 @@ class HistoryViewModel(
             upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today).filter { it !is UpNextItem.Flow }).all,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             programDay = lifting.programDay,
+            liftLog = liftLog,
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
                 daySheet(training, timestamps.heading(day, today), past = day < today) {
                     timestamps.item(it, names, body, training.plans)
-                }
+                }.copy(liftDay = liftLog?.on(day))
             },
             moveSheet = view.movingFrom?.let { from ->
                 planned.firstOrNull { it.id == view.moving }?.let { moveSheet(it, from, today, log) }
@@ -308,6 +327,20 @@ class HistoryViewModel(
         const val WEEKS_SHOWN = 12
         const val MOST_DONE_SHOWN = 3
     }
+}
+
+/**
+ * The days the followed program's next day, as [lifting] has it, can be logged done as planned: from the day it was
+ * taken up ([followedSince], which its days are counted from) or the last day a session of it finished, whichever is
+ * later, to [today]. None while a session of it is under way.
+ */
+private fun TimestampFormatter.liftLog(today: Long, lifting: Lifting, followedSince: Long?): LiftLog? {
+    // A session of the program under way is its next day already.
+    val next = lifting.programDay?.takeIf { it.program.key != lifting.activeProgram } ?: return null
+    val since = followedSince?.let(::dayNumber) ?: return null
+    val last = lifting.sessions.filter { it.program == next.program.key }
+        .mapNotNull { session -> session.finishedAtEpochMillis?.let(::dayNumber) }.maxOrNull()
+    return LiftLog(next, maxOf(since, last ?: since), today)
 }
 
 /** A plan moved, as Undo needs it: the plan as it stood and the days it went between. */

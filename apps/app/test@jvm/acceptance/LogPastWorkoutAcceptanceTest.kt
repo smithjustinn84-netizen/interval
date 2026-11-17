@@ -4,8 +4,8 @@ import kotlin.test.Test
 
 /**
  * `journeys/log-past-workout.xml`: a workout done away from the app, or without the Timer, goes into the Log after
- * the fact from its day's sheet, today or a day gone by: a preset, a flow or a sport day, in full, with Undo; a
- * workout planned that day is logged from its row.
+ * the fact from its day's sheet, today or a day gone by: a preset, a flow or a sport day, in full, or the program's
+ * next day done as planned, with Undo; a workout planned that day is logged from its row.
  */
 class LogPastWorkoutAcceptanceTest {
     // The app's clock starts on Thursday 1 January 1970: yesterday is Wednesday, epoch day -1. The week shows
@@ -61,4 +61,23 @@ class LogPastWorkoutAcceptanceTest {
         openTab("Today")
         seeNothingMoreDue()
     }
+
+    @Test
+    fun `the program's day done yesterday without the phone is logged as planned and moves the program on`() =
+        acceptanceScenario {
+            followingPressLaddersSince(daysAgo = 3)
+            openTab("Log")
+
+            openDayOnTheWeek("Wednesday, no workout")
+            logTheProgramDayAsPlanned()
+            see("Press ladders 1-2-3 logged")
+            programDayLoggedOn(day = 1, epochDay = -1)
+            programAtDay(2)
+            seeDayOnTheWeek("Wednesday, done")
+            seeLoggedUnder("Wed", "Press and Two-hand swing")
+
+            undoNotice()
+            programAtDay(1)
+            seeDayOnTheWeek("Wednesday, no workout")
+        }
 }

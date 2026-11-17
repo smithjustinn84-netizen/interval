@@ -9,6 +9,7 @@ import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.LIFT_MIGRATIONS
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.data.LiftDatabase
+import dev.justinsmith.lift.data.LiftLogging
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
@@ -74,6 +75,7 @@ val liftDataModule: Module = module {
     }
     single<SessionStore> { get<LiftRepository>().sessions }
     single<LiftActivity> { get<LiftRepository>().sessions }
+    single<LiftLogging> { get<LiftRepository>().sessions }
     single<SetStore> { get<LiftRepository>().sets }
     single<ProgramStore> { get<LiftRepository>().programs }
     single<ExerciseStore> { get<LiftRepository>().exercises }

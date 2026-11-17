@@ -229,6 +229,12 @@ ticket 6.
     midday on its day where midnight is skipped; `IntervalRepositoryTest` dates it as given and tombstones the undo;
     `HistoryViewModelTest` marks a plan done on a day gone by and dates today's now; `WorkoutDetailViewModelTest`
     reads no heart rate for one; `HistoryScreenTest` drives the sheet's three kinds and the row's Log it.
+- Follow-up (2026-11-16): Lift is in after all, as the followed program's next day done as planned (the sheet's
+  Strength side, and a planned program day's row). A session is still its sets, so it is logged with every planned
+  set at the load it would have been suggested, timed as the day would run, through `lift-api`'s `LiftLogging`;
+  `logPastSession` writes it finished with its own times, so nothing assumes it ends now. A density block comes to
+  the rounds it last did; no block steps and nothing is marked. `AsPlannedTest`, `LiftRepositoryTest`,
+  `HistoryViewModelTest`, `HistoryScreenTest` and a fourth `LogPastWorkoutAcceptanceTest` scenario hold it.
 
 **10. Plan's routines read sequences** (added during the sprint, from below the cut line) · XS
 - `describeRoutine` (`RoutineDescription.kt`) no longer breaks clauses at "then". A clause is split at "then" or

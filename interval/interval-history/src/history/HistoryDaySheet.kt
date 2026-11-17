@@ -52,6 +52,7 @@ import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -254,8 +255,8 @@ private fun planLine(plan: SheetPlan, sheet: DaySheet): List<String> {
 
 /**
  * Under the plan's line, what else can be done with it: an interval workout done away from the app, or without the
- * Timer, logged on its day or after; a sport logged on its day or after, never ahead of it; a plan still to do, or
- * missed, moved to another day.
+ * Timer, logged on its day or after; the program's next day logged done as planned, while it can be; a sport logged
+ * on its day or after, never ahead of it; a plan still to do, or missed, moved to another day.
  */
 @Composable
 private fun SecondaryActions(
@@ -268,13 +269,25 @@ private fun SecondaryActions(
     val stillToDo = plan.state != PlanState.Done && plan.state != PlanState.Moved
     val interval = (plan.workout as? PlanWorkout.Interval)?.takeIf { sheet.canLog && stillToDo }
     val sport = (plan.workout as? PlanWorkout.SportDay)?.sport?.takeIf { sheet.canLog && stillToDo }
-    if (interval == null && sport == null && !plan.movable) return
+    // The program's next day, done as planned, while it can be logged on this day (DaySheet.liftDay).
+    val liftDay = sheet.liftDay?.takeIf { plan.workout == PlanWorkout.Lift.ProgramDay && stillToDo }
+    val loggable = interval != null || sport != null || liftDay != null
+    if (!loggable && !plan.movable) return
     Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         if (interval != null) {
             val logged = stringResource(Res.string.notice_workout_logged, name)
             StartPill(
                 primary = false,
                 onClick = { actions.onLogWorkout(interval.config, sheet.epochDay, logged) },
+                label = stringResource(Res.string.sport_log_it),
+            )
+        }
+        if (liftDay != null) {
+            val title = liftDayTitle(liftDay)
+            val logged = stringResource(Res.string.notice_workout_logged, programName(liftDay.program))
+            StartPill(
+                primary = false,
+                onClick = { actions.onLogLift(title, sheet.epochDay, logged) },
                 label = stringResource(Res.string.sport_log_it),
             )
         }

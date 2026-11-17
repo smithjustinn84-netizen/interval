@@ -19,8 +19,12 @@ import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_kind_interval
 import dev.justinsmith.interval.history.resources.history_kind_mobility
 import dev.justinsmith.interval.history.resources.history_kind_sport
+import dev.justinsmith.interval.history.resources.history_kind_strength
 import dev.justinsmith.interval.history.resources.history_log_workout
 import dev.justinsmith.interval.history.resources.log_flow_which
+import dev.justinsmith.interval.history.resources.log_lift_day
+import dev.justinsmith.interval.history.resources.log_lift_text
+import dev.justinsmith.interval.history.resources.log_lift_which
 import dev.justinsmith.interval.history.resources.log_workout_confirm
 import dev.justinsmith.interval.history.resources.log_workout_text
 import dev.justinsmith.interval.history.resources.notice_sport_logged
@@ -42,15 +46,25 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.workoutDescription
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.ui.programDayLifts
+import dev.justinsmith.lift.ui.programDayLine
+import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.sessionTitle
 import org.jetbrains.compose.resources.stringResource
 
-/** What the log sheet offers: an interval workout (the Timer's or a preset), a mobility flow, or a day of a sport. */
-private enum class LogKind { Interval, Mobility, Sport }
+/**
+ * What the log sheet offers: the followed program's next day, an interval workout (the Timer's or a preset), a
+ * mobility flow, or a day of a sport.
+ */
+private enum class LogKind { Strength, Interval, Mobility, Sport }
 
 /**
  * Logs a workout done away from the app, or without the Timer, on [epochDay]: one of [choices] or of [flows] through
- * [onLogWorkout], or a day of a sport through [onLogSport], each with the line the notice says ("Tabata logged").
- * Nothing about when: the day is all that is known, so it goes on in full. Nothing of Lift's: a session is its sets.
+ * [onLogWorkout], a day of a sport through [onLogSport], or [liftDay], the followed program's next day while it can be
+ * logged then, done as planned through [onLogLift] (every set at its load, under the title a session of its lifts
+ * takes), each with the line the notice says ("Tabata logged"). Nothing about when: the day is all that is known, so
+ * it goes on in full. With a day to log, it leads.
  */
 @Composable
 internal fun LogWorkoutSheet(
@@ -60,6 +74,8 @@ internal fun LogWorkoutSheet(
     onLogWorkout: (config: IntervalConfig, epochDay: Long, loggedText: String) -> Unit,
     onLogSport: (sport: Sport, epochDay: Long, loggedText: String) -> Unit,
     onDismiss: () -> Unit,
+    liftDay: ProgramDay? = null,
+    onLogLift: (title: String, epochDay: Long, loggedText: String) -> Unit = { _, _, _ -> },
 ) {
     val palette = IntervalTheme.palette
     // The first choice is the Timer's; a preset is the likelier pick when there is one.
@@ -69,6 +85,7 @@ internal fun LogWorkoutSheet(
     val sportName = rememberTextFieldState()
     val kinds = LogKind.entries.filter {
         when (it) {
+            LogKind.Strength -> liftDay != null
             LogKind.Interval -> choices.isNotEmpty()
             LogKind.Mobility -> flows.isNotEmpty()
             LogKind.Sport -> true
@@ -86,12 +103,13 @@ internal fun LogWorkoutSheet(
             )
             if (kinds.size > 1) KindPicker(kinds, kind, onPick = { kind = it })
             when (kind) {
+                LogKind.Strength -> liftDay?.let { LiftDayAsPlanned(it) }
                 LogKind.Interval -> IntervalChoiceList(choices, picked, onPick = { picked = it })
                 LogKind.Mobility -> FlowChoiceList(flows, flow, onPick = { flow = it })
                 LogKind.Sport -> SportChoiceList(sport, sportName, onPick = { sport = it })
             }
-            // The Sport side says its own word on counting.
-            if (kind != LogKind.Sport) {
+            // The Sport and Strength sides say their own word on counting.
+            if (kind != LogKind.Sport && kind != LogKind.Strength) {
                 Text(
                     stringResource(Res.string.log_workout_text),
                     style = IntervalTheme.type.meta,
@@ -100,6 +118,12 @@ internal fun LogWorkoutSheet(
             }
             // Null while there is nothing to log: no workout to pick from, or a sport still to be named.
             val log: (() -> Unit)? = when (kind) {
+                LogKind.Strength -> liftDay?.let { day ->
+                    val sessionTitle = liftDayTitle(day)
+                    val logged = stringResource(Res.string.notice_workout_logged, programName(day.program))
+                    ({ onLogLift(sessionTitle, epochDay, logged) })
+                }
+
                 LogKind.Interval -> choices.getOrNull(picked.coerceAtMost(choices.lastIndex))?.preset?.let { preset ->
                     val logged = stringResource(Res.string.notice_workout_logged, preset.name)
                     ({ onLogWorkout(preset.config, epochDay, logged) })
@@ -138,6 +162,7 @@ private fun KindPicker(kinds: List<LogKind>, kind: LogKind, onPick: (LogKind) ->
         selected = kind,
         label = {
             when (it) {
+                LogKind.Strength -> stringResource(Res.string.history_kind_strength)
                 LogKind.Interval -> stringResource(Res.string.history_kind_interval)
                 LogKind.Mobility -> stringResource(Res.string.history_kind_mobility)
                 LogKind.Sport -> stringResource(Res.string.history_kind_sport)
@@ -145,6 +170,27 @@ private fun KindPicker(kinds: List<LogKind>, kind: LogKind, onPick: (LogKind) ->
         },
         onSelect = onPick,
     )
+}
+
+/** The program's next [day], to log done as planned: the program, where the day falls in it, and what that means. */
+@Composable
+private fun LiftDayAsPlanned(day: ProgramDay) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+        Caption(stringResource(Res.string.log_lift_which))
+        ListCard(Modifier.selectableGroup()) {
+            PickRow(
+                name = programName(day.program),
+                detail = stringResource(Res.string.log_lift_day, programDayLine(day), programDayLifts(day)),
+                selected = true,
+                onPick = {},
+            )
+        }
+        Text(
+            stringResource(Res.string.log_lift_text),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+        )
+    }
 }
 
 /** The flows to pick from, the shipped ones then the user's own, the [picked] one checked. */
@@ -165,3 +211,7 @@ private fun FlowChoiceList(flows: List<Flow>, picked: Int, onPick: (Int) -> Unit
         }
     }
 }
+
+/** The title a session of [day]'s lifts takes, as one run on Lift would: "Press", "Swing and get-up". */
+@Composable
+internal fun liftDayTitle(day: ProgramDay): String = sessionTitle(day.plannedSets().map { it.exercise }.distinct())

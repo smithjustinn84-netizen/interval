@@ -8,21 +8,29 @@ import dev.justinsmith.interval.storage.SerialWriter
 import dev.justinsmith.interval.storage.orEmptyOnError
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.SessionAsPlanned
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.StrengthTest
 import dev.justinsmith.lift.domain.at
 import dev.justinsmith.lift.domain.attempts
+import dev.justinsmith.lift.domain.doneAsPlanned
+import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.plannedLoad
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -42,7 +50,7 @@ class SessionRepository(
     scope: CoroutineScope,
     /** The rest between sets, as [SetRepository] keeps it. */
     override val restSeconds: StateFlow<Int>,
-) : LiftActivity, SessionStore {
+) : LiftActivity, LiftLogging, SessionStore {
     private val log = Logger.withTag("SessionRepository")
 
     override val bells: StateFlow<List<Double>> get() = gear.bells
@@ -64,6 +72,9 @@ class SessionRepository(
 
     /** The day of the program followed to do next, as [programs] keeps it. */
     override val programDay: StateFlow<ProgramDay?> get() = programs.programDay
+
+    override val followedSince: Flow<Long?>
+        get() = programs.followed.map { it?.startedAtEpochMillis }.distinctUntilChanged()
 
     init {
         scope.launch {
@@ -131,6 +142,53 @@ class SessionRepository(
     /** Finishes the session in progress under [title]; one with no sets is dropped instead. */
     override fun finishSession(title: String) {
         writer.persist { sessionDao.finishActive(title, clock.nowMillis()) }
+    }
+
+    /**
+     * Logs the followed program's next day done as planned, finished at [finishedAtEpochMillis]: each set at the load
+     * it would have been suggested from the sessions finished before, as a session started then would suggest it.
+     */
+    override fun logDayAsPlanned(title: String, finishedAtEpochMillis: Long): String? {
+        val day = programs.programDay.value ?: return null
+        val followed = programs.followed.value ?: return null
+        // A session of the program under way is its next day already: logging another would number two alike.
+        if (_active.value?.program == day.program.key) return null
+        val before = _sessions.value.filter { (it.finishedAtEpochMillis ?: Long.MAX_VALUE) < finishedAtEpochMillis }
+        val history = before.reversed().flatMap { it.sets }
+        val bar = gear.bar.value
+        val bands = offeredBands(gear.bands.value)
+        val owned = gear.bells.value
+        val session = day.doneAsPlanned(finishedAtEpochMillis, before, restSeconds.value) { set ->
+            plannedLoad(set, history, bar, bands, DEFAULT_BELL_KG, Band.Default, owned)
+        } ?: return null
+        val counted = session.within(followed.startedAtEpochMillis, clock.nowMillis())
+        return logPastSession(day.program.key, day.number, title, counted)
+    }
+
+    override fun unlog(uid: String) = deleteSession(uid)
+
+    override fun logPastSession(program: ProgramKey, day: Int, title: String, session: SessionAsPlanned): String {
+        val uid = ids.newId()
+        val now = clock.nowMillis()
+        writer.persist {
+            sessionDao.insert(
+                SessionEntity(
+                    uid,
+                    session.startedAtEpochMillis,
+                    session.finishedAtEpochMillis,
+                    title = title,
+                    updatedAtEpochMillis = now,
+                    programId = program.stored,
+                    programDay = day,
+                ),
+            )
+            session.sets.forEach { set ->
+                sessionDao.insert(
+                    setRow(uid, set.exercise, set.load, set.reps, set.side, set.seconds, set.loggedAtEpochMillis),
+                )
+            }
+        }
+        return uid
     }
 
     /**

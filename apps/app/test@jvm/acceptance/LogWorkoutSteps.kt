@@ -7,6 +7,9 @@ import androidx.compose.ui.test.isSelectable
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.timer.nameOf
+import dev.justinsmith.lift.data.LiftRepository
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
 // Logging a workout after the fact, from a day's sheet in the Log; beside the driver, which is at its size limit.
 
 /** On Plan: a weekday's + and the add sheet as it opens, on the Timer's workout, then Add to plan. */
@@ -64,3 +67,39 @@ fun IntervalAcceptanceDriver.workoutLoggedOn(epochDay: Long, name: String? = nul
                 (name == null || presets.nameOf(it.config, flows) == name)
         }
     }
+
+/**
+ * Given: Press ladders followed on Lift since [daysAgo] days before the app's clock, then the clock back where it was,
+ * so the days since can have the program's day logged on them.
+ */
+fun IntervalAcceptanceDriver.followingPressLaddersSince(daysAgo: Int) {
+    val now = app.clock.get()
+    app.clock.set(now - daysAgo * DAY_MILLIS)
+    lift.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+    app.clock.set(now)
+    waitFor("Press ladders followed") { lift.programs.programDay.value?.number == 1 }
+}
+
+/** The day sheet's Log a workout, which leads with the program's next day on its Strength side, then Log it. */
+fun IntervalAcceptanceDriver.logTheProgramDayAsPlanned() {
+    tap("Log a workout")
+    see(hasText("Strength") and isSelectable())
+    see(hasText("Done as planned", substring = true))
+    tap(hasText("Log it") and hasClickAction())
+}
+
+/** Day [day] of the program is kept as a session finished on the epoch day [epochDay], each of its sets done. */
+fun IntervalAcceptanceDriver.programDayLoggedOn(day: Int, epochDay: Long) = waitFor("day $day logged on $epochDay") {
+    lift.sessions.sessions.value.any { session ->
+        session.day == day &&
+            session.finishedAtEpochMillis?.floorDiv(DAY_MILLIS) == epochDay &&
+            session.sets.size == lift.programs.following.value?.day(day)?.plannedSets()?.size
+    }
+}
+
+/** The program followed is at day [day]. */
+fun IntervalAcceptanceDriver.programAtDay(day: Int) = waitFor("the program at day $day") {
+    lift.programs.programDay.value?.number == day
+}
+
+private val IntervalAcceptanceDriver.lift: LiftRepository get() = app.koin.koin.get()

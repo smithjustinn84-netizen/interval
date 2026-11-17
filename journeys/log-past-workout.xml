@@ -1,7 +1,8 @@
 <journey name="Log a past workout">
   <description>
     A workout done away from the app, or without the Timer, goes into the Log after the fact from its day's
-    sheet, today or a day gone by: a preset, a flow or a sport day, logged in full on that day with Undo. A
+    sheet, today or a day gone by: a preset, a flow, a sport day or the followed program's next day done as
+    planned, logged in full on that day with Undo. A
     workout planned that day and still to do, or missed, is logged from its own row. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>
@@ -28,13 +29,18 @@
     <action>Tap "Climbing", then "Log it"</action>
     <action>Verify that a notice says "Climbing logged" and the week names "Climb" under yesterday's day</action>
     <action>Tap today's dot on the week</action>
-    <action>Verify that the day sheet lists the planned workout reading "Every" and today's weekday with "Start" and "Log it", and under the plans "Open plan", "Add workout" and "Log a workout"</action>
+    <action>Verify that the day sheet lists the planned workout reading "Every" and today's weekday with "Start", "Log it" and "Move", and under the plans "Open plan", "Add workout" and "Log a workout"</action>
     <action>Tap the row's "Log it"</action>
     <action>Verify that the plan's row reads "Done · Every" and today's weekday, with neither "Start" nor "Log it", and the workout is listed among the day's (the sheet stays open, so its notice shows under it, as a sport's "Log it" there does)</action>
     <action>Close the sheet and tap the "Today" tab</action>
-    <action>Verify that the card under the week says "Nothing more due" and the week counts "3 workouts"</action>
+    <action>Verify that the card under the week says "Done for today" and the week counts "3 workouts"</action>
     <action>Tap the "Log" tab, then tomorrow's dot on the week if the week has one</action>
     <action>Verify that the day sheet offers "Open plan" and "Add workout" and no "Log a workout": nothing is logged ahead of its day</action>
+    <action>Close the sheet. On the "Train" tab's Strength pillar, follow "Press ladders 1-2-3", then go back to the "Log" tab and tap today's dot, then "Log a workout"</action>
+    <action>Verify that the sheet opens on "Strength", picked first, listing "Press ladders 1-2-3" with "Day 1 of" and its lifts under "The program’s next day", and the line "Done as planned: every set at the load the program asks for. It counts as the program’s day and toward your week."</action>
+    <action>Tap "Log it" and verify that a notice says "Press ladders 1-2-3 logged" and the log lists "Press and Two-hand swing" under today with "Strength"</action>
+    <action>Tap yesterday's dot, then "Log a workout", and verify that there is no "Strength" to pick: the program was taken up today</action>
+    <action>Close the sheet. On the "Train" tab's Strength pillar, verify that the program is at day 2; back on the "Log" tab, tap "Undo" if its notice still shows, or open the session's page and delete it, and verify that the program is back at day 1</action>
     <action>Open the "Tabata" row from earlier if it is still there, or any logged workout's page, and verify that it shows the whole workout as done with no heart rate</action>
   </actions>
 </journey>
