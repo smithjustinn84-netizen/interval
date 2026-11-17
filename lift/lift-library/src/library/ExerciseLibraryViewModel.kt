@@ -106,7 +106,7 @@ fun exerciseDetail(
         history,
         lastDone = history.lastDoneAtEpochMillis?.let(timestamps::date).orEmpty(),
         recent = history.recent.map { DatedSession(it, timestamps.date(it.startedAtEpochMillis)) },
-        trend = exerciseTrend(exercise, history.recent),
+        trend = exerciseTrend(exercise, history.trendSessions),
         bestPace = bestPaceOf(exercise, sessions, intervals),
         lifetime = lifetimeReps(exercise, sessions.flatMap { it.sets } + intervals.sets),
     )

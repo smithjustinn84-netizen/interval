@@ -17,6 +17,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 
 /**
  * One bar of [Bars]: its [value] against the chart's top. [filled] bars are in the accent, the rest in the quiet
@@ -25,9 +26,9 @@ import androidx.compose.ui.semantics.semantics
 data class Bar(val value: Float, val filled: Boolean = true, val outlined: Boolean = false)
 
 /**
- * Bars to scale, bottoms aligned: History's workouts a week, an exercise's best a session. [max] is the top
- * of the chart; a dashed [line] marks that value across it when given (a goal). The row reads as one node,
- * [description] its words for a screen reader, so the bars themselves say nothing.
+ * Bars to scale, bottoms aligned: History's workouts a week, a test's attempts, the grip's weeks. [max] is the top
+ * of the chart, [height] tall; a dashed [line] marks that value across it when given (a goal, a usual week). The
+ * row reads as one node, [description] its words for a screen reader, so the bars themselves say nothing.
  */
 @Composable
 fun Bars(
@@ -36,13 +37,14 @@ fun Bars(
     description: String,
     modifier: Modifier = Modifier,
     line: Float? = null,
+    height: Dp = Sizes.weeksChart,
 ) {
     val palette = IntervalTheme.palette
     val top = max.coerceAtLeast(MIN_MAX)
     Row(
         modifier
             .fillMaxWidth()
-            .height(Sizes.weeksChart)
+            .height(height)
             .semantics { contentDescription = description }
             .drawWithCache {
                 val dash = line?.let { PathEffect.dashPathEffect(floatArrayOf(DASH, DASH)) }
@@ -63,14 +65,14 @@ fun Bars(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
         verticalAlignment = Alignment.Bottom,
     ) {
-        bars.forEach { bar -> BarBox(bar, top) }
+        bars.forEach { bar -> BarBox(bar, top, height) }
     }
 }
 
 @Composable
-private fun RowScope.BarBox(bar: Bar, top: Float) {
+private fun RowScope.BarBox(bar: Bar, top: Float, chart: Dp) {
     val palette = IntervalTheme.palette
-    val height = (Sizes.weeksChart * (bar.value / top)).coerceAtLeast(Sizes.weekBarEmpty)
+    val height = (chart * (bar.value / top)).coerceAtLeast(Sizes.weekBarEmpty)
     val shape = Modifier.weight(1f).height(height).clip(Corners.radius12)
     Box(
         when {

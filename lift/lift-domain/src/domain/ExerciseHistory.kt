@@ -5,13 +5,15 @@ data class PastSession(val uid: String, val startedAtEpochMillis: Long, val sets
 
 /**
  * The user's history with one exercise: how many finished sessions had it ([timesDone]), when it was [lastDone],
- * the [records] its sets set (one bell and two apart), and the [recent] sessions with it, newest first.
+ * the [records] its sets set (one bell and two apart), the [recent] sessions with it, newest first, and the
+ * [trendSessions] its trend is drawn over, the latest [TREND_SESSIONS] of them, newest first too.
  */
 data class ExerciseHistory(
     val timesDone: Int = 0,
     val lastDoneAtEpochMillis: Long? = null,
     val records: List<PersonalRecord> = emptyList(),
     val recent: List<PastSession> = emptyList(),
+    val trendSessions: List<PastSession> = emptyList(),
 )
 
 /**
@@ -34,11 +36,15 @@ fun exerciseHistory(
         // Oldest first, the order records are worked out in.
         records = personalRecords(done.asReversed().flatMap { it.sets }),
         recent = done.take(limit),
+        trendSessions = done.take(TREND_SESSIONS),
     )
 }
 
 /** How many of its sessions an exercise's page lists. */
 const val RECENT_SESSIONS = 10
+
+/** How many of its sessions an exercise's trend is drawn over: months of training, a session or two a week. */
+const val TREND_SESSIONS = 24
 
 /** [count] sets in a row, each the same as [set]: the same load, reps or hold, side and band. */
 data class SetRun(val set: SetLog, val count: Int)
@@ -60,41 +66,57 @@ fun collapsedSets(sets: List<SetLog>): List<SetRun> = buildList {
 private fun SetLog.sameAs(other: SetLog) = exercise.key == other.exercise.key && load == other.load &&
     reps == other.reps && side == other.side && seconds == other.seconds
 
-/** What a trend counts for an exercise: the bell's weight, the reps (bodyweight or band work), or the hold. */
-enum class TrendMeasure { Kg, Reps, Seconds }
+/**
+ * What a trend counts for an exercise: the work of its best set, the bell's weight times the reps (so more reps at
+ * the same bell climb), the reps alone (bodyweight or band work), or the hold.
+ */
+enum class TrendMeasure { Work, Reps, Seconds }
 
-/** One session's best with an exercise: when the session started, and its [value] in the trend's measure. */
-data class TrendPoint(val startedAtEpochMillis: Long, val value: Double)
+/**
+ * One session's best with an exercise: when the session started, and its [value] in the trend's measure. A
+ * [TrendMeasure.Work] point carries its set's [kg] (the bell's, one of two) and [reps], whose product is the value;
+ * the others leave them 0.
+ */
+data class TrendPoint(val startedAtEpochMillis: Long, val value: Double, val kg: Double = 0.0, val reps: Int = 0)
 
 /** An exercise's best each session over its latest sessions, oldest first, all in one [measure]. */
 data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
     val max: Double get() = points.maxOf { it.value }
 
+    val min: Double get() = points.minOf { it.value }
+
+    val first: TrendPoint get() = points.first()
+
     val latest: Double get() = points.last().value
 }
 
 /**
- * [exercise]'s trend over [recent] (newest first, as [ExerciseHistory.recent] holds them), oldest first: a hold
- * by its longest set, a band or mat exercise, or a bodyweight one with nothing added, by its most reps in a set,
- * anything with a weight by its heaviest set (the bell's weight, one or two). Null until there are two
- * sessions to compare.
+ * [exercise]'s trend over [sessions] (newest first, as [ExerciseHistory.trendSessions] holds them), the latest
+ * [TREND_SESSIONS] oldest first: a hold by its longest set, a band or mat exercise, or a bodyweight one with nothing
+ * added, by its most reps in a set, anything with a weight by its best set's work, the bell's weight (one of two)
+ * times the reps, a tie going to the heavier bell. Null until there are two sessions to compare.
  */
-fun exerciseTrend(exercise: Exercise, recent: List<PastSession>): Trend? {
-    val sessions = recent.asReversed()
-    if (sessions.size < MIN_TREND_SESSIONS) return null
+fun exerciseTrend(exercise: Exercise, sessions: List<PastSession>): Trend? {
+    val oldestFirst = sessions.take(TREND_SESSIONS).asReversed()
+    if (oldestFirst.size < MIN_TREND_SESSIONS) return null
     val measure = when {
         exercise.measure == Measure.Time -> TrendMeasure.Seconds
         exercise.equipment == Equipment.Band || exercise.equipment == Equipment.Mat -> TrendMeasure.Reps
-        sessions.all { session -> session.sets.all { it.load.kg == 0.0 } } -> TrendMeasure.Reps
-        else -> TrendMeasure.Kg
+        oldestFirst.all { session -> session.sets.all { it.load.kg == 0.0 } } -> TrendMeasure.Reps
+        else -> TrendMeasure.Work
     }
-    val points = sessions.map { session ->
-        val value = when (measure) {
-            TrendMeasure.Seconds -> session.sets.maxOf { it.seconds ?: 0 }.toDouble()
-            TrendMeasure.Reps -> session.sets.maxOf { it.reps }.toDouble()
-            TrendMeasure.Kg -> session.sets.maxOf { it.load.kg }
+    val points = oldestFirst.map { session ->
+        val at = session.startedAtEpochMillis
+        when (measure) {
+            TrendMeasure.Seconds -> TrendPoint(at, session.sets.maxOf { it.seconds ?: 0 }.toDouble())
+
+            TrendMeasure.Reps -> TrendPoint(at, session.sets.maxOf { it.reps }.toDouble())
+
+            TrendMeasure.Work -> {
+                val best = session.sets.maxWith(compareBy<SetLog> { it.load.kg * it.reps }.thenBy { it.load.kg })
+                TrendPoint(at, best.load.kg * best.reps, best.load.kg, best.reps)
+            }
         }
-        TrendPoint(session.startedAtEpochMillis, value)
     }
     return Trend(measure, points)
 }

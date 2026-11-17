@@ -23,6 +23,9 @@ const val GRIP_ACUTE_DAYS = 7
 /** The days of load the week is weighed against: four weeks. */
 const val GRIP_CHRONIC_DAYS = 28
 
+/** The weeks of [GRIP_CHRONIC_DAYS] that [GripLoad.weeks] holds. */
+const val GRIP_WEEKS = GRIP_CHRONIC_DAYS / GRIP_ACUTE_DAYS
+
 /** This week's load past this many times the weeks before's average is too much, too soon. */
 const val GRIP_OVERREACHED_RATIO = 1.3
 
@@ -60,8 +63,9 @@ val SetLog.gripLoad: Double
 
 /**
  * The grip's load lately: [acute] over the last [GRIP_ACUTE_DAYS] (of it, [ballistic] thrown and [grind] slow or
- * held, BJJ's in neither), [chronic] over the last [GRIP_CHRONIC_DAYS], and the [trainingDays] in those that
- * carried any.
+ * held, BJJ's in neither), [chronic] over the last [GRIP_CHRONIC_DAYS], the [trainingDays] in those that carried
+ * any, and the [weeks] of the month, each [GRIP_ACUTE_DAYS] days counted back from today (not calendar weeks),
+ * oldest first: so the last is [acute], and together they are [chronic]. Empty with nothing in the month.
  */
 data class GripLoad(
     val acute: Double = 0.0,
@@ -69,6 +73,7 @@ data class GripLoad(
     val ballistic: Double = 0.0,
     val grind: Double = 0.0,
     val trainingDays: Int = 0,
+    val weeks: List<Double> = emptyList(),
 ) {
     /** A week's load in the three weeks before this one, on average; null with none, as in a first week. */
     val weeksBefore: Double?
@@ -105,12 +110,18 @@ fun gripLoad(sets: List<SetLog>, grappling: List<Long>, today: Long, dayOf: (Lon
     val thisWeek = lifted.filter { (day, _) -> day in week }.map { it.second }
     val ballistic = thisWeek.filter { it.exercise.movement.tempo == Tempo.Ballistic }.sumOf { it.gripLoad }
     val grind = thisWeek.sumOf { it.gripLoad } - ballistic
+    // Each week's load, by how many weeks back from today its day falls: 0 this week.
+    val byWeek = DoubleArray(GRIP_WEEKS)
+    lifted.forEach { (day, set) -> byWeek[((today - day) / GRIP_ACUTE_DAYS).toInt()] += set.gripLoad }
+    mat.forEach { day -> byWeek[((today - day) / GRIP_ACUTE_DAYS).toInt()] += GRAPPLING_GRIP_LOAD }
+    val weeks = byWeek.reversed().takeIf { load -> load.any { it > 0 } }.orEmpty()
     return GripLoad(
         acute = ballistic + grind + mat.count { it in week } * GRAPPLING_GRIP_LOAD,
         chronic = lifted.sumOf { it.second.gripLoad } + mat.size * GRAPPLING_GRIP_LOAD,
         ballistic = ballistic,
         grind = grind,
         trainingDays = (lifted.map { it.first } + mat).distinct().size,
+        weeks = weeks,
     )
 }
 

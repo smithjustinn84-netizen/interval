@@ -28,4 +28,12 @@ object LiftSizes {
     /** A set-up's stretch at its narrowest on a demo's timeline, and the gap that keeps it apart from the rep. */
     val demoSetUpLeast = 36.dp
     val demoSetUpGap = 12.dp
+
+    /** A trend's line on an exercise's page: compact, so months of sessions read in one glance. */
+    val sparkline = 56.dp
+    val sparklineStroke = 2.dp
+    val sparklineDot = 6.dp
+
+    /** The grip's four weeks on Lift's Grip card: short bars under its lines. */
+    val gripChart = 48.dp
 }

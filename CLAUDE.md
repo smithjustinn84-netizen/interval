@@ -163,7 +163,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      (`Estimate.kt`, from its sets, each lift's pace and the rest between sets), the program to
                      start someone on with one bell (`StarterProgram.kt`). The coaching (docs/kettlebell-coaching.md):
                      how each lift moves (`Movement.kt`: pattern, tempo ballistic/grind/hold, grip, lifts in a rep),
-                     the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it) and how ready the lifter is (`Readiness.kt`), a
+                     the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it, and the month's four weeks, `GripLoad.weeks`) and how ready the lifter is (`Readiness.kt`), a
                      taxed day's easier plan (`Autoregulate.kt`), the safety lines (`Safety.kt`: `SafetyLine`, and
                      `firstAtBell`, a thrown lift's first set at a bell new to it), density and pace (`Density.kt`, only from sets
                      logged as done), the challenges and totals (`Benchmarks.kt`) and the tests (`Tests.kt`: a
@@ -190,7 +190,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      words, and each platform's `liftPlatformModule` (the database builder too); Lift's
                      `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
-                     `SessionStats`, `BalanceBars`), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
+                     `SessionStats`, `BalanceBars`, `Sparkline`: an exercise's trend, each session's best set by its kg × reps over
+                     its latest 24, `exerciseTrend` in lift-domain), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
                      figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
                      `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
                      a figure on its feet gives a record, a one-rep demo from where it stood), and `Demonstration`,

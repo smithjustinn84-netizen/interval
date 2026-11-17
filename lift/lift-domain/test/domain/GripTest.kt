@@ -42,6 +42,21 @@ class GripTest {
     }
 
     @Test
+    fun `the month's four weeks count back from today and add up to it`() {
+        val sets = listOf(
+            set(BuiltInExercise.TwoHandSwing, 100, 0),
+            set(BuiltInExercise.TwoHandSwing, 50, 6),
+            set(BuiltInExercise.Snatch, 100, 20),
+            set(BuiltInExercise.Snatch, 10, 27),
+        )
+        // Day 0 is the month's first day, in the oldest week with day 6; day 20 is the week before this one.
+        val grip = gripLoad(sets, grappling = listOf(13), today = 27, dayOf)
+        assertEquals(listOf(450.0, GRAPPLING_GRIP_LOAD, 450.0, 45.0), grip.weeks)
+        assertEquals(grip.acute, grip.weeks.last())
+        assertEquals(grip.chronic, grip.weeks.sum())
+    }
+
+    @Test
     fun `a first week never reads as overreached`() {
         val grip = gripLoad(List(5) { set(BuiltInExercise.Snatch, 100, 22L + it) }, emptyList(), today = 27, dayOf)
         assertNull(grip.ratio)

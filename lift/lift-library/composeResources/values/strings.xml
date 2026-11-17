@@ -40,7 +40,8 @@
         <item quantity="other">Last %1$d sessions</item>
     </plurals>
     <string name="detail_trend_latest">Latest %1$s</string>
-    <string name="detail_trend_kg">%1$s kg</string>
+    <string name="detail_trend_work">%1$s kg × %2$d</string>
+    <string name="detail_trend_from">From %1$s</string>
     <plurals name="detail_trend_reps">
         <item quantity="one">%1$d rep</item>
         <item quantity="other">%1$d reps</item>

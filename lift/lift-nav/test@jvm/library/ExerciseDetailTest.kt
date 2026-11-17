@@ -70,8 +70,11 @@ class ExerciseDetailTest {
         waitForText("Done 3 times · last day 2")
         onNodeWithText("Best each session").performScrollTo().assertExists()
         onNodeWithText("Last 3 sessions").assertExists()
-        onNodeWithText("Latest 24 kg").assertExists()
-        onNodeWithContentDescription("Best each session, oldest first: 12 kg, 16 kg, 24 kg").assertExists()
+        // Each session's best set by its weight times reps: day 2's 20 kg × 5 over its 24 kg × 3.
+        onNodeWithText("Latest 20 kg × 5").assertExists()
+        onNodeWithText("From 12 kg × 8").assertExists()
+        onNodeWithContentDescription("Best each session, oldest first: 12 kg × 8, 16 kg × 5, 20 kg × 5")
+            .assertExists()
     }
 
     @Test

@@ -79,20 +79,54 @@ class ExerciseTrendTest {
 
     private fun session(startedAt: Long, vararg sets: SetLog) = PastSession("s$startedAt", startedAt, sets.toList())
 
-    private fun set(exercise: Exercise, kg: Double, reps: Int, seconds: Int? = null) =
-        SetLog.of(nextId++, exercise, kg, reps, null, nextId, seconds = seconds)
+    private fun set(exercise: Exercise, kg: Double, reps: Int, seconds: Int? = null, double: Boolean = false) =
+        SetLog.of(nextId++, exercise, kg, reps, null, nextId, double, seconds = seconds)
 
     @Test
-    fun `a weighted lift trends by its heaviest set each session oldest first`() {
+    fun `a weighted lift trends by its best set's work each session oldest first`() {
         val recent = listOf(
-            session(3_000, set(BuiltInExercise.Press, 20.0, 5), set(BuiltInExercise.Press, 24.0, 3)),
+            session(3_000, set(BuiltInExercise.Press, 24.0, 3), set(BuiltInExercise.Press, 16.0, 10)),
             session(2_000, set(BuiltInExercise.Press, 16.0, 8)),
-            session(1_000, set(BuiltInExercise.Press, 12.0, 10)),
+            session(1_000, set(BuiltInExercise.Press, 16.0, 5)),
         )
         val trend = exerciseTrend(BuiltInExercise.Press, recent)
-        assertEquals(TrendMeasure.Kg, trend?.measure)
-        assertEquals(listOf(12.0, 16.0, 24.0), trend?.points?.map { it.value })
-        assertEquals(24.0, trend?.latest)
+        assertEquals(TrendMeasure.Work, trend?.measure)
+        assertEquals(listOf(80.0, 128.0, 160.0), trend?.points?.map { it.value })
+        assertEquals(TrendPoint(3_000, 160.0, 16.0, 10), trend?.points?.last())
+        assertEquals(80.0, trend?.min)
+        assertEquals(TrendPoint(1_000, 80.0, 16.0, 5), trend?.first)
+    }
+
+    @Test
+    fun `a tie of work goes to the heavier bell`() {
+        val recent = listOf(
+            session(2_000, set(BuiltInExercise.TwoHandSwing, 16.0, 15), set(BuiltInExercise.TwoHandSwing, 24.0, 10)),
+            session(1_000, set(BuiltInExercise.TwoHandSwing, 16.0, 10)),
+        )
+        val latest = exerciseTrend(BuiltInExercise.TwoHandSwing, recent)?.points?.last()
+        assertEquals(24.0, latest?.kg)
+        assertEquals(10, latest?.reps)
+    }
+
+    @Test
+    fun `a set with two bells counts the bell's weight`() {
+        val recent = listOf(
+            session(2_000, set(BuiltInExercise.Clean, 16.0, 5, double = true)),
+            session(1_000, set(BuiltInExercise.Clean, 16.0, 4, double = true)),
+        )
+        assertEquals(listOf(64.0, 80.0), exerciseTrend(BuiltInExercise.Clean, recent)?.points?.map { it.value })
+    }
+
+    @Test
+    fun `the trend keeps its latest sessions while the page lists fewer`() {
+        val sessions = (30 downTo 1).map {
+            LiftSession("s$it", it * 1_000L, it * 1_000L + 60_000, "", listOf(set(BuiltInExercise.Snatch, 16.0, it)))
+        }
+        val history = exerciseHistory(BuiltInExercise.Snatch, sessions)
+        assertEquals(RECENT_SESSIONS, history.recent.size)
+        val trend = exerciseTrend(BuiltInExercise.Snatch, history.trendSessions)
+        assertEquals(TREND_SESSIONS, trend?.points?.size)
+        assertEquals((7..30).map { it * 1_000L }, trend?.points?.map { it.startedAtEpochMillis })
     }
 
     @Test

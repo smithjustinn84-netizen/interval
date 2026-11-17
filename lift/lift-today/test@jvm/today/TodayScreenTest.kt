@@ -22,6 +22,7 @@ import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.GripLoad
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
@@ -172,6 +173,24 @@ class TodayScreenTest {
         onNodeWithContentDescription("Shoulders: 1 set worked it most, 0 assisted").assertExists()
         onNode(hasScrollAction()).performScrollToNode(hasText("Not trained", substring = true))
         onNodeWithText("Not trained in four weeks: Chest, Quads and calves").assertExists()
+    }
+
+    @Test
+    fun `the grip's card charts its four weeks against a usual one`() = runUiTest {
+        val week = GripLoad(acute = 600.0, chronic = 600.0)
+        var state by mutableStateOf(TodayUiState(grip = week))
+        setThemedContent(dark = true) { TodayScreen(state, onStartSession = {}, onChooseProgram = {}) }
+        onNode(hasScrollAction()).performScrollToNode(hasText("Grip this week: 600"))
+        // A load with no weeks to chart has no chart.
+        onNodeWithText("The last four weeks", substring = true).assertDoesNotExist()
+
+        state =
+            state.copy(grip = GripLoad(acute = 600.0, chronic = 1_500.0, weeks = listOf(300.0, 300.0, 300.0, 600.0)))
+        onNode(hasScrollAction()).performScrollToNode(hasText("The last four weeks, the line a usual week"))
+        onNodeWithContentDescription(
+            "Grip a week over the last four weeks, oldest first: 300, 300, 300, 600. A usual week: 300",
+        )
+            .assertExists()
     }
 
     @Test
