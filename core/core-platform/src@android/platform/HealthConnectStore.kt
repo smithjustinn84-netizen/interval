@@ -42,7 +42,7 @@ import java.time.ZoneId
  */
 class HealthConnectStore(
     private val context: Context,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1)),
 ) : HealthStore {
     private val log = Logger.withTag("HealthConnect")
     private val _status = MutableStateFlow(statusOfSdk())
@@ -87,6 +87,7 @@ class HealthConnectStore(
     }
 
     override fun record(workout: HealthWorkout) {
+        if (workout.endedAtEpochMillis <= workout.startedAtEpochMillis) return
         scope.launch {
             if (!granted()) {
                 _status.value = currentStatus()
@@ -181,8 +182,12 @@ class HealthConnectStore(
     }
 }
 
-/** The records [this] goes into the store as: the session, and its calories when estimated. */
-private fun HealthWorkout.records(): List<Record> {
+/**
+ * The records [this] goes into the store as: the session, and its calories when there are some to record
+ * (Health Connect refuses a zero-calorie record, and a session that didn't advance the clock).
+ */
+internal fun HealthWorkout.records(): List<Record> {
+    if (endedAtEpochMillis <= startedAtEpochMillis) return emptyList()
     val start = Instant.ofEpochMilli(startedAtEpochMillis)
     val end = Instant.ofEpochMilli(endedAtEpochMillis)
     val offset = ZoneId.systemDefault().rules.getOffset(start)
@@ -197,7 +202,7 @@ private fun HealthWorkout.records(): List<Record> {
         notes = notes,
         segments = segments.map { it.toSegment() },
     )
-    val calories = calories?.let {
+    val calories = calories?.takeIf { it > 0 }?.let {
         TotalCaloriesBurnedRecord(
             startTime = start,
             startZoneOffset = offset,

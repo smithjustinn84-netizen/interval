@@ -70,4 +70,10 @@ class HealthKitWorkoutTest {
         assertNull(bare.metadata[HealthKitKeys.NOTES])
         assertNull(bare.calories)
     }
+
+    @Test
+    fun `zero calories or a workout that did not advance the clock records no energy sample`() {
+        assertNull(workout.copy(calories = 0).toHealthKit().calories)
+        assertNull(workout.copy(endedAtEpochMillis = workout.startedAtEpochMillis).toHealthKit().calories)
+    }
 }

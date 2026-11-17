@@ -83,7 +83,7 @@ import kotlin.coroutines.resume
  * each carry a sync identifier (the workout's id) and version, so the same workout written again replaces the first.
  */
 class HealthKitStore(
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1)),
 ) : HealthStore {
     private val log = Logger.withTag("HealthKit")
     private val store: HKHealthStore? = if (HKHealthStore.isHealthDataAvailable()) HKHealthStore() else null
@@ -126,6 +126,7 @@ class HealthKitStore(
 
     override fun record(workout: HealthWorkout) {
         val store = store ?: return
+        if (workout.endedAtEpochMillis <= workout.startedAtEpochMillis) return
         scope.launch {
             refresh()
             if (status.value != HealthStatus.Connected) return@launch
@@ -219,6 +220,7 @@ class HealthKitStore(
 
 /** Writes [workout] through a builder dated to when it ran, then finishes it; a step that fails drops the lot. */
 private suspend fun HKHealthStore.write(workout: HealthKitWorkout) {
+    if (workout.endedAtEpochMillis <= workout.startedAtEpochMillis) return
     val configuration = HKWorkoutConfiguration().apply { activityType = workout.kind.activityType }
     val builder = HKWorkoutBuilder(this, configuration, HKDevice.localDevice())
     try {
@@ -239,7 +241,7 @@ private suspend fun HKHealthStore.write(workout: HealthKitWorkout) {
             )
         }
         if (events.isNotEmpty()) step { builder.addWorkoutEvents(events, it) }
-        workout.calories?.let { calories ->
+        workout.calories?.takeIf { it > 0 }?.let { calories ->
             val sample = HKQuantitySample.quantitySampleWithType(
                 quantityType(HKQuantityTypeIdentifierActiveEnergyBurned),
                 HKQuantity.quantityWithUnit(HKUnit.kilocalorieUnit(), calories.toDouble()),

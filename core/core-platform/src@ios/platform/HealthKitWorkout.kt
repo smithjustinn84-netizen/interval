@@ -48,7 +48,7 @@ internal fun HealthWorkout.toHealthKit(): HealthKitWorkout {
             )
         },
         pauses = paused.map { HealthKitPause(it.startEpochMillis, it.endEpochMillis) },
-        calories = calories,
+        calories = calories?.takeIf { it > 0 && endedAtEpochMillis > startedAtEpochMillis },
         metadata = buildMap {
             put(HealthKitKeys.SYNC_IDENTIFIER, id)
             put(HealthKitKeys.SYNC_VERSION, version)

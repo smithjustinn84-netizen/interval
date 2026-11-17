@@ -66,8 +66,10 @@ line is after ticket 5; ticket 6 sits below it.
 
 **0. (Dropped) Release 0.5.0.** Releases are not sprint tickets; one happens when the user asks. "Lift speaks"
 landed on `main` and CI passed. An R8 smoke run of 28 journeys on the minified build (2026-11-07) found no crash
-and no R8 signature; the one open question is `health-connect.xml`, whose finished workout didn't show under
-Exercise in Health Connect. Check it before the next release. Ticket 4 of 0.5 moves here as ticket 6.
+and no R8 signature; `health-connect.xml`'s finished workout was dropped when the short skipped run's calorie
+estimate rounded to 0 (`TotalCaloriesBurnedRecord` refuses zero energy, which aborted the insert before the
+session was written), now guarded in `HealthConnectStore` and `HealthKitStore`. Ticket 4 of 0.5 moves here as
+ticket 6.
 
 **1. Open 0.6.0** · XS
 - `versionName` 0.6.0 and `versionCode` 6 in `apps/androidApp/module.yaml` and the pbxproj (both targets,

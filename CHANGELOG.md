@@ -177,6 +177,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   view rather than the whole library.
 
 ### Fixed
+- A workout skipped through or ended after a few seconds with a body weight set now reaches Health Connect and
+  Apple Health: a calorie estimate that rounds to zero no longer drops the session with it.
 - A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of
   what it says while more lies below, so the bell row under the stepper no longer looks like the end of it.
 
