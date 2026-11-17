@@ -15,6 +15,13 @@ rather than copying the list forward. What is in a sprint is in that sprint's fi
 - **A Live Activity that follows each phase on iOS.** With the app suspended its Live Activity can't learn of the
   next interval, so past the current one's end it shows only the whole workout's clock. *Brings it in:* the Apple
   team above, and a push service to update it at each change.
+- **The Live Activity's stale view, checked on an iPhone.** Once the interval it counts ends with the app
+  suspended, the activity should drop the phase and its clock for "back in the app" over the whole workout's
+  (`staleDate` is the interval's end, `IntervalActivity.swift`). On the simulator (2026-11-17, the app stopped with
+  SIGSTOP) it never did: the Lock Screen sat in always-on display with the backlight off, which only steps the
+  timers, and kept "Work 0:00" until the app ran again and caught it up. *Brings it in:* a phone with the app on it
+  (a personal team in Xcode is enough to install). Start a workout, lock, wait past the interval with the screen
+  on, and look; if it still says "Work 0:00", the stale view needs another way in.
 - **Screenshot tests and coverage.** The Kotlin Toolchain (0.13) supports neither ([testing.md](testing.md)).
   *Brings it in:* the toolchain supporting them.
 
