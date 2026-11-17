@@ -105,16 +105,18 @@ class FinishSession(
         }
         // 15:15's snatches, counted on the interval side, count beside the sessions' sets.
         val alongside = intervals.workouts.value.snatchSets
+        val lifted = sessionStore.sessions.value.flatMap { it.sets }
+        val today = timestamps.dayNumber(done.finishedAtEpochMillis ?: clock.nowMillis())
         // The weeks before this one: the session is not yet among the finished.
         val grip = gripLoad(
-            sessionStore.sessions.value.flatMap { it.sets } + alongside.sets,
+            lifted + alongside.sets,
             intervals.sportDays.value.filter { it.grappling }.map { it.epochDay },
-            timestamps.dayNumber(done.finishedAtEpochMillis ?: clock.nowMillis()),
+            today,
             timestamps::dayNumber,
         )
         current.value = Finished(
             done,
-            newRecords(sessionStore.sessions.value.flatMap { it.sets }, done),
+            newRecords(lifted, done),
             weekWithThis(),
             changes,
             taken = programStore.customPrograms.value.mapNotNull { it.name }.toSet(),
@@ -127,7 +129,8 @@ class FinishSession(
                 toppedOut(it, session.sets, bells, bands, pairs, setStore.restSeconds.value)
             }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
-            handCare = done.wantsHandCare,
+            // The day's hands: today's other sessions and 15:15's snatches with this one's.
+            handCare = wantsHandCare(done.sets, lifted + alongside.sets, today, timestamps::dayNumber),
             paces = newPaces(sessionStore.sessions.value, done, alongside),
             milestones = milestonesIn(sessionStore.sessions.value, done, alongside.sets),
             snatchTest = if (test != null) {

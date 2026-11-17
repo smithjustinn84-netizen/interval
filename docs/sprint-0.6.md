@@ -171,7 +171,10 @@ ticket 6.
   it), with each work interval's end (`HistoryEntry.workEnds`) and the preset's name. The snatch test names that
   preset ("from 15:15 MVO2"). The Log page and the session's exercise sheet count them too, and a lift's page shows
   its reps in all with only 15:15's snatches behind them. The question lives in `interval-ui` (`SnatchQuestion`),
-  which now depends on `lift-domain` for the bell sizes.
+  which now depends on `lift-domain` for the bell sizes. Hand care followed (`wantsHandCare` in `Grip.kt`, over a
+  day's sets): 15:15's summary says it once its count and the day's other snatches reach `HAND_CARE_SNATCHES`
+  (`WorkoutUiState.handCare`, `SummarySnatches`), and a session's summary counts the day's 15:15 snatches with its
+  own, saying nothing of the hands after a session with no snatches or one-hand swings.
 
 **7. The bell waits** (added during the sprint) · M
 - Fixed bell sizes, in one ordered ladder ([kettlebell-coaching.md](kettlebell-coaching.md), section 4):

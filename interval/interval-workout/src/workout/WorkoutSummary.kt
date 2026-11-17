@@ -68,7 +68,6 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
-import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.countUp
@@ -395,11 +394,7 @@ private fun SummaryDetails(
         }
         state.snatches?.let { ask ->
             AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SNATCH_STEP)) {
-                SnatchQuestion(
-                    ask,
-                    onCount = reflection.onCountSnatches,
-                    modifier = Modifier.padding(top = Spacing.space24).widthIn(max = Sizes.content),
-                )
+                SummarySnatches(ask, state.handCare, reflection.onCountSnatches)
             }
         }
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * HOW_STEP)) {

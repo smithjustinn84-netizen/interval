@@ -86,7 +86,9 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   their milestones, the snatch test (ten sets of eight in five minutes is 80, "Best: 80 in 5 minutes, from 15:15
   MVO2"), its best pace, and the grip's load, and through it how ready you are. Nothing is copied into Lift's log, so
   an edit or a second import never counts them twice. A lift's page shows its reps in all and pace with only 15:15's
-  snatches behind them. Exports carry the count (schema 11).
+  snatches behind them. Exports carry the count (schema 11). Once the count, with the day's other snatches (a Lift
+  session's, another 15:15's), comes to a hundred, the summary says how to look after the hands, as a Lift session
+  of that many does; and a session of snatches or one-hand swings counts 15:15's from the same day toward its own.
 - Start launches: pressed, it sends one ring of the accent out from its centre across the page as the workout
   rises, so the workout's ring reads as what the button sent up.
 - Describe reads "then": a workout typed as "8 × 20/10 then 5 × 1:00/0:30" (or "followed by") goes onto the Timer

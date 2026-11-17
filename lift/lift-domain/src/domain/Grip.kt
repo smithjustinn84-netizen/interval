@@ -118,6 +118,23 @@ fun gripLoad(sets: List<SetLog>, grappling: List<Long>, today: Long, dayOf: (Lon
 val LiftSession.gripLoad: Double get() = sets.sumOf { it.gripLoad }
 
 /** Whether a session asked enough of the hands to say how to look after them: many snatches, or one-hand swings. */
-val LiftSession.wantsHandCare: Boolean
-    get() = sets.filter { it.exercise == BuiltInExercise.Snatch }.sumOf { it.reps } >= HAND_CARE_SNATCHES ||
-        sets.filter { it.exercise == BuiltInExercise.OneHandSwing }.sumOf { it.reps } >= HAND_CARE_SWINGS
+val LiftSession.wantsHandCare: Boolean get() = sets.wantsHandCare
+
+/**
+ * Whether these sets, a day's however they were done (a session's, an interval workout's snatches), asked enough of
+ * the hands to say how to look after them: [HAND_CARE_SNATCHES] snatches, or [HAND_CARE_SWINGS] one-hand swings.
+ */
+val List<SetLog>.wantsHandCare: Boolean
+    get() = filter { it.exercise == BuiltInExercise.Snatch }.sumOf { it.reps } >= HAND_CARE_SNATCHES ||
+        filter { it.exercise == BuiltInExercise.OneHandSwing }.sumOf { it.reps } >= HAND_CARE_SWINGS
+
+/**
+ * Whether the hands want looking after once [done], the sets of a workout just finished, are added to [others] (the
+ * day's other sets wherever they were logged, each on the day [dayOf] its time falls on): [done] holds snatches or
+ * one-hand swings, and with the others on [today] they come to [wantsHandCare]'s mark. So 15:15's snatches and a
+ * session's on the same day say it together, and a session of squats after them says nothing of the hands.
+ */
+fun wantsHandCare(done: List<SetLog>, others: List<SetLog>, today: Long, dayOf: (Long) -> Long): Boolean {
+    val handWork = done.any { it.exercise == BuiltInExercise.Snatch || it.exercise == BuiltInExercise.OneHandSwing }
+    return handWork && (done + others.filter { dayOf(it.loggedAtEpochMillis) == today }).wantsHandCare
+}

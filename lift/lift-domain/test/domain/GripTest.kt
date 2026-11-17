@@ -66,6 +66,22 @@ class GripTest {
     }
 
     @Test
+    fun `an interval workout's snatches and a session's on the same day want the hands looked after together`() {
+        // 15:15 on day 3: eight sets of eight, 64 snatches; a session's 40 the same day come to 104.
+        val intervals = intervalSets(listOf(IntervalSnatches(8, 16.0, List(8) { 3 * DAY + it * 30_000L }, null)))
+        val session = List(2) { set(BuiltInExercise.Snatch, 20, 3) }
+
+        assertFalse(intervals.sets.wantsHandCare)
+        assertFalse(session.wantsHandCare)
+        assertTrue(wantsHandCare(session, intervals.sets, today = 3, dayOf = dayOf))
+        assertTrue(wantsHandCare(intervals.sets, session, today = 3, dayOf = dayOf))
+        // The day before's count for nothing, and a session of squats says nothing of the hands.
+        assertFalse(wantsHandCare(session, intervals.sets, today = 4, dayOf = dayOf))
+        val squats = listOf(set(BuiltInExercise.GobletSquat, 10, 3))
+        assertFalse(wantsHandCare(squats, intervals.sets + session, today = 3, dayOf = dayOf))
+    }
+
+    @Test
     fun `an interval workout's snatches load the grip as sets logged do`() {
         val ends = List(40) { 3 * DAY + it * 30_000L }
         val intervals = intervalSets(listOf(IntervalSnatches(8, 16.0, ends, "15:15 MVO2")))

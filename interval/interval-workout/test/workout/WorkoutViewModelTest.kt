@@ -20,7 +20,9 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.fakes.FakeLiftStorage
+import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -91,7 +93,16 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         repository: IntervalRepository = this.repository,
         id: Long = WORKOUT_ID,
         flow: String? = null,
-    ) = WorkoutViewModel(id, flow, session, repository.presets, repository.flows, repository.history, lifts.sessions)
+    ) = WorkoutViewModel(
+        id,
+        flow,
+        session,
+        repository.presets,
+        repository.flows,
+        repository.history,
+        lifts.sessions,
+        FixedTimestampFormatter,
+    )
         .also { viewModels += it }
 
     /**
@@ -237,6 +248,33 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         val next = assertNotNull(restored.state.value.snatches)
         assertNull(next.count)
         assertEquals(SnatchCount(9, 20.0), next.opensOn)
+    }
+
+    @Test
+    fun `the snatches counted and a Lift session's today come to hand care on the summary`() = runTest(dispatcher) {
+        snatchWorkout()
+        // Earlier today in Lift: three sets of twenty snatches.
+        lifts.sessions.startSession(null)
+        repeat(3) { lifts.sets.logSet(BuiltInExercise.Snatch, 16.0, 20, null) }
+        lifts.sessions.finishSession("Snatches")
+        runCurrent()
+        val viewModel = workoutViewModel(workoutSession())
+        run(15_000)
+        assertFalse(viewModel.state.value.handCare)
+
+        // Two work intervals of ten here: 80 in the day.
+        viewModel.countSnatches(SnatchCount(10, 16.0))
+        runCurrent()
+        assertFalse(viewModel.state.value.handCare)
+
+        // Of twenty: 100.
+        viewModel.countSnatches(SnatchCount(20, 16.0))
+        runCurrent()
+        assertTrue(viewModel.state.value.handCare)
+
+        viewModel.countSnatches(null)
+        runCurrent()
+        assertFalse(viewModel.state.value.handCare)
     }
 
     @Test

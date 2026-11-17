@@ -8,11 +8,18 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.asksSnatches
 import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.domain.IntervalSnatches
+import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.intervalSets
+import dev.justinsmith.lift.domain.sets
+import dev.justinsmith.lift.domain.wantsHandCare
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -38,6 +45,7 @@ class WorkoutViewModel(
     private val flowStore: FlowStore,
     private val historyStore: HistoryStore,
     private val lift: LiftActivity,
+    private val timestamps: TimestampFormatter,
 ) : ViewModel() {
     init {
         session.open(id, flow)
@@ -50,8 +58,8 @@ class WorkoutViewModel(
         presetStore.presets,
         flowStore.flows,
         historyStore.history,
-        lift.bells,
-    ) { run, presets, flows, history, bells -> run.shown(presets, flows, history, bells) }
+        combine(lift.bells, lift.sessions, lift.active, ::LiftSide),
+    ) { run, presets, flows, history, lifted -> run.shown(presets, flows, history, lifted) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -59,9 +67,14 @@ class WorkoutViewModel(
                 presetStore.presets.value,
                 flowStore.flows.value,
                 historyStore.history.value,
-                lift.bells.value,
+                LiftSide(lift.bells.value, lift.sessions.value, lift.active.value),
             ),
         )
+
+    /** What the summary reads of Lift: the [bells] owned, and every set lifted, finished or under way. */
+    private class LiftSide(val bells: List<Double>, sessions: List<LiftSession>, active: LiftSession?) {
+        val sets: List<SetLog> = sessions.flatMap { it.sets } + active?.sets.orEmpty()
+    }
 
     /**
      * How far through its interval the workout is, 0 to 1, for the ring; 0 once it is over. Apart from [state],
@@ -73,17 +86,42 @@ class WorkoutViewModel(
 
     private val WorkoutRun.ringProgress: Float get() = if (ended || engine.isDone) 0f else engine.progress
 
-    /** [WorkoutRun.toUiState], with the snatch question once it is over and the workout is one of snatches. */
+    /**
+     * [WorkoutRun.toUiState], with the snatch question once it is over and the workout is one of snatches, and the
+     * hands' care once its count and the day's other snatches come to enough.
+     */
     private fun WorkoutRun.shown(
         presets: List<Preset>,
         flows: List<Flow>,
         history: List<HistoryEntry>,
-        bells: List<Double>,
+        lifted: LiftSide,
     ): WorkoutUiState {
         val shown = toUiState(presets, flows)
         if (entryUid == null || !presets.asksSnatches(config)) return shown
         // Its own entry, in History by now, holds this count or none, so the last one said stands either way.
-        return shown.copy(snatches = SnatchAsk.of(snatches, history, bells))
+        return shown.copy(
+            snatches = SnatchAsk.of(snatches, history, lifted.bells),
+            handCare = handCare(history, lifted.sets),
+        )
+    }
+
+    /**
+     * Whether the snatches counted, with the day's others (Lift's sets, and the other interval workouts counted),
+     * want the hands looked after, as Lift's summary says of a session: see [wantsHandCare]. Read as Lift reads
+     * them, a set a work interval done, from its own entry in History (recorded from [WorkoutRun.startedAt]).
+     */
+    private fun WorkoutRun.handCare(history: List<HistoryEntry>, lifted: List<SetLog>): Boolean {
+        val count = snatches ?: return false
+        val (own, others) = history.partition { it.startedAtEpochMillis == startedAt }
+        val entry = own.firstOrNull() ?: return false
+        val done = intervalSets(listOf(IntervalSnatches(count.perSet, count.bellKg, entry.workEnds(), null))).sets
+        val alongside = intervalSets(
+            others.mapNotNull { other ->
+                other.snatches?.let { IntervalSnatches(it.perSet, it.bellKg, other.workEnds(), null) }
+            },
+        ).sets
+        val today = timestamps.dayNumber(entry.finishedAtEpochMillis)
+        return wantsHandCare(done, alongside + lifted, today, timestamps::dayNumber)
     }
 
     fun togglePause() = session.togglePause()

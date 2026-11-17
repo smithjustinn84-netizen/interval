@@ -330,7 +330,8 @@ toolchain (`$compose.*`).
   asked on its summary, or later on its page in the Log, about how many snatches a set and the bell
   (`HistoryStore.countSnatches`, `SnatchCount`); Lift reads each counted one as a set of snatches a work interval
   done (`intervalSets`, `lift-domain`) beside its own sets wherever they are counted (the snatch test, reps in all,
-  pace, grip), never storing them, so nothing is counted twice. A sport day is
+  pace, grip, the day's hand care on either summary, `wantsHandCare`), never storing them, so nothing is counted
+  twice. A sport day is
   planned from `AddToPlanSheet`'s Sport side (`plan/PlanChoices.kt`) and worded by `plan/SportWords.kt`; the week
   strip names it under its day (`DayCell.sport`). It is logged from Today (`HomeViewModel.logSport`) or from its
   day in History, each with Undo. A workout done away from the app, or without the Timer, is logged after the fact

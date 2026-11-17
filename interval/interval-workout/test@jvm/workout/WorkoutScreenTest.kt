@@ -117,6 +117,17 @@ class WorkoutScreenTest {
     }
 
     @Test
+    fun `a summary of a hundred snatches in the day says to look after the hands`() = runUiTest {
+        val counted = SnatchAsk(count = SnatchCount(20, 16.0), opensOn = SnatchCount(8, 16.0), bells = listOf(16.0))
+        var state by mutableStateOf(done.toUiState(running = false).copy(snatches = counted))
+        setThemedContent { Screen(state) }
+        onNodeWithText("Look after your hands", substring = true).assertDoesNotExist()
+
+        state = state.copy(handCare = true)
+        onNodeWithText("Look after your hands", substring = true).performScrollTo().assertExists()
+    }
+
+    @Test
     fun `a summary of anything else asks nothing of snatches`() = runUiTest {
         setThemedContent { Screen(done.toUiState(running = false)) }
         onNodeWithText("How was it?").assertExists()

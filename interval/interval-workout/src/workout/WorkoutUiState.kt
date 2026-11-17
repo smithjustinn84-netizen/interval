@@ -116,6 +116,8 @@ data class WorkoutUiState(
     val heartRate: HeartRate? = null,
     /** "About how many snatches a set?" on the summary, for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
+    /** The snatches counted, with the day's others, ask for the hands to be looked after: see `wantsHandCare`. */
+    val handCare: Boolean = false,
     /** 1-based, the set [round] is in. */
     val set: Int = 1,
     /** 0-based, the block of the config that [set] is in. */

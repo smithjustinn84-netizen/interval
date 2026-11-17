@@ -6,8 +6,10 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.IntervalSnatches
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.Side
@@ -123,6 +125,44 @@ class FinishSessionTest {
         assertTrue(finished.handCare)
         // No usual day to weigh it against yet.
         assertFalse(finished.heavyGrip)
+    }
+
+    @Test
+    fun `15-15's snatches counted today and a session's come to hand care together`() = runTest {
+        // Eight sets of eight on 15:15 earlier today (the clock stands on day 0), 64 snatches; yesterday's count for
+        // nothing.
+        val ends = List(8) { 10_000L + it * 30_000L }
+        intervals.workouts.value = listOf(
+            IntervalWorkout("today", ends.last(), 600, IntervalSnatches(8, 16.0, ends, "15:15 MVO2")),
+            IntervalWorkout(
+                "yesterday",
+                -86_000_000L,
+                600,
+                IntervalSnatches(
+                    8,
+                    16.0,
+                    ends.map {
+                        it - 86_400_000L
+                    },
+                    null,
+                ),
+            ),
+        )
+        repository.sessions.startSession(null)
+        repeat(2) { repository.sets.logSet(BuiltInExercise.Snatch, 16.0, 20, null) }
+        val finishing = finishing(backgroundScope)
+
+        assertTrue(finishing.finish("Snatches"))
+
+        // 40 here and 64 there: 104.
+        assertTrue(assertNotNull(finishing.finished.value).handCare)
+
+        intervals.workouts.value = intervals.workouts.value.drop(1)
+        repository.sessions.startSession(null)
+        repeat(2) { repository.sets.logSet(BuiltInExercise.Snatch, 16.0, 20, null) }
+        assertTrue(finishing.finish("Snatches"))
+        // The earlier session's 40 count beside these, but yesterday's 15:15 does not: 80.
+        assertFalse(assertNotNull(finishing.finished.value).handCare)
     }
 
     @Test
