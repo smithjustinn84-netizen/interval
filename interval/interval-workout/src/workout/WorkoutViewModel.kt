@@ -10,6 +10,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.Flow
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.asksSnatches
 import dev.justinsmith.interval.ui.SnatchAsk
@@ -52,6 +53,12 @@ class WorkoutViewModel(
     init {
         session.open(id, flow)
     }
+
+    /**
+     * The last [WorkoutRun.capBests] worked out, and what from: the history's instance, the shape and the start.
+     * Declared before [state], whose first value reads it.
+     */
+    private var bests: CapBestsKept? = null
 
     // Followed rather than read once: a preset saved from the summary lands later, and the summary must then
     // name it. Matched once per change of either, not only on a tick.
@@ -98,13 +105,32 @@ class WorkoutViewModel(
         history: List<HistoryEntry>,
         lifted: LiftSide,
     ): WorkoutUiState {
-        val shown = toUiState(presets, flows, history)
+        val shown = toUiState(presets, flows, history, bestsOf(history))
         if (entryUid == null || !presets.asksSnatches(config)) return shown
         // Its own entry, in History by now, holds this count or none, so the last one said stands either way.
         return shown.copy(
             snatches = SnatchAsk.of(snatches, history, lifted.bells),
             handCare = handCare(history, lifted.sets),
         )
+    }
+
+    private class CapBestsKept(
+        val history: List<HistoryEntry>,
+        val config: IntervalConfig,
+        val startedAt: Long,
+        val bests: Map<Int, Int>,
+    ) {
+        fun isFor(history: List<HistoryEntry>, run: WorkoutRun): Boolean =
+            history === this.history && run.config == config && run.startedAt == startedAt
+    }
+
+    /**
+     * [WorkoutRun.capBests], worked out again only when the history changes (a new list) or the workout does, not on
+     * every tick: the state is worked out ten times a second while it runs, and the best can't change meanwhile.
+     */
+    private fun WorkoutRun.bestsOf(history: List<HistoryEntry>): Map<Int, Int> {
+        bests?.takeIf { it.isFor(history, this) }?.let { return it.bests }
+        return capBests(history).also { bests = CapBestsKept(history, config, startedAt, it) }
     }
 
     /**

@@ -12,6 +12,7 @@ import dev.justinsmith.interval.fakes.RecordingBackgroundWorkout
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.fakes.deferredStorageScope
+import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
@@ -128,6 +129,32 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
         runCurrent()
 
         assertEquals(2, viewModel.state.value.week?.count)
+    }
+
+    @Test
+    fun `a cap's best is kept over the ticks and follows the history as it changes`() = runTest(dispatcher) {
+        val cap = IntervalConfig(prepSeconds = 0, workSeconds = 300, restSeconds = 0, rounds = 1, capped = true)
+        repository.settings.updateConfig { cap }
+        repository.history.recordWorkout(
+            cap,
+            elapsedSeconds = 300,
+            startedAtEpochMillis = 1,
+            capRounds = listOf(CapRound(0, 60_000), CapRound(0, 120_000)),
+        )
+        val viewModel = workoutViewModel(workoutSession())
+        run(10_000)
+        assertEquals(2, viewModel.state.value.caps.single().best)
+        run(10_000)
+        assertEquals(2, viewModel.state.value.caps.single().best, "the same history, ticks later")
+
+        repository.history.recordWorkout(
+            cap,
+            elapsedSeconds = 300,
+            startedAtEpochMillis = 2,
+            capRounds = (1..4).map { CapRound(0, it * 60_000L) },
+        )
+        run(1_000)
+        assertEquals(4, viewModel.state.value.caps.single().best)
     }
 
     @Test

@@ -181,9 +181,15 @@ data class WorkoutRun(
 
     /**
      * The screen's view of it, its shape named after the one of [presets] it matches, or the one of [flows] it is,
-     * and its time caps beside the best of the same workout in [history], its own entry left out.
+     * and its time caps beside the best of the same workout in [history], its own entry left out: [bests], which a
+     * caller ticking it keeps while the history is the same (see [capBests]).
      */
-    fun toUiState(presets: List<Preset>, flows: List<Flow>, history: List<HistoryEntry> = emptyList()): WorkoutUiState =
+    fun toUiState(
+        presets: List<Preset>,
+        flows: List<Flow>,
+        history: List<HistoryEntry> = emptyList(),
+        bests: Map<Int, Int> = capBests(history),
+    ): WorkoutUiState =
         engine.toUiState(
             running = running,
             ended = ended,
@@ -197,13 +203,25 @@ data class WorkoutRun(
             leaving = leaving,
             effort = effort,
             note = note,
-        ).copy(heartRate = heartRate).withCaps(history)
+        ).copy(heartRate = heartRate).withCaps(bests)
 
-    private fun WorkoutUiState.withCaps(history: List<HistoryEntry>): WorkoutUiState {
+    /**
+     * The most rounds done in each capped block (0-based) of a workout of this shape in [history], its own entry left
+     * out; a block none was counted in has none. Nothing in a workout changes it, so it is worked out once per history.
+     */
+    fun capBests(history: List<HistoryEntry>): Map<Int, Int> {
+        if (!config.hasCap) return emptyMap()
+        val before = history.filter { it.startedAtEpochMillis != startedAt }
+        return config.blocks.indices
+            .filter { config.blocks[it].capped }
+            .mapNotNull { block -> bestRounds(config, block, before)?.let { block to it } }
+            .toMap()
+    }
+
+    private fun WorkoutUiState.withCaps(bests: Map<Int, Int>): WorkoutUiState {
         if (!config.hasCap) return this
         val taps = this@WorkoutRun.capRounds
-        val before = history.filter { it.startedAtEpochMillis != startedAt }
-        val caps = taps.scores(config).map { CapResult(it, bestRounds(config, it.block, before)) }
+        val caps = taps.scores(config).map { CapResult(it, bests[it.block]) }
         val shown = caps.firstOrNull { it.score.block == engine.block }?.takeUnless { over }
         val cap = shown?.let { result ->
             val into = engine.phaseMillis - engine.remainingMillis
