@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -63,7 +63,7 @@ fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>, modifier
     val player = rememberDemoPlayer(demo)
     val colors = FigureColors.theme()
     // Read as the phase changes, not every frame the figure moves.
-    val phase by remember(demo, player) { derivedStateOf { demo.phaseAt(player.progress) } }
+    val phase by remember(demo, player) { computedStateOf { demo.phaseAt(player.progress) } }
     val still = prefersReducedMotion()
     // The timeline and the cues follow the player too, so it runs while any of the card shows, not the figure alone.
     ListCard(modifier.showingPlayer(player), fill = IntervalTheme.palette.surfaceVariant) {

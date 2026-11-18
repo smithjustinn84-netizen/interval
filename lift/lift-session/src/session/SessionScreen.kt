@@ -27,7 +27,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -178,8 +178,8 @@ fun SessionRoute(onExit: () -> Unit) {
         remember(viewModel, title, healthTitle, onExit) {
             sessionActions(ActionTargets(viewModel, timers, sets, filters), title, healthTitle, onExit)
         }
-    // Derived, so the clocks' ticks reach this page only when the face up changes or what it says does.
-    val page by remember { derivedStateOf(structuralEqualityPolicy()) { sessionPage(state, clocks.value) } }
+    // Computed, so the clocks' ticks reach this page only when the face up changes or what it says does.
+    val page by remember { computedStateOf(structuralEqualityPolicy()) { sessionPage(state, clocks.value) } }
     // The session, its EMOM or density block, and its summary take one another's place with a fade through, as
     // pages do.
     AnimatedContent(
@@ -738,7 +738,7 @@ private fun SessionFoot(
 ) {
     // What the band says changes once a second, and only while a rest runs; its bar moves every tick, read where
     // it is drawn.
-    val rest by remember(clocks) { derivedStateOf(structuralEqualityPolicy()) { clocks().rest?.copy(progress = 0f) } }
+    val rest by remember(clocks) { computedStateOf(structuralEqualityPolicy()) { clocks().rest?.copy(progress = 0f) } }
     Column {
         RestBand(
             rest,

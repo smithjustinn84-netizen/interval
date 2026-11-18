@@ -265,8 +265,11 @@ feature never depends on a platform module that has an `*-api`, the data modules
 sources between modules); a data module's tests may depend on its side's `*-testing` even though that depends
 back on it.
 
-Versions live in `libs.versions.toml` (`$libs.a.b.c` = alias `a-b-c`). Compose versions come from the
-toolchain (`$compose.*`).
+Versions live in `libs.versions.toml` (`$libs.a.b.c` = alias `a-b-c`). Compose's version is set once, as
+`compose.version` in `templates/compose-stability.module-template.yaml` (1.13.0-rc01, ahead of the toolchain's
+1.12.1), and the `$compose.*` aliases follow it, but for Material3: JetBrains versions it with Compose since 1.13,
+which the toolchain can't name, so `compose-material3` and the nav suite are catalog entries, bumped with
+`compose.version`. Compose 1.13's Android artifacts need compileSdk 37.1 (`apps/androidApp/module.yaml`).
 
 ## Conventions
 

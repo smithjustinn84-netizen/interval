@@ -1,6 +1,6 @@
 package dev.justinsmith.lift.session
 
-import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.CapturedAnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -12,10 +12,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,8 +43,9 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * The rest after a set, counting down just above Log set while it runs, where the hand is: what is left, −/+
  * to make it and every rest after shorter or longer, Skip, and a bar running out along its foot. It opens as a
- * rest starts and closes as it ends, keeping its last words while it goes. Its last seconds pop in the rest
- * colour with a tick under the thumb, in step with the beeps, as the workout's clock does.
+ * rest starts and closes as it ends, the last frame it drew shrinking away (`CapturedAnimatedVisibility`). Its
+ * last seconds pop in the rest colour with a tick under the thumb, in step with the beeps, as the workout's clock
+ * does.
  */
 @Composable
 internal fun RestBand(
@@ -58,10 +55,8 @@ internal fun RestBand(
     progress: () -> Float,
     modifier: Modifier = Modifier,
 ) {
-    var shown by remember { mutableStateOf(rest) }
-    if (rest != null) shown = rest
-    AnimatedVisibility(rest != null, modifier, enter = enterExpanding(), exit = exitShrinking()) {
-        shown?.let { RestBandContent(it, onStep, onSkip, progress) }
+    CapturedAnimatedVisibility(rest != null, modifier, enter = enterExpanding(), exit = exitShrinking()) {
+        rest?.let { RestBandContent(it, onStep, onSkip, progress) }
     }
 }
 

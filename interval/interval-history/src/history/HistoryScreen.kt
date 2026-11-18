@@ -34,10 +34,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.intl.Locale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
@@ -107,7 +107,7 @@ fun HistoryRoute(
 ) {
     val viewModel = koinViewModel<HistoryViewModel>()
     val flows = koinInject<FlowStore>()
-    val locale = Locale.current.toLanguageTag()
+    val locale = LocalLocale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The actions are remembered once, so they read the latest navigation callbacks rather than the first.

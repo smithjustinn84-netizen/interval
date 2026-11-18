@@ -22,7 +22,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.intl.Locale
+import androidx.compose.ui.platform.LocalLocale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.PreviewHost
@@ -122,7 +122,7 @@ fun HomeRoute(
     val viewModel = koinViewModel<HomeViewModel>()
     // Read as a start is tapped: a flow of the user's starts as itself, as a shipped one does.
     val flows = koinInject<FlowStore>()
-    val locale = Locale.current.toLanguageTag()
+    val locale = LocalLocale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The actions are remembered once, so they read the latest navigation callbacks rather than the first.
@@ -238,13 +238,12 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
     var looking by rememberSaveable { mutableStateOf<String?>(null) }
     // Whether the picks by time are unfolded, on a day whose plan keeps them to a row.
     var picking by rememberSaveable { mutableStateOf(false) }
-    // Kept while what is up next is: the agenda is worked out again with every state, its lists new each time,
-    // which a screen comparing them by instance (iOS) would compose again.
-    val agenda = remember(state.upNext) { state.agenda }
-    val plan = state.plan
+    // Kept while what it is made of is: the plan is worked out again with every state, its lists new each time
+    // (TodayPlan's sealed steps are compared by instance), so the day's card would compose again for any change.
+    val plan = remember(state.upNext, state.done) { state.plan }
     // The line over the day, once there is a day to speak of: a plan, or something done.
     val coached = state.coached
-    val note = state.coachNote()
+    val note = state.coachNote(plan)
     // Level with the title, which starts the same way in from the window's edge.
     val coachPadding = Modifier.padding(horizontal = Spacing.space16)
     TabGrid(
@@ -272,7 +271,7 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
                 WeekDots(state.week, onDay = { actions.onOpenHistory() })
             }
         }
-        dayItems(state, actions, card, onLook = { looking = LEAD })
+        dayItems(state, plan, actions, card, onLook = { looking = LEAD })
         state.firstWeek?.let { week ->
             // A flow or a sport's day in the lead has no workout under its Start, and another day's has no Start:
             // that one is picked by time.
@@ -310,11 +309,11 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
  */
 private fun LazyStaggeredGridScope.dayItems(
     state: HomeUiState,
+    plan: TodayPlan,
     actions: HomeActions,
     card: Modifier,
     onLook: () -> Unit,
 ) {
-    val plan = state.plan
     val next = plan.next
     when {
         plan.steps.isNotEmpty() -> item(key = "day") { DayCard(plan, state.easier, actions, onLook, card) }
@@ -332,10 +331,10 @@ private fun LazyStaggeredGridScope.dayItems(
 }
 
 /** Whether there is a day to speak of: a plan, or something done. */
-private val HomeUiState.coached: Boolean get() = !loading && (hasPlans || plan.done.isNotEmpty())
+private val HomeUiState.coached: Boolean get() = !loading && (hasPlans || done.isNotEmpty())
 
 /** The one thing worth saying of the day, by the week's goal and Lift's reading; null with nothing to say. */
-private fun HomeUiState.coachNote(): CoachNote? {
+private fun HomeUiState.coachNote(plan: TodayPlan): CoachNote? {
     val goal = weekGoal.goal
     return if (coached) plan.note(taxed, goalMet = goal != null && weekGoal.count >= goal) else null
 }

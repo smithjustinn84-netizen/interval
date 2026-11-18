@@ -29,7 +29,7 @@ dependencies:
   - //lift/lift-platform
   - $compose.runtime
   - $compose.foundation: exported
-  - $compose.material3: exported
+  - $libs.compose.material3: exported
   - $libs.compose.material3.navigation.suite
   - $libs.compose.material3.adaptive.navigation3
   - $compose.ui

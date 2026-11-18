@@ -150,6 +150,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- Compose Multiplatform 1.13 (rc01, from 1.12.1), compiled against Android 37.1. Lift's rest band closes on its
+  last frame (`CapturedAnimatedVisibility`) rather than holding a copy of the rest, the states read from a running
+  clock are `computedStateOf`, which is cheaper to invalidate than `derivedStateOf`, and Today keeps its day's plan
+  while what it is made of is, so its card isn't composed again for every change of the tab's state.
 - An interval workout said to have felt very hard or all out now makes the next two days ones to take easier, as a
   Lift session does. Today says "A workout in the last two days felt very hard" and offers the program's day eased,
   Lift's session offers its easier day, and the voice says "Stop a rep early". Before, a hard 15:15 counted for

@@ -9,7 +9,7 @@ dependencies:
   - //core/core
   - $compose.runtime
   - $compose.foundation
-  - $compose.material3
+  - $libs.compose.material3
   - $compose.ui
   - $compose.components.resources
   - $compose.preview

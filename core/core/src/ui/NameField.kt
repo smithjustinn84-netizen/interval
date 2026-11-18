@@ -18,7 +18,7 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.clearText
-import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.maxLengthReject
 import androidx.compose.foundation.text.selection.TextSelectionColors
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -93,7 +93,7 @@ fun NameField(
         } else {
             TextFieldLineLimits.SingleLine
         },
-        inputTransformation = InputTransformation.maxLength(maxLength),
+        inputTransformation = InputTransformation.maxLengthReject(maxLength),
         keyboardOptions = KeyboardOptions(
             capitalization = capitalization,
             autoCorrectEnabled = autoCorrectEnabled,

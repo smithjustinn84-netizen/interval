@@ -6,6 +6,11 @@
 # but Kotlin/Native's compiler runs from its own distribution in the user's cache, where no relative path reaches the
 # project, and a file not found is a warning, which fails the build. So on iOS the types stay compared by instance,
 # and a ViewModel keeping a list's instance while nothing in it changed still counts there.
+# Compose Multiplatform's version, one for every module that turns Compose on (the toolchain's default otherwise).
+settings:
+  compose:
+    version: 1.13.0-rc01
+
 settings@jvm:
   kotlin:
     freeCompilerArgs:

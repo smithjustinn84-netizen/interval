@@ -20,7 +20,10 @@ settings:
     applicationId: dev.justinsmith.interval
     # Pinned rather than left to the toolchain's defaults, so a toolchain upgrade cannot silently
     # move the SDK level the app is compiled and tested against.
-    compileSdk: 37
+    # 37.1: Compose 1.13's Android artifacts ask for it (their AAR metadata).
+    compileSdk:
+      apiLevel: 37
+      minorApiLevel: 1
     targetSdk: 37
     minSdk: 26
     # Bump versionCode before every Play upload; versionName is the release in CHANGELOG.md.

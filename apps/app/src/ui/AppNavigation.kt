@@ -42,7 +42,8 @@ fun NavigationItems(current: Tab, type: NavigationSuiteType, pillar: Tab, onSele
     val palette = IntervalTheme.palette
     val colors = ShortNavigationBarItemDefaults.colors(
         selectedIconColor = palette.onAccent,
-        selectedTextColor = palette.text,
+        selectedTextColorTopIconPosition = palette.text,
+        selectedTextColorStartIconPosition = palette.text,
         selectedIndicatorColor = palette.accent,
         unselectedIconColor = palette.textDim,
         unselectedTextColor = palette.textDim,
