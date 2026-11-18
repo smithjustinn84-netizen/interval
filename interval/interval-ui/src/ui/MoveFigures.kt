@@ -41,9 +41,11 @@ val Move.demo: ExerciseDemo? get() = builtIn?.demo
  */
 @Composable
 fun MoveThumb(demo: ExerciseDemo, modifier: Modifier = Modifier) {
+    // Drawn in round the figure: in the view a whole rep takes, a deep squat's still is a speck in a thumb.
+    val still = remember(demo) { demo.closeUp() }
     ExerciseFigure(
-        demo,
-        progress = { demo.still },
+        still,
+        progress = { still.still },
         contentDescription = null,
         modifier = modifier
             .size(Sizes.figureThumbWidth, Sizes.figureThumbHeight)

@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -32,17 +31,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.scale
-import androidx.compose.ui.graphics.drawscope.translate
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -73,6 +62,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.countUp
+import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
@@ -281,36 +271,6 @@ private fun SummaryReadout(
         }
     }
 }
-
-/**
- * Fades the foot of a column scrolled by [scroll] while more of it lies below, so what is cut off reads as there:
- * the fade is [IntervalSizes.summaryFade] tall, shrinking over the last of the way so it is gone at the end. Read
- * as it draws, so scrolling only redraws. The column is drawn apart (offscreen, which the fade's blend needs) only
- * while there is a fade, and the fade is one gradient made as the size is, squeezed to the way left.
- */
-private fun Modifier.fadeWhenMoreBelow(scroll: ScrollState): Modifier = this
-    .graphicsLayer {
-        compositingStrategy = if (scroll.canScrollForward) CompositingStrategy.Offscreen else CompositingStrategy.Auto
-    }
-    .drawWithCache {
-        val full = IntervalSizes.summaryFade.toPx()
-        val fadeBrush = Brush.verticalGradient(FadeColors, startY = 0f, endY = full)
-        val fadeSize = Size(size.width, full)
-        onDrawWithContent {
-            drawContent()
-            val fade = minOf(full, (scroll.maxValue - scroll.value).toFloat())
-            if (fade > 0f) {
-                translate(top = size.height - full) {
-                    scale(scaleX = 1f, scaleY = fade / full, pivot = Offset(0f, full)) {
-                        drawRect(fadeBrush, size = fadeSize, blendMode = BlendMode.DstIn)
-                    }
-                }
-            }
-        }
-    }
-
-/** The summary's fade, opaque to clear: what [fadeWhenMoreBelow] keeps of the column, down its foot. */
-private val FadeColors = listOf(Color.Black, Color.Transparent)
 
 /**
  * The [ring] over the [details], as large as the [viewport]'s height leaves it: at most its full size, at least

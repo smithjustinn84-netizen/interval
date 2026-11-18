@@ -145,6 +145,9 @@ object Sizes {
     val figureThumbWidth = 64.dp
     val figureThumbHeight = 48.dp
 
+    /** How tall the fade at the foot of a summary's scrolling column is while more of it lies below. */
+    val summaryFade = 48.dp
+
     /**
      * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
      * edge and below its bottom, so the lanes sweep in from the side and bend down; the innermost

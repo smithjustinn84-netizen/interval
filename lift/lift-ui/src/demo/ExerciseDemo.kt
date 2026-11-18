@@ -233,6 +233,27 @@ class ExerciseDemo(
         return if (seconds < left) from + seconds / setUp.seconds else looped((seconds - left) / secondsPerRep)
     }
 
+    /**
+     * This demo with its [view] drawn in round the figure as it is at [still], for a small still picture: of the
+     * figure, not of the room its whole rep takes, so one crouched or sat is as plain as one standing. The floor
+     * stays under it and nothing past the view comes in. One with [props] keeps its view, which holds them too.
+     */
+    fun closeUp(): ExerciseDemo {
+        if (props.isNotEmpty()) return this
+        val figure = figureAt(still)
+        val drawn = if (hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+        val around = Rect(
+            left = drawn.minOf { it.x } - CLOSE_UP_MARGIN,
+            top = drawn.minOf { it.y } - CLOSE_UP_MARGIN,
+            right = drawn.maxOf { it.x } + CLOSE_UP_MARGIN,
+            bottom = view.bottom,
+        )
+        return ExerciseDemo(
+            keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root, around.intersect(view), props, anchor,
+            setUp,
+        )
+    }
+
     private val times = FloatArray(keyframes.size) { keyframes[it].at }
     private val angles = keyframes.map { it.pose.angles() }
 
@@ -331,6 +352,9 @@ class ExerciseDemo(
 
         /** How many places a trail remembers. */
         const val TRAIL_STEPS = 9
+
+        /** The room a close-up leaves round the joints: a plate's, the widest thing in a hand, and a little air. */
+        private const val CLOSE_UP_MARGIN = 44f
     }
 }
 

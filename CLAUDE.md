@@ -318,6 +318,10 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   A sheet that shows nothing but a long list while it does passes `IntervalSheet` a `SheetList` (core's
   `Sheet.kt`), a lazy list in place of its content, each row its part of a card by `cardRow`; the exercise
   picker is one (`rememberPickerList`, lift-library), so a test reaches a row far down it with `scrollToText`.
+  A line of parts joined by the dot that may wrap is a `JoinedText` (core: it breaks after a dot, never before, and
+  is read and found by tests as its own words); a summary's scrolling column wears `fadeWhenMoreBelow` (core's
+  `ScrollFade.kt`) before its `verticalScroll`, both sides'. A still of a figure in a list is `demo.closeUp()`
+  (`MoveThumb`): its view drawn in round the figure at `still`.
   The navigation bar or rail is an overlay (`NavigationAreaBar`, `core/core/src/ui/NavigationArea.kt`) that slides
   away as a page is pushed over a tab; a tab's scene reserves its room through `NavigationArea.tabScenes()`, so a
   tab screen pads nothing itself and a pushed page pads `safeDrawing`.

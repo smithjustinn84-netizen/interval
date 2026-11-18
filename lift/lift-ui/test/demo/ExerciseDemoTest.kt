@@ -19,6 +19,26 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a close-up holds the still figure inside the view and is the same demo`() {
+        demos.forEach { demo ->
+            val close = demo.closeUp()
+            val figure = close.figureAt(close.still)
+            assertEquals(demo.figureAt(demo.still).joints, figure.joints)
+            val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+            drawn.forEach { joint -> assertTrue(close.view.contains(joint), "$joint is outside the close-up") }
+            assertEquals(demo.view.intersect(close.view), close.view, "The close-up reaches past the view")
+            assertEquals(demo.view.bottom, close.view.bottom, "The floor is not under it")
+        }
+    }
+
+    @Test
+    fun `a close-up of a figure crouched draws in and one with props keeps its view`() {
+        val squat = assertNotNull(BuiltInExercise.DeepSquat.demo)
+        assertTrue(squat.closeUp().view.height < squat.view.height * 0.8f)
+        demos.filter { it.props.isNotEmpty() }.forEach { assertSame(it, it.closeUp()) }
+    }
+
+    @Test
     fun `a rep ends where it starts so it loops without a jump`() {
         demos.forEach { demo ->
             demo.figureAt(0f).joints.zip(demo.figureAt(1f).joints).forEach { (start, end) ->

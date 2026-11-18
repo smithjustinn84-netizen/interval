@@ -44,6 +44,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.BuiltInExercise
@@ -131,12 +132,14 @@ fun SummaryScreen(
                     }
                     Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
                 }
+                val scroll = rememberScrollState()
                 Column(
                     Modifier
                         .weight(1f, fill = false)
                         .widthIn(max = Sizes.contentWide)
                         .fillMaxHeight()
-                        .verticalScroll(rememberScrollState()),
+                        .fadeWhenMoreBelow(scroll)
+                        .verticalScroll(scroll),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
                     SummaryBody(finished, entrance, choices, onKeep, reflection)
@@ -152,8 +155,10 @@ fun SummaryScreen(
                     .padding(Spacing.space20),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
+                // The foot fades while more lies below: a heading cut off above the footer says its card is under it.
+                val scroll = rememberScrollState()
                 Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()),
+                    Modifier.weight(1f).fadeWhenMoreBelow(scroll).verticalScroll(scroll),
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
                     Arrival(entrance, HEADING_STEP) {
@@ -365,6 +370,9 @@ private val previewSets = List(6) { index ->
     SetLog.of(index + 1L, exercise, kg = if (index < 4) 24.0 else 16.0, reps = 10, side = null, index * 120_000L)
 }
 
+/** The thousandth swing, so the preview has a Bests card under the numbers. */
+private val previewMilestones = listOf(BuiltInExercise.TwoHandSwing to 1000)
+
 @PreviewFormFactors
 @Composable
 private fun SummaryScreenPreview() {
@@ -382,6 +390,7 @@ private fun SummaryScreenPreview() {
                 session,
                 newRecords(emptyList(), session),
                 week = WeekStanding(count = 3, goal = 4, streak = 2),
+                milestones = previewMilestones,
             ),
             onDone = {},
         )

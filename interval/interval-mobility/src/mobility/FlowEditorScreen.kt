@@ -35,10 +35,12 @@ import dev.justinsmith.interval.mobility.resources.flow_deleted
 import dev.justinsmith.interval.mobility.resources.flow_edit_title
 import dev.justinsmith.interval.mobility.resources.flow_move_unnamed
 import dev.justinsmith.interval.mobility.resources.flow_moves
+import dev.justinsmith.interval.mobility.resources.flow_name
 import dev.justinsmith.interval.mobility.resources.flow_name_label
 import dev.justinsmith.interval.mobility.resources.flow_name_placeholder
 import dev.justinsmith.interval.mobility.resources.flow_new_title
 import dev.justinsmith.interval.mobility.resources.flow_no_moves
+import dev.justinsmith.interval.mobility.resources.flow_note
 import dev.justinsmith.interval.mobility.resources.flow_note_label
 import dev.justinsmith.interval.mobility.resources.flow_note_placeholder
 import dev.justinsmith.interval.mobility.resources.flow_save
@@ -204,6 +206,8 @@ private fun FlowWords(draft: FlowDraft, onChange: ((FlowDraft) -> FlowDraft) -> 
         }
     }
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        // Each field under its name: filled in, a field with only a placeholder to say what it is says nothing.
+        GroupLabel(stringResource(Res.string.flow_name))
         NameField(
             name,
             placeholder = stringResource(Res.string.flow_name_placeholder),
@@ -230,12 +234,12 @@ private fun FlowWords(draft: FlowDraft, onChange: ((FlowDraft) -> FlowDraft) -> 
             check = false,
             maxLines = 2,
         )
+        GroupLabel(stringResource(Res.string.flow_note))
         NameField(
             note,
             placeholder = stringResource(Res.string.flow_note_placeholder),
             label = stringResource(Res.string.flow_note_label),
             maxLength = Flow.NOTE_MAX_LENGTH,
-            modifier = Modifier.padding(top = Spacing.space8),
         )
     }
 }

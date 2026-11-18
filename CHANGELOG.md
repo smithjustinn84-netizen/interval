@@ -221,6 +221,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   Apple Health: a calorie estimate that rounds to zero no longer drops the session with it.
 - A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of
   what it says while more lies below, so the bell row under the stepper no longer looks like the end of it.
+- A Lift session's summary fades at its foot the same way, so "Bests" cut off above Done no longer looks like a
+  heading with nothing under it.
+- A line of details that runs to a second line on Today ("about 35 min · Day 4 of 40 · Press · Row …") breaks after
+  a dot, never before one, so no line starts with the separator.
+- A move's small figure in a flow's list and in the flow editor is drawn in round the figure, so a deep squat or a
+  seated move is as plain as a lunge, not a speck in the room a whole rep takes.
+- The flow editor's name and note each sit under a label, so a filled-in note still says what it is.
 
 ## [0.5.0] — Unreleased
 

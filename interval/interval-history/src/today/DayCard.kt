@@ -77,6 +77,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
@@ -291,7 +292,7 @@ private fun LeadStep(
         Column(Modifier.fillMaxWidth().then(tap), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             Text(upNextCaption(item), style = IntervalTheme.type.caption, color = palette.textDim)
             Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
-            Text(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)
+            JoinedText(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         if (offered) {
             ListCard(Modifier.padding(top = Spacing.space8), fill = palette.surfaceVariant) {
@@ -467,7 +468,7 @@ private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
                 Text(name, style = IntervalTheme.type.label, color = palette.text)
-                Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
+                JoinedText(detail, style = IntervalTheme.type.meta, color = palette.textDim)
             }
             total?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
         }
@@ -507,7 +508,7 @@ private fun QuietRow(
         ) {
             caption?.let { Text(it, style = IntervalTheme.type.caption, color = palette.textDim) }
             Text(name, style = IntervalTheme.type.label, color = palette.text)
-            Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
+            JoinedText(detail, style = IntervalTheme.type.meta, color = palette.textDim)
         }
         button()
     }
