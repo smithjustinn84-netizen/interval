@@ -28,6 +28,9 @@ what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md). Finished 
 ./kotlin check                      # All checks; avoid locally: it also links every module's iOS tests
                                     # in Release (~12 min a link, 19 at once), which CI never runs
 ./kotlin run -m desktopApp --compose-hot-reload   # Desktop window that reloads on every save
+./kotlin test -m app -p jvm --include-classes '*PreviewRenderTest' --jvm-args='-Dpreviews=HistoryScreen'
+                                    # Draws the `@Preview`s whose name has that in it (`all`: every one) to
+                                    # build/previews/*.png. Also -Dpreviews.window=Tablet|all, -Dpreviews.dark=true
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in apps/androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
@@ -48,9 +51,13 @@ your own jj workspace) and leave it up while you edit: each save recompiles and 
 layout or motion change shows in seconds without losing the screen you are on. Size the window to the form
 factor you are checking (`InitialSize` in `apps/desktopApp/src/main.kt`, reverted before committing). To see the
 window yourself you need either a computer-use grant for the running app (`MainKt`, `com.jetbrains.jbr.java`)
-or the toolchain's `./kotlin compose-hot-reload-mcp-server` registered as an MCP server. Without either, render
-the screen from a throwaway `test@jvm` test (`onRoot().captureToImage()` to a PNG at a harness `Window`) and
-delete the test after. The emulator is for what only a device shows: insets, the keyboard, system bars.
+or the toolchain's `./kotlin compose-hot-reload-mcp-server` registered as an MCP server. Without either, draw
+the screen's `@Preview` to a PNG and read it (`PreviewRenderTest`, in Commands above; about 15 s a pass once
+compiled, every preview in one run). So every stateless screen keeps a preview at the foot of its file
+(`@PreviewFormFactors`, private, no parameters, its name ending in `Preview`, which is what the test finds it by),
+and a state worth looking at gets one of its own. Only what no preview can show (a sheet opened by a tap, a flow
+across pages) takes a throwaway `test@jvm` test that captures as that one does, deleted after. The emulator is for
+what only a device shows: insets, the keyboard, system bars.
 
 ## Layout
 

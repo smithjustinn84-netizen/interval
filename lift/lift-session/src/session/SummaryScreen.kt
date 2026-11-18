@@ -39,16 +39,21 @@ import dev.justinsmith.interval.ui.FinishHaptic
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
+import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
+import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.summary_done
@@ -351,5 +356,34 @@ private fun weekText(week: WeekStanding): String {
         goal == null -> pluralStringResource(Res.plurals.summary_week_count, week.count, week.count)
         week.goalMet -> stringResource(Res.string.today_goal_met)
         else -> stringResource(Res.string.summary_week_of_goal, week.count, goal)
+    }
+}
+
+/** A session of swings then goblet squats, a set every two minutes, for the preview. */
+private val previewSets = List(6) { index ->
+    val exercise = if (index < 4) BuiltInExercise.TwoHandSwing else BuiltInExercise.GobletSquat
+    SetLog.of(index + 1L, exercise, kg = if (index < 4) 24.0 else 16.0, reps = 10, side = null, index * 120_000L)
+}
+
+@PreviewFormFactors
+@Composable
+private fun SummaryScreenPreview() {
+    val session = LiftSession(
+        "s",
+        startedAtEpochMillis = 0,
+        finishedAtEpochMillis = 1_500_000,
+        title = "Swings and squats",
+        sets = previewSets,
+        effort = PerceivedEffort.Hard,
+    )
+    IntervalTheme {
+        SummaryScreen(
+            Finished(
+                session,
+                newRecords(emptyList(), session),
+                week = WeekStanding(count = 3, goal = 4, streak = 2),
+            ),
+            onDone = {},
+        )
     }
 }

@@ -52,6 +52,7 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ModalBackHandler
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SetupLanes
 import dev.justinsmith.interval.ui.Sizes
@@ -206,3 +207,27 @@ private fun ColumnScope.Foot(page: Int, actions: WelcomeActions) {
 
 /** The mark's ring and a little air, in the units `drawIntervalMark` measures in: no coin round it here. */
 private const val MARK_VISIBLE_UNITS = 64f
+
+@PreviewFormFactors
+@Composable
+private fun WelcomeOpeningPreview() {
+    IntervalTheme { WelcomeScreen(page = 0, actions = WelcomeActions()) }
+}
+
+@PreviewFormFactors
+@Composable
+private fun WelcomeTodayPreview() {
+    IntervalTheme { WelcomeScreen(page = 1, actions = WelcomeActions()) }
+}
+
+@PreviewFormFactors
+@Composable
+private fun WelcomeTrainPreview() {
+    IntervalTheme { WelcomeScreen(page = 2, actions = WelcomeActions()) }
+}
+
+@PreviewFormFactors
+@Composable
+private fun WelcomeLogPreview() {
+    IntervalTheme { WelcomeScreen(page = 3, actions = WelcomeActions()) }
+}

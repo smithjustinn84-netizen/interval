@@ -1,3 +1,6 @@
+// The two previews and their sample state take it past a screen file's fifteen.
+@file:Suppress("detekt.TooManyFunctions")
+
 package dev.justinsmith.interval.today
 
 import androidx.compose.foundation.clickable
@@ -25,10 +28,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
+import dev.justinsmith.interval.history.DayCell
+import dev.justinsmith.interval.history.DayState
+import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.PreviewHost
 import dev.justinsmith.interval.history.StartPreview
+import dev.justinsmith.interval.history.Streak
 import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
+import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.flowKeyOf
 import dev.justinsmith.interval.history.preview
@@ -67,7 +75,9 @@ import dev.justinsmith.interval.plan.MovePlanSheet
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.restDayFlow
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.GroupLabel
@@ -78,6 +88,7 @@ import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
@@ -90,7 +101,9 @@ import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.configDescription
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.workoutDescription
+import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.programDayLifts
 import dev.justinsmith.lift.ui.programDayLine
@@ -573,5 +586,77 @@ private fun PickRow(pick: QuickPick, onLook: () -> Unit, modifier: Modifier = Mo
         }
         Text(formatClock(pick.totalSeconds), style = IntervalTheme.type.value, color = palette.text)
         Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.chipIcon))
+    }
+}
+
+/** The preview's today, a Thursday, how far into its program the lift day is, and the minutes picked. */
+private const val PREVIEW_TODAY = 20_741L
+private const val PREVIEW_DAYS_DONE = 3
+private const val PREVIEW_MINUTES = 20
+
+/** Monday to Sunday, today a Thursday still to do: two days done before it, one missed, two more planned. */
+private val PreviewWeek = listOf(
+    DayState.Done to 240,
+    DayState.Missed to 0,
+    DayState.Done to 755,
+    DayState.Planned to 0,
+    DayState.Planned to 0,
+    DayState.Rest to 0,
+    DayState.Planned to 0,
+).mapIndexed { index, (state, seconds) ->
+    DayCell(PREVIEW_TODAY - 3 + index, index + 1, 12 + index, state, seconds, today = index == 3)
+}
+
+/** A week under way with [today] as it stands: three workouts of a goal of four, and the picks by time. */
+private fun previewState(today: DayState, upNext: List<UpNextItem>, done: List<DoneStep>) = HomeUiState(
+    week = PreviewWeek.map { if (it.today) it.copy(state = today) else it },
+    weekGoal = WeekGoal(count = 3, lifts = 1, goal = 4, streak = Streak(current = 5, best = 7), mobility = 1),
+    upNext = upNext,
+    hasPlans = true,
+    minutes = PREVIEW_MINUTES,
+    picks = builtInPresets.fitting(PREVIEW_MINUTES, onTimer = IntervalConfig()),
+    done = done,
+)
+
+/** A training day: a flow done, the program's day to do now and a planned workout after it. */
+@PreviewFormFactors
+@Composable
+private fun HomeScreenPreview() {
+    val (tabata, hiit) = builtInPresets
+    val flow = restDayFlow
+    IntervalTheme {
+        HomeScreen(
+            previewState(
+                today = DayState.Done,
+                upNext = listOfNotNull(
+                    program(ProgramId.EasyStrength).dayAfter(PREVIEW_DAYS_DONE)?.let {
+                        UpNextItem.Lift(PREVIEW_TODAY, HistoryDay.Today, it, planId = 1, minutes = 35)
+                    },
+                    UpNextItem.Planned(planId = 2, PREVIEW_TODAY, HistoryDay.Today, tabata.name, tabata.config),
+                    UpNextItem.Planned(planId = 3, PREVIEW_TODAY + 1, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                ),
+                done = listOf(DoneStep.Workout(flow.name, flow.config, elapsedSeconds = 310)),
+            ),
+            HomeActions(),
+        )
+    }
+}
+
+/** A rest day: nothing due or done today, and tomorrow's workout standing back. */
+@PreviewFormFactors
+@Composable
+private fun HomeScreenRestDayPreview() {
+    val hiit = builtInPresets[1]
+    IntervalTheme {
+        HomeScreen(
+            previewState(
+                today = DayState.Rest,
+                upNext = listOf(
+                    UpNextItem.Planned(planId = 3, PREVIEW_TODAY + 1, HistoryDay.Tomorrow, hiit.name, hiit.config),
+                ),
+                done = emptyList(),
+            ),
+            HomeActions(),
+        )
     }
 }

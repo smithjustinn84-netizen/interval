@@ -27,17 +27,21 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.NameField
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.MAX_BAND_NAME
+import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.bars
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.personalRecords
 import dev.justinsmith.lift.domain.standardBells
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.band_add
@@ -340,3 +344,20 @@ private fun BandRemoveAction(band: Band, used: Boolean, actions: BandActions, hi
 
 /** What [editing] holds while a band is being added. */
 private const val NEW_BAND = ""
+
+@PreviewFormFactors
+@Composable
+private fun GearScreenPreview() {
+    val sets = listOf(
+        SetLog.of(1, BuiltInExercise.TwoHandSwing, kg = 24.0, reps = 20, side = null, loggedAtEpochMillis = 0),
+        SetLog.of(2, BuiltInExercise.GobletSquat, kg = 16.0, reps = 12, side = null, loggedAtEpochMillis = 0),
+        SetLog.of(3, BuiltInExercise.GetUp, kg = 16.0, reps = 1, side = null, loggedAtEpochMillis = 0),
+    )
+    IntervalTheme {
+        GearScreen(
+            GearUiState(owned = sets.map { it.load.kg }.toSet(), bar = 20.0, records = personalRecords(sets)),
+            onToggle = {},
+            onBack = {},
+        )
+    }
+}

@@ -32,6 +32,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.dayHeading
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
@@ -69,7 +70,11 @@ import dev.justinsmith.interval.history.resources.plan_routine
 import dev.justinsmith.interval.history.resources.plan_title
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.PlanWorkout
+import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.AskToShowNotifications
+import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
@@ -81,6 +86,7 @@ import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.RowDivider
@@ -95,6 +101,8 @@ import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
@@ -506,6 +514,58 @@ private fun OneOffRow(oneOff: OneOff, onRemove: (Long, String) -> Unit) {
             stringResource(Res.string.plan_remove_cd, name, dayHeading(oneOff.day)),
             { onRemove(oneOff.entry.planId, removed) },
             haptic = HapticFeedbackType.SegmentTick,
+        )
+    }
+}
+
+/** The preview's today, a Thursday the 15th, and how far into its program the lift days are. */
+private const val PREVIEW_TODAY = 20_741L
+private const val PREVIEW_DAYS_DONE = 3
+
+/** What the preview's routine holds on each weekday, Monday first; the weekdays left out rest. */
+private val PreviewRoutine: Map<Int, PlanEntry> = mapOf(
+    1 to PlanEntry(1, builtInPresets[0].asPlan()),
+    2 to PlanEntry(2, PlanWorkout.SportDay(Sport.Bjj)),
+    3 to PlanEntry(3, PlanWorkout.Lift.ProgramDay, programDay = PREVIEW_DAYS_DONE + 1),
+    4 to PlanEntry(4, PlanWorkout.SportDay(Sport.Bjj)),
+    6 to PlanEntry(5, PlanWorkout.Lift.ProgramDay, programDay = PREVIEW_DAYS_DONE + 2),
+)
+
+@PreviewFormFactors
+@Composable
+private fun PlanScreenPreview() {
+    val hiit = builtInPresets[1]
+    val state = PlanUiState(
+        goal = 4,
+        streak = 5,
+        routine = (1..7).map { RoutineDay(it, listOfNotNull(PreviewRoutine[it])) },
+        oneOffs = listOf(OneOff(PlanEntry(6, hiit.asPlan()), PREVIEW_TODAY + 1, HistoryDay.Tomorrow)),
+        choices = builtInPresets.map { PlanChoice(it) },
+        days = (0 until 14).map { DayChoice(PREVIEW_TODAY + it, weekdayOf(PREVIEW_TODAY + it), 15 + it) },
+        todayWeekday = 4,
+        today = PREVIEW_TODAY,
+        reminder = ReminderUi(
+            on = true,
+            minuteOfDay = 7 * 60,
+            text = "7:00 AM",
+            picks = REMINDER_PICKS.map { ReminderPick(it, "${it / 60}:00") },
+        ),
+        programDay = program(ProgramId.EasyStrength).dayAfter(PREVIEW_DAYS_DONE),
+        programWeekdays = 2,
+        routineLifts = 2,
+        routineIntervals = 1,
+        routineSports = 2,
+    )
+    IntervalTheme {
+        PlanScreen(
+            state = state,
+            onBack = {},
+            onStepGoal = {},
+            onPlanWeekly = { _, _ -> },
+            onPlanOnce = { _, _ -> },
+            onPlanRoutine = {},
+            onRemove = { _, _ -> },
+            onSetReminder = {},
         )
     }
 }

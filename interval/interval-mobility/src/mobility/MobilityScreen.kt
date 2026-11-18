@@ -32,6 +32,7 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
@@ -177,5 +178,17 @@ private fun FlowRow(item: FlowItem, onOpen: () -> Unit, modifier: Modifier = Mod
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun MobilityScreenPreview() {
+    IntervalTheme {
+        MobilityScreen(
+            state = mobilityState(prepSeconds = 10),
+            page = MobilityPage("Train", onOpenSettings = {}, header = {}),
+            actions = MobilityActions(),
+        )
     }
 }

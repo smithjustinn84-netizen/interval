@@ -12,6 +12,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.setup_build
 import dev.justinsmith.interval.resources.setup_built
@@ -22,9 +23,13 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.weekdayMask
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.program
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -113,6 +118,35 @@ fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier
             stringResource(Res.string.setup_skip),
             actions.onBack,
             Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8),
+        )
+    }
+}
+
+private val previewSportDays = setOf(1, 3, 5)
+private val previewLiftDays = setOf(2, 4, 6)
+private val previewMinutes = 15..15
+private val previewBells = setOf(16.0)
+
+@PreviewFormFactors
+@Composable
+private fun WeekSetupScreenPreview() {
+    IntervalTheme {
+        WeekSetupScreen(
+            state = WeekSetupUiState(
+                sport = 0,
+                weekdays = weekdayMask(previewSportDays),
+                bells = previewBells,
+                minutes = previewMinutes.first,
+                week = BuiltWeek(
+                    sport = Sport.Bjj,
+                    sportDays = previewSportDays,
+                    program = program(ProgramId.FirstHundredSwings),
+                    liftDays = previewLiftDays,
+                    goal = previewSportDays.size + previewLiftDays.size,
+                ),
+                programMinutes = previewMinutes,
+            ),
+            actions = WeekSetupActions(),
         )
     }
 }

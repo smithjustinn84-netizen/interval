@@ -27,10 +27,15 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PerceivedEffort
+import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.SessionStats
 import dev.justinsmith.lift.session.effortWord
 import dev.justinsmith.lift.session.resources.Res
@@ -222,5 +227,34 @@ private fun When(state: LiftDetailUiState, modifier: Modifier = Modifier) {
                 color = palette.textDim,
             )
         }
+    }
+}
+
+/** A session of swings then goblet squats, a set every two minutes, for the preview. */
+private val previewSets = List(6) { index ->
+    val exercise = if (index < 4) BuiltInExercise.TwoHandSwing else BuiltInExercise.GobletSquat
+    SetLog.of(index + 1L, exercise, kg = if (index < 4) 24.0 else 16.0, reps = 10, side = null, index * 120_000L)
+}
+
+@PreviewFormFactors
+@Composable
+private fun LiftDetailScreenPreview() {
+    val session = LiftSession(
+        "s",
+        startedAtEpochMillis = 0,
+        finishedAtEpochMillis = 1_500_000,
+        title = "Swings and squats",
+        sets = previewSets,
+        effort = PerceivedEffort.Hard,
+        note = "Swings felt snappy. Squats slow out of the hole.",
+        averageBpm = 132,
+        peakBpm = 164,
+    )
+    IntervalTheme {
+        LiftDetailScreen(
+            LiftDetailUiState(session, "Saturday, Nov 14", "7:42 AM", newRecords(emptyList(), session)),
+            onDelete = {},
+            onBack = {},
+        )
     }
 }

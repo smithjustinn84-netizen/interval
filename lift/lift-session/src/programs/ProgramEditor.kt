@@ -45,6 +45,7 @@ import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -490,5 +491,14 @@ private fun BlockSheet(
             },
             modifier = Modifier.padding(vertical = Spacing.space8),
         )
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun ProgramEditorScreenPreview() {
+    val draft = ProgramDraft.of(program(ProgramId.GobletSquatRow)).copy(name = "Squat and row (yours)")
+    IntervalTheme {
+        ProgramEditorScreen(ProgramEditorUiState(draft = draft, initialDraft = draft), ProgramEditorActions())
     }
 }

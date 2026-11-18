@@ -50,13 +50,18 @@ import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.notice_workout_deleted
 import dev.justinsmith.interval.model.CapScore
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.plan.AddToPlanSheet
+import dev.justinsmith.interval.plan.DayChoice
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
+import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
@@ -68,6 +73,7 @@ import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -340,5 +346,44 @@ private fun Badge(text: String, check: Boolean) {
     ) {
         if (check) Icon(IntervalIcons.Check, null, tint = palette.accent, modifier = Modifier.size(Sizes.chipIcon))
         Text(text, style = IntervalTheme.type.caption, color = palette.text)
+    }
+}
+
+/** The preview's today, a Thursday the 15th. */
+private const val PREVIEW_TODAY = 20_741L
+
+@PreviewFormFactors
+@Composable
+private fun WorkoutDetailScreenPreview() {
+    val hiit = builtInPresets[1]
+    val workout = FinishedWorkout(
+        id = 4,
+        presetName = hiit.name,
+        config = hiit.config,
+        day = HistoryDay.On("Wednesday, Oct 14"),
+        time = "7:05 AM",
+        total = "9:40",
+        work = "5:00",
+        calories = 84,
+        endedEarly = false,
+        planned = true,
+        effort = PerceivedEffort.Hard,
+        note = "Legs heavy from Tuesday, held the pace to the end.",
+        heartRate = HeartRate(averageBpm = 148, peakBpm = 174),
+    )
+    val state = WorkoutDetailUiState(
+        workout,
+        days = (0 until 14).map { DayChoice(PREVIEW_TODAY + it, weekdayOf(PREVIEW_TODAY + it), 15 + it) },
+        todayWeekday = 4,
+    )
+    IntervalTheme {
+        WorkoutDetailScreen(
+            state = state,
+            onBack = {},
+            onRepeat = {},
+            onDelete = {},
+            onPlanWeekly = { _, _ -> },
+            onPlanOnce = { _, _ -> },
+        )
     }
 }

@@ -221,8 +221,21 @@ class SettingsScreenTest {
 
 ### Visual Debugging (Desktop Screen Capture)
 
-Because UI tests execute off-screen via Skiko on the JVM, you can capture the visual output to inspect a layout
-or diagnose an unexpected state:
+Every stateless screen has a `@Preview` at the foot of its file, and `PreviewRenderTest` (`apps/app/test@jvm/`)
+draws them to PNGs off-screen, so a layout can be looked at without the IDE, a window or a device:
+
+```sh
+./kotlin test -m app -p jvm --include-classes '*PreviewRenderTest' --jvm-args='-Dpreviews=HistoryScreen'
+```
+
+It does nothing unless `-Dpreviews` is set (part of a preview function's name, or `all`), so it is no part of
+the ordinary run. `-Dpreviews.window=Tablet` (any harness `Window`, or `all`), `-Dpreviews.dark=true` and
+`-Dpreviews.out=<dir>` (default `build/previews/`) choose the rest. It finds a preview by its shape, not its
+annotation, which the class file doesn't keep: a top-level composable of no parameters whose name ends in
+`Preview`. A new state worth looking at is a new preview, not a new test.
+
+For what a preview can't show (a sheet a tap opens, a step in a flow), capture from inside a test, since UI
+tests draw off-screen via Skiko on the JVM:
 
 ```kotlin
 import androidx.compose.ui.graphics.asSkiaBitmap

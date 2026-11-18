@@ -65,6 +65,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.MoveThumb
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.NoticeAction
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -314,5 +315,21 @@ private fun Footer(state: FlowEditorUiState, actions: FlowEditorActions) {
                 destructive = true,
             )
         }
+    }
+}
+
+/** A copy of the shipped flow whose moves are Lift's exercises, so its rows have their figures. */
+@PreviewFormFactors
+@Composable
+private fun FlowEditorScreenPreview() {
+    val flow = builtInFlows.first { flow -> flow.moves.any { it.exercise != null } }
+    IntervalTheme {
+        FlowEditorScreen(
+            state = FlowEditorUiState(
+                draft = FlowDraft.copyOf(flow, "My ${flow.name.lowercase()}"),
+                total = formatClock(flow.config(prepSeconds = 10).totalSeconds),
+            ),
+            actions = FlowEditorActions(),
+        )
     }
 }

@@ -15,12 +15,18 @@ import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Measure
+import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.library_group
 import dev.justinsmith.lift.library.resources.library_new
@@ -115,5 +121,21 @@ fun ExerciseLibraryScreen(
                 NoMatch(picker.query.text.toString(), onNew, card)
             }
         }
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun ExerciseLibraryScreenPreview() {
+    val plank = CustomExercise("e1", "Copenhagen plank", Equipment.Bodyweight, Measure.Time, true, Focus.Core)
+    IntervalTheme {
+        ExerciseLibraryScreen(
+            LibraryList(
+                offeredExercises(listOf(plank)),
+                recents = listOf(BuiltInExercise.TwoHandSwing, BuiltInExercise.GetUp),
+            ),
+            onFilters = {},
+            onBack = {},
+        )
     }
 }

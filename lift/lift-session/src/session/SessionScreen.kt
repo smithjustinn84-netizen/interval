@@ -1,3 +1,6 @@
+// The preview is its sixteenth function: the screen's own pieces are at the limit.
+@file:Suppress("detekt.TooManyFunctions")
+
 package dev.justinsmith.lift.session
 
 import androidx.compose.animation.AnimatedContent
@@ -63,6 +66,7 @@ import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.Notices
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -76,9 +80,12 @@ import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.testOf
@@ -892,5 +899,28 @@ private fun SetRow(
                 haptic = HapticFeedbackType.SegmentTick,
             )
         }
+    }
+}
+
+/** A session of swings then goblet squats, a set every two minutes, for the preview. */
+private val previewSets = List(6) { index ->
+    val exercise = if (index < 4) BuiltInExercise.TwoHandSwing else BuiltInExercise.GobletSquat
+    SetLog.of(index + 1L, exercise, kg = if (index < 4) 24.0 else 16.0, reps = 10, side = null, index * 120_000L)
+}
+
+@PreviewFormFactors
+@Composable
+private fun SessionScreenPreview() {
+    val state = SessionUiState(
+        session = LiftSession("s", startedAtEpochMillis = 0, finishedAtEpochMillis = null, "Swings", previewSets),
+        ownsBells = true,
+        bells = listOf(16.0, 24.0),
+        draft = SetDraft(exercise = BuiltInExercise.GobletSquat, bellKg = 16.0),
+        free = true,
+        draftLastTime = previewSets.last(),
+    )
+    val clocks = SessionClocks(elapsed = "14:32", sinceLast = "0:38", rest = RestState(90, 52, 0.42f))
+    IntervalTheme {
+        SessionScreen(state, { clocks }, SessionActions())
     }
 }

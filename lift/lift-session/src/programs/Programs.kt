@@ -38,6 +38,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
@@ -46,12 +47,15 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.sheetIsSideways
+import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramFamily
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
+import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.estimatedMinutes
 import dev.justinsmith.lift.domain.programCatalogue
@@ -506,5 +510,29 @@ private fun ProgramRow(
                 actions.onEdit(key.uid)
             })
         }
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun ProgramsScreenPreview() {
+    val following = builtInPrograms.first()
+    val mine = Program(
+        ProgramKey.Custom("mine"),
+        days = listOf(
+            listOf(Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10)),
+            listOf(Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 8)),
+        ),
+        daysPerWeek = 3,
+        weeks = 4,
+        name = "Garage mornings",
+    )
+    IntervalTheme {
+        ProgramsScreen(
+            following = following.key,
+            custom = listOf(mine),
+            actions = ProgramsActions(),
+            followingDay = ProgramDay(following, number = 3, week = 1, blocks = following.days.first()),
+        )
     }
 }
