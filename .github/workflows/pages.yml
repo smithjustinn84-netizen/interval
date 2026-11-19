@@ -52,6 +52,10 @@ jobs:
       - name: Install MkDocs Material
         run: pip install -r tools/docs-requirements.txt
 
+      # CI skips a change to docs/ alone, so the modules' diagram in docs/architecture.md is checked here too.
+      - name: Module diagram
+        run: python3 tools/check_module_rules.py
+
       # Strict: a broken link or a missing page fails the build.
       - name: Build the site
         run: mkdocs build --strict
