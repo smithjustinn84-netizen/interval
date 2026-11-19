@@ -38,6 +38,8 @@ python3 tools/check_ios_shards.py       # Every module with common tests is on o
 python3 tools/check_module_rules.py     # Every module dependency keeps the layering below, and docs/architecture.md's
                                         # diagram draws the modules as they are (run in CI); --write-diagram redraws it
 uv run --with pillow tools/generate_icons.py  # Regenerate app icons and launch screens from the vector mark
+uv run --with-requirements tools/docs-requirements.txt mkdocs serve   # The docs site (mkdocs.yml, docs/) at
+                                        # localhost:8000/interval/; `mkdocs build --strict` as Pages' CI does
 ./kotlin show modules | settings | dependencies | tasks
 ```
 

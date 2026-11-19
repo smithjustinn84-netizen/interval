@@ -1,0 +1,73 @@
+/* The app's own accent (core's Theme.kt: 0xFF2456E6 light, 0xFF5B8CFF dark) and its dark ground. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #2456e6;
+  --md-primary-fg-color--light: #5b8cff;
+  --md-primary-fg-color--dark: #1a3fae;
+  --md-accent-fg-color: #2456e6;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #161a20;
+  --md-primary-fg-color--light: #232b35;
+  --md-primary-fg-color--dark: #0b0d10;
+  --md-accent-fg-color: #5b8cff;
+  --md-default-bg-color: #0b0d10;
+  --md-typeset-a-color: #5b8cff;
+}
+
+/* A row of phone screenshots that wraps on a narrow window. */
+.shots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  justify-content: center;
+  margin: 1.5rem 0;
+}
+
+.shots figure {
+  margin: 0;
+  flex: 0 1 11rem;
+  text-align: center;
+}
+
+.shots img {
+  width: 100%;
+  border-radius: 1rem;
+  box-shadow: var(--md-shadow-z2);
+}
+
+.shots figcaption {
+  font-size: 0.7rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.4rem;
+}
+
+.hero img {
+  width: 100%;
+  border-radius: 0.6rem;
+}
+
+/* The work, rest and done colours of the timer, for the guide's small legends. */
+.phase { font-weight: 700; }
+.phase.work { color: #ff5a43; }
+.phase.rest { color: #2fd3a0; }
+.phase.prep { color: #f2a81d; }
+.phase.set-rest { color: #b18cff; }
+
+/* In dark mode the header takes the dark ground, so buttons go by the accent instead. */
+[data-md-color-scheme="slate"] .md-typeset .md-button {
+  color: #5b8cff;
+  border-color: #5b8cff;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  color: #0b0d10;
+  background-color: #5b8cff;
+}
+
+[data-md-color-scheme="slate"] .md-typeset .md-button:hover {
+  color: #0b0d10;
+  background-color: #5b8cff;
+  border-color: #5b8cff;
+}

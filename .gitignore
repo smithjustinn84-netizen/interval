@@ -41,3 +41,6 @@ hs_err_pid*
 .env
 .env.*
 !.env.example
+
+# MkDocs output (the documentation site)
+/site/

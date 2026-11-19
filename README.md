@@ -17,6 +17,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 <br/>
 
 <p align="center">
+  <a href="https://smithjustinn84-netizen.github.io/interval/">Documentation site</a> •
   <a href="#-app-showcase">App Showcase</a> •
   <a href="#-features">Features</a> •
   <a href="#-architecture--tech-stack">Architecture</a> •
@@ -275,6 +276,9 @@ For testing architecture, harnesses, and test fakes, see [docs/testing.md](./doc
 ---
 
 ## 📚 Documentation
+
+The user guide, privacy policy and developer docs are published at
+**[smithjustinn84-netizen.github.io/interval](https://smithjustinn84-netizen.github.io/interval/)** (MkDocs Material, from `mkdocs.yml` and `docs/`).
 
 - [Architecture Guide](./docs/architecture.md): System architecture, Navigation 3 backstack, Room multiplatform, and background execution.
 - [Testing Strategy](./docs/testing.md): Compose UI desktop harness, fakes, and on-device journeys.

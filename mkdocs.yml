@@ -1,0 +1,105 @@
+# The documentation site, published to GitHub Pages by .github/workflows/pages.yml.
+# Preview: uv run --with-requirements tools/docs-requirements.txt mkdocs serve
+site_name: Interval
+site_description: >-
+  An offline training companion for interval conditioning, kettlebell strength, mobility flows and the week's plan.
+  Android, iOS and desktop.
+site_url: https://smithjustinn84-netizen.github.io/interval/
+repo_url: https://github.com/smithjustinn84-netizen/interval
+repo_name: interval
+edit_uri: edit/main/docs/
+copyright: No accounts, no analytics, no ads.
+
+# docs/ holds the developer docs as well; the sprint plans, the backlog and the archive stay in the repository.
+exclude_docs: |
+  sprint-*.md
+  backlog.md
+  archive/
+not_in_nav: |
+  hero.png
+
+hooks:
+  - tools/mkdocs_hooks.py
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Dark
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Light
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  icon:
+    logo: material/timer-outline
+    repo: fontawesome/brands/github
+
+extra_css:
+  - assets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - def_list
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+
+nav:
+  - Home: index.md
+  - Guide:
+      - guide/index.md
+      - Getting started: guide/getting-started.md
+      - Today: guide/today.md
+      - Strength: guide/strength.md
+      - Conditioning & the Timer: guide/conditioning.md
+      - Mobility: guide/mobility.md
+      - The Log & the plan: guide/log-and-plan.md
+      - Health & sensors: guide/health-and-sensors.md
+      - Your data: guide/your-data.md
+  - Privacy: privacy.md
+  - Changelog: changelog.md
+  - Developers:
+      - developers/index.md
+      - Architecture: architecture.md
+      - Testing: testing.md
+      - Kettlebell coaching: kettlebell-coaching.md
+      - Releasing: release.md

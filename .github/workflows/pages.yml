@@ -1,0 +1,77 @@
+name: Pages
+
+# The documentation site (mkdocs.yml, docs/), built and published to GitHub Pages. Apart from CI, whose
+# permissions stay read-only: only this workflow's deploy job may write, and only to Pages.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'PRIVACY.md'
+      - 'CHANGELOG.md'
+      - 'tools/mkdocs_hooks.py'
+      - 'tools/docs-requirements.txt'
+      - '.github/workflows/pages.yml'
+  # A pull request builds the site, so a broken link fails there, and deploys nothing.
+  pull_request:
+    paths:
+      - 'docs/**'
+      - 'mkdocs.yml'
+      - 'PRIVACY.md'
+      - 'CHANGELOG.md'
+      - 'tools/mkdocs_hooks.py'
+      - 'tools/docs-requirements.txt'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One deploy at a time, and a newer push doesn't cancel one half done.
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  NO_MKDOCS_2_WARNING: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.13'
+          cache: pip
+          cache-dependency-path: tools/docs-requirements.txt
+
+      - name: Install MkDocs Material
+        run: pip install -r tools/docs-requirements.txt
+
+      # Strict: a broken link or a missing page fails the build.
+      - name: Build the site
+        run: mkdocs build --strict
+
+      - uses: actions/upload-pages-artifact@v5
+        if: github.event_name != 'pull_request'
+        with:
+          path: site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

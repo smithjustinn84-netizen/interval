@@ -4,6 +4,8 @@ The app's Privacy page (About > Privacy), word for word. This file is the policy
 with `privacy_*` in `apps/app/composeResources/values/strings.xml`, which the app shows. On an iPhone the app's
 page says Apple Health wherever this says Health Connect, and all of it holds for Apple Health.
 
+<!-- The site's privacy page (docs/privacy.md) shows what lies between these two markers. --8<-- [start:policy] -->
+
 Interval keeps everything on this device. There are no accounts, no analytics and no ads, and nothing leaves the
 phone unless you send it.
 
@@ -39,3 +41,5 @@ the sensor in Settings, or take the Nearby devices permission back, and it is no
 ## Questions
 
 Open an issue at https://github.com/smithjustinn84-netizen/interval/issues.
+
+<!-- --8<-- [end:policy] -->
