@@ -82,7 +82,6 @@ private val oneWorkout = HistoryUiState(
 
 private val empty = HistoryUiState(sections = emptyList(), week = restWeek)
 
-@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class HistoryScreenTest {
     private val events = mutableListOf<String>()
 

@@ -50,7 +50,6 @@ private val firstWork = states.first { it.phase == Phase.Work }
 private val firstRest = states.first { it.phase == Phase.Rest }
 private val done = states.last()
 
-@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class WorkoutScreenTest {
     private val calls = mutableListOf<String>()
 

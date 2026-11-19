@@ -35,7 +35,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** Changing a program day's plan in the session: a block's load, skipping one, and swapping its exercise. */
-@Suppress("detekt.TooManyFunctions") // One change, and one way of keeping it, per test, side by side.
 class PlanFlowTest {
     /** Goblet squat and row: 3 × 10 goblet squats, then 3 × 10 rows a side, each building to 15. */
     private fun followed() = FakeLiftStorage().apply {

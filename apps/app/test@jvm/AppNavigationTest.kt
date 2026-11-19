@@ -40,7 +40,6 @@ private fun DesktopComposeUiTest.pageTitle(title: String): SemanticsNodeInteract
 // A page pushed from Lift's title bar: a new program's editor.
 private const val NEW_PROGRAM = "New program"
 
-@Suppress("detekt.TooManyFunctions") // One journey per test, side by side.
 class AppNavigationTest {
     @Test
     fun `the app opens on today`() = appTest {

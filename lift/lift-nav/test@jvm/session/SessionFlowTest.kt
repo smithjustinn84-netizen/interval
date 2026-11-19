@@ -37,7 +37,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** A session from Today to the summary, through the whole app over fakes. */
-@Suppress("detekt.TooManyFunctions") // One way of logging per test, side by side.
 class SessionFlowTest {
     /**
      * On the Log sheet: Change (the sheet's, over the Next set card's), then narrow the library by [search] or

@@ -49,6 +49,8 @@ complexity:
     # file starts. A Route/Screen pair plus a dozen small private pieces fits; more wants splitting.
     allowedFunctionsPerFile: 15
     allowedFunctionsPerClass: 15
+    # As FunctionNaming: detekt leaves tests out of this by default, but only knows Gradle's test dirs.
+    excludes: ['**/test/**', '**/test@*/**']
 
 style:
   ForbiddenImport:

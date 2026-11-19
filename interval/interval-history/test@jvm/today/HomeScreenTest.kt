@@ -54,7 +54,6 @@ private val empty = HomeUiState(week = restWeek, picks = builtInPresets.fitting(
 
 private fun option(text: String): SemanticsMatcher = hasText(text) and isSelectable()
 
-@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class HomeScreenTest {
     @Test
     fun `nothing planned leads to set up first then to the plan and to the programs`() = runUiTest {

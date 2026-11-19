@@ -52,7 +52,6 @@ import kotlin.time.Duration.Companion.seconds
  * Dispatchers.IO as in the app. The common tests' fakes finish every write before a call returns; these
  * check the app still behaves when writes are genuinely asynchronous.
  */
-@Suppress("detekt.TooManyFunctions") // One stored thing per test, side by side.
 class StorageTest {
     private val directory: File = Files.createTempDirectory("interval-storage").toFile()
 

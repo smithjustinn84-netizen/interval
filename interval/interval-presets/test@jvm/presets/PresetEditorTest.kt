@@ -26,7 +26,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 /** The editor over [PresetsScreen], opened from a row's sheet, the + or the Timer card's "Save as preset". */
-@Suppress("detekt.TooManyFunctions") // One behaviour per test, side by side.
 class PresetEditorTest {
     private val saved = mutableListOf<Preset>()
     private val savedCurrent = mutableListOf<Preset>()

@@ -46,7 +46,6 @@ private val defaults = SettingsUiState(
 /** Calorie estimates turned off: no weight. */
 private val caloriesOff = defaults.copy(app = defaults.app.copy(body = BodySettings(weightKg = null)))
 
-@Suppress("detekt.TooManyFunctions") // One test per setting, as the screen lists them.
 class SettingsScreenTest {
     private val calls = mutableListOf<Any>()
 

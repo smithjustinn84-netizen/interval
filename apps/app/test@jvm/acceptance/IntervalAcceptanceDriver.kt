@@ -57,7 +57,7 @@ import kotlin.time.Duration
  * Swing's thread), every tap goes in on that thread, outcomes are checked in the repository as well as on
  * screen, and time moves only through [AppFixture.advance].
  */
-@Suppress("detekt.TooManyFunctions", "detekt.LargeClass") // A step per journey action, as the journeys say them.
+@Suppress("detekt.LargeClass") // A step per journey action, as the journeys say them.
 class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : AcceptanceSteps(ui) {
 
     // Navigation
