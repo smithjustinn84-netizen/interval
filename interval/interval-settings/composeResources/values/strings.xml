@@ -135,4 +135,15 @@
     <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
     <string name="settings_about_app">About Interval</string>
     <string name="settings_about_app_hint">Version, credits and licenses</string>
+    <!-- Live heart-rate alerts and maximum heart rate for training zones. -->
+    <string name="settings_hr_alerts">Heart-rate alerts</string>
+    <string name="settings_hr_alerts_hint">Chime and pulse when your heart rate enters high effort or recovery</string>
+    <string name="settings_max_hr">Max heart rate</string>
+    <string name="settings_max_hr_hint">Sets the five heart-rate training zones</string>
+    <string name="settings_max_hr_value">%1$d bpm</string>
+    <string name="settings_max_hr_default">%1$d bpm (default)</string>
+    <string name="settings_max_hr_edit">Edit max heart rate</string>
+    <string name="settings_max_hr_less_cd">Lower max heart rate</string>
+    <string name="settings_max_hr_more_cd">Higher max heart rate</string>
+    <string name="settings_max_hr_reset">Use default (190 bpm)</string>
 </resources>

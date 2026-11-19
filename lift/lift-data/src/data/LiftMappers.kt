@@ -75,6 +75,7 @@ internal fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercis
         timer?.takeIf { finishedAtEpochMillis == null }?.let { decodeTimer(it, made, bands) },
         averageBpm,
         peakBpm,
+        decodeHeartRateSamples(heartRateSamples),
     )
 
 /** A finished session as an import stores it: as it was, but changed now. */
@@ -90,7 +91,18 @@ internal fun LiftSession.importRow(now: Long) = SessionEntity(
     note = note,
     averageBpm = averageBpm,
     peakBpm = peakBpm,
+    heartRateSamples = encodeHeartRateSamples(heartRateSamples),
 )
+
+internal fun encodeHeartRateSamples(samples: List<Int>?): String? =
+    samples?.takeIf { it.isNotEmpty() }?.let { kotlinx.serialization.json.Json.encodeToString(it) }
+
+internal fun decodeHeartRateSamples(json: String?): List<Int>? {
+    if (json.isNullOrBlank()) return null
+    return runCatching { kotlinx.serialization.json.Json.decodeFromString<List<Int>>(json) }
+        .getOrNull()
+        ?.takeIf { it.isNotEmpty() }
+}
 
 /** An exercise the user added; one whose kinds this build doesn't know is left out. */
 internal fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(

@@ -3,8 +3,17 @@ package dev.justinsmith.lift.session
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.platform.HeartRateSampler
+import dev.justinsmith.interval.platform.LiveHeartRate
+import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.NoLiveHeartRate
+import dev.justinsmith.interval.platform.NoTones
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.platform.TonePlayer
+import dev.justinsmith.interval.platform.ToneSynth
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.ZoneTracker
+import dev.justinsmith.interval.platform.ZoneTransition
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.ExerciseStore
 import dev.justinsmith.lift.data.GearStore
@@ -65,11 +74,16 @@ class SessionViewModel(
     private val timers: SessionTimers,
     intervals: IntervalActivity,
     timestamps: TimestampFormatter,
-    clock: WallClock,
+    private val clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
+    private val liveHeartRate: LiveHeartRate = NoLiveHeartRate,
+    private val tones: TonePlayer = NoTones,
     tickMillis: Long = TICK_MILLIS,
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
+    private val sampler = HeartRateSampler()
+    private val zoneTracker = ZoneTracker()
+
     /**
      * The sets of the sessions finished before this one, as they are stored, not as when it opened: flattened off the
      * main thread, as the sessions change, the first time on the caller.
@@ -172,9 +186,9 @@ class SessionViewModel(
         }
     }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
-    /** The clocks, read at each tick of the session's own and of its timers. */
+    /** The clocks, read at each tick of the session's own and of its timers, plus live heart rate. */
     val clocks: StateFlow<SessionClocks> =
-        combine(sessionStore.active, ticks, timers.state, ::clocksAt)
+        combine(sessionStore.active, ticks, timers.state, liveHeartRate.reading, ::clocksAt)
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionClocks())
 
@@ -226,6 +240,25 @@ class SessionViewModel(
         viewModelScope.launch {
             exerciseStore.customExercises.collect(draft::exercisesChanged)
         }
+        // Stream live heart rate from the paired sensor while the session is active.
+        liveHeartRate.start()
+        viewModelScope.launch {
+            liveHeartRate.reading.collect { reading ->
+                if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return@collect
+                val now = clock.nowMillis()
+                sampler.add(reading.bpm, now)
+                when (zoneTracker.record(reading.bpm, now)) {
+                    ZoneTransition.EnteredHigh -> tones.play(ToneSynth.zoneUp)
+                    ZoneTransition.EnteredRecovery -> tones.play(ToneSynth.zoneDown)
+                    null -> Unit
+                }
+            }
+        }
+    }
+
+    override fun onCleared() {
+        liveHeartRate.stop()
+        super.onCleared()
     }
 
     /** Logs [set], by default the sheet's: a hold for [seconds], fewer when a timed one is stopped early. */
@@ -346,6 +379,7 @@ class SessionViewModel(
     /** Leaves the session for later: its timers stop, its sets stay. */
     fun leave() {
         timers.stopAll()
+        liveHeartRate.stop()
     }
 
     /**
@@ -362,11 +396,13 @@ class SessionViewModel(
      */
     fun finish(title: String, healthTitle: String? = null): Boolean {
         timers.stopAll()
-        return summary.finish(title, healthTitle)
+        liveHeartRate.stop()
+        return summary.finish(title, healthTitle, sampler.summary(), sampler.samples().takeIf { it.isNotEmpty() })
     }
 
     fun discard() {
         timers.stopAll()
+        liveHeartRate.stop()
         sessionStore.discardSession()
     }
 

@@ -47,7 +47,8 @@ val liftSessionModule: Module = module {
     factory { EasierDay(get(), get(), get(), get(), get(), get(), get()) } bind LiftReadiness::class
     viewModel {
         SessionViewModel(
-            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(),
+            get(),
         )
     }
     viewModelOf(::ProgramsViewModel)

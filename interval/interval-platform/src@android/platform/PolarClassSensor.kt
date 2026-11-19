@@ -24,12 +24,17 @@ import com.polar.sdk.api.model.PolarSensorSetting.SettingType
 import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.timer.classSamples
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -48,10 +53,15 @@ import kotlin.math.sqrt
  * Run against a Verity Sense on 2026-11-18 (SDK 8.6.0): pairing, a recording of the heart rate, a reading a
  * second, and the accelerometer, and its sync. A stop before the start answers "already in state", passed over.
  */
-internal class PolarClassSensor(private val context: Context, private val clock: WallClock) : ClassSensor {
+internal class PolarClassSensor(private val context: Context, private val clock: WallClock) :
+    ClassSensor,
+    LiveHeartRate {
     private val log = Logger.withTag("PolarClassSensor")
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
     private val ready = MutableStateFlow(emptySet<String>())
+    private val hrReady = MutableStateFlow(emptySet<String>())
+    private val streamScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var streamJob: Job? = null
 
     /** One piece of work with the sensor at a time. */
     private val working = Mutex()
@@ -60,6 +70,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         PolarBleApiDefaultImpl.defaultImplementation(
             context,
             setOf(
+                PolarBleSdkFeature.FEATURE_HR,
                 PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP,
             ),
@@ -67,10 +78,15 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             api.setApiCallback(object : PolarBleApiCallback() {
                 override fun bleSdkFeatureReady(identifier: String, feature: PolarBleSdkFeature) {
                     if (feature == PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING) ready.update { it + identifier }
+                    if (feature == PolarBleSdkFeature.FEATURE_HR) hrReady.update { it + identifier }
                 }
 
                 override fun deviceDisconnected(polarDeviceInfo: PolarDeviceInfo, info: PolarBleDisconnectInfo) {
                     ready.update { it - polarDeviceInfo.deviceId }
+                    hrReady.update { it - polarDeviceInfo.deviceId }
+                    if (streamJob?.isActive == true) {
+                        _reading.value = LiveHeartRateState.Disconnected
+                    }
                 }
 
                 override fun disInformationReceived(identifier: String, disInfo: DisInfo) = Unit
@@ -82,6 +98,14 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     private val _status = MutableStateFlow(stored())
     override val status: StateFlow<SensorStatus> = _status.asStateFlow()
+
+    private val _reading = MutableStateFlow(initialReading())
+    override val reading: StateFlow<LiveHeartRateState> = _reading.asStateFlow()
+
+    private fun initialReading(): LiveHeartRateState = when (stored()) {
+        is SensorStatus.Paired -> LiveHeartRateState.Idle
+        else -> LiveHeartRateState.Unavailable
+    }
 
     private val supported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -115,12 +139,59 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             remove(KEY_SINCE)
         }
         _status.value = stored()
+        _reading.value = initialReading()
         null
     }
 
     override fun forget() {
+        stop()
         preferences.edit { clear() }
         _status.value = stored()
+        _reading.value = LiveHeartRateState.Unavailable
+    }
+
+    override fun start() {
+        if (streamJob?.isActive == true) return
+        val id = preferences.getString(KEY_ID, null)
+        val offlineActive = preferences.getLong(KEY_SINCE, 0L) > 0L
+        val bluetoothReady = supported && mayUseBluetooth()
+        if (!bluetoothReady || id == null || offlineActive) {
+            _reading.value = initialReading()
+            return
+        }
+        _reading.value = LiveHeartRateState.Connecting
+        streamJob = streamScope.launch {
+            try {
+                api.connectToDevice(id)
+                val readyHr = withTimeoutOrNull(CONNECT_MILLIS) { hrReady.first { id in it } }
+                if (readyHr == null) {
+                    _reading.value = LiveHeartRateState.Disconnected
+                    return@launch
+                }
+                api.startHrStreaming(id).collect { data ->
+                    val sample = data.samples.lastOrNull() ?: return@collect
+                    if (sample.hr in HeartRate.BPM_RANGE) {
+                        _reading.value = LiveHeartRateState.Reading(
+                            bpm = sample.hr,
+                            contact = sample.contactStatus,
+                        )
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
+                log.w(e) { "Live HR streaming failed" }
+                _reading.value = LiveHeartRateState.Disconnected
+            } finally {
+                quietly { api.disconnectFromDevice(id) }
+            }
+        }
+    }
+
+    override fun stop() {
+        streamJob?.cancel()
+        streamJob = null
+        _reading.value = initialReading()
     }
 
     override suspend fun startRecording(): SensorFailure? = attempt {

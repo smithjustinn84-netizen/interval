@@ -8,6 +8,7 @@ import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -63,12 +64,12 @@ class WorkoutViewModel(
     // Followed rather than read once: a preset saved from the summary lands later, and the summary must then
     // name it. Matched once per change of either, not only on a tick.
     val state: StateFlow<WorkoutUiState> = combine(
-        session.state.filterNotNull().filter { it.id == id },
+        combine(session.state.filterNotNull().filter { it.id == id }, session.liveHeartRateState, ::Pair),
         presetStore.presets,
         flowStore.flows,
         historyStore.history,
         combine(lift.bells, lift.sessions, lift.active, ::LiftSide),
-    ) { run, presets, flows, history, lifted -> run.shown(presets, flows, history, lifted) }
+    ) { (run, liveHr), presets, flows, history, lifted -> run.shown(presets, flows, history, lifted, liveHr) }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -77,6 +78,7 @@ class WorkoutViewModel(
                 flowStore.flows.value,
                 historyStore.history.value,
                 LiftSide(lift.bells.value, lift.sessions.value, lift.active.value),
+                session.liveHeartRateState.value,
             ),
         )
 
@@ -104,8 +106,9 @@ class WorkoutViewModel(
         flows: List<Flow>,
         history: List<HistoryEntry>,
         lifted: LiftSide,
+        liveHeartRate: LiveHeartRateState,
     ): WorkoutUiState {
-        val shown = toUiState(presets, flows, history, bestsOf(history))
+        val shown = toUiState(presets, flows, history, bestsOf(history)).copy(liveHeartRate = liveHeartRate)
         if (entryUid == null || !presets.asksSnatches(config)) return shown
         // Its own entry, in History by now, holds this count or none, so the last one said stands either way.
         return shown.copy(

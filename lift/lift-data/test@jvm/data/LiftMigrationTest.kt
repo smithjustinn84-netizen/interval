@@ -168,9 +168,11 @@ class LiftMigrationTest {
             assertNull(dao.observeSessions().first().single().timer)
             assertNull(dao.observeSessions().first().single().averageBpm)
             // A heart rate found later is kept on the row, and only the first.
-            dao.keepHeartRate("s1", 130, 165, 70_000)
-            dao.keepHeartRate("s1", 100, 120, 80_000)
-            assertEquals(130 to 165, dao.observeSessions().first().single().let { it.averageBpm to it.peakBpm })
+            dao.keepHeartRate("s1", 130, 165, "[130,165]", 70_000)
+            dao.keepHeartRate("s1", 100, 120, "[100,120]", 80_000)
+            val saved = dao.observeSessions().first().single()
+            assertEquals(130 to 165, saved.averageBpm to saved.peakBpm)
+            assertEquals("[130,165]", saved.heartRateSamples)
         } finally {
             database.close()
         }

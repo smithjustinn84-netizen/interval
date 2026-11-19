@@ -201,9 +201,10 @@ class SessionRepository(
         writer.persist { sessionDao.reflect(uid, effort?.level, kept, now) }
     }
 
-    override fun keepHeartRate(uid: String, heartRate: HeartRate) {
+    override fun keepHeartRate(uid: String, heartRate: HeartRate, samples: List<Int>?) {
         val now = clock.nowMillis()
-        writer.persist { sessionDao.keepHeartRate(uid, heartRate.averageBpm, heartRate.peakBpm, now) }
+        val encoded = encodeHeartRateSamples(samples)
+        writer.persist { sessionDao.keepHeartRate(uid, heartRate.averageBpm, heartRate.peakBpm, encoded, now) }
     }
 
     /** Drops the session in progress and its sets. */

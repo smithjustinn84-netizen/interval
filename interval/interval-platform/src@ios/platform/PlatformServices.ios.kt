@@ -77,6 +77,7 @@ fun platformModule(): Module = module {
     }
     single<PlanReminders> { IosPlanReminders(get()) }
     single<ClassSensor> { NoClassSensor }
+    single<LiveHeartRate> { NoLiveHeartRate }
 }
 
 /**
@@ -388,6 +389,10 @@ private class IosCuePlayer(speaker: Speaker, private val tones: TonePlayer) : Cu
 
             Haptic.Finished -> UINotificationFeedbackGenerator()
                 .notificationOccurred(UINotificationFeedbackType.UINotificationFeedbackTypeSuccess)
+
+            Haptic.Heartbeat -> UIImpactFeedbackGenerator(
+                UIImpactFeedbackStyle.UIImpactFeedbackStyleMedium,
+            ).impactOccurred()
         }
     }
 

@@ -90,6 +90,8 @@ class HistoryRepository(
         workSeconds: Int?,
         startedAtEpochMillis: Long?,
         capRounds: List<CapRound>?,
+        heartRate: HeartRate?,
+        heartRateSamples: List<Int>?,
     ): String {
         val now = clock.nowMillis()
         val uid = ids.newId()
@@ -101,7 +103,10 @@ class HistoryRepository(
                 endedEarly,
                 workSeconds,
                 startedAtEpochMillis = startedAtEpochMillis,
+                averageBpm = heartRate?.averageBpm,
+                peakBpm = heartRate?.peakBpm,
                 capRounds = capRounds,
+                heartRateSamples = heartRateSamples?.takeIf { it.isNotEmpty() },
             )
         writer.persist { historyDao.insert(entry.toEntity(uid = uid, updatedAtEpochMillis = now)) }
         return uid

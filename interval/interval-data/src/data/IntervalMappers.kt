@@ -114,6 +114,7 @@ internal fun HistoryEntity.toDomain() = HistoryEntry(
     peakBpm = peakBpm,
     snatches = SnatchCount.of(snatchesPerSet, snatchBellKg),
     capRounds = decodeCapRounds(capRounds),
+    heartRateSamples = decodeHeartRateSamples(heartRateSamples),
 )
 
 internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = HistoryEntity(
@@ -145,6 +146,7 @@ internal fun HistoryEntry.toEntity(uid: String, updatedAtEpochMillis: Long) = Hi
     snatchBellKg = snatches?.bellKg,
     capped = config.capped,
     capRounds = encodeCapRounds(capRounds),
+    heartRateSamples = encodeHeartRateSamples(heartRateSamples),
 )
 
 internal fun PresetEntity.toDomain() =

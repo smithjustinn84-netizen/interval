@@ -74,13 +74,19 @@ class FinishSession(
      * store has it as [healthTitle] when there is one (a program's day, by its name). One with no sets has nothing
      * to save and is thrown away instead. True when it was saved, and the summary follows.
      */
-    fun finish(title: String, healthTitle: String? = null): Boolean {
+    fun finish(
+        title: String,
+        healthTitle: String? = null,
+        heartRate: HeartRate? = null,
+        heartRateSamples: List<Int>? = null,
+    ): Boolean {
         val session = sessionStore.active.value ?: return false
         if (session.sets.isEmpty()) {
             sessionStore.discardSession()
             return false
         }
-        val done = session.copy(finishedAtEpochMillis = clock.nowMillis(), title = title)
+        val samples = heartRateSamples?.takeIf { it.isNotEmpty() }
+        val done = session.finishedWith(clock.nowMillis(), title, heartRate, samples)
         // Taken now: once the session is saved, the program day moves on to the next.
         val bells = gearStore.bells.value.ifEmpty { standardBells }
         val bands = offeredBands(gearStore.bands.value)
@@ -153,12 +159,26 @@ class FinishSession(
             test = test?.let { testResult(it, session.sets, sessionStore.sessions.value) },
         )
         sessionStore.finishSession(title)
+        if (heartRate != null) sessionStore.keepHeartRate(done.uid, heartRate, samples)
         val now = done.finishedAtEpochMillis ?: clock.nowMillis()
         health.record(
             done.healthWorkout(now, intervals.sessionCalories(done.elapsedSeconds(now)), healthTitle ?: title),
         )
         return true
     }
+
+    private fun LiftSession.finishedWith(
+        now: Long,
+        title: String,
+        heartRate: HeartRate?,
+        samples: List<Int>?,
+    ): LiftSession = copy(
+        finishedAtEpochMillis = now,
+        title = title,
+        averageBpm = heartRate?.averageBpm ?: averageBpm,
+        peakBpm = heartRate?.peakBpm ?: peakBpm,
+        heartRateSamples = samples ?: heartRateSamples,
+    )
 
     /** How hard the finished session felt, from the summary; kept with it at once. */
     fun setEffort(effort: PerceivedEffort?) {

@@ -128,15 +128,21 @@ class FakeSessionDao : SessionDao {
         all.map { if (it.uid == uid) it.copy(effort = effort, note = note, updatedAtEpochMillis = now) else it }
     }
 
-    override suspend fun keepHeartRate(uid: String, average: Int, peak: Int, now: Long) = sessions.update { all ->
-        all.map {
-            if (it.uid == uid && it.averageBpm == null) {
-                it.copy(averageBpm = average, peakBpm = peak, updatedAtEpochMillis = now)
-            } else {
-                it
+    override suspend fun keepHeartRate(uid: String, average: Int, peak: Int, samples: String?, now: Long) =
+        sessions.update { all ->
+            all.map {
+                if (it.uid == uid && it.averageBpm == null) {
+                    it.copy(
+                        averageBpm = average,
+                        peakBpm = peak,
+                        heartRateSamples = samples,
+                        updatedAtEpochMillis = now,
+                    )
+                } else {
+                    it
+                }
             }
         }
-    }
 
     override suspend fun finish(uid: String, title: String, at: Long) = sessions.update { all ->
         all.map {

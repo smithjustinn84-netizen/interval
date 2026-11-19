@@ -59,6 +59,7 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -364,6 +365,12 @@ private fun PortraitWorkout(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, progress, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))
+                HeartBeatBadge(
+                    state.liveHeartRate,
+                    Modifier.padding(top = Spacing.space8),
+                    maxBpm = state.maxHeartRate,
+                    onWorkoutGround = true,
+                )
             }
         }
         val cap = state.cap

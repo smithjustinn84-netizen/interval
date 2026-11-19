@@ -56,8 +56,14 @@ object ToneSynth {
     /** The end of a workout, or of an EMOM. */
     val finished = Tone(Note(E5, millis = 100), Note(G5, millis = 100), Note(C6, millis = 190))
 
-    /** The six, for what checks them all. */
-    val all: List<Tone> = listOf(countdown, halfway, start, work, rest, finished)
+    /** Heart rate crossed into a high-effort zone (Zones 4–5). */
+    val zoneUp = Tone(Note(E5, millis = 80), Note(G5, millis = 120))
+
+    /** Heart rate dropped back into recovery (Zones 1–2). */
+    val zoneDown = Tone(Note(G5, millis = 80), Note(E5, millis = 120))
+
+    /** Every tone, for what checks them all. */
+    val all: List<Tone> = listOf(countdown, halfway, start, work, rest, finished, zoneUp, zoneDown)
 
     /** [tone]'s samples, -1 to 1, silent at both ends. */
     fun samples(tone: Tone): FloatArray {

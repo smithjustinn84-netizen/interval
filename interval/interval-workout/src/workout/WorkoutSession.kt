@@ -9,10 +9,19 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.BackgroundWorkout
+import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.HeartRateSampler
+import dev.justinsmith.interval.platform.LiveHeartRate
+import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.NoLiveHeartRate
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.WorkoutStatus
+import dev.justinsmith.interval.platform.ZoneTracker
+import dev.justinsmith.interval.platform.ZoneTransition
 import dev.justinsmith.interval.platform.playCue
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -25,9 +34,14 @@ import dev.justinsmith.interval.timer.alternateHands
 import dev.justinsmith.interval.timer.keyed
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAt
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * The running workout, owned by the process rather than by its screen: one at a time, from the moment the Workout
@@ -53,9 +67,17 @@ class WorkoutSession(
     private val ticker: WorkoutTicker,
     private val flowStore: FlowStore,
     private val presetStore: PresetStore,
+    private val liveHeartRate: LiveHeartRate = NoLiveHeartRate,
 ) : ActiveWorkout {
     private val _state = MutableStateFlow<WorkoutRun?>(null)
     private val _status = MutableStateFlow<WorkoutStatus?>(null)
+    private val heartRateScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private var heartRateJob: Job? = null
+    private val sampler = HeartRateSampler()
+    private var zoneTracker = ZoneTracker()
+
+    /** Live heart-rate state from the paired sensor, for the workout screen. */
+    val liveHeartRateState: StateFlow<LiveHeartRateState> get() = liveHeartRate.reading
 
     /** True between [BackgroundWorkout.start] and [BackgroundWorkout.stop]: while there is a workout to keep. */
     private var kept = false
@@ -100,6 +122,7 @@ class WorkoutSession(
         val restored = run ?: return
         if (!restored.over) {
             hold(keep = true)
+            startHeartRate(settings.body.maxHeartRate ?: DEFAULT_MAX_BPM)
             if (restored.running) ticker.start(tick)
             checkpoint()
         }
@@ -179,7 +202,10 @@ class WorkoutSession(
 
             current.engine.completedRounds > 0 || current.capRounds.isNotEmpty() -> {
                 ticker.stop()
-                val stopped = current.copy(running = false, ended = true).turned(phase = null, clock.nowMillis())
+                val stopped = current.copy(running = false, ended = true)
+                    .turned(phase = null, clock.nowMillis())
+                    .withRecordedHeartRate()
+                stopHeartRate()
                 run = recorder.finished(stopped, endedEarly = true)
                 checkpoint()
                 hold(keep = false)
@@ -187,6 +213,7 @@ class WorkoutSession(
 
             else -> {
                 ticker.stop()
+                stopHeartRate()
                 run = current.copy(running = false, leaving = true)
                 hold(keep = false)
             }
@@ -251,6 +278,7 @@ class WorkoutSession(
         val current = run ?: return
         recorder.rewriteForHealth(current)
         ticker.stop()
+        stopHeartRate()
         hold(keep = false)
         run = null
         progressStore.saveWorkoutProgress(null)
@@ -268,6 +296,7 @@ class WorkoutSession(
                 body = body,
             )
         hold(keep = true)
+        startHeartRate(body.maxHeartRate ?: DEFAULT_MAX_BPM)
         play(start.cues, start.state)
         ticker.start(tick)
         checkpoint()
@@ -281,7 +310,9 @@ class WorkoutSession(
         play(step.cues, next.engine, capOver = if (leftCap) before.roundsInCap else null)
         if (next.engine.isDone) {
             ticker.stop()
-            val finished = recorder.finished(next.turned(phase = null, clock.nowMillis()), endedEarly = false)
+            val closed = next.turned(phase = null, clock.nowMillis()).withRecordedHeartRate()
+            stopHeartRate()
+            val finished = recorder.finished(closed, endedEarly = false)
             hold(keep = false)
             run = finished
         } else {
@@ -289,6 +320,48 @@ class WorkoutSession(
         }
         // A new interval is a change of course; the clock running down within one is not.
         if (next.turnedFrom(before.engine)) checkpoint()
+    }
+
+    private fun startHeartRate(maxBpm: Int) {
+        sampler.reset()
+        zoneTracker = ZoneTracker(maxBpm = maxBpm)
+        heartRateJob?.cancel()
+        liveHeartRate.start()
+        heartRateJob = heartRateScope.launch {
+            liveHeartRate.reading.collect { state ->
+                val current = run ?: return@collect
+                if (state !is LiveHeartRateState.Reading || !current.running || current.over) return@collect
+                val now = clock.nowMillis()
+                sampler.add(state.bpm, now)
+                val cues = settingsStore.cueSettings.value
+                if (!cues.heartRateAlerts) return@collect
+                when (zoneTracker.record(state.bpm, now)) {
+                    ZoneTransition.EnteredHigh -> {
+                        if (cues.sound) player.beep(Beep.ZoneUp)
+                        if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
+                    }
+
+                    ZoneTransition.EnteredRecovery -> {
+                        if (cues.sound) player.beep(Beep.ZoneDown)
+                        if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
+                    }
+
+                    null -> Unit
+                }
+            }
+        }
+    }
+
+    private fun stopHeartRate() {
+        heartRateJob?.cancel()
+        heartRateJob = null
+        liveHeartRate.stop()
+    }
+
+    private fun WorkoutRun.withRecordedHeartRate(): WorkoutRun {
+        val recorded = sampler.summary() ?: return this
+        val samples = sampler.samples().takeIf { it.isNotEmpty() }
+        return copy(heartRate = recorded, heartRateSamples = samples)
     }
 
     /**

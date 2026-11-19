@@ -59,7 +59,7 @@ import kotlinx.coroutines.flow.Flow
         FlowEntity::class,
         SportClassEntity::class,
     ],
-    version = 19,
+    version = 20,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -78,6 +78,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 16, to = 17),
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19),
+        AutoMigration(from = 19, to = 20),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -424,6 +425,8 @@ data class HistoryEntity(
     @ColumnInfo(defaultValue = "0") val capped: Boolean = false,
     /** The rounds done in its caps, a JSON list ([encodeCapRounds]); null for none counted. */
     @ColumnInfo(name = "cap_rounds") val capRounds: String? = null,
+    /** 5-second BPM samples recorded live by a sensor, a JSON list ([encodeHeartRateSamples]); null before 20. */
+    @ColumnInfo(name = "heart_rate_samples") val heartRateSamples: String? = null,
 )
 
 @Entity(tableName = "preset")

@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
@@ -105,10 +106,17 @@ data class SessionClocks(
     val emomState: EmomState? = null,
     val holdState: HoldState? = null,
     val densityState: DensityState? = null,
+    /** Live heart-rate reading from the paired sensor while the session is active. */
+    val liveHeartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
 )
 
-/** The [session]'s clocks [now], and its [timing]'s. */
-internal fun clocksAt(session: LiftSession?, now: Long, timing: TimerState) = SessionClocks(
+/** The [session]'s clocks [now], its [timing]'s, and the live [heartRate]. */
+internal fun clocksAt(
+    session: LiftSession?,
+    now: Long,
+    timing: TimerState,
+    heartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
+) = SessionClocks(
     elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
     sinceLast = session?.sets?.lastOrNull()?.let {
         formatClock(((now - it.loggedAtEpochMillis) / MILLIS_PER_SECOND).toInt())
@@ -117,6 +125,7 @@ internal fun clocksAt(session: LiftSession?, now: Long, timing: TimerState) = Se
     emomState = timing.emomState,
     holdState = timing.holdState,
     densityState = timing.densityState,
+    liveHeartRate = heartRate,
 )
 
 private const val MILLIS_PER_SECOND = 1_000L

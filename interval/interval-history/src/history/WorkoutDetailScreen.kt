@@ -66,6 +66,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.HeartRateChart
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
@@ -80,6 +81,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
+import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -265,6 +267,10 @@ private fun DetailFigures(workout: FinishedWorkout) {
         }
         workout.caps.forEach { cap -> CapFigures(cap, block = cap.block.takeIf { workout.config.isSequence }) }
         workout.heartRate?.let { heartRate ->
+            val samples = workout.heartRateSamples
+            if (!samples.isNullOrEmpty()) {
+                HeartRateChart(samples, Modifier.padding(vertical = Spacing.space8), maxBpm = workout.maxHeartRate)
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Stat(
                     stringResource(Res.string.detail_average_heart_rate),
@@ -274,6 +280,9 @@ private fun DetailFigures(workout: FinishedWorkout) {
                     stringResource(Res.string.detail_peak_heart_rate),
                     stringResource(Res.string.detail_bpm_value, heartRate.peakBpm),
                 )
+            }
+            if (!samples.isNullOrEmpty()) {
+                ZoneBreakdown(samples, Modifier.padding(top = Spacing.space8), maxBpm = workout.maxHeartRate)
             }
         }
     }

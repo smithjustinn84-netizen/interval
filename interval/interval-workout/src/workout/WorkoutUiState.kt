@@ -2,7 +2,9 @@ package dev.justinsmith.interval.workout
 
 import dev.justinsmith.interval.model.CapScore
 import dev.justinsmith.interval.model.PerceivedEffort
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.FlowStep
@@ -133,8 +135,14 @@ data class WorkoutUiState(
     val effort: PerceivedEffort? = null,
     /** The summary's note as typed. */
     val note: String = "",
-    /** Its heart rate as a watch recorded it, for the summary; null without one. */
+    /** Its heart rate as a watch or sensor recorded it, for the summary; null without one. */
     val heartRate: HeartRate? = null,
+    /** Live heart-rate sensor state while the workout is running. */
+    val liveHeartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
+    /** User's maximum heart rate for training zones. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
+    /** 5-second BPM samples recorded live during this workout, for the summary chart. */
+    val heartRateSamples: List<Int>? = null,
     /** "About how many snatches a set?" on the summary, for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
     /** The snatches counted, with the day's others, ask for the hands to be looked after: see `wantsHandCare`. */

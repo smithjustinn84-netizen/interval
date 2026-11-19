@@ -49,7 +49,7 @@ import kotlinx.coroutines.flow.Flow
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 17,
+    version = 18,
     // 3 to 4 and 15 to 16 are by hand, [LIFT_MIGRATIONS], added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -66,6 +66,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 13, to = 14),
         AutoMigration(from = 14, to = 15),
         AutoMigration(from = 16, to = 17),
+        AutoMigration(from = 17, to = 18),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)
@@ -203,10 +204,10 @@ interface SessionDao {
 
     /** Keeps the heart rate of the session [uid], at [now], unless it has one: the first found stays. */
     @Query(
-        "UPDATE session SET average_bpm = :average, peak_bpm = :peak, updated_at = :now " +
-            "WHERE uid = :uid AND average_bpm IS NULL",
+        "UPDATE session SET average_bpm = :average, peak_bpm = :peak, heart_rate_samples = :samples, " +
+            "updated_at = :now WHERE uid = :uid AND average_bpm IS NULL",
     )
-    suspend fun keepHeartRate(uid: String, average: Int, peak: Int, now: Long)
+    suspend fun keepHeartRate(uid: String, average: Int, peak: Int, samples: String?, now: Long)
 
     /** Marks a finished session deleted, keeping the row as a tombstone. */
     @Query("UPDATE session SET deleted = 1, updated_at = :now WHERE uid = :uid")
@@ -415,6 +416,8 @@ data class SessionEntity(
     /** Its heart rate, average and peak in beats a minute, as read from the health store; null until read. */
     @ColumnInfo(name = "average_bpm") val averageBpm: Int? = null,
     @ColumnInfo(name = "peak_bpm") val peakBpm: Int? = null,
+    /** 5-second BPM samples recorded live by a sensor, a JSON list; null before version 18. */
+    @ColumnInfo(name = "heart_rate_samples") val heartRateSamples: String? = null,
 )
 
 @Entity(

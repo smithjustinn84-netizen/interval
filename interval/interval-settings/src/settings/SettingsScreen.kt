@@ -94,6 +94,7 @@ fun SettingsRoute(
         onSetWeightUnit = viewModel::setWeightUnit,
         onClearWeight = viewModel::clearWeight,
         onUseHealthWeight = viewModel::useHealthWeight,
+        onSetMaxHeartRate = viewModel::setMaxHeartRate,
         onSetEffort = viewModel::setEffort,
         onExport = viewModel::export,
         onClearLog = viewModel::clearLog,
@@ -144,6 +145,7 @@ fun SettingsScreen(
     onSetWeightUnit: (WeightUnit) -> Unit = {},
     onClearWeight: () -> Unit = {},
     onUseHealthWeight: () -> Unit = {},
+    onSetMaxHeartRate: (Int?) -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
     onExport: () -> Unit = {},
     onClearLog: () -> Unit = {},
@@ -156,6 +158,7 @@ fun SettingsScreen(
 ) {
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
+    var editingMaxHeartRate by rememberSaveable { mutableStateOf(false) }
     var clearingLog by rememberSaveable { mutableStateOf(false) }
     val groups = settingsGroups(
         state,
@@ -163,6 +166,7 @@ fun SettingsScreen(
         onEditPrep = { editingPrep = true },
         onToggleKeepScreenOn,
         onEditWeight = { editingWeight = true },
+        onEditMaxHeartRate = { editingMaxHeartRate = true },
         onSetEffort,
         onSetTheme,
         onExport,
@@ -196,14 +200,9 @@ fun SettingsScreen(
         }
     }
     if (editingPrep) {
-        ValueSheet(
-            field = ConfigField.Prep,
-            value = state.prepSeconds,
-            total = null,
-            onStep = onStepPrep,
-            onPick = onSetPrep,
-            onDismiss = { editingPrep = false },
-        )
+        ValueSheet(ConfigField.Prep, state.prepSeconds, null, onStepPrep, onSetPrep, onDismiss = {
+            editingPrep = false
+        })
     }
     ImportProgress(importStep, imports)
     if (clearingLog) {
@@ -222,15 +221,18 @@ fun SettingsScreen(
     }
     if (editingWeight) {
         WeightSheet(
-            weight = state.weight,
-            unit = state.body.unit,
-            onSetWeight = onSetWeight,
-            onSetUnit = onSetWeightUnit,
-            onClear = onClearWeight,
+            state.weight,
+            state.body.unit,
+            onSetWeight,
+            onSetWeightUnit,
+            onClearWeight,
             onDismiss = { editingWeight = false },
-            healthWeight = state.healthWeight,
-            onUseHealthWeight = onUseHealthWeight,
+            state.healthWeight,
+            onUseHealthWeight,
         )
+    }
+    if (editingMaxHeartRate) {
+        MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
     }
 }
 

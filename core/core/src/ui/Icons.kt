@@ -76,6 +76,19 @@ object IntervalIcons {
         "M12 3c1 4 5 5 5 10a5 5 0 0 1 -10 0c0 -2 1 -3 2 -4c0 2 1 3 2 3c0 -3 -1 -5 1 -9z",
     )
 
+    /** A filled heart: live heart rate beside the BPM readout. */
+    val Heart: ImageVector = ImageVector.Builder("Heart", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
+        addPath(
+            addPathNodes(
+                "M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 " +
+                    "2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09 " +
+                    "C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5 " +
+                    "c0 3.78-3.4 6.86-8.55 11.54L12 21.35z",
+            ),
+            fill = SolidColor(Color.Black),
+        )
+    }.build()
+
     /** The filled triangle inside Start workout. */
     val Play: ImageVector = ImageVector.Builder("Play", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         addPath(

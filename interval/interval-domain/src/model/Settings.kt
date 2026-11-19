@@ -15,6 +15,7 @@ data class CueSettings(
     val voice: Boolean = true,
     val halfway: Boolean = true,
     val vibrate: Boolean = true,
+    val heartRateAlerts: Boolean = true,
 )
 
 /** How the app picks light or dark. */
@@ -28,6 +29,8 @@ data class BodySettings(
     val weightKg: Double? = WeightUnit.Kg.default.toDouble(),
     val unit: WeightUnit = WeightUnit.Kg,
     val effort: Effort = Effort.Hard,
+    /** User's maximum heart rate for training zones (120..230); null uses the 190 bpm default. */
+    val maxHeartRate: Int? = null,
 ) {
     /**
      * The calories of [workSeconds] of [activity] at [effort] and [otherSeconds] recovering, or null

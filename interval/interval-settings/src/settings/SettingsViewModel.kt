@@ -16,6 +16,7 @@ import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.MAX_BPM_RANGE
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
@@ -86,7 +87,7 @@ sealed interface ImportStep {
 }
 
 /** Toggles a single [CueSettings] flag. */
-enum class CueToggle { Sound, Voice, Halfway, Vibrate }
+enum class CueToggle { Sound, Voice, Halfway, Vibrate, HeartRateAlerts }
 
 /**
  * The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked.
@@ -146,6 +147,7 @@ class SettingsViewModel(
                 CueToggle.Voice -> cues.copy(voice = !cues.voice)
                 CueToggle.Halfway -> cues.copy(halfway = !cues.halfway)
                 CueToggle.Vibrate -> cues.copy(vibrate = !cues.vibrate)
+                CueToggle.HeartRateAlerts -> cues.copy(heartRateAlerts = !cues.heartRateAlerts)
             }
         }
         preview(toggle, settingsStore.cueSettings.value)
@@ -155,9 +157,17 @@ class SettingsViewModel(
     private fun preview(toggle: CueToggle, cues: CueSettings) {
         when (toggle) {
             CueToggle.Sound -> if (cues.sound) player.beep(Beep.Work)
+
             CueToggle.Voice -> if (cues.voice) player.speak(Speech.Work(lastRound = false))
+
             CueToggle.Halfway -> playCue(Cue.Halfway, cues, player)
+
             CueToggle.Vibrate -> if (cues.vibrate) player.vibrate(Haptic.Work)
+
+            CueToggle.HeartRateAlerts -> if (cues.heartRateAlerts) {
+                if (cues.sound) player.beep(Beep.ZoneUp)
+                if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
+            }
         }
     }
 
@@ -180,6 +190,11 @@ class SettingsViewModel(
     /** Sets the body weight to [value] whole units of the current unit, clamped to its range. */
     fun setWeight(value: Int) {
         updateBody { it.copy(weightKg = it.unit.toKg(value.coerceIn(it.unit.range))) }
+    }
+
+    /** Sets the user's max heart rate for training zones, or null to return to the 190 bpm default. */
+    fun setMaxHeartRate(bpm: Int?) {
+        updateBody { it.copy(maxHeartRate = bpm?.coerceIn(MAX_BPM_RANGE)) }
     }
 
     /**

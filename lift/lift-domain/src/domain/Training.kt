@@ -398,6 +398,8 @@ data class LiftSession(
     /** Its heart rate, average and peak in beats a minute, as a watch recorded it in health; null until read. */
     val averageBpm: Int? = null,
     val peakBpm: Int? = null,
+    /** 5-second BPM samples recorded live by the paired heart-rate sensor; null when none were recorded. */
+    val heartRateSamples: List<Int>? = null,
 ) {
     val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
 

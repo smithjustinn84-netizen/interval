@@ -9,4 +9,6 @@ val Beep.tone: Tone
         Beep.Work -> ToneSynth.work
         Beep.Rest -> ToneSynth.rest
         Beep.Finished -> ToneSynth.finished
+        Beep.ZoneUp -> ToneSynth.zoneUp
+        Beep.ZoneDown -> ToneSynth.zoneDown
     }

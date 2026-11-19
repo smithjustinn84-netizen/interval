@@ -4,13 +4,16 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.HeartRateChart
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
@@ -69,6 +72,18 @@ fun SessionStats(
         val average = session.averageBpm
         val peak = session.peakBpm
         if (average != null && peak != null) {
+            val samples = session.heartRateSamples
+            if (!samples.isNullOrEmpty()) {
+                ListCard {
+                    Column(
+                        Modifier.padding(Spacing.space16),
+                        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+                    ) {
+                        HeartRateChart(samples)
+                        ZoneBreakdown(samples)
+                    }
+                }
+            }
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 StatTile(
                     stringResource(Res.string.session_average_heart_rate),

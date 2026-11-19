@@ -51,6 +51,7 @@ import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.FinishHaptic
+import dev.justinsmith.interval.ui.HeartRateChart
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
@@ -61,6 +62,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.presetNameOrCustom
@@ -342,7 +344,7 @@ private fun SummaryDetails(
                 }
             }
         }
-        HeartRateLine(state.heartRate)
+        HeartRateLine(state.heartRate, state.heartRateSamples, state.maxHeartRate)
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SAVED_STEP)) {
             Row(
                 Modifier.padding(top = Spacing.space20),
@@ -394,16 +396,25 @@ private fun SummaryDetails(
  * it arrives after the rest. One line, not a row of tiles, so "How was it?" still fits above the actions on a phone.
  */
 @Composable
-private fun ColumnScope.HeartRateLine(heartRate: HeartRate?) {
+private fun ColumnScope.HeartRateLine(heartRate: HeartRate?, samples: List<Int>?, maxBpm: Int) {
     AnimatedVisibility(heartRate != null, enter = risingEnter()) {
         val shown = heartRate ?: return@AnimatedVisibility
-        Text(
-            stringResource(Res.string.workout_heart_rate, shown.averageBpm, shown.peakBpm),
-            style = IntervalTheme.type.meta,
-            color = IntervalTheme.workout.onGround,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = Spacing.space12),
-        )
+        Column(
+            Modifier.padding(top = Spacing.space12).widthIn(max = Sizes.content),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+        ) {
+            Text(
+                stringResource(Res.string.workout_heart_rate, shown.averageBpm, shown.peakBpm),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.workout.onGround,
+                textAlign = TextAlign.Center,
+            )
+            if (!samples.isNullOrEmpty()) {
+                HeartRateChart(samples, maxBpm = maxBpm, onWorkoutGround = true)
+                ZoneBreakdown(samples, maxBpm = maxBpm, onWorkoutGround = true)
+            }
+        }
     }
 }
 

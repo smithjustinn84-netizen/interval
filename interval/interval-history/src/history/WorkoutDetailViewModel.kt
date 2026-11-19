@@ -19,6 +19,7 @@ import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.plan.dayChoices
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -56,8 +57,12 @@ data class FinishedWorkout(
     /** How hard it felt and a note on it, as said on its summary; null for none. */
     val effort: PerceivedEffort? = null,
     val note: String? = null,
-    /** Its heart rate as a watch recorded it, average and peak in beats a minute; null until read. */
+    /** Its heart rate as a watch or sensor recorded it, average and peak in beats a minute; null until read. */
     val heartRate: HeartRate? = null,
+    /** 5-second BPM samples recorded live by the paired sensor; null when none were recorded. */
+    val heartRateSamples: List<Int>? = null,
+    /** User's maximum heart rate for training zones. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
     /** "About how many snatches a set?", for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
     /** Its time caps, each with the rounds done in it; empty for a workout with none counted. */
@@ -187,6 +192,8 @@ class WorkoutDetailViewModel(
                 effort = entry.effort,
                 note = entry.note,
                 heartRate = entry.averageBpm?.let { average -> entry.peakBpm?.let { HeartRate(average, it) } },
+                heartRateSamples = entry.heartRateSamples,
+                maxHeartRate = app.body.maxHeartRate ?: DEFAULT_MAX_BPM,
                 snatches = if (names.asksSnatches(entry.config)) SnatchAsk.of(entry.snatches, history, bells) else null,
                 caps = entry.capRounds?.scores(entry.config).orEmpty(),
             )

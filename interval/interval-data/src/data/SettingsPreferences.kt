@@ -10,6 +10,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.MAX_BPM_RANGE
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -35,6 +36,7 @@ private val CUE_SOUND = booleanPreferencesKey("cue_sound")
 private val CUE_VOICE = booleanPreferencesKey("cue_voice")
 private val CUE_HALFWAY = booleanPreferencesKey("cue_halfway")
 private val CUE_VIBRATE = booleanPreferencesKey("cue_vibrate")
+private val CUE_HR_ALERTS = booleanPreferencesKey("cue_hr_alerts")
 
 private val THEME = stringPreferencesKey("theme")
 private val KEEP_SCREEN_ON = booleanPreferencesKey("keep_screen_on")
@@ -47,6 +49,7 @@ private val FIRST_WEEK = booleanPreferencesKey("first_week")
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
 private val BODY_EFFORT = stringPreferencesKey("body_effort")
+private val BODY_MAX_HR = intPreferencesKey("body_max_hr")
 
 // A missing weight reads as the default, so calories turned off are stored as such.
 private val CALORIES_OFF = booleanPreferencesKey("calories_off")
@@ -93,6 +96,7 @@ internal fun Preferences.toCueSettings(): CueSettings {
         voice = this[CUE_VOICE] ?: defaults.voice,
         halfway = this[CUE_HALFWAY] ?: defaults.halfway,
         vibrate = this[CUE_VIBRATE] ?: defaults.vibrate,
+        heartRateAlerts = this[CUE_HR_ALERTS] ?: defaults.heartRateAlerts,
     )
 }
 
@@ -101,6 +105,7 @@ internal fun MutablePreferences.write(cues: CueSettings) {
     this[CUE_VOICE] = cues.voice
     this[CUE_HALFWAY] = cues.halfway
     this[CUE_VIBRATE] = cues.vibrate
+    this[CUE_HR_ALERTS] = cues.heartRateAlerts
 }
 
 internal fun Preferences.toAppSettings(): AppSettings {
@@ -141,6 +146,7 @@ private fun Preferences.toBodySettings(): BodySettings {
         // As for the theme: a name this build doesn't know falls back to the default.
         unit = WeightUnit.entries.firstOrNull { it.name == this[BODY_UNIT] } ?: defaults.unit,
         effort = Effort.entries.firstOrNull { it.name == this[BODY_EFFORT] } ?: defaults.effort,
+        maxHeartRate = this[BODY_MAX_HR]?.coerceIn(MAX_BPM_RANGE),
     )
 }
 
@@ -155,4 +161,6 @@ private fun MutablePreferences.write(body: BodySettings) {
     }
     this[BODY_UNIT] = body.unit.name
     this[BODY_EFFORT] = body.effort.name
+    val maxHr = body.maxHeartRate
+    if (maxHr == null) remove(BODY_MAX_HR) else this[BODY_MAX_HR] = maxHr
 }

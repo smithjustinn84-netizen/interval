@@ -24,7 +24,42 @@ import dev.justinsmith.core.resources.barlow_condensed_extrabold
 import dev.justinsmith.core.resources.barlow_condensed_semibold
 import dev.justinsmith.core.resources.barlow_regular
 import dev.justinsmith.core.resources.barlow_semibold
+import dev.justinsmith.interval.platform.HeartRateZone
 import org.jetbrains.compose.resources.Font
+
+/** Five heart-rate training zone colours, tuned for contrast on either dark or light grounds. */
+@Immutable
+data class HeartZoneColors(
+    val zone1: Color,
+    val zone2: Color,
+    val zone3: Color,
+    val zone4: Color,
+    val zone5: Color,
+) {
+    fun of(zone: HeartRateZone): Color = when (zone) {
+        HeartRateZone.Zone1 -> zone1
+        HeartRateZone.Zone2 -> zone2
+        HeartRateZone.Zone3 -> zone3
+        HeartRateZone.Zone4 -> zone4
+        HeartRateZone.Zone5 -> zone5
+    }
+}
+
+private val darkHeartZones = HeartZoneColors(
+    zone1 = Color(0xFF7FA3D1),
+    zone2 = Color(0xFF2FD3A0),
+    zone3 = Color(0xFFF2A81D),
+    zone4 = Color(0xFFFF7A43),
+    zone5 = Color(0xFFFF4365),
+)
+
+private val lightHeartZones = HeartZoneColors(
+    zone1 = Color(0xFF3E6396),
+    zone2 = Color(0xFF0A6E55),
+    zone3 = Color(0xFFA86A05),
+    zone4 = Color(0xFFC44219),
+    zone5 = Color(0xFFB81D3D),
+)
 
 /** Surfaces and text for the setup screen; light and dark variants. */
 @Immutable
@@ -53,6 +88,8 @@ data class IntervalPalette(
      * darkens it; dark mode uses [prepMark] itself.
      */
     val onPrepTint: Color,
+    /** Heart-rate training zone colours on setup and detail surfaces. */
+    val heartZones: HeartZoneColors = darkHeartZones,
 ) {
     /** Selected preset card fill. */
     val accentTint: Color get() = tint(accent)
@@ -114,6 +151,8 @@ data class WorkoutColors(
     /** The lanes round the ring: their lines, and every other lane's fill. */
     val laneLine: Color,
     val laneFill: Color,
+    /** Heart-rate training zone colours on the workout ground. */
+    val heartZones: HeartZoneColors = darkHeartZones,
 ) {
     /**
      * The label on a phase-coloured or [onGround] fill: ink or white, whichever reads better. Worked
@@ -184,6 +223,7 @@ internal val lightPalette = IntervalPalette(
     workMark = Color(0xFFD13A26),
     restMark = Color(0xFF0A5E49),
     onPrepTint = Color(0xFFA86A05),
+    heartZones = lightHeartZones,
 )
 
 /** Gym dark: the workout's near-black ground carried onto Setup, with its bright phase colours. */
@@ -238,6 +278,7 @@ internal val lightWorkoutColors = WorkoutColors(
     onGroundDim = lightPalette.textDim,
     laneLine = lightPalette.laneLine,
     laneFill = lightPalette.laneFill,
+    heartZones = lightHeartZones,
 )
 
 /**

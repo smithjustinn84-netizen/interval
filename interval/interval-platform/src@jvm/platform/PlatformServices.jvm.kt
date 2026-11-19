@@ -14,6 +14,7 @@ fun platformModule(): Module = module {
     single<BackgroundWorkout> { NoBackgroundWorkout }
     single<PlanReminders> { NoPlanReminders }
     single<ClassSensor> { NoClassSensor }
+    single<LiveHeartRate> { NoLiveHeartRate }
 }
 
 /** A desktop has no notification centre the app could hand a day's reminder to. */

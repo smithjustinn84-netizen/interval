@@ -86,8 +86,9 @@ private fun AppSettings.export(cues: CueSettings) = SettingsExport(
     effort = body.effort.name,
     weeklyGoal = weeklyGoal,
     reminderMinuteOfDay = reminderMinuteOfDay,
-    cues = CuesExport(cues.sound, cues.voice, cues.halfway, cues.vibrate),
+    cues = CuesExport(cues.sound, cues.voice, cues.halfway, cues.vibrate, cues.heartRateAlerts),
     sessionMinutes = sessionMinutes,
+    maxHeartRate = body.maxHeartRate,
 )
 
 private fun IntervalConfig.export() = ConfigExport(
@@ -140,6 +141,7 @@ private fun HistoryEntry.export() =
         snatches?.perSet,
         snatches?.bellKg,
         capRounds?.map { CapRoundExport(it.block, it.atMillis) },
+        heartRateSamples,
     )
 
 private fun PlannedWorkout.export(): PlannedExport {
@@ -205,6 +207,7 @@ private fun LiftSession.export(): SessionExport? {
         note,
         averageBpm,
         peakBpm,
+        heartRateSamples,
     )
 }
 

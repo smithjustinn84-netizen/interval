@@ -33,6 +33,8 @@ data class HistoryEntry(
     val peakBpm: Int? = null,
     val snatches: SnatchCount? = null,
     val capRounds: List<CapRound>? = null,
+    /** 5-second BPM samples recorded live by the paired heart-rate sensor; null when none were recorded. */
+    val heartRateSamples: List<Int>? = null,
 ) {
     /** When it began: as recorded, or for an older entry, its time run back from its finish, pauses left out. */
     val startedAt: Long get() = startedAtEpochMillis ?: (finishedAtEpochMillis - elapsedSeconds * MILLIS_PER_SECOND)

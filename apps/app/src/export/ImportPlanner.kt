@@ -187,7 +187,7 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
         classes = newClasses,
         settings = ImportedSettings(
             bundle.settings.toDomain(),
-            bundle.settings.cues.let { CueSettings(it.sound, it.voice, it.halfway, it.vibrate) },
+            bundle.settings.cues.let { CueSettings(it.sound, it.voice, it.halfway, it.vibrate, it.heartRateAlerts) },
             bundle.timer.toDomain(),
             bundle.lift.restSeconds.also {
                 require(it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS) { "rest" }
@@ -322,6 +322,7 @@ private fun WorkoutExport.toDomain(): HistoryEntry {
                 require(within && at == at.sorted()) { "a cap's rounds" }
             }
         },
+        heartRateSamples = heartRateSamples?.takeIf { it.isNotEmpty() },
     )
 }
 
@@ -373,7 +374,12 @@ private fun SettingsExport.toDomain(): AppSettings {
     return AppSettings(
         theme = enumNamed<ThemeMode>(theme),
         keepScreenOn = keepScreenOn,
-        body = BodySettings(weightKg, unit, enumNamed<Effort>(effort)),
+        body = BodySettings(
+            weightKg,
+            unit,
+            enumNamed<Effort>(effort),
+            maxHeartRate = maxHeartRate?.coerceIn(dev.justinsmith.interval.platform.MAX_BPM_RANGE),
+        ),
         weeklyGoal = weeklyGoal,
         reminderMinuteOfDay = reminderMinuteOfDay,
         sessionMinutes = sessionMinutes,
@@ -439,6 +445,7 @@ private fun SessionExport.toDomain(exercises: List<CustomExercise>, bands: List<
         note = note?.take(LiftEffort.NOTE_MAX_LENGTH)?.ifBlank { null },
         averageBpm = averageBpm,
         peakBpm = peakBpm,
+        heartRateSamples = heartRateSamples?.takeIf { it.isNotEmpty() },
     )
 }
 

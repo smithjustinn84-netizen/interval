@@ -27,7 +27,9 @@ fun platformModule(context: Context): Module = context.applicationContext.let { 
             onClose { it?.release() }
         }
         single<BackgroundWorkout> { AndroidBackgroundWorkout(app) }
-        single<ClassSensor> { PolarClassSensor(app, get()) }
+        single { PolarClassSensor(app, get()) }
+        single<ClassSensor> { get<PolarClassSensor>() }
+        single<LiveHeartRate> { get<PolarClassSensor>() }
         // One record of the alarms per process: DataStore's rule of one instance per file.
         single { PlanAlarms(app, planAlarmStore(app), get()) }
         single<PlanReminders> { AndroidPlanReminders(get()) }
@@ -72,6 +74,7 @@ private class AndroidCuePlayer(context: Context, speaker: Speaker, private val t
             Haptic.Work -> longArrayOf(0, 150)
             Haptic.Rest -> longArrayOf(0, 70, 60, 70)
             Haptic.Finished -> longArrayOf(0, 250, 100, 250)
+            Haptic.Heartbeat -> longArrayOf(0, 40, 80, 60)
         }
         // SecurityException without the VIBRATE permission; treated like any other missing cue.
         runCatching { vibrator?.vibrate(VibrationEffect.createWaveform(timings, -1)) }

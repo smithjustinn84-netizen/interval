@@ -57,6 +57,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -435,7 +436,10 @@ fun SessionScreen(
                 navigation = {
                     IconAction(IntervalIcons.Close, stringResource(Res.string.session_discard), { discarding = true })
                 },
-                actions = { IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet) },
+                actions = {
+                    HeartBeatBadge(clocks().liveHeartRate, onWorkoutGround = false)
+                    IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet)
+                },
             )
         },
         tiles = { wide -> SessionTiles(state, clocks, wide) },

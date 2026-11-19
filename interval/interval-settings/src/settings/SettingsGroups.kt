@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.healthStoreName
@@ -43,11 +44,18 @@ import dev.justinsmith.interval.settings.resources.settings_health
 import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
+import dev.justinsmith.interval.settings.resources.settings_hr_alerts
+import dev.justinsmith.interval.settings.resources.settings_hr_alerts_hint
 import dev.justinsmith.interval.settings.resources.settings_import
 import dev.justinsmith.interval.settings.resources.settings_import_action
 import dev.justinsmith.interval.settings.resources.settings_import_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
+import dev.justinsmith.interval.settings.resources.settings_max_hr
+import dev.justinsmith.interval.settings.resources.settings_max_hr_default
+import dev.justinsmith.interval.settings.resources.settings_max_hr_edit
+import dev.justinsmith.interval.settings.resources.settings_max_hr_hint
+import dev.justinsmith.interval.settings.resources.settings_max_hr_value
 import dev.justinsmith.interval.settings.resources.settings_plan
 import dev.justinsmith.interval.settings.resources.settings_plan_open
 import dev.justinsmith.interval.settings.resources.settings_reminder
@@ -126,6 +134,7 @@ internal fun settingsGroups(
     onEditPrep: () -> Unit,
     onToggleKeepScreenOn: () -> Unit,
     onEditWeight: () -> Unit,
+    onEditMaxHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     onExport: () -> Unit,
@@ -156,7 +165,7 @@ internal fun settingsGroups(
     },
     SettingsGroup("calories") {
         GroupLabel(stringResource(Res.string.settings_calories))
-        CaloriesCard(state, onEditWeight = onEditWeight, onSetEffort = onSetEffort)
+        CaloriesCard(state, onEditWeight, onEditMaxHeartRate, onSetEffort)
     },
     // After the calories its weight feeds, and only where the platform has a store.
     SettingsGroup("health") {
@@ -347,6 +356,13 @@ private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onTo
         cues.vibrate,
         onToggle = { onToggle(CueToggle.Vibrate) },
     )
+    RowDivider()
+    ToggleRow(
+        stringResource(Res.string.settings_hr_alerts),
+        stringResource(Res.string.settings_hr_alerts_hint),
+        cues.heartRateAlerts,
+        onToggle = { onToggle(CueToggle.HeartRateAlerts) },
+    )
 }
 
 /**
@@ -431,6 +447,7 @@ private fun <T> ChoiceRow(
 private fun CaloriesCard(
     state: SettingsUiState,
     onEditWeight: () -> Unit,
+    onEditMaxHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -449,6 +466,19 @@ private fun CaloriesCard(
             onClick = onEditWeight,
             onClickLabel = stringResource(Res.string.settings_weight_edit),
             dim = weight == null,
+        )
+        RowDivider()
+        val maxHr = state.body.maxHeartRate
+        ValueRow(
+            stringResource(Res.string.settings_max_hr),
+            stringResource(Res.string.settings_max_hr_hint),
+            value = if (maxHr == null) {
+                stringResource(Res.string.settings_max_hr_default, DEFAULT_MAX_BPM)
+            } else {
+                stringResource(Res.string.settings_max_hr_value, maxHr)
+            },
+            onClick = onEditMaxHeartRate,
+            onClickLabel = stringResource(Res.string.settings_max_hr_edit),
         )
         RowDivider()
         ChoiceRow(

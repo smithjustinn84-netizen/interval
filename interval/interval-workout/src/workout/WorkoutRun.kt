@@ -62,8 +62,10 @@ data class WorkoutRun(
     val capRounds: List<CapRound> = emptyList(),
     /** The summary's words for the health store's note, as the screen put them. */
     val healthNotes: String? = null,
-    /** Its heart rate as a watch recorded it in the health store, once read there: not saved, it is read again. */
+    /** Its heart rate as a watch recorded it in the health store, or live from the sensor. */
     val heartRate: HeartRate? = null,
+    /** 5-second BPM samples recorded live by the paired sensor during this run. */
+    val heartRateSamples: List<Int>? = null,
     /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
     val keepScreenOn: Boolean = false,
     val body: BodySettings = BodySettings(),
@@ -203,7 +205,11 @@ data class WorkoutRun(
             leaving = leaving,
             effort = effort,
             note = note,
-        ).copy(heartRate = heartRate).withCaps(bests)
+        ).copy(
+            heartRate = heartRate,
+            heartRateSamples = heartRateSamples,
+            maxHeartRate = body.maxHeartRate ?: dev.justinsmith.interval.platform.DEFAULT_MAX_BPM,
+        ).withCaps(bests)
 
     /**
      * The most rounds done in each capped block (0-based) of a workout of this shape in [history], its own entry left

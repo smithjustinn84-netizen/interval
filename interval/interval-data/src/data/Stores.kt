@@ -90,6 +90,8 @@ interface HistoryStore {
         workSeconds: Int? = null,
         startedAtEpochMillis: Long? = null,
         capRounds: List<CapRound>? = null,
+        heartRate: HeartRate? = null,
+        heartRateSamples: List<Int>? = null,
     ): String
 
     fun reflectOnWorkout(uid: String, effort: PerceivedEffort?, note: String)

@@ -100,6 +100,12 @@ object Sizes {
     /** The tallest bar of All time's weekly chart. */
     val weeksChart = 96.dp
 
+    /** The workout/session heart-rate line chart height and stroke, and each zone bar's height. */
+    val heartChart = 112.dp
+    val heartChartStroke = 2.5.dp
+    val zoneBarHeight = 8.dp
+    val zoneLabelWidth = 88.dp
+
     /** The small glyph inside a chip, such as the streak's flame. */
     val chipIcon = 16.dp
 
@@ -343,6 +349,9 @@ object Motion {
 
     /** The streak's flame flares to this as the streak grows. */
     const val FLAME_POP_SCALE = 1.25f
+
+    /** The live heart icon swells to this on each beat. */
+    const val HEART_PULSE_SCALE = 1.22f
 
     /** The goal ring pops to this as it closes on the week's goal. */
     const val RING_CLOSE_POP_SCALE = 1.06f

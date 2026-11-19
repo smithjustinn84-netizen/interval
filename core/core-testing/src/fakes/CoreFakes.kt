@@ -7,6 +7,7 @@ import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkout
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
+import dev.justinsmith.interval.platform.LiveHeartRate
 import dev.justinsmith.interval.platform.NoTones
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
@@ -158,6 +159,7 @@ fun fakeCorePlatformModule(
     ids: IdGenerator = IdGenerator.Random,
     speaker: Speaker = RecordingSpeaker(),
     tones: TonePlayer = NoTones,
+    liveHeartRate: LiveHeartRate = FakeLiveHeartRate(),
 ): Module = module {
     single { clock }
     single { timeSource }
@@ -168,4 +170,5 @@ fun fakeCorePlatformModule(
     single { ids }
     single { speaker }
     single<TonePlayer> { tones }
+    single { liveHeartRate }
 }

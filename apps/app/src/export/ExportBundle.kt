@@ -42,7 +42,7 @@ data class ExportBundle(
     val classes: List<ClassExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 14
+        const val SCHEMA = 15
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -68,10 +68,18 @@ data class SettingsExport(
     val cues: CuesExport,
     /** How long a session is, as Set up was answered. */
     val sessionMinutes: Int? = null,
+    /** User-configured maximum heart rate for training zones; null before schema 15. */
+    val maxHeartRate: Int? = null,
 )
 
 @Serializable
-data class CuesExport(val sound: Boolean, val voice: Boolean, val halfway: Boolean, val vibrate: Boolean)
+data class CuesExport(
+    val sound: Boolean,
+    val voice: Boolean,
+    val halfway: Boolean,
+    val vibrate: Boolean,
+    val heartRateAlerts: Boolean = true,
+)
 
 @Serializable
 data class ConfigExport(
@@ -150,6 +158,8 @@ data class WorkoutExport(
     val snatchBellKg: Double? = null,
     /** The rounds done in its time caps; null for none counted, and in files before schema 13. */
     val capRounds: List<CapRoundExport>? = null,
+    /** 5-second BPM samples recorded live by a sensor; null before schema 15. */
+    val heartRateSamples: List<Int>? = null,
 )
 
 /** A round done in a time cap: the cap's block (0-based), and how far into it, pauses left out. */
@@ -274,6 +284,8 @@ data class SessionExport(
     val note: String? = null,
     val averageBpm: Int? = null,
     val peakBpm: Int? = null,
+    /** 5-second BPM samples recorded live by a sensor; null before schema 15. */
+    val heartRateSamples: List<Int>? = null,
 )
 
 @Serializable
