@@ -612,7 +612,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
   location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
-  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and not yet run on an H10 (docs/backlog.md). A sync hands over
+  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10, its class recording not yet tried (docs/backlog.md). A sync hands over
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,

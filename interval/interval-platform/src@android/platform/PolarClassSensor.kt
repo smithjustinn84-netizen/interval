@@ -56,7 +56,8 @@ import kotlin.math.sqrt
  *
  * Run against a Verity Sense on 2026-11-18 (SDK 8.6.0): pairing, a recording of the heart rate, a reading a
  * second, and the accelerometer, and its sync. A stop before the start answers "already in state", passed over.
- * The H10's path has not yet been run on a real strap.
+ * An H10 on 2026-11-19: pairing, and the heart rate live through a conditioning workout, its zones after. Its
+ * class recording has not yet been run on a real strap.
  */
 internal class PolarClassSensor(private val context: Context, private val clock: WallClock) :
     ClassSensor,

@@ -45,5 +45,6 @@ its rounds go by the heart rate. The class's row in the Log opens it again.
 Deleting the recording leaves the day logged.
 
 !!! note
-    Tried on a real Verity Sense for pairing, recording and syncing, not yet through a whole class; not yet tried on an H10. iOS and
+    Tried on a real Verity Sense for pairing, recording and syncing, not yet through a whole class. An H10 has paired and shown the heart rate live through a workout; its class
+    recording is not yet tried. iOS and
     desktop don't offer a sensor yet.
