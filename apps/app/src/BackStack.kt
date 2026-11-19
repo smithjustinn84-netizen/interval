@@ -2,6 +2,7 @@ package dev.justinsmith.interval
 
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
+import dev.justinsmith.interval.nav.ClassDetail
 import dev.justinsmith.interval.nav.ConditioningTab
 import dev.justinsmith.interval.nav.Presets
 import dev.justinsmith.interval.nav.Settings
@@ -63,9 +64,9 @@ internal fun NavBackStack<NavKey>.replaceTop(key: NavKey) {
 internal val NavBackStack<NavKey>.settingsOverTimer: Boolean
     get() = getOrNull(indexOf(Settings) - 1) == Timer
 
-/** A finished workout or session opened from History: on a wide window it sits beside the log. */
+/** A finished workout, class or session opened from History: on a wide window it sits beside the log. */
 internal val NavKey?.opensBesideHistory: Boolean
-    get() = this is WorkoutDetail || (this is LiftDetail && fromHistory)
+    get() = this is WorkoutDetail || this is ClassDetail || (this is LiftDetail && fromHistory)
 
 /**
  * Opens [key] beside History's log, in place of whatever was open there, so Back closes it rather than walking

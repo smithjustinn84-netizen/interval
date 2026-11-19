@@ -86,6 +86,18 @@ interface HealthConnector {
 expect fun rememberHealthConnector(store: HealthStore): HealthConnector
 
 /**
+ * The leave to use Bluetooth, for the screen that pairs a sensor or reaches one: [ask] asks where the platform
+ * has one to ask for and it isn't had yet, then calls back with whether it is. Android 12 and up ask to find and
+ * connect to nearby devices; elsewhere there is nothing to ask and the answer is yes.
+ */
+fun interface BluetoothAccess {
+    fun ask(then: (granted: Boolean) -> Unit)
+}
+
+@Composable
+expect fun rememberBluetoothAccess(): BluetoothAccess
+
+/**
  * The platform's [HealthStore] by its name, which the screens put into their words: Health Connect on Android,
  * Apple Health on iOS. Desktop has none to name, and says Android's, as its tests read.
  */

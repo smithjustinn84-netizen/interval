@@ -122,6 +122,17 @@
     <string name="settings_health_off_hint">Save finished workouts and Lift sessions there too</string>
     <string name="settings_health_on_hint">Finished workouts and Lift sessions are saved there</string>
     <string name="settings_health_install_hint">Get it from Google Play to save workouts there</string>
+    <!-- The heart-rate sensor a class is recorded on: only where the platform can reach one. -->
+    <string name="settings_sensor">Heart-rate sensor</string>
+    <string name="settings_sensor_pair">Pair a sensor</string>
+    <string name="settings_sensor_pair_hint">A Polar Verity Sense, switched on and close by, to record a class</string>
+    <string name="settings_sensor_looking">Looking for it…</string>
+    <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day. Tap to forget it</string>
+    <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>
+    <string name="settings_sensor_forget">Forget</string>
+    <string name="notice_sensor_no_access">Bluetooth is off, or the app may not use it.</string>
+    <string name="notice_sensor_none_nearby">Couldn’t find a sensor. Switch it on and keep it close.</string>
+    <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
     <string name="settings_about_app">About Interval</string>
     <string name="settings_about_app_hint">Version, credits and licenses</string>
 </resources>

@@ -123,3 +123,7 @@ private fun openHealthApp() {
 }
 
 private const val HEALTH_APP = "x-apple-health://"
+
+/** Nothing to ask here: no sensor is offered, and iOS asks for Bluetooth itself as it is first used. */
+@Composable
+actual fun rememberBluetoothAccess(): BluetoothAccess = BluetoothAccess { then -> then(true) }

@@ -13,16 +13,25 @@ import dev.justinsmith.interval.data.PlannedDao
 import dev.justinsmith.interval.data.PlannedEntity
 import dev.justinsmith.interval.data.PresetDao
 import dev.justinsmith.interval.data.PresetEntity
+import dev.justinsmith.interval.data.SportClassDao
+import dev.justinsmith.interval.data.SportClassEntity
 import dev.justinsmith.interval.data.SportLogDao
 import dev.justinsmith.interval.data.SportLogEntity
 import dev.justinsmith.interval.di.StorageScope
+import dev.justinsmith.interval.model.ClassRecording
+import dev.justinsmith.interval.model.ClassSample
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
+import dev.justinsmith.interval.platform.ClassSensor
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
+import dev.justinsmith.interval.platform.SensorFailure
+import dev.justinsmith.interval.platform.SensorStatus
+import dev.justinsmith.interval.platform.SensorSync
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.Preset
@@ -253,6 +262,35 @@ class FakeFlowDao : FlowDao {
     }
 }
 
+/** A [SportClassDao] over a list, the latest first like the real query. */
+class FakeSportClassDao : SportClassDao {
+    private val rows = MutableStateFlow(emptyList<SportClassEntity>())
+    private val ids = AutoIds()
+
+    override fun observeAll(): Flow<List<SportClassEntity>> =
+        rows.map { all -> all.sortedByDescending { it.startedAtEpochMillis } }
+
+    // As the unique index with REPLACE does.
+    override suspend fun insert(row: SportClassEntity) {
+        rows.update { all ->
+            all.filterNot { it.startedAtEpochMillis == row.startedAtEpochMillis } + row.copy(id = ids.assign(row.id))
+        }
+    }
+
+    /** As the unique index with IGNORE does, for an import. */
+    suspend fun insertNew(row: SportClassEntity) {
+        if (rows.value.none { it.startedAtEpochMillis == row.startedAtEpochMillis }) insert(row)
+    }
+
+    override suspend fun delete(startedAt: Long) {
+        rows.update { all -> all.filterNot { it.startedAtEpochMillis == startedAt } }
+    }
+
+    override suspend fun clear() {
+        rows.value = emptyList()
+    }
+}
+
 /** An [ImportDao] over the other fakes: its transaction is [ImportDao.importAll]'s own, without the rollback. */
 class FakeImportDao(
     private val history: FakeHistoryDao,
@@ -260,6 +298,7 @@ class FakeImportDao(
     private val planned: FakePlannedDao,
     private val sports: FakeSportLogDao,
     private val flows: FakeFlowDao = FakeFlowDao(),
+    private val classes: FakeSportClassDao = FakeSportClassDao(),
 ) : ImportDao {
     override suspend fun insertHistory(rows: List<HistoryEntity>) = rows.forEach { history.insert(it) }
 
@@ -270,6 +309,8 @@ class FakeImportDao(
     override suspend fun insertSports(rows: List<SportLogEntity>) = sports.insert(rows)
 
     override suspend fun insertFlows(rows: List<FlowEntity>) = rows.forEach { flows.insert(it) }
+
+    override suspend fun insertClasses(rows: List<SportClassEntity>) = rows.forEach { classes.insertNew(it) }
 }
 
 /**
@@ -283,7 +324,8 @@ class FakeStorage {
     val planned = FakePlannedDao()
     val sports = FakeSportLogDao()
     val flows = FakeFlowDao()
-    val imports = FakeImportDao(history, presets, planned, sports, flows)
+    val classes = FakeSportClassDao()
+    val imports = FakeImportDao(history, presets, planned, sports, flows, classes)
 
     /**
      * A repository over this storage. By default its writes run unconfined and the fakes never suspend, so
@@ -297,7 +339,7 @@ class FakeStorage {
         scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined),
         ids: IdGenerator = IdGenerator.Random,
     ): IntervalRepository =
-        IntervalRepository(settings, history, presets, planned, sports, flows, imports, scope, now, ids)
+        IntervalRepository(settings, history, presets, planned, sports, flows, classes, imports, scope, now, ids)
 }
 
 /**
@@ -323,6 +365,7 @@ fun fakeStorageModule(storage: FakeStorage = FakeStorage()): Module = module {
     single<PlannedDao> { storage.planned }
     single<SportLogDao> { storage.sports }
     single<FlowDao> { storage.flows }
+    single<SportClassDao> { storage.classes }
     single<ImportDao> { storage.imports }
 }
 
@@ -367,6 +410,72 @@ class RecordingBackgroundWorkout : BackgroundWorkout {
     }
 }
 
+/**
+ * A [ClassSensor] in memory, whose [status] a test sets as it likes: [nearby] is the sensor a pairing finds (null:
+ * none in reach), [recorded] what a sync brings over (null: nothing on it), [failing] what every call answers while
+ * set. [now] dates a recording's start. It starts as a platform with no sensor has it, so nothing of one shows
+ * until a test offers one ([SensorStatus.Unpaired]).
+ */
+class RecordingClassSensor(
+    initial: SensorStatus = SensorStatus.Unavailable,
+    var nearby: String? = SENSOR_NAME,
+    var recorded: ClassRecording? = null,
+    var failing: SensorFailure? = null,
+    private val now: () -> Long = { 0L },
+) : ClassSensor {
+    private val _status = MutableStateFlow(initial)
+    override val status: MutableStateFlow<SensorStatus> get() = _status
+    var starts = 0
+    var syncs = 0
+
+    private val name: String? get() = when (val status = _status.value) {
+        is SensorStatus.Paired -> status.name
+        is SensorStatus.Recording -> status.name
+        else -> null
+    }
+
+    override suspend fun pair(): SensorFailure? {
+        val found = nearby
+        return when {
+            failing != null -> failing
+            found == null -> SensorFailure.NotFound
+            else -> null.also { _status.value = SensorStatus.Paired(found) }
+        }
+    }
+
+    override fun forget() {
+        _status.value = SensorStatus.Unpaired
+    }
+
+    override suspend fun startRecording(): SensorFailure? {
+        val paired = name
+        return when {
+            failing != null -> failing
+
+            paired == null -> SensorFailure.NotFound
+
+            else -> null.also {
+                starts++
+                _status.value = SensorStatus.Recording(paired, now())
+            }
+        }
+    }
+
+    override suspend fun sync(): SensorSync {
+        val paired = name
+        val recording = recorded
+        val failure = failing ?: SensorFailure.NotFound.takeIf { paired == null }
+            ?: SensorFailure.NothingRecorded.takeIf { recording == null }
+        if (failure != null || paired == null || recording == null) {
+            return SensorSync.Failed(failure ?: SensorFailure.Failed)
+        }
+        syncs++
+        recorded = null
+        _status.value = SensorStatus.Paired(paired)
+        return SensorSync.Synced(recording)
+    }
+}
+
 /** [PlanReminders] that keep nothing and remember every set they were handed; [pending] is the latest. */
 class RecordingPlanReminders : PlanReminders {
     val schedules = mutableListOf<List<PlanReminder>>()
@@ -399,8 +508,41 @@ fun fakePlatformModule(
     player: CuePlayer = RecordingCuePlayer(),
     background: BackgroundWorkout = RecordingBackgroundWorkout(),
     reminders: PlanReminders = RecordingPlanReminders(),
+    sensor: ClassSensor = RecordingClassSensor(),
 ): Module = module {
     single { player }
     single { background }
     single { reminders }
+    single { sensor }
+}
+
+/** The name the fake sensor goes by. */
+const val SENSOR_NAME = "Polar Sense 1A2B3C4D"
+
+private const val WARM_UP_SECONDS = 600
+private const val ROUND_SECONDS = 300
+private const val REST_SECONDS = 60
+private const val EASY_BPM = 110
+private const val HARD_BPM = 170
+private const val REST_DROP_BPM = 20
+private const val EASY_MOVEMENT = 0.3f
+private const val STILL_MOVEMENT = 0.05f
+
+/**
+ * A class as a sensor would hand it over, started at [startedAtEpochMillis]: ten minutes of warm-up at 110, then
+ * [rounds] five-minute rounds at 170 with a minute's rest after each, the arm still and the heart rate falling 20,
+ * and ten easy minutes to end on. The detector finds exactly [rounds] in it.
+ */
+fun sparringRecording(rounds: Int, startedAtEpochMillis: Long = 0L): ClassRecording {
+    fun steady(seconds: Int, bpm: Int, movement: Float) =
+        List(seconds / SportClass.SAMPLE_SECONDS) { ClassSample(bpm, movement) }
+    val rest = List(REST_SECONDS / SportClass.SAMPLE_SECONDS) { index ->
+        val count = REST_SECONDS / SportClass.SAMPLE_SECONDS
+        ClassSample(HARD_BPM - REST_DROP_BPM * (index + 1) / count, STILL_MOVEMENT)
+    }
+    val easy = steady(WARM_UP_SECONDS, EASY_BPM, EASY_MOVEMENT)
+    return ClassRecording(
+        startedAtEpochMillis,
+        easy + List(rounds) { steady(ROUND_SECONDS, HARD_BPM, movement = 1f) + rest }.flatten() + easy,
+    )
 }

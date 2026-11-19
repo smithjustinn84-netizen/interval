@@ -62,6 +62,7 @@ class AppDataExporter(
         history = intervals.history.history.value.map { it.export() },
         plan = intervals.plans.planned.value.map { it.export() },
         sportDays = intervals.history.sportDays.value.map { it.export() },
+        classes = intervals.history.classes.value.map { it.export() },
         flows = intervals.flows.customFlows.value.map { it.export() },
         lift = LiftExport(
             bellsKg = lift.gear.bells.value,

@@ -7,10 +7,30 @@ import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WorkoutKind
 import dev.justinsmith.interval.history.upNextKind
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.sensor.SensorCard
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.lift.domain.ReadinessReason
 
 // Today as a coach lays the day out: what is done, what is still to do and in what order, and what can wait.
+
+/**
+ * The sport a class recorded today is of: the one still to log, else the one logged, else BJJ, which the sensor
+ * is for first.
+ */
+internal val TodayPlan.classSport: Sport
+    get() = steps.firstNotNullOfOrNull { (it as? UpNextItem.SportDay)?.sport }
+        ?: done.firstNotNullOfOrNull { (it as? DoneStep.SportLogged)?.sport }
+        ?: Sport.Bjj
+
+/**
+ * The sensor's card as Today shows it: a class on the sensor is always there to sync; the way to record one only
+ * on a day with a sport still to log, so a rest day and a lifting day say nothing of the sensor.
+ */
+internal fun TodayPlan.sensorCard(card: SensorCard?): SensorCard? = when (card) {
+    is SensorCard.Recording -> card
+    is SensorCard.Ready -> card.takeIf { steps.any { it is UpNextItem.SportDay } }
+    null -> null
+}
 
 /** Something done today, a tick on Today's card: oldest first, the sports logged after the workouts. */
 sealed interface DoneStep {

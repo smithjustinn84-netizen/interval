@@ -455,6 +455,12 @@ flowchart TD
     first" before a thrown lift's first set at a new bell, `firstAtBell`, and "Stop a rep early" once a session on a
     taxed day, `EasierDay.taxed`) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
     `IntervalActivity.voice`).
+- **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the armband a class is recorded on. Android's
+  `PolarClassSensor` (`interval-platform`) drives a Polar Verity Sense's offline recording through Polar's SDK;
+  iOS and desktop bind `NoClassSensor`. A sync yields a `ClassRecording` of five-second `ClassSample`s, kept by
+  `HistoryStore.keepClass` (`sport_class`) and read back as a `SportClass` whose rounds `detectRounds`
+  (`interval-domain`) finds afresh each time. Today records and syncs (`ClassSensorCard`), Settings pairs, and
+  `ClassDetail` shows the class in the Log. CLAUDE.md's "A class on a heart-rate sensor" has the detail.
 - **Health store** (`HealthStore`, `core-platform`):
   - As a workout or a Lift session finishes, its ViewModel hands the store a `HealthWorkout`: when it ran, a segment
     per interval, rest, pause or set (the workout's course is kept as `CourseSpan`s in `WorkoutProgress`, so a

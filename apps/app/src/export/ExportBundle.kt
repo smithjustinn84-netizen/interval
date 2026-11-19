@@ -16,8 +16,8 @@ import kotlinx.serialization.Serializable
  * of a kind an older build would drop, `kind` "Density", and the block a stepped one goes back to at the next
  * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`;
  * schema 12 the Lift exercise a flow's move is, `exercise`, and the day a one-off plan was moved from, `movedFromDay`,
- * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`, the rest
- * absent from older files). Lift's
+ * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`; schema 14
+ * the classes recorded on a heart-rate sensor, `classes`, the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -38,9 +38,11 @@ data class ExportBundle(
     val sportDays: List<SportDayExport> = emptyList(),
     /** The mobility flows the user built, in the order they were saved. */
     val flows: List<FlowExport> = emptyList(),
+    /** The classes recorded on a heart-rate sensor, the latest first. */
+    val classes: List<ClassExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 13
+        const val SCHEMA = 14
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -180,6 +182,21 @@ data class SportDayExport(
     val sport: String,
     val name: String? = null,
     val loggedAtEpochMillis: Long,
+)
+
+/**
+ * A class recorded on a heart-rate sensor: its day and sport as [SportDayExport]'s, the moment it started, and a
+ * reading every five seconds, [bpm] (0 where the sensor read none) with [movement] in step, how much the arm moved.
+ * Its rounds are worked out from these, so the file holds none.
+ */
+@Serializable
+data class ClassExport(
+    val epochDay: Long,
+    val sport: String,
+    val name: String? = null,
+    val startedAtEpochMillis: Long,
+    val bpm: List<Int>,
+    val movement: List<Float> = emptyList(),
 )
 
 @Serializable

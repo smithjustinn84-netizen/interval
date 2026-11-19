@@ -19,10 +19,15 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.SensorFailure
+import dev.justinsmith.interval.platform.rememberBluetoothAccess
 import dev.justinsmith.interval.platform.rememberFileOpener
 import dev.justinsmith.interval.platform.rememberHealthConnector
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.import_failed
+import dev.justinsmith.interval.settings.resources.notice_sensor_failed
+import dev.justinsmith.interval.settings.resources.notice_sensor_no_access
+import dev.justinsmith.interval.settings.resources.notice_sensor_none_nearby
 import dev.justinsmith.interval.settings.resources.settings_cancel
 import dev.justinsmith.interval.settings.resources.settings_clear_log_confirm
 import dev.justinsmith.interval.settings.resources.settings_clear_log_text
@@ -44,6 +49,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.ValueSheet
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -65,6 +71,12 @@ fun SettingsRoute(
     val health = rememberHealthConnector(koinInject<HealthStore>())
     // Read again on each opening: the permission may have been taken back in the store's own settings.
     LaunchedEffect(Unit) { viewModel.refreshHealth() }
+    val sensors = koinViewModel<SensorSettingsViewModel>()
+    val sensor by sensors.state.collectAsStateWithLifecycle()
+    val bluetooth = rememberBluetoothAccess()
+    val notices = LocalNotices.current
+    val failures by rememberUpdatedState(SensorFailure.entries.associateWith { stringResource(it.words) })
+    LaunchedEffect(sensors, notices) { sensors.failures.collect { notices.show(failures.getValue(it)) } }
     SettingsScreen(
         state = state,
         onBack = onBack,
@@ -88,6 +100,17 @@ fun SettingsRoute(
         onConnectHealth = health::connect,
         onDisconnectHealth = viewModel::disconnectHealth,
         onInstallHealth = health::install,
+        sensor = SensorRow(
+            sensor.status,
+            sensor.looking,
+            // Looked for only once Bluetooth may be used; a refusal says so as a sensor out of reach does.
+            onPair = {
+                bluetooth.ask { granted ->
+                    if (granted) sensors.pair() else notices.show(failures.getValue(SensorFailure.NoAccess))
+                }
+            },
+            onForget = sensors::forget,
+        ),
         importStep = importing,
         imports = ImportActions(
             // Providers label a .json file in more ways than one; what is in it decides, not its type.
@@ -127,6 +150,7 @@ fun SettingsScreen(
     onConnectHealth: () -> Unit = {},
     onDisconnectHealth: () -> Unit = {},
     onInstallHealth: () -> Unit = {},
+    sensor: SensorRow = SensorRow(),
     importStep: ImportStep? = null,
     imports: ImportActions = ImportActions(),
 ) {
@@ -145,6 +169,7 @@ fun SettingsScreen(
         imports.onPick,
         onClearLog = { clearingLog = true },
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
+        sensor,
         onShowPlan,
         onShowSetup,
         onShowAbout,
@@ -252,3 +277,11 @@ private fun SettingsScreenPreview() {
         )
     }
 }
+
+/** What a failure to pair the sensor is said as. */
+private val SensorFailure.words: StringResource
+    get() = when (this) {
+        SensorFailure.NoAccess -> Res.string.notice_sensor_no_access
+        SensorFailure.NotFound -> Res.string.notice_sensor_none_nearby
+        SensorFailure.Failed, SensorFailure.NothingRecorded -> Res.string.notice_sensor_failed
+    }

@@ -28,6 +28,12 @@ dependencies@android:
   - $libs.androidx.core.ktx
   # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.
   - $libs.androidx.datastore.preferences.core
+  # Polar's SDK: the Verity Sense a class is recorded on (`PolarClassSensor`).
+  - $libs.polar.ble.sdk
+
+# Polar publishes its SDK on JitPack alone.
+repositories:
+  - https://jitpack.io
 
 test-dependencies:
   - //interval/interval-testing

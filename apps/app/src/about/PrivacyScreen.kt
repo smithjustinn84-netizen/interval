@@ -10,6 +10,8 @@ import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.privacy_health
+import dev.justinsmith.interval.resources.privacy_sensor
+import dev.justinsmith.interval.resources.privacy_sensor_title
 import dev.justinsmith.interval.resources.privacy_sharing
 import dev.justinsmith.interval.resources.privacy_sharing_title
 import dev.justinsmith.interval.resources.privacy_stored
@@ -42,6 +44,7 @@ fun PrivacyScreen(onBack: () -> Unit, modifier: Modifier = Modifier) {
         Section(stringResource(Res.string.privacy_sharing_title), stringResource(Res.string.privacy_sharing))
         val health = stringResource(healthStoreName)
         Section(health, stringResource(Res.string.privacy_health, health))
+        Section(stringResource(Res.string.privacy_sensor_title), stringResource(Res.string.privacy_sensor))
     }
 }
 

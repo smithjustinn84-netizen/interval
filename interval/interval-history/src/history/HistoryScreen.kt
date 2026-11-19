@@ -86,7 +86,8 @@ import org.koin.compose.viewmodel.koinViewModel
 /**
  * Resolves the tab's ViewModel and binds it to [HistoryScreen]. Starting a workout puts it on the Timer, then
  * [onStartWorkout]; a flow starts as itself, by the key [onStartWorkout] is handed, and the Timer is left alone.
- * [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session, [onPlan] the plan,
+ * [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session, [onOpenClass] one class recorded
+ * on a sensor, [onPlan] the plan,
  * [onShowTimer] the Timer, [onOpenSettings] Settings. Starting the lift program's day opens [onStartSession].
  * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */
@@ -99,6 +100,7 @@ fun HistoryRoute(
     onShowTimer: () -> Unit,
     onStartSession: () -> Unit,
     modifier: Modifier = Modifier,
+    onOpenClass: (Long) -> Unit = {},
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
     onOpenSettings: () -> Unit = {},
@@ -112,6 +114,7 @@ fun HistoryRoute(
     val startWorkout by rememberUpdatedState(onStartWorkout)
     val openWorkout by rememberUpdatedState(onOpenWorkout)
     val openLift by rememberUpdatedState(onOpenLift)
+    val openClass by rememberUpdatedState(onOpenClass)
     val plan by rememberUpdatedState(onPlan)
     val showTimer by rememberUpdatedState(onShowTimer)
     val startSession by rememberUpdatedState(onStartSession)
@@ -168,6 +171,7 @@ fun HistoryRoute(
             onPlan = { leavingSheet(plan) },
             onShowTimer = { showTimer() },
             onOpenLift = { leavingSheet { openLift(it) } },
+            onOpenClass = { leavingSheet { openClass(it) } },
             onStartLift = { program ->
                 // Lift starts nothing while a session is in progress, so with one under way this resumes it.
                 viewModel.startLift(program)
@@ -216,6 +220,8 @@ class HistoryActions(
     val onShowTimer: () -> Unit = {},
     /** Opens a kettlebell session's page, by its uid. */
     val onOpenLift: (String) -> Unit = {},
+    /** Opens a class recorded on a sensor, by the moment it started. */
+    val onOpenClass: (Long) -> Unit = {},
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
     val onOpenSettings: () -> Unit = {},

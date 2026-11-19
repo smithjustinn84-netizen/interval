@@ -11,6 +11,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.settings.ImportCounts
@@ -60,6 +61,7 @@ data class Holdings(
     val flows: List<Flow> = emptyList(),
     val planned: List<PlannedWorkout> = emptyList(),
     val sportDays: List<LoggedSport> = emptyList(),
+    val classes: List<SportClass> = emptyList(),
     /** Lift's finished sessions. */
     val sessions: List<LiftSession> = emptyList(),
     val exercises: List<CustomExercise> = emptyList(),
@@ -94,6 +96,8 @@ data class ImportPlan(
     val lift: LiftImport,
     /** The flows the user built, of names not here yet. */
     val flows: List<Flow> = emptyList(),
+    /** The classes recorded on a sensor, none of which started at a moment one here did; the sheet counts none. */
+    val classes: List<SportClass> = emptyList(),
     val settings: ImportedSettings,
     val added: ImportCounts,
     val alreadyHere: Int,
@@ -117,7 +121,8 @@ private val json = Json { ignoreUnknownKeys = true }
  * come from one plan. The schema is checked before the rest is decoded, so a newer file says so rather than
  * failing as damaged. Every value goes through the domain's own ranges; one out of them makes the file
  * unreadable, as nothing in a file this app wrote could be. Nothing is matched by the file's ids, which are
- * the other phone's: workouts by when and what they were, sport days by day and sport, presets by name, plans by
+ * the other phone's: workouts by when and what they were, sport days by day and sport, recorded classes by the
+ * moment they started, presets by name, plans by
  * day and what they hold,
  * Lift's sessions, exercises and programs by uid, bands by id, bells by weight.
  */
@@ -151,6 +156,10 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
     val newPlans = planned.filter { plansHere.add(it.key) }
     val sportsHere = holdings.sportDays.map { it.key }.toMutableSet()
     val newSports = sportDays.filter { sportsHere.add(it.key) }
+    // A class rides with its sport day, which the sheet counts: it is neither added to the counts nor to what
+    // is here already.
+    val classesHere = holdings.classes.map { it.startedAtEpochMillis }.toMutableSet()
+    val newClasses = bundle.classes.map { it.toDomain() }.filter { classesHere.add(it.startedAtEpochMillis) }
     val flows = bundle.flows.map { it.toDomain() }
     val flowNames = holdings.flows.map { it.name }.toMutableSet()
     val newFlows = flows.filter { flowNames.add(it.name) }
@@ -175,6 +184,7 @@ private fun plan(bundle: ExportBundle, holdings: Holdings): ImportPlan {
         sportDays = newSports,
         lift = lift.import,
         flows = newFlows,
+        classes = newClasses,
         settings = ImportedSettings(
             bundle.settings.toDomain(),
             bundle.settings.cues.let { CueSettings(it.sound, it.voice, it.halfway, it.vibrate) },

@@ -112,16 +112,17 @@ internal fun DaySheetContent(
                     )
                 }
             }
-            if (sheet.workouts.isNotEmpty() || sheet.sports.isNotEmpty()) {
+            val sports = sportLines(sheet.sports, sheet.classes)
+            if (sheet.workouts.isNotEmpty() || sports.isNotEmpty()) {
                 ListCard {
                     sheet.workouts.forEachIndexed { index, item ->
                         if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                         HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift)
                     }
-                    sheet.sports.forEachIndexed { index, sport ->
+                    sports.forEachIndexed { index, line ->
                         val first = index == 0 && sheet.workouts.isEmpty()
                         if (!first) RowDivider(Modifier.padding(start = Spacing.space20))
-                        SportRow(sport, sheet.epochDay, actions)
+                        SportRow(line.sport, sheet.epochDay, actions, recorded = line.recorded, logged = line.logged)
                     }
                 }
             }

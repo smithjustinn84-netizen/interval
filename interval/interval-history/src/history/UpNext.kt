@@ -4,6 +4,7 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.dateOfEpochDay
@@ -40,6 +41,8 @@ internal data class Logged(
     val lifting: Lifting,
     /** When the program followed was taken up; null with none. */
     val followedSince: Long? = null,
+    /** The classes recorded on a sensor, the latest first. */
+    val classes: List<SportClass> = emptyList(),
 )
 
 /**

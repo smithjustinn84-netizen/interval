@@ -28,6 +28,14 @@ workout or session you finished, as a watch recorded it there, whose average and
 Both stay on this device like the weight you set yourself. Turn it off in Settings, or take the permission back in Health Connect, and
 nothing more is written; what was written stays there for you to keep or delete.
 
+## Heart-rate sensor
+
+If you pair a heart-rate sensor in Settings (Android), Interval uses Bluetooth to find it, to set it recording
+before a class and to bring the recording over after. What comes over, your heart rate and how much your arm
+moved through the class, is kept on this device with your workouts, goes in your export, and is deleted with the
+recording or the log. Nothing is worked out from which devices are nearby, and nothing is sent anywhere. Forget
+the sensor in Settings, or take the Nearby devices permission back, and it is not reached again.
+
 ## Questions
 
 Open an issue at https://github.com/smithjustinn84-netizen/interval/issues.

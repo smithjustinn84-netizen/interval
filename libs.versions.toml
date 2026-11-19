@@ -30,6 +30,8 @@ composeunstyled = "2.10.2"
 detekt = "2.0.0-alpha.6"
 kermit = "2.2.0"
 koin = "4.2.2"
+# Polar's BLE SDK, on JitPack (interval-platform names the repository): Android's `ClassSensor`.
+polar-ble-sdk = "8.6.0"
 kotlinx-coroutines = "1.11.0"
 ktlint = "1.8.0"
 slf4j = "2.0.20"
@@ -66,6 +68,7 @@ koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", ver
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
 koin-core-viewmodel = { module = "io.insert-koin:koin-core-viewmodel", version.ref = "koin" }
 koin-test = { module = "io.insert-koin:koin-test", version.ref = "koin" }
+polar-ble-sdk = { module = "com.github.polarofficial:polar-ble-sdk", version.ref = "polar-ble-sdk" }
 kotlinx-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-swing = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-swing", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }

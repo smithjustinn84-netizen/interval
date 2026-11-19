@@ -8,6 +8,10 @@ import androidx.compose.ui.unit.sp
  * controls and marks, History's charts and calendar, the sheets' steppers.
  */
 object IntervalSizes {
+    /** A recorded class's heart rate, drawn over its length, and the line's width. */
+    val heartChart = 96.dp
+    val heartChartStroke = 2.dp
+
     /** Width of each side rail of workout controls in landscape. */
     val rail = 120.dp
 

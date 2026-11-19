@@ -66,6 +66,7 @@ import dev.justinsmith.interval.history.resources.home_pick_time
 import dev.justinsmith.interval.history.resources.home_setup
 import dev.justinsmith.interval.history.resources.home_something_else
 import dev.justinsmith.interval.history.resources.home_title
+import dev.justinsmith.interval.history.resources.notice_sensor_started
 import dev.justinsmith.interval.history.resources.notice_undo
 import dev.justinsmith.interval.history.resources.preview_open_cd
 import dev.justinsmith.interval.history.resources.sport_counts
@@ -73,6 +74,13 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.MovePlanSheet
 import dev.justinsmith.interval.plan.sportTitle
+import dev.justinsmith.interval.platform.SensorFailure
+import dev.justinsmith.interval.platform.rememberBluetoothAccess
+import dev.justinsmith.interval.sensor.ClassSensorCard
+import dev.justinsmith.interval.sensor.ClassSensorEvent
+import dev.justinsmith.interval.sensor.ClassSensorUiState
+import dev.justinsmith.interval.sensor.ClassSensorViewModel
+import dev.justinsmith.interval.sensor.words
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -118,6 +126,7 @@ import org.koin.compose.viewmodel.koinViewModel
  * is not handed, and [onStartSession] the session Lift
  * was just told to start; the rest lead to the plan, Lift's programs, the History tab, the Timer, Settings and
  * Set up, which [onSetup] opens, and Train's Mobility pillar, which [onOpenMobility] does for the First week card.
+ * A class synced from the heart-rate sensor opens its page through [onOpenClass], by the moment it started.
  */
 @Composable
 fun HomeRoute(
@@ -131,8 +140,13 @@ fun HomeRoute(
     onOpenSettings: () -> Unit = {},
     onSetup: () -> Unit = {},
     onOpenMobility: () -> Unit = {},
+    onOpenClass: (Long) -> Unit = {},
 ) {
     val viewModel = koinViewModel<HomeViewModel>()
+    val sensors = koinViewModel<ClassSensorViewModel>()
+    val sensor by sensors.state.collectAsStateWithLifecycle()
+    val bluetooth = rememberBluetoothAccess()
+    val openClass by rememberUpdatedState(onOpenClass)
     // Read as a start is tapped: a flow of the user's starts as itself, as a shipped one does.
     val flows = koinInject<FlowStore>()
     val locale = LocalLocale.current.toLanguageTag()
@@ -150,7 +164,22 @@ fun HomeRoute(
     val openMobility by rememberUpdatedState(onOpenMobility)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
-    val actions = remember(viewModel, notices, undo) {
+    val recording = stringResource(Res.string.notice_sensor_started)
+    val failures by rememberUpdatedState(SensorFailure.entries.associateWith { stringResource(it.words) })
+    LaunchedEffect(sensors, notices) {
+        sensors.events.collect { event ->
+            when (event) {
+                ClassSensorEvent.Started -> notices.show(recording)
+                is ClassSensorEvent.Synced -> openClass(event.startedAtEpochMillis)
+                is ClassSensorEvent.Failed -> notices.show(failures.getValue(event.why))
+            }
+        }
+    }
+    val actions = remember(viewModel, sensors, bluetooth, notices, undo) {
+        // The sensor is reached only once Bluetooth may be used; a refusal says so as any failure to reach it does.
+        fun reaching(work: () -> Unit) = bluetooth.ask { granted ->
+            if (granted) work() else notices.show(failures.getValue(SensorFailure.NoAccess))
+        }
         HomeActions(
             onStart = { name, config ->
                 val flow = flowKeyOf(config, flows.flows.value)
@@ -193,9 +222,11 @@ fun HomeRoute(
             onSetup = { setup() },
             onOpenMobility = { openMobility() },
             onHideFirstWeek = viewModel::hideFirstWeek,
+            onRecordClass = { reaching(sensors::record) },
+            onSyncClass = { sport -> reaching { sensors.sync(sport) } },
         )
     }
-    HomeScreen(state, actions, modifier)
+    HomeScreen(state, actions, modifier, sensor)
 }
 
 /** What the Today tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
@@ -231,6 +262,10 @@ class HomeActions(
     val onOpenMobility: () -> Unit = {},
     /** Puts the First week card away for good. */
     val onHideFirstWeek: () -> Unit = {},
+    /** Sets the heart-rate sensor recording a class. */
+    val onRecordClass: () -> Unit = {},
+    /** Syncs the class on the sensor, as one of this sport. */
+    val onSyncClass: (Sport) -> Unit = {},
 )
 
 /**
@@ -242,10 +277,16 @@ class HomeActions(
  * with a quiet button ([NextCard]); with nothing to come, the ways to a plan, or a word that the plan is done for
  * now. In a new install's first week, the few things to do once ([FirstWeekCard]). Under them the picks by time,
  * folded to a row on a day that has its plan. A grid of cards as Lift's tab is, so a wide window sets them side by
- * side. Nothing shows until the first state is built.
+ * side. Nothing shows until the first state is built. Under the day, with a heart-rate [sensor] paired, the way to
+ * record a class on a sport's day and to sync one recorded ([ClassSensorCard]).
  */
 @Composable
-fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Modifier) {
+fun HomeScreen(
+    state: HomeUiState,
+    actions: HomeActions,
+    modifier: Modifier = Modifier,
+    sensor: ClassSensorUiState = ClassSensorUiState(),
+) {
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     // What is being looked at before Start, by where it is: kept by place, so a rotation keeps it open.
     var looking by rememberSaveable { mutableStateOf<String?>(null) }
@@ -285,6 +326,17 @@ fun HomeScreen(state: HomeUiState, actions: HomeActions, modifier: Modifier = Mo
             }
         }
         dayItems(state, plan, actions, card, onLook = { looking = LEAD })
+        plan.sensorCard(sensor.card)?.let { shown ->
+            item(key = "sensor") {
+                ClassSensorCard(
+                    shown,
+                    sensor.busy,
+                    onRecord = actions.onRecordClass,
+                    onSync = { actions.onSyncClass(plan.classSport) },
+                    modifier = card,
+                )
+            }
+        }
         state.firstWeek?.let { week ->
             // A flow or a sport's day in the lead has no workout under its Start, and another day's has no Start:
             // that one is picked by time.

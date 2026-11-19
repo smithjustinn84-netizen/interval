@@ -1,0 +1,32 @@
+<journey name="Class recording">
+  <description>
+    A Polar Verity Sense paired in Settings records a class on its own memory while the phone is in the bag; synced
+    after, the class is logged and opens with its rounds. Needs a real phone on Android 12 or later with Bluetooth on
+    and the sensor charged, switched on and worn: the emulator has no Bluetooth, so this one is run by hand, not on
+    amper-37. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
+    <action>Tap the gear on "Today" and scroll to "Heart-rate sensor"</action>
+    <action>Verify that its row reads "Pair a sensor" over "A Polar Verity Sense, switched on and close by, to record a class"</action>
+    <action>Tap "Pair a sensor" and allow "Nearby devices" when Android asks</action>
+    <action>Verify that the row reads "Looking for it…", then the sensor's name ("Polar Sense" and its id) over "Paired. Record a class from Today on its day. Tap to forget it"</action>
+    <action>Go back to "Today", tap "Plan your week", add "BJJ" from "Sport" on today's weekday row, and tap "Back"</action>
+    <action>Verify that under the day's card a card reads "Record the class" with the sensor's name and a "Record class" button</action>
+    <action>Tap "Record class"</action>
+    <action>Verify that the button reads "Reaching the sensor…" for a few seconds, then a notice says "Recording. The phone can go in the bag." and the card reads "Recording since" and the time, with "Sync class"</action>
+    <action>Close the app, put the phone away, and train for at least fifteen minutes with two hard efforts of three minutes or more and a rest between</action>
+    <action>Open the app with the sensor still on the arm</action>
+    <action>Verify that "Today" still shows "Recording since" and the time it was started</action>
+    <action>Tap "Sync class"</action>
+    <action>Verify that the "Log" tab opens on a page titled "BJJ class" with today and the time the recording started, a "Length" close to how long it ran, a line of the heart rate with a shaded band a round, "Avg heart rate" and "Peak heart rate", and under "Rounds" a row a round reading its length, "avg", "peak" and "down … in 60 s" or "in 30 s"</action>
+    <action>Tap "Back"</action>
+    <action>Verify that the log lists "BJJ class" under today reading its rounds and length ("2 rounds · 21:40"), and the week card's "Sport days" row reads "1 of 1"</action>
+    <action>Tap the "Today" tab</action>
+    <action>Verify that the card says "Done for today" with "BJJ class" ticked and no sensor card shows</action>
+    <action>Tap the "Log" tab, open the "BJJ class" row, tap "More options", "Delete recording", then "Delete"</action>
+    <action>Verify that a notice says "Recording deleted" and the "BJJ class" row reads "Logged" with an "×"</action>
+    <action>Switch the sensor off, plan nothing more, and on a day with a class still to log tap "Record class"</action>
+    <action>Verify that after a while a notice says "Couldn’t find the sensor. Wake it and keep it close." and the card still offers "Record class"</action>
+  </actions>
+</journey>

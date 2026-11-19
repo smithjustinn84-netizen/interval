@@ -13,6 +13,7 @@ fun platformModule(): Module = module {
     single<CuePlayer> { DesktopCuePlayer(get()) }
     single<BackgroundWorkout> { NoBackgroundWorkout }
     single<PlanReminders> { NoPlanReminders }
+    single<ClassSensor> { NoClassSensor }
 }
 
 /** A desktop has no notification centre the app could hand a day's reminder to. */

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Haptic cues on phase changes. A normal permission: granted at install, no prompt. -->
     <uses-permission android:name="android.permission.VIBRATE"/>
@@ -26,6 +27,18 @@
     <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
     <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
+    <!-- The heart-rate sensor a class is recorded on (PolarClassSensor, in interval-platform), found and reached
+         over Bluetooth to set it recording and to sync it. Android 12's permissions, asked at runtime when a sensor
+         is paired; nothing is worked out from what a scan finds, so no location. Below Android 12 Bluetooth would
+         need location, and the sensor is not offered. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation"
+        tools:targetApi="s"/>
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
+    <uses-feature android:name="android.hardware.bluetooth_le" android:required="false"/>
+    <!-- Polar's SDK declares these for its companion-device mode, which the app never turns on. -->
+    <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" tools:node="remove"/>
+    <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" tools:node="remove"/>
 
     <!-- Android 11+ package visibility: lets TextToSpeech find the device's speech engine, and the Health Connect
          client find its app on Android 13 and before (on 14 and up it is part of the system). -->

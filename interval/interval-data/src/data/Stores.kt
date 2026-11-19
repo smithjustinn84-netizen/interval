@@ -2,6 +2,7 @@ package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CapRound
+import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
@@ -10,6 +11,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.model.WorkoutProgress
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.timer.Flow
@@ -113,6 +115,18 @@ interface HistoryStore {
 
     /** Takes back [logSport]: Undo, or the day's own remove. */
     fun unlogSport(sport: Sport, epochDay: Long)
+
+    /** The classes recorded on a heart-rate sensor, the latest first, each with the rounds found in it. */
+    val classes: StateFlow<List<SportClass>>
+
+    /**
+     * Keeps [recording] as a class of [sport] on [epochDay]. It is known by the moment it started: one synced
+     * again replaces itself. It logs nothing: the day is [logSport]'s.
+     */
+    fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording)
+
+    /** Removes the class that started at [startedAtEpochMillis]; its day stays logged. */
+    fun removeClass(startedAtEpochMillis: Long)
 
     /**
      * Logs a workout of [config] done away from the app, or without the Timer, as finished at [finishedAtEpochMillis]

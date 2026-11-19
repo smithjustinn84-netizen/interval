@@ -61,6 +61,7 @@ import dev.justinsmith.interval.about.LicensesRoute
 import dev.justinsmith.interval.about.PrivacyScreen
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.di.processKoin
+import dev.justinsmith.interval.history.ClassDetailRoute
 import dev.justinsmith.interval.history.HistoryPlaceholder
 import dev.justinsmith.interval.history.HistoryRoute
 import dev.justinsmith.interval.history.WorkoutDetailRoute
@@ -71,6 +72,7 @@ import dev.justinsmith.interval.mobility.MobilityPage
 import dev.justinsmith.interval.mobility.MobilityRoute
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.nav.About
+import dev.justinsmith.interval.nav.ClassDetail
 import dev.justinsmith.interval.nav.ConditioningTab
 import dev.justinsmith.interval.nav.FlowEditor
 import dev.justinsmith.interval.nav.HistoryTab
@@ -173,6 +175,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Licenses::class)
             subclass(Privacy::class)
             subclass(WorkoutDetail::class)
+            subclass(ClassDetail::class)
             subclass(Plan::class)
             subclass(Presets::class)
             subclass(WeekSetup::class)
@@ -462,6 +465,7 @@ private fun appEntries(
             selectedLift = (open as? LiftDetail)?.uid,
             onOpenWorkout = { backStack.openDetail(WorkoutDetail(it)) },
             onOpenLift = { backStack.openDetail(LiftDetail(it, fromHistory = true)) },
+            onOpenClass = { backStack.openDetail(ClassDetail(it)) },
             onPlan = { backStack.push(Plan) },
             onStartWorkout = { backStack.startWorkout(clock, it) },
             onShowTimer = { backStack.showTimer() },
@@ -501,6 +505,9 @@ private fun appEntries(
             onStartWorkout = { backStack.startWorkout(clock, it) },
             inPane = twoPane,
         )
+    }
+    entry<ClassDetail>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) { key ->
+        ClassDetailRoute(key.startedAtEpochMillis, onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
     }
     entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Workout>(metadata = pageKind(PageKind.Mode)) { key ->
@@ -644,6 +651,11 @@ private fun EntryProviderScope<NavKey>.todayEntry(
             onOpenSettings = { backStack.push(Settings) },
             onSetup = { backStack.push(WeekSetup) },
             onOpenMobility = { selectTab(MobilityTab) },
+            // A class just synced opens in the Log, where its row is: Back from it lands there.
+            onOpenClass = {
+                selectTab(HistoryTab)
+                backStack.openDetail(ClassDetail(it))
+            },
         )
     }
 }

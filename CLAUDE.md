@@ -90,7 +90,8 @@ core/
                      platform hooks the UI needs (`SystemServices.kt`), and each platform's `corePlatformModule`
                      (`CorePlatform*.kt`: the `WallClock`, `IdGenerator`, `TimestampFormatter`, `AppInfo`, `Sharer`
                      and `HealthStore` both sides' containers take, with each platform's `Sharer`) and
-                     `rememberHealthConnector` (the store's permission sheet, for Settings); exports `core-platform`
+                     `rememberHealthConnector` (the store's permission sheet, for Settings) and
+                     `rememberBluetoothAccess` (the leave to reach a sensor); exports `core-platform`
                      and `core-time`.
                      Packages `dev.justinsmith.interval.ui`, `.platform`, `.nav`; resources
                      `dev.justinsmith.core.resources`
@@ -133,10 +134,12 @@ interval/            the interval timer
                      (di/)
   interval-platform-api  what the features ask of the platform, over `interval-domain` and no Compose:
                      `CuePlayer` (`Beep`, `Speech`, `Haptic`), `playCue`, `ActiveWorkout`, `BackgroundWorkout`,
-                     `WorkoutStatus`, `StatusColors` (the notification's ARGB), `PlanReminders`, `PlanReminderSource`
+                     `WorkoutStatus`, `StatusColors` (the notification's ARGB), `PlanReminders`, `PlanReminderSource`,
+                     `ClassSensor` (the heart-rate sensor a class is recorded on: pair, record, sync)
   interval-platform  implements it: `reminderWords`, `SpeechQueue`, `StatusBar`, and each platform's
                      `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
-                     (android). Over `core-platform`, not `core`; only `app` depends on it
+                     (android), and Android's `PolarClassSensor` (Polar's SDK, from JitPack, which the module
+                     names as a repository). Over `core-platform`, not `core`; only `app` depends on it
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`, `SnatchQuestion`:
                      "About how many snatches a set?", the summary's and the Log page's, over `lift-domain`'s bell
@@ -598,6 +601,30 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   HealthKit entitlement (`apps/iosApp/src/iosApp.entitlements`) and both `NSHealth…UsageDescription`s. iOS can't
   revoke, so its switch off is the app's own (user defaults), and one refused on HealthKit's sheet is sent to the
   Health app. Screens name the store by core's `healthStoreName`, never a literal.
+- **A class on a heart-rate sensor**: `ClassSensor` (`interval-platform-api`) is the port: `status` (Unavailable,
+  Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync`, each reaching the sensor for as long
+  as it takes and letting it go. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
+  through Polar's coroutine SDK: offline recording of the heart rate and the accelerometer on the sensor's own
+  memory; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
+  Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
+  location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
+  `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
+  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class (docs/backlog.md). A sync hands over
+  a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
+  and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
+  stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,
+  so one synced again replaces itself; exported in schema 14) and `HistoryStore.classes` reads back as
+  `SportClass`es with their rounds, found afresh at each read by `detectRounds` (`timer/Rounds.kt`, pure: the
+  stretches of two minutes or more with the heart rate in the upper half of the class's own range, split where
+  the arm goes still for thirty seconds, each with its drop 30 and 60 seconds after; its constants are a first
+  reading), so nothing of a round is stored and a retuned detector reads old classes anew. Settings pairs and
+  forgets (`SensorSettingsViewModel`, the "sensor" group, shown unless Unavailable); Today's `ClassSensorCard`
+  (`interval-history/sensor/`, `ClassSensorViewModel`, its events said as notices) offers Record class on a day
+  with a sport still to log and Sync class while one is on the sensor (`TodayPlan.sensorCard`), asking Bluetooth's
+  leave first; a sync keeps the class, logs its sport's day (the day it started) and opens `ClassDetail` (an app
+  key, by the moment it started) in the Log: `ClassDetailScreen`, the heart rate drawn with a band a round
+  (`HeartChart`) and a row a round. In the Log a sport's row with a class says its rounds and opens the page
+  (`sportLines`, `ClassRow`); deleting the recording leaves the day logged.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

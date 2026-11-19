@@ -258,6 +258,35 @@
     <string name="sport_log_it">Log it</string>
     <string name="notice_sport_logged">%1$s logged</string>
     <string name="history_sport_logged">Logged</string>
+    <string name="class_recorded">Recorded · %1$s</string>
+    <plurals name="class_rounds">
+        <item quantity="one">%1$d round</item>
+        <item quantity="other">%1$d rounds</item>
+    </plurals>
+    <string name="class_detail_length">Length</string>
+    <string name="class_detail_chart_cd">Heart rate over the class, rounds shaded</string>
+    <string name="class_detail_rounds">Rounds</string>
+    <string name="class_detail_no_rounds">No rounds found: the heart rate never stood out for two minutes.</string>
+    <string name="class_round">Round %1$d</string>
+    <string name="class_round_figures">%1$d avg · %2$d peak</string>
+    <string name="class_round_drop">down %1$d in %2$d s</string>
+    <string name="class_detail_delete_menu">Delete recording</string>
+    <string name="class_detail_close_cd">Close class</string>
+    <string name="class_detail_delete_title">Delete this recording?</string>
+    <string name="class_detail_delete_text">The heart rate and rounds of %1$s on %2$s go. The day stays logged.</string>
+    <string name="notice_class_deleted">Recording deleted</string>
+    <string name="sensor_ready_title">Record the class</string>
+    <string name="sensor_ready_text">%1$s records on its own, so the phone can stay in the bag.</string>
+    <string name="sensor_record">Record class</string>
+    <string name="sensor_recording_title">Recording since %1$s</string>
+    <string name="sensor_recording_text">Sync it when the class is over, with the sensor close.</string>
+    <string name="sensor_sync">Sync class</string>
+    <string name="sensor_working">Reaching the sensor…</string>
+    <string name="notice_sensor_started">Recording. The phone can go in the bag.</string>
+    <string name="notice_sensor_no_access">Bluetooth is off, or the app may not use it.</string>
+    <string name="notice_sensor_not_found">Couldn’t find the sensor. Wake it and keep it close.</string>
+    <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
+    <string name="notice_sensor_nothing">Nothing was recorded on the sensor.</string>
 
     <!-- Logging a workout done away from the app, or without the Timer, on its day -->
     <string name="history_log_workout">Log a workout</string>

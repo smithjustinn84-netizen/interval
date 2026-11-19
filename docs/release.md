@@ -134,6 +134,11 @@ To change one later (a new password, say), run its command again: `gh secret set
    the Play Console's Health apps declaration must name the four data types in the manifest: exercise and total
    calories burned (write), and body weight and heart rate (read). Without the declaration Play blocks the release's
    review.
+   The heart-rate sensor adds `BLUETOOTH_SCAN` (flagged `neverForLocation`) and `BLUETOOTH_CONNECT`, runtime
+   permissions with no Play declaration of their own; the Data safety form's answer stays "no data collected or
+   shared", since a class's heart rate never leaves the device. Polar's SDK (`interval-platform`, from JitPack)
+   brings protobuf, Retrofit and RxJava with it and ships its own consumer rules: run the R8 smoke test on a
+   release build with a sensor paired before the first release that carries it.
 5. **Tag and upload.** `git tag v<version> && git push origin v<version>` (jj has no tags). The tag must be `v` +
    `versionName` (`tools/check_versions.py --tag` fails the job before anything is signed). CI attaches
    `interval-v<version>.aab` to the workflow run; upload it to the Play Console's internal testing track. Play

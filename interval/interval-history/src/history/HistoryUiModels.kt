@@ -36,12 +36,19 @@ data class HistoryItem(
     val capRounds: Int? = null,
 )
 
-/** One day's workouts, and the sports logged on it. [dayNumber] is its epoch day. */
+/** A class recorded on a sensor, as its sport's row says it: found again by the moment it started. */
+data class ClassRow(val startedAtEpochMillis: Long, val sport: Sport, val rounds: Int, val length: String)
+
+/**
+ * One day's workouts, the sports logged on it and the [classes] recorded on it, each shown on its sport's row.
+ * [dayNumber] is its epoch day.
+ */
 data class HistorySection(
     val day: HistoryDay,
     val dayNumber: Long,
     val items: List<HistoryItem>,
     val sports: List<Sport> = emptyList(),
+    val classes: List<ClassRow> = emptyList(),
 )
 
 /**
@@ -183,6 +190,8 @@ data class DaySheet(
     val workouts: List<HistoryItem>,
     val past: Boolean,
     val sports: List<Sport> = emptyList(),
+    /** The classes recorded on the day. */
+    val classes: List<ClassRow> = emptyList(),
     /**
      * The followed program's next day, while it can be logged on this day done as planned: today or a day gone by,
      * since the program was taken up, and none of its sessions finished on a later day.

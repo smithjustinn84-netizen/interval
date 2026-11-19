@@ -58,6 +58,7 @@ val storageModule: Module = module {
     single { get<AppDatabase>().plannedDao() }
     single { get<AppDatabase>().sportLogDao() }
     single { get<AppDatabase>().flowDao() }
+    single { get<AppDatabase>().sportClassDao() }
     single { get<AppDatabase>().importDao() }
     single<CoroutineScope>(PreferencesScope) { CoroutineScope(SupervisorJob() + Dispatchers.IO) }.withOptions {
         onClose { it?.cancel() }
@@ -82,6 +83,7 @@ val dataModule: Module = module {
             plannedDao = get(),
             sportLogDao = get(),
             flowDao = get(),
+            classDao = get(),
             importDao = get(),
             scope = get(StorageScope),
             clock = get(),

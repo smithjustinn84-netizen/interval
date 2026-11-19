@@ -118,7 +118,12 @@ class HistoryViewModel(
     private val lifting = bells.lifting()
 
     private val built = combine(
-        combine(historyStore.history, historyStore.sportDays, lifting, liftLogging.followedSince, ::Logged),
+        combine(
+            historyStore.history,
+            combine(historyStore.sportDays, historyStore.classes, ::Pair),
+            lifting,
+            liftLogging.followedSince,
+        ) { history, (sports, classes), lifting, since -> Logged(history, sports, lifting, since, classes) },
         planStore.planned,
         combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
         settingsStore.appSettings,
@@ -267,7 +272,13 @@ class HistoryViewModel(
         val week = log.week()
         val liftLog = timestamps.liftLog(today, lifting, followedSince)
 
-        val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, log, today) { workout, plans ->
+        val classes = logged.classes.groupBy({ it.epochDay }) {
+            ClassRow(it.startedAtEpochMillis, it.sport, it.rounds.size, formatClock(it.seconds))
+        }
+        val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, classes, log, today) {
+                workout,
+                plans,
+            ->
             timestamps.item(workout, names, body, plans)
         }
 
@@ -315,7 +326,7 @@ class HistoryViewModel(
                 val training = log.day(day)
                 daySheet(training, timestamps.heading(day, today), past = day < today) {
                     timestamps.item(it, names, body, training.plans)
-                }.copy(liftDay = liftLog?.on(day))
+                }.copy(liftDay = liftLog?.on(day), classes = classes[day].orEmpty())
             },
             moveSheet = view.movingFrom?.let { from ->
                 planned.firstOrNull { it.id == view.moving }?.let { moveSheet(it, from, today, log) }
@@ -386,19 +397,20 @@ private fun TimestampFormatter.item(
 
 /**
  * The log by day, the latest first: each day's workouts as [item] makes its row, given the day's plans, and the
- * sports logged on it. A day with only a sport logged is a day of the log too. [workouts] are newest first, so
- * the rows within a day keep that order.
+ * sports logged and the classes recorded on it. A day with only a sport logged or a class is a day of the log
+ * too. [workouts] are newest first, so the rows within a day keep that order.
  */
 private fun TimestampFormatter.sections(
     workouts: List<LoggedWorkout>,
     sports: List<LoggedSport>,
+    classes: Map<Long, List<ClassRow>>,
     log: TrainingLog,
     today: Long,
     item: (LoggedWorkout, plans: List<DayPlan>) -> HistoryItem,
 ): List<HistorySection> {
     val byDay = workouts.groupBy { dayNumber(it.finishedAtEpochMillis) }
     val sportsByDay = sports.groupBy { it.epochDay }
-    return (byDay.keys + sportsByDay.keys).sortedDescending().map { day ->
+    return (byDay.keys + sportsByDay.keys + classes.keys).sortedDescending().map { day ->
         val plans = log.day(day).plans
         HistorySection(
             heading(day, today),
@@ -406,6 +418,7 @@ private fun TimestampFormatter.sections(
             byDay[day].orEmpty().map { item(it, plans) },
             // As logged, the first of the day first.
             sportsByDay[day].orEmpty().sortedBy { it.id }.map { it.sport },
+            classes[day].orEmpty(),
         )
     }
 }

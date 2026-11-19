@@ -5,6 +5,7 @@ package dev.justinsmith.interval.data
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.SequentialIds
 import dev.justinsmith.interval.fakes.saveCurrentAsPreset
+import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.HistoryEntry
@@ -229,6 +230,79 @@ class HistoryRepositoryTest {
             setOf(Sport.Bjj, Sport.Custom("Yoga")),
             repository.history.sportDays.value.map { it.sport }.toSet(),
         )
+    }
+
+    @Test
+    fun `a class kept is read back with its rounds and the latest first`() {
+        val repository = repository()
+        repository.history.keepClass(
+            Sport.Bjj,
+            epochDay = 20_744,
+            sparringRecording(rounds = 3, startedAtEpochMillis = 5_000),
+        )
+        repository.history.keepClass(
+            Sport.Bjj,
+            epochDay = 20_745,
+            sparringRecording(rounds = 2, startedAtEpochMillis = 9_000),
+        )
+
+        val classes = repository().history.classes.value
+        assertEquals(listOf(9_000L, 5_000L), classes.map { it.startedAtEpochMillis })
+        assertEquals(listOf(2, 3), classes.map { it.rounds.size })
+        assertEquals(sparringRecording(rounds = 3).samples, classes.last().samples)
+        assertEquals(Sport.Bjj to 20_744L, classes.last().let { it.sport to it.epochDay })
+    }
+
+    @Test
+    fun `a class synced again replaces itself and one removed is gone`() {
+        val repository = repository()
+        repository.history.keepClass(
+            Sport.Bjj,
+            epochDay = 20_744,
+            sparringRecording(rounds = 3, startedAtEpochMillis = 5_000),
+        )
+        repository.history.keepClass(
+            Sport.Bjj,
+            epochDay = 20_744,
+            sparringRecording(rounds = 4, startedAtEpochMillis = 5_000),
+        )
+        assertEquals(listOf(4), repository.history.classes.value.map { it.rounds.size })
+
+        repository.history.removeClass(startedAtEpochMillis = 5_000)
+        assertEquals(emptyList(), repository().history.classes.value)
+    }
+
+    @Test
+    fun `clearing the history clears the classes with it`() {
+        val repository = repository()
+        repository.history.keepClass(Sport.Bjj, epochDay = 20_744, sparringRecording(rounds = 3))
+        repository.history.clearHistory()
+
+        assertEquals(emptyList(), repository().history.classes.value)
+    }
+
+    @Test
+    fun `a class whose samples cannot be read or of a sport unknown is left out`() = runTest {
+        val good = encodeSamples(sparringRecording(rounds = 1).samples)
+        storage.classes.insert(
+            SportClassEntity(epochDay = 1, sport = "bjj", name = "", startedAtEpochMillis = 1, samples = "{"),
+        )
+        storage.classes.insert(
+            SportClassEntity(epochDay = 1, sport = "fencing", name = "", startedAtEpochMillis = 2, samples = good),
+        )
+        storage.classes.insert(
+            SportClassEntity(epochDay = 1, sport = "bjj", name = "", startedAtEpochMillis = 3, samples = good),
+        )
+
+        assertEquals(listOf(3L), repository().history.classes.first().map { it.startedAtEpochMillis })
+    }
+
+    @Test
+    fun `a heart rate no heart has is read as none`() {
+        val samples = decodeSamples("""{"bpm":[120,900,-4,0],"movement":[0.5,1.0]}""")
+
+        assertEquals(listOf(120, 0, 0, 0), samples.map { it.bpm })
+        assertEquals(listOf(0.5f, 1f, 0f, 0f), samples.map { it.movement })
     }
 
     @Test

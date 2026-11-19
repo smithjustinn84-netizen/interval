@@ -2,11 +2,13 @@ package dev.justinsmith.interval.data
 
 import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.model.CapRound
+import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
@@ -30,6 +32,7 @@ import kotlinx.coroutines.launch
 class HistoryRepository(
     private val historyDao: HistoryDao,
     private val sportLogDao: SportLogDao,
+    private val classDao: SportClassDao,
     private val writer: SerialWriter,
     private val clock: WallClock,
     private val ids: IdGenerator,
@@ -51,6 +54,10 @@ class HistoryRepository(
 
     override val sportDays: StateFlow<List<LoggedSport>> = _sportDays.asStateFlow()
 
+    private val _classes = MutableStateFlow(emptyList<SportClass>())
+
+    override val classes: StateFlow<List<SportClass>> = _classes.asStateFlow()
+
     init {
         // Mapped upstream of its fallback, so a row that fails to map counts as a failed read.
         val workouts = historyDao.observeAll()
@@ -59,10 +66,14 @@ class HistoryRepository(
         val sports = sportLogDao.observeAll()
             .map { rows -> rows.mapNotNull { it.toDomain() } }
             .orEmptyOnError("sport days", log)
+        val recorded = classDao.observeAll()
+            .map { rows -> rows.mapNotNull { it.toDomain() } }
+            .orEmptyOnError("classes", log)
         scope.launch {
-            combine(workouts, sports) { entries, days -> entries to days }.collect { (entries, days) ->
+            combine(workouts, sports, recorded, ::Triple).collect { (entries, days, classes) ->
                 _history.value = entries
                 _sportDays.value = days
+                _classes.value = classes
                 _ready.value = true
             }
         }
@@ -152,6 +163,15 @@ class HistoryRepository(
         writer.persist { sportLogDao.delete(epochDay, sport.key, sport.storedName) }
     }
 
+    override fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording) {
+        val row = classEntity(sport, epochDay, recording.startedAtEpochMillis, recording.samples)
+        writer.persist { classDao.insert(row) }
+    }
+
+    override fun removeClass(startedAtEpochMillis: Long) {
+        writer.persist { classDao.delete(startedAtEpochMillis) }
+    }
+
     override fun logWorkout(config: IntervalConfig, finishedAtEpochMillis: Long): String {
         val now = clock.nowMillis()
         val uid = ids.newId()
@@ -168,13 +188,14 @@ class HistoryRepository(
 
     /**
      * Removes every workout from the history, leaving each row marked deleted as [deleteWorkout] does, and every
-     * sport day logged.
+     * sport day logged and class recorded.
      */
     override fun clearHistory() {
         val now = clock.nowMillis()
         writer.persist {
             historyDao.clear(now)
             sportLogDao.clear()
+            classDao.clear()
         }
     }
 }

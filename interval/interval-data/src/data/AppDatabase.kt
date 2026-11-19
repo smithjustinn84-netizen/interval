@@ -48,7 +48,7 @@ import kotlinx.coroutines.flow.Flow
  * in rows from before; version 17 the day a one-off plan was moved from ([PlannedEntity.movedFromDay]), none in
  * rows from before; version 18 whether a workout's, preset's or plan's first block is a time cap
  * ([HistoryEntity.capped]) and the rounds done in a workout's caps ([HistoryEntity.capRounds]), neither in rows
- * from before.
+ * from before; version 19 the classes recorded on a heart-rate sensor ([SportClassEntity]).
  */
 @Database(
     entities = [
@@ -57,8 +57,9 @@ import kotlinx.coroutines.flow.Flow
         PlannedEntity::class,
         SportLogEntity::class,
         FlowEntity::class,
+        SportClassEntity::class,
     ],
-    version = 18,
+    version = 19,
     // 3 to 4 and 4 to 5 are MIGRATION_3_4 and MIGRATION_4_5, added by buildAppDatabase.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -76,6 +77,7 @@ import kotlinx.coroutines.flow.Flow
         AutoMigration(from = 15, to = 16),
         AutoMigration(from = 16, to = 17),
         AutoMigration(from = 17, to = 18),
+        AutoMigration(from = 18, to = 19),
     ],
 )
 @ConstructedBy(AppDatabaseConstructor::class)
@@ -89,6 +91,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun sportLogDao(): SportLogDao
 
     abstract fun flowDao(): FlowDao
+
+    abstract fun sportClassDao(): SportClassDao
 
     abstract fun importDao(): ImportDao
 }
@@ -241,7 +245,24 @@ interface SportLogDao {
     suspend fun clear()
 }
 
-/** What an import adds, all of it or none: one transaction over the five tables. */
+@Dao
+interface SportClassDao {
+    /** The classes recorded, the latest first. */
+    @Query("SELECT * FROM sport_class ORDER BY started_at DESC")
+    fun observeAll(): Flow<List<SportClassEntity>>
+
+    /** Adds [row]; a class that started at the same moment is the same one synced again, and is replaced. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insert(row: SportClassEntity)
+
+    @Query("DELETE FROM sport_class WHERE started_at = :startedAt")
+    suspend fun delete(startedAt: Long)
+
+    @Query("DELETE FROM sport_class")
+    suspend fun clear()
+}
+
+/** What an import adds, all of it or none: one transaction over the six tables. */
 @Dao
 interface ImportDao {
     @Insert
@@ -260,8 +281,13 @@ interface ImportDao {
     @Insert
     suspend fun insertFlows(rows: List<FlowEntity>)
 
+    /** A class that started at a moment one here did is here already, and stays as it is. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertClasses(rows: List<SportClassEntity>)
+
     /**
-     * Adds [history], [presets], [planned], [sports] and [flows] together. A plan naming a preset added here by
+     * Adds [history], [presets], [planned], [sports], [flows] and [classes] together. A plan naming a preset added
+     * here by
      * [presetNames] (in step with [planned]) takes the id it was just stored under.
      */
     @Transaction
@@ -272,10 +298,12 @@ interface ImportDao {
         presetNames: List<String?>,
         sports: List<SportLogEntity>,
         flows: List<FlowEntity>,
+        classes: List<SportClassEntity> = emptyList(),
     ) {
         insertHistory(history)
         insertSports(sports)
         insertFlows(flows)
+        insertClasses(classes)
         val ids = presets.map { it.name }.zip(insertPresets(presets)).toMap()
         insertPlanned(
             planned.zip(presetNames) { row, name ->
@@ -487,4 +515,19 @@ data class FlowEntity(
     val use: String,
     val note: String? = null,
     val moves: String,
+)
+
+/**
+ * A class recorded on a heart-rate sensor: its day and sport as a [SportLogEntity] has them, the moment it started,
+ * which tells it from every other, and [samples], its heart rate and movement every five seconds as JSON
+ * (`ClassesJson.kt`). Its rounds are worked out from those as it is read.
+ */
+@Entity(tableName = "sport_class", indices = [Index(value = ["started_at"], unique = true)])
+data class SportClassEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    @ColumnInfo(name = "epoch_day") val epochDay: Long,
+    val sport: String,
+    val name: String,
+    @ColumnInfo(name = "started_at") val startedAtEpochMillis: Long,
+    val samples: String,
 )

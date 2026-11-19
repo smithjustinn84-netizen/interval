@@ -6,9 +6,10 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.noonOf
+import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_14_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_15_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -219,6 +220,44 @@ class AppDataImporterTest {
     }
 
     @Test
+    fun `a class recorded on a sensor comes across with its rounds and is not added twice`() = runTest {
+        val source = Phone(now).apply {
+            intervals.history.logSport(Sport.Bjj, TODAY)
+            intervals.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = now))
+            intervals.history.keepClass(Sport.Bjj, TODAY - 2, sparringRecording(rounds = 2, startedAtEpochMillis = 5))
+        }
+        val target = Phone(now + 1)
+        target.intervals.history.keepClass(
+            Sport.Bjj,
+            TODAY - 2,
+            sparringRecording(rounds = 2, startedAtEpochMillis = 5),
+        )
+
+        // A class rides with its day: the sheet counts the day logged and nothing for the recordings.
+        val review = assertIs<ImportReview.Ready>(target.importer.review(source.file()))
+        assertEquals(ImportCounts(workouts = 1), review.new)
+        target.importer.import(source.file(), withSettings = false)
+        target.importer.import(source.file(), withSettings = false)
+
+        val classes = target.intervals.history.classes.value
+        assertEquals(listOf(now to 3, 5L to 2), classes.map { it.startedAtEpochMillis to it.rounds.size })
+        assertEquals(source.intervals.history.classes.value.map { it.samples }, classes.map { it.samples })
+    }
+
+    @Test
+    fun `a class with a heart rate no heart has makes the file unreadable`() = runTest {
+        val source = Phone(now).apply {
+            intervals.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 1, startedAtEpochMillis = now))
+        }
+        val file = source.file()
+        // The class's first reading, 110, put past any heart.
+        val at = file.content.indexOf("110", file.content.indexOf("\"bpm\""))
+        val damaged = ShareableFile(file.name, file.mimeType, file.content.replaceRange(at, at + 3, "999"))
+
+        assertIs<ImportReview.Unreadable>(Phone(now + 1).importer.review(damaged))
+    }
+
+    @Test
     fun `sport days planned and logged come across and none is added twice`() = runTest {
         val source = Phone(now).apply {
             intervals.plans.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(2, 4))
@@ -326,7 +365,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_14_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_15_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

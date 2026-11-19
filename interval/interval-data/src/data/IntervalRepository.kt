@@ -7,6 +7,7 @@ import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
+import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.storage.SerialWriter
@@ -36,6 +37,7 @@ class IntervalRepository(
     plannedDao: PlannedDao,
     sportLogDao: SportLogDao,
     flowDao: FlowDao,
+    classDao: SportClassDao,
     private val importDao: ImportDao,
     scope: CoroutineScope,
     private val clock: WallClock,
@@ -57,7 +59,7 @@ class IntervalRepository(
     val flows = FlowRepository(flowDao, writer, scope)
 
     /** The finished workouts and the sport days logged. */
-    val history = HistoryRepository(historyDao, sportLogDao, writer, clock, ids, scope)
+    val history = HistoryRepository(historyDao, sportLogDao, classDao, writer, clock, ids, scope)
 
     /** The planned workouts. */
     val plans = PlanRepository(plannedDao, writer, clock, scope)
@@ -89,7 +91,8 @@ class IntervalRepository(
      * once it has landed; a failure is thrown, nothing having been written. Each workout gets a uid of its own;
      * a plan naming a preset by [PlanWorkout.Interval.name] of one added here, or already here, links to it; a
      * sport logged on its day already stays as it is. [flows] are added as new ones of the user's, under the names
-     * they bring: the import has left out any whose name is here already.
+     * they bring: the import has left out any whose name is here already. A class
+     * that started at the moment one here did stays as it is.
      */
     suspend fun importAll(
         history: List<HistoryEntry>,
@@ -97,6 +100,7 @@ class IntervalRepository(
         planned: List<PlannedWorkout>,
         sportDays: List<LoggedSport> = emptyList(),
         flows: List<Flow> = emptyList(),
+        classes: List<SportClass> = emptyList(),
     ) {
         val now = clock.nowMillis()
         val rows = history.map { it.copy(id = null).toEntity(uid = ids.newId(), now) }
@@ -105,6 +109,7 @@ class IntervalRepository(
         val names = planned.map { (it.workout as? PlanWorkout.Interval)?.takeIf { w -> w.presetId == null }?.name }
         val sportRows = sportDays.map { it.copy(id = 0).toEntity() }
         val flowRows = flows.map { it.copy(id = null).toEntity() }
-        writer.await { importDao.importAll(rows, presetRows, planRows, names, sportRows, flowRows) }
+        val classRows = classes.map { classEntity(it.sport, it.epochDay, it.startedAtEpochMillis, it.samples) }
+        writer.await { importDao.importAll(rows, presetRows, planRows, names, sportRows, flowRows, classRows) }
     }
 }

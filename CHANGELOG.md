@@ -7,6 +7,16 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A class recorded on a heart-rate sensor (Android 12 and up, a Polar Verity Sense). Pair the armband in Settings
+  ("Heart-rate sensor"); on a class's day Today offers "Record class", which sets the sensor recording on its own
+  memory, so the phone can stay in the bag. After, "Sync class" brings it over, logs the day and opens the class:
+  its length, its heart rate drawn over it with each round shaded, the average and peak, and a row a round with
+  its heart rate and how far that fell in the minute after ("Round 3 · 5:02 · 162 avg · 178 peak · down 24 in
+  60 s"). The rounds are found from the heart rate and how much the arm moved, by a first reading of the numbers
+  that classes on the mat will tune. The class's row in the Log says its rounds and opens it again; its page
+  deletes the recording and leaves the day logged. Classes go in the export (schema 14) and stay on the device.
+  Run against a Verity Sense on a Pixel for a few minutes (pairing, recording, sync), not yet through a class.
+  iOS and desktop offer no sensor yet.
 - A time cap on the Timer: as many rounds as you can in so many minutes. Work's sheet makes the workout one, and
   the editor makes any block of a sequence one ("10 min cap, 2 min rest, 10 min cap"). It runs as one countdown
   with a big Round done under the ring, which counts the rounds as you tap it, with the best of the same workout

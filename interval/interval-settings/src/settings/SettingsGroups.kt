@@ -13,6 +13,7 @@ import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.effort_easy
@@ -51,6 +52,13 @@ import dev.justinsmith.interval.settings.resources.settings_plan
 import dev.justinsmith.interval.settings.resources.settings_plan_open
 import dev.justinsmith.interval.settings.resources.settings_reminder
 import dev.justinsmith.interval.settings.resources.settings_reminder_hint
+import dev.justinsmith.interval.settings.resources.settings_sensor
+import dev.justinsmith.interval.settings.resources.settings_sensor_forget
+import dev.justinsmith.interval.settings.resources.settings_sensor_looking
+import dev.justinsmith.interval.settings.resources.settings_sensor_pair
+import dev.justinsmith.interval.settings.resources.settings_sensor_pair_hint
+import dev.justinsmith.interval.settings.resources.settings_sensor_paired_hint
+import dev.justinsmith.interval.settings.resources.settings_sensor_recording_hint
 import dev.justinsmith.interval.settings.resources.settings_setup
 import dev.justinsmith.interval.settings.resources.settings_setup_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
@@ -96,7 +104,19 @@ internal class SettingsGroup(val key: String, val content: @Composable () -> Uni
 internal class HealthActions(val onConnect: () -> Unit, val onDisconnect: () -> Unit, val onInstall: () -> Unit)
 
 /**
- * The groups in order: cues, the workout, calories, the health store where there is one, the plan's goal and
+ * The heart-rate sensor's row: how it stands, whether one is being looked for, and what pairing and forgetting do.
+ * Unavailable, as it is by default, shows no row.
+ */
+class SensorRow(
+    val status: SensorStatus = SensorStatus.Unavailable,
+    val looking: Boolean = false,
+    val onPair: () -> Unit = {},
+    val onForget: () -> Unit = {},
+)
+
+/**
+ * The groups in order: cues, the workout, calories, the health store where there is one, the heart-rate sensor
+ * where the platform has one, the plan's goal and
  * reminder, appearance, your data and, at the foot with no label, the way to About.
  */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
@@ -112,6 +132,7 @@ internal fun settingsGroups(
     onImport: () -> Unit,
     onClearLog: () -> Unit,
     health: HealthActions,
+    sensor: SensorRow,
     onShowPlan: () -> Unit,
     onShowSetup: () -> Unit,
     onShowAbout: () -> Unit,
@@ -142,6 +163,7 @@ internal fun settingsGroups(
         GroupLabel(stringResource(Res.string.settings_health))
         ListCard { HealthRow(state.health, health) }
     }.takeIf { state.health != HealthStatus.Unavailable },
+    sensorGroup(sensor),
     SettingsGroup("plan") {
         GroupLabel(stringResource(Res.string.settings_plan))
         PlanCard(state.app.weeklyGoal, state.reminderTime, onShowPlan, onShowSetup)
@@ -221,6 +243,46 @@ private fun HealthRow(status: HealthStatus, actions: HealthActions, modifier: Mo
                 modifier = modifier,
             )
         }
+    }
+}
+
+/** The heart-rate sensor's group, where the platform can reach one. */
+private fun sensorGroup(sensor: SensorRow): SettingsGroup? = SettingsGroup("sensor") {
+    GroupLabel(stringResource(Res.string.settings_sensor))
+    ListCard { SensorRowContent(sensor) }
+}.takeIf { sensor.status != SensorStatus.Unavailable }
+
+/**
+ * The sensor's row: with none paired, the way to pair the one nearby, saying so while it looks; with one, its
+ * name, what it is doing, and a tap to forget it.
+ */
+@Composable
+private fun SensorRowContent(sensor: SensorRow, modifier: Modifier = Modifier) {
+    when (val status = sensor.status) {
+        is SensorStatus.Paired -> LinkRow(
+            status.name,
+            stringResource(Res.string.settings_sensor_paired_hint),
+            onClick = sensor.onForget,
+            modifier = modifier,
+            onClickLabel = stringResource(Res.string.settings_sensor_forget),
+        )
+
+        is SensorStatus.Recording -> LinkRow(
+            status.name,
+            stringResource(Res.string.settings_sensor_recording_hint),
+            onClick = sensor.onForget,
+            modifier = modifier,
+            onClickLabel = stringResource(Res.string.settings_sensor_forget),
+        )
+
+        else -> LinkRow(
+            stringResource(Res.string.settings_sensor_pair),
+            stringResource(
+                if (sensor.looking) Res.string.settings_sensor_looking else Res.string.settings_sensor_pair_hint,
+            ),
+            onClick = sensor.onPair,
+            modifier = modifier,
+        )
     }
 }
 

@@ -70,6 +70,13 @@ data object Privacy : NavKey
 @Serializable
 data class WorkoutDetail(val id: Long) : NavKey
 
+/**
+ * One class recorded on a heart-rate sensor, by the moment it started: its heart rate and rounds, and the way to
+ * delete the recording. Opened from History, where a sync on Today lands too.
+ */
+@Serializable
+data class ClassDetail(val startedAtEpochMillis: Long) : NavKey
+
 /** The weekly goal, the routine by weekday and one-offs on dates. Pushed from History. */
 @Serializable
 data object Plan : NavKey

@@ -76,6 +76,7 @@ fun platformModule(): Module = module {
         onClose { (it as? IosBackgroundWorkout)?.release() }
     }
     single<PlanReminders> { IosPlanReminders(get()) }
+    single<ClassSensor> { NoClassSensor }
 }
 
 /**

@@ -27,7 +27,31 @@ rather than copying the list forward. What is in a sprint is in that sprint's fi
 
 ## Planned, not yet scheduled
 
-Nothing at present: the last item here, Pause and End on iOS's Live Activity, landed on 2026-11-16.
+After the class recorded on a heart-rate sensor (2026-11-18: record, sync, rounds, on Android), what it left out:
+
+- **The sensor on a real mat.** `PolarClassSensor` paired, recorded and synced a few minutes on a Verity Sense
+  (2026-11-18, a Pixel 10 Pro: the heart rate a reading a second, the accelerometer recording, and a recording's
+  start coming back in UTC, which that run found and fixed). Not yet a whole class: an hour and a half on the
+  sensor's memory, the sync's length at that size, and the sensor out of reach of the phone all the while. Then
+  tune `detectRounds`
+  (`interval-domain`, `timer/Rounds.kt`) on what real classes look like, a recording or two kept as a fixture
+  for `RoundsTest`. *Brings it in:* the sensor in hand.
+- **Round tags and trends.** A partner's level, how the round went and the position it stuck in, a tap or two a
+  round on the class's page, then the rounds over weeks by tag. Needs the rounds stored once tagged (today they
+  are found afresh from the samples at each read, so a retuned detector would move the tags' rounds).
+- **Composure: heart rate against movement.** Each sample keeps how much the arm moved, so a round can be read as
+  a scramble, a grind or easy work without a second sync. Wants real classes first, to see what the armband's
+  accelerometer tells apart.
+- **A morning reading into readiness.** Two minutes seated against a week's baseline, as a fourth reason beside
+  `ReadinessReason`'s three (`readiness(...)` takes its inputs as parameters; `CoachLine` words each reason). An
+  optical armband's beat-to-beat intervals are only good at rest and still; a chest strap's are the ones to trust.
+- **A class's grip load by its rounds.** `GRAPPLING_GRIP_LOAD` weighs every BJJ day the same; a recorded class
+  knows how long it was rolled for.
+- **The class in Health Connect.** Written as a martial-arts session with its heart rate; `HealthWorkoutKind` has
+  no such kind yet, and the write would add a heart-rate permission to Play's declaration.
+- **The sensor on iOS.** Polar's iOS SDK is Swift alone: a `swiftPackage` dependency of `iosApp` and a bridge
+  handed into Kotlin as `startWidgetFeed`'s closure is, implementing `ClassSensor` (`interval-platform-api`),
+  with `NSBluetoothAlwaysUsageDescription`. iOS binds `NoClassSensor` until then.
 
 ## Left out on purpose
 

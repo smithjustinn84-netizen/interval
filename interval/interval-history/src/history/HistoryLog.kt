@@ -27,6 +27,9 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
+import dev.justinsmith.interval.history.resources.class_recorded
+import dev.justinsmith.interval.history.resources.class_rounds
+import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_calories_value
 import dev.justinsmith.interval.history.resources.history_cap_rounds
 import dev.justinsmith.interval.history.resources.history_ended_early
@@ -76,9 +79,9 @@ internal fun DaySection(
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
                 HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift, selected = selected(item))
             }
-            section.sports.forEachIndexed { index, sport ->
+            sportLines(section.sports, section.classes).forEachIndexed { index, line ->
                 if (index > 0 || section.items.isNotEmpty()) RowDivider(Modifier.padding(start = Spacing.space20))
-                SportRow(sport, section.dayNumber, actions)
+                SportRow(line.sport, section.dayNumber, actions, recorded = line.recorded, logged = line.logged)
             }
         }
     }
@@ -115,9 +118,16 @@ internal fun WeekDoneCard(
                     day = day(),
                 )
             }
-            section.sports.forEach { sport ->
+            sportLines(section.sports, section.classes).forEach { line ->
                 if (rows++ > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                SportRow(sport, section.dayNumber, actions, day = day())
+                SportRow(
+                    line.sport,
+                    section.dayNumber,
+                    actions,
+                    day = day(),
+                    recorded = line.recorded,
+                    logged = line.logged,
+                )
             }
         }
     }
@@ -126,9 +136,22 @@ internal fun WeekDoneCard(
 /** A row's day for its column: its words ("Today", "Wed"; none under the same day's row above) and whether today. */
 internal class DayMark(val text: String, val today: Boolean)
 
+/** A sport's row on a day: the class [recorded] of it, if one was, and whether the day was [logged]. */
+internal class SportLine(val sport: Sport, val recorded: ClassRow?, val logged: Boolean)
+
 /**
- * A day of a sport logged: its name, that it was logged, and the × that takes it off again. It has no page to
- * open: there is nothing more to it than the day. With [day], its day stands in the column before it.
+ * A day's sport rows: each sport logged, with the class recorded of it that day, then any class whose day was
+ * never logged or was taken off again, which keeps a row so its recording can still be reached.
+ */
+internal fun sportLines(sports: List<Sport>, classes: List<ClassRow>): List<SportLine> =
+    sports.map { sport -> SportLine(sport, classes.firstOrNull { it.sport == sport }, logged = true) } +
+        classes.filter { it.sport !in sports }.map { SportLine(it.sport, it, logged = false) }
+
+/**
+ * A day of a sport logged: its name, that it was logged, and the × that takes it off again. One with a class
+ * [recorded] on a sensor says its rounds and length instead and opens the class's page; the rest have no page:
+ * there is nothing more to them than the day. A class whose day isn't [logged] has no ×: its page deletes it.
+ * With [day], its day stands in the column before it.
  */
 @Composable
 internal fun SportRow(
@@ -137,15 +160,28 @@ internal fun SportRow(
     actions: HistoryActions,
     modifier: Modifier = Modifier,
     day: DayMark? = null,
+    recorded: ClassRow? = null,
+    logged: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
     val name = sportTitle(sport)
     val removed = stringResource(Res.string.notice_plan_removed, name)
+    val interaction = remember { MutableInteractionSource() }
     Row(
         modifier
             .fillMaxWidth()
-            // Read as one row, its remove a button of its own.
-            .semantics(mergeDescendants = true) {}
+            .then(
+                if (recorded == null) {
+                    // Read as one row, its remove a button of its own.
+                    Modifier.semantics(mergeDescendants = true) {}
+                } else {
+                    Modifier
+                        .clickable(interaction, LocalIndication.current, role = Role.Button) {
+                            actions.onOpenClass(recorded.startedAtEpochMillis)
+                        }
+                        .pressScale(interaction)
+                },
+            )
             .heightIn(min = Sizes.listRow)
             .padding(start = Spacing.space16, end = Spacing.space4, top = Spacing.space8, bottom = Spacing.space8),
         verticalAlignment = Alignment.CenterVertically,
@@ -156,17 +192,19 @@ internal fun SportRow(
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
             Text(
-                stringResource(Res.string.history_sport_logged),
+                recorded?.let { classLine(it) } ?: stringResource(Res.string.history_sport_logged),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
         }
-        IconAction(
-            IntervalIcons.Close,
-            stringResource(Res.string.history_remove_cd, name),
-            { actions.onUnlogSport(sport, epochDay, removed) },
-            haptic = HapticFeedbackType.SegmentTick,
-        )
+        if (logged) {
+            IconAction(
+                IntervalIcons.Close,
+                stringResource(Res.string.history_remove_cd, name),
+                { actions.onUnlogSport(sport, epochDay, removed) },
+                haptic = HapticFeedbackType.SegmentTick,
+            )
+        }
     }
 }
 
@@ -288,3 +326,16 @@ internal fun HistoryRow(
         }
     }
 }
+
+/** What a recorded class's row says of it: "5 rounds · 1:02:10", or its length alone with no round found. */
+@Composable
+internal fun classLine(recorded: ClassRow): String =
+    if (recorded.rounds == 0) {
+        stringResource(Res.string.class_recorded, recorded.length)
+    } else {
+        stringResource(
+            Res.string.common_joined,
+            pluralStringResource(Res.plurals.class_rounds, recorded.rounds, recorded.rounds),
+            recorded.length,
+        )
+    }
