@@ -1,5 +1,7 @@
 <div align="center">
 
+<img src="docs/hero.png" alt="Interval — Conditioning · Strength · Mobility" width="100%" />
+
 # ⏱️ Interval
 
 **An offline-first, privacy-focused training companion for interval conditioning, kettlebell & strength training, guided mobility flows, and weekly planning.**  
