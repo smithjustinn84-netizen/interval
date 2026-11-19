@@ -54,7 +54,7 @@ class LiftVoiceAcceptanceTest {
     @Test
     fun `a taxed day says stop a rep early once`() = liftScenario(afterAHardSession()) {
         startSession()
-        hear("Stop a rep early")
+        hear("Stop a repetition early")
         openLogSheet()
         pickExercise("Snatch", search = "snatch")
         logFromSheet()

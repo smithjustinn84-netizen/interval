@@ -32,7 +32,8 @@ object NoSpeaker : Speaker {
 /**
  * Puts each line, of any kind [T], into [words] off the caller (reading strings suspends) and hands it to [say] on
  * [dispatcher], the main thread by default, one at a time and in order. Only the newest line waits its turn: one
- * overtaken by the next is stale, just as the speaker cuts a line short when the next one starts.
+ * overtaken by the next is stale, just as the speaker cuts a line short when the next one starts. Each is said
+ * as [spokenForm] has it, so no side's words need spelling for the engine.
  */
 class SpokenLines<T : Any>(
     dispatcher: CoroutineDispatcher = Dispatchers.Main,
@@ -52,7 +53,7 @@ class SpokenLines<T : Any>(
     // A line that fails is logged and skipped, never thrown: as for every cue, a missing one must not
     // crash a workout, nor stop the lines after it.
     private suspend fun speakLogged(line: T) {
-        catchingFailures(onFailure = { e -> log.w(e) { "Couldn't speak $line" } }) { say(words(line)) }
+        catchingFailures(onFailure = { e -> log.w(e) { "Couldn't speak $line" } }) { say(spokenForm(words(line))) }
     }
 
     fun speak(line: T) {
@@ -64,3 +65,12 @@ class SpokenLines<T : Any>(
         scope.cancel()
     }
 }
+
+private val REP = Regex("""\brep\b""", RegexOption.IGNORE_CASE)
+
+/**
+ * [text] as the device's voice should be handed it: the engines read "rep" as an abbreviation, "representative",
+ * so the word alone is spelled out. "Reps" they say as written. What a screen shows keeps the short word.
+ */
+fun spokenForm(text: String): String =
+    REP.replace(text) { if (it.value.first().isUpperCase()) "Repetition" else "repetition" }
