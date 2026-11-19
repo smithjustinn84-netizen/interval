@@ -92,6 +92,8 @@
                 android:theme="@style/Theme.Interval">
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+                <!-- What an implicit start adds anyway; the toolchain's run task also can't read a filter without one. -->
+                <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </activity>
         <activity-alias
