@@ -5,6 +5,7 @@ dependencies:
   # Exported: the database builder a platform supplies is a Room type.
   - $libs.androidx.room.runtime: exported
   - $libs.androidx.sqlite.bundled
+  - $kotlin.serialization.json
 
 settings:
   kotlin:
@@ -12,4 +13,4 @@ settings:
     # classes still warn as Beta. The flag only silences that warning, so it is safe in the native cache
     # build of dependencies too (see lib.module-template.yaml on `optIns`).
     freeCompilerArgs: [-Xexpect-actual-classes]
-    serialization: json
+    serialization: enabled

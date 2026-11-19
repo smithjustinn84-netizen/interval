@@ -48,6 +48,7 @@ dependencies:
   - $libs.koin.core.viewmodel
   - $libs.koin.compose.viewmodel
   - $libs.kermit
+  - $kotlin.serialization.json
 
 test-dependencies:
   # Each side's storage fakes (`tested-lib` adds the shared fakes and the UI harness in `core-testing`).
@@ -79,4 +80,4 @@ settings:
       exposedAccessors: true
   kotlin:
     # The navigation keys are @Serializable, for the saved back stack.
-    serialization: json
+    serialization: enabled

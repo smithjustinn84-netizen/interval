@@ -14,6 +14,7 @@ dependencies:
   # The library's mat moves and holds, by their names and cues, for a flow built by hand.
   - //lift/lift-domain
   - //lift/lift-ui
+  - $kotlin.serialization.json
 
 test-dependencies:
   - //interval/interval-testing
@@ -24,4 +25,4 @@ settings:
       packageName: dev.justinsmith.interval.mobility.resources
   kotlin:
     # A draft flow is kept in its editor's SavedStateHandle as JSON.
-    serialization: json
+    serialization: enabled

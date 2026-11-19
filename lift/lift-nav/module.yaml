@@ -21,6 +21,7 @@ dependencies:
   - $libs.compose.material3.adaptive.navigation3
   - $libs.androidx.navigation3.runtime
   - $libs.androidx.navigation3.ui
+  - $kotlin.serialization.json
 
 test-dependencies:
   - //lift/lift-testing
@@ -32,4 +33,4 @@ test-dependencies@jvm:
 settings:
   kotlin:
     # The keys are @Serializable, for the app's saved back stack.
-    serialization: json
+    serialization: enabled
