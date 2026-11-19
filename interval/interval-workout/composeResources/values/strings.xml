@@ -2,7 +2,7 @@
 <resources>
     <string name="common_done">Done</string>
     <string name="common_joined">%1$s · %2$s</string>
-    <string name="history_goal_met">Goal met this week</string>
+    <string name="summary_goal_met">Goal met this week</string>
     <plurals name="history_streak">
         <item quantity="one">%1$d-week streak</item>
         <item quantity="other">%1$d-week streak</item>

@@ -22,8 +22,8 @@ import dev.justinsmith.interval.mobility.resources.move_cue_label
 import dev.justinsmith.interval.mobility.resources.move_cue_placeholder
 import dev.justinsmith.interval.mobility.resources.move_done
 import dev.justinsmith.interval.mobility.resources.move_down
-import dev.justinsmith.interval.mobility.resources.move_held
 import dev.justinsmith.interval.mobility.resources.move_held_hint
+import dev.justinsmith.interval.mobility.resources.move_held_still
 import dev.justinsmith.interval.mobility.resources.move_less_cd
 import dev.justinsmith.interval.mobility.resources.move_library
 import dev.justinsmith.interval.mobility.resources.move_more_cd
@@ -106,7 +106,7 @@ internal fun MoveSheet(move: Move, onChange: (Move) -> Unit, actions: MoveAction
             )
             RowDivider()
             ToggleRow(
-                stringResource(Res.string.move_held),
+                stringResource(Res.string.move_held_still),
                 stringResource(Res.string.move_held_hint),
                 move.held,
                 onToggle = { onChange(move.copy(held = !move.held)) },

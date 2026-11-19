@@ -54,8 +54,8 @@ import dev.justinsmith.lift.session.resources.plan_hint
 import dev.justinsmith.lift.session.resources.plan_skip_block
 import dev.justinsmith.lift.session.resources.plan_skip_rest
 import dev.justinsmith.lift.session.resources.plan_skipped
-import dev.justinsmith.lift.session.resources.plan_title
 import dev.justinsmith.lift.session.resources.plan_unskip
+import dev.justinsmith.lift.session.resources.session_plan_title
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.pluralStringResource
@@ -110,7 +110,7 @@ internal val SessionUiState.blockChoices: BlockChoices get() = BlockChoices(bell
 @Composable
 internal fun PlanSheet(state: SessionUiState, onOpen: (Int) -> Unit, onDismiss: () -> Unit) {
     val palette = IntervalTheme.palette
-    IntervalSheet(stringResource(Res.string.plan_title), onDismiss = onDismiss) {
+    IntervalSheet(stringResource(Res.string.session_plan_title), onDismiss = onDismiss) {
         Column(
             Modifier.padding(vertical = Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),

@@ -77,8 +77,8 @@ import dev.justinsmith.interval.workout.resources.effort_easy
 import dev.justinsmith.interval.workout.resources.effort_hard
 import dev.justinsmith.interval.workout.resources.effort_steady
 import dev.justinsmith.interval.workout.resources.effort_very_hard
-import dev.justinsmith.interval.workout.resources.history_goal_met
 import dev.justinsmith.interval.workout.resources.history_streak
+import dev.justinsmith.interval.workout.resources.summary_goal_met
 import dev.justinsmith.interval.workout.resources.summary_how_was_it
 import dev.justinsmith.interval.workout.resources.summary_note_placeholder
 import dev.justinsmith.interval.workout.resources.summary_week_count
@@ -486,7 +486,7 @@ private fun weekText(week: WeekStanding): String {
     val goal = week.goal
     return when {
         goal == null -> pluralStringResource(Res.plurals.summary_week_count, week.count, week.count)
-        week.goalMet -> stringResource(Res.string.history_goal_met)
+        week.goalMet -> stringResource(Res.string.summary_goal_met)
         else -> stringResource(Res.string.summary_week_of_goal, week.count, goal)
     }
 }
