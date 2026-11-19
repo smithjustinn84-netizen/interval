@@ -2,11 +2,11 @@ package dev.justinsmith.lift.gear
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -101,7 +101,6 @@ fun GearRoute(onBack: () -> Unit) {
  * Each sits in a card under its label, as a column's cell: on a wider window the bar sits beside the bells, and
  * the bands and the records fill whichever column is shorter.
  */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun GearScreen(
     state: GearUiState,
@@ -117,31 +116,7 @@ fun GearScreen(
     var editing by rememberSaveable { mutableStateOf<String?>(null) }
     TabGrid(stringResource(Res.string.bells_title), modifier, navigation = { BackAction(onBack) }) {
         item(key = "owned") {
-            Column(card) {
-                GroupLabel(stringResource(Res.string.bells_owned))
-                ListCard {
-                    FlowRow(
-                        Modifier.padding(Spacing.space16),
-                        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-                    ) {
-                        standardBells.forEach { kg ->
-                            Choice(
-                                stringResource(Res.string.kg_value, formatKg(kg)),
-                                kg in state.owned,
-                                onClick = { onToggle(kg) },
-                                role = Role.Checkbox,
-                            )
-                        }
-                    }
-                }
-                Text(
-                    stringResource(Res.string.bells_owned_hint),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                    modifier = Modifier.padding(top = Spacing.space8),
-                )
-            }
+            BellsSection(state.owned, onToggle, card)
         }
         item(key = "bar") {
             BarSection(state.bar, onBar, card)
@@ -188,6 +163,44 @@ fun GearScreen(
     }
 }
 
+/** Every standard bell size in even rows of [BELL_COLUMNS], the owned ones selected. */
+@Composable
+private fun BellsSection(owned: Set<Double>, onToggle: (Double) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        GroupLabel(stringResource(Res.string.bells_owned))
+        ListCard {
+            Column(
+                Modifier.padding(Spacing.space16),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                standardBells.chunked(BELL_COLUMNS).forEach { row ->
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+                    ) {
+                        row.forEach { kg ->
+                            Choice(
+                                stringResource(Res.string.kg_value, formatKg(kg)),
+                                kg in owned,
+                                onClick = { onToggle(kg) },
+                                modifier = Modifier.weight(1f),
+                                role = Role.Checkbox,
+                            )
+                        }
+                        repeat(BELL_COLUMNS - row.size) { Spacer(Modifier.weight(1f)) }
+                    }
+                }
+            }
+        }
+        Text(
+            stringResource(Res.string.bells_owned_hint),
+            style = IntervalTheme.type.meta,
+            color = IntervalTheme.palette.textDim,
+            modifier = Modifier.padding(top = Spacing.space8),
+        )
+    }
+}
+
 /** The user's bar by what it weighs empty, or None: a tap on another picks it ([onBar]). */
 @Composable
 private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifier = Modifier) {
@@ -195,9 +208,19 @@ private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifie
         GroupLabel(stringResource(Res.string.bar_owned))
         val none = stringResource(Res.string.bar_none)
         ListCard {
-            ChoiceRow(listOf(null) + bars, bar, { kg ->
-                kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none
-            }, onBar, Modifier.padding(Spacing.space16))
+            Row(
+                Modifier.fillMaxWidth().padding(Spacing.space16).selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                (listOf(null) + bars).forEach { kg ->
+                    Choice(
+                        kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none,
+                        kg == bar,
+                        onClick = { onBar(kg) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
         }
         Text(
             stringResource(Res.string.bar_owned_hint),
@@ -344,6 +367,9 @@ private fun BandRemoveAction(band: Band, used: Boolean, actions: BandActions, hi
 
 /** What [editing] holds while a band is being added. */
 private const val NEW_BAND = ""
+
+/** Bell sizes on a row, so every pill in the card shares the width evenly. */
+private const val BELL_COLUMNS = 4
 
 @PreviewFormFactors
 @Composable

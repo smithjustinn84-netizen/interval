@@ -50,6 +50,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.of
@@ -203,6 +204,7 @@ internal fun RingReadout(
                     style = IntervalTheme.type.label,
                     color = IntervalTheme.workout.onGroundDim,
                     textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
                 )
             }
         }

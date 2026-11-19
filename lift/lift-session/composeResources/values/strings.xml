@@ -168,6 +168,7 @@
     <string name="program_follow_again_hint">Starts again at day 1. These sessions stay in your log.</string>
     <string name="editor_new_title">New program</string>
     <string name="editor_edit_title">Edit program</string>
+    <string name="editor_name">Name</string>
     <string name="editor_name_label">Program name</string>
     <string name="editor_name_placeholder">My program</string>
     <string name="editor_schedule">Schedule</string>

@@ -45,9 +45,13 @@ import androidx.compose.ui.input.key.onKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.text
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.timer.formatClock
@@ -220,17 +224,24 @@ private fun PortraitEmom(
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
-            ProgressRing(
-                progress,
-                color,
-                Modifier.size(diameter),
-                glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
-            )
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                PhaseWord(state, color)
-                val type = IntervalTheme.type
-                ClockText(state, color, diameter, if (roomy) type.clock else type.display)
-                TaskText(run, state)
+            Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+                ProgressRing(
+                    progress,
+                    color,
+                    Modifier.fillMaxSize(),
+                    glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                )
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    PhaseWord(state, color)
+                    val type = IntervalTheme.type
+                    ClockText(state, color, diameter, if (roomy) type.clock else type.display)
+                    TaskText(
+                        run,
+                        state,
+                        Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
+                        centered = true,
+                    )
+                }
             }
         }
         SetDone(state, color, onFinishSet, Modifier.fillMaxWidth().padding(bottom = Spacing.space16))
@@ -382,17 +393,26 @@ private fun ClockText(state: EmomState, color: () -> Color, diameter: Dp, style:
 
 /** The set to do, or next while resting. */
 @Composable
-private fun TaskText(run: EmomRun, state: EmomState) {
+private fun TaskText(run: EmomRun, state: EmomState, modifier: Modifier = Modifier, centered: Boolean = false) {
     val side = run.sideOf(state.minute)
     val task = setLine(run.load, run.reps, side)
+    val kept = task.replace(' ', '\u00A0')
+    val plain = if (state.phase == EmomPhase.Rest) {
+        stringResource(Res.string.emom_next, task)
+    } else {
+        stringResource(Res.string.common_joined, liftName(run.exercise, run.double), task)
+    }
+    val drawn = if (state.phase == EmomPhase.Rest) {
+        stringResource(Res.string.emom_next, kept)
+    } else {
+        stringResource(Res.string.common_joined, liftName(run.exercise, run.double), kept)
+    }
     Text(
-        if (state.phase == EmomPhase.Rest) {
-            stringResource(Res.string.emom_next, task)
-        } else {
-            stringResource(Res.string.common_joined, liftName(run.exercise, run.double), task)
-        },
+        drawn,
         style = IntervalTheme.type.label,
         color = IntervalTheme.workout.onGroundDim,
+        textAlign = if (centered) TextAlign.Center else TextAlign.Start,
+        modifier = modifier.clearAndSetSemantics { this.text = AnnotatedString(plain) },
     )
 }
 

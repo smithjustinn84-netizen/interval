@@ -165,7 +165,7 @@ private fun Opening(modifier: Modifier = Modifier) {
         verticalArrangement = Arrangement.spacedBy(Spacing.space16, Alignment.Bottom),
     ) {
         Canvas(Modifier.size(AppSizes.welcomeMark)) {
-            drawIntervalMark(center, unit = size.minDimension / MARK_VISIBLE_UNITS)
+            drawIntervalMark(center, unit = size.minDimension / MARK_VISIBLE_UNITS, handColor = palette.text)
         }
         Text(
             stringResource(Res.string.app_name),

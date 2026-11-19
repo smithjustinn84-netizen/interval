@@ -35,9 +35,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
@@ -64,6 +61,7 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -456,10 +454,10 @@ private fun LazyStaggeredGridScope.logItems(
     }
 }
 
-/** The week's done card's key in the lists, and its place: in the gutters, under its heading's room. */
+/** The week's done card's key in the lists. */
 private const val DONE_WEEK = "doneWeek"
 private const val DAY_SECTION = "day"
-private val DoneWeekCard = Modifier.padding(horizontal = Spacing.space16).padding(top = Spacing.space8)
+private val DoneWeekCard = Gutter
 
 /** The range picker, its summary card, and Up next or the most done shapes under it. */
 private fun LazyStaggeredGridScope.summaryItems(
@@ -563,16 +561,14 @@ private enum class LogGroup { ThisWeek, Earlier }
 /** A heading over a group of the log's days. */
 @Composable
 private fun LogHeading(group: LogGroup, modifier: Modifier = Modifier) {
-    Text(
+    GroupLabel(
         stringResource(
             when (group) {
                 LogGroup.ThisWeek -> Res.string.history_done_week
                 LogGroup.Earlier -> Res.string.history_earlier
             },
         ),
-        style = IntervalTheme.type.section,
-        color = IntervalTheme.palette.text,
-        modifier = modifier.padding(top = Spacing.space16).semantics { heading() },
+        modifier = modifier,
     )
 }
 

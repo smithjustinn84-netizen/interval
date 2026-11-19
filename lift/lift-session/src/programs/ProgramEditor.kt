@@ -84,6 +84,7 @@ import dev.justinsmith.lift.session.resources.editor_discard_text
 import dev.justinsmith.lift.session.resources.editor_discard_title
 import dev.justinsmith.lift.session.resources.editor_edit_title
 import dev.justinsmith.lift.session.resources.editor_keep_editing
+import dev.justinsmith.lift.session.resources.editor_name
 import dev.justinsmith.lift.session.resources.editor_name_label
 import dev.justinsmith.lift.session.resources.editor_name_placeholder
 import dev.justinsmith.lift.session.resources.editor_new_title
@@ -236,6 +237,7 @@ private fun ProgramEditorBody(
         modifier,
         navigation = { BackAction(actions.onBack) },
     ) {
+        GroupLabel(stringResource(Res.string.editor_name))
         NameField(
             state = name,
             placeholder = stringResource(Res.string.editor_name_placeholder),

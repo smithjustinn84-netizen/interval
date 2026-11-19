@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
@@ -21,9 +22,23 @@ import androidx.compose.ui.graphics.graphicsLayer
  * blend needs) only while there is a fade, and the fade is one gradient made as the size is, squeezed to the way
  * left.
  */
-fun Modifier.fadeWhenMoreBelow(scroll: ScrollState): Modifier = this
+fun Modifier.fadeWhenMoreBelow(scroll: ScrollState): Modifier = fadeAtFoot(
+    canFade = { scroll.canScrollForward },
+    fadeHeight = { full -> minOf(full, (scroll.maxValue - scroll.value).toFloat()) },
+)
+
+/**
+ * Fades the foot of a staggered grid scrolled by [grid] while more of it lies below, for a [TabGrid] with a
+ * pinned bottom bar so content above the bar never hard-clips.
+ */
+fun Modifier.fadeWhenMoreBelow(grid: LazyStaggeredGridState): Modifier = fadeAtFoot(
+    canFade = { grid.canScrollForward },
+    fadeHeight = { full -> if (grid.canScrollForward) full else 0f },
+)
+
+private fun Modifier.fadeAtFoot(canFade: () -> Boolean, fadeHeight: (full: Float) -> Float): Modifier = this
     .graphicsLayer {
-        compositingStrategy = if (scroll.canScrollForward) CompositingStrategy.Offscreen else CompositingStrategy.Auto
+        compositingStrategy = if (canFade()) CompositingStrategy.Offscreen else CompositingStrategy.Auto
     }
     .drawWithCache {
         val full = Sizes.summaryFade.toPx()
@@ -31,7 +46,7 @@ fun Modifier.fadeWhenMoreBelow(scroll: ScrollState): Modifier = this
         val fadeSize = Size(size.width, full)
         onDrawWithContent {
             drawContent()
-            val fade = minOf(full, (scroll.maxValue - scroll.value).toFloat())
+            val fade = fadeHeight(full)
             if (fade > 0f) {
                 translate(top = size.height - full) {
                     scale(scaleX = 1f, scaleY = fade / full, pivot = Offset(0f, full)) {

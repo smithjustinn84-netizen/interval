@@ -43,9 +43,16 @@ data class MarkArc(val start: Float, val end: Float, val color: Color) {
 /**
  * Draws the mark centred on [center] at [unit] pixels per canvas unit. [handTurns] turns the hand
  * clockwise from 12, and each arc swells as the hand sweeps past its middle; at whole turns the
- * mark is the icon exactly.
+ * mark is the icon exactly. [handColor] colours the hand and hub: white on the dark splash and
+ * launcher badge, or the theme's text colour when drawn directly on the page.
  */
-fun DrawScope.drawIntervalMark(center: Offset, unit: Float, handTurns: Float = 0f, alpha: Float = 1f) {
+fun DrawScope.drawIntervalMark(
+    center: Offset,
+    unit: Float,
+    handTurns: Float = 0f,
+    alpha: Float = 1f,
+    handColor: Color = PhaseColors.onGround,
+) {
     if (alpha <= 0f) return
     val handAngle = handTurns * Angles.FULL_TURN
     for (arc in Mark.arcs) {
@@ -64,7 +71,7 @@ fun DrawScope.drawIntervalMark(center: Offset, unit: Float, handTurns: Float = 0
     }
     rotate(handAngle, pivot = center) {
         drawLine(
-            PhaseColors.onGround,
+            handColor,
             start = Offset(center.x, center.y - Mark.HUB_RADIUS * unit),
             end = Offset(center.x, center.y - Mark.HAND_LENGTH * unit),
             strokeWidth = Mark.HAND_STROKE * unit,
@@ -74,7 +81,7 @@ fun DrawScope.drawIntervalMark(center: Offset, unit: Float, handTurns: Float = 0
     }
     // The hub is a ring, so the pin hole shows whatever is behind the mark, as on the icons.
     drawCircle(
-        PhaseColors.onGround,
+        handColor,
         radius = (Mark.HUB_RADIUS + Mark.PIN_RADIUS) / 2 * unit,
         center = center,
         alpha = alpha,

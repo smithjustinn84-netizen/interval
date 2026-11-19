@@ -483,7 +483,7 @@ private fun ProgramRow(
                 start = Spacing.space16,
                 top = Spacing.space16,
                 bottom = Spacing.space16,
-                end = if (key is ProgramKey.Custom) Spacing.space4 else Spacing.space16,
+                end = if (key is ProgramKey.Custom) Spacing.space4 else Spacing.space12,
             ),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -509,6 +509,13 @@ private fun ProgramRow(
             IconAction(IntervalIcons.Describe, stringResource(Res.string.programs_edit_cd, name), {
                 actions.onEdit(key.uid)
             })
+        } else {
+            Icon(
+                IntervalIcons.Chevron,
+                contentDescription = null,
+                tint = palette.textDim,
+                modifier = Modifier.size(Sizes.icon),
+            )
         }
     }
 }

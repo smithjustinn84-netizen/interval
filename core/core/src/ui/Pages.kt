@@ -21,6 +21,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
@@ -116,9 +117,14 @@ fun TabGrid(
                 ),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            val gridState = rememberLazyStaggeredGridState()
             LazyVerticalStaggeredGrid(
                 columns = StaggeredGridCells.Adaptive(Sizes.listColumn),
-                modifier = Modifier.fillMaxWidth().weight(1f),
+                state = gridState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .then(if (bottomBar != null) Modifier.fadeWhenMoreBelow(gridState) else Modifier),
                 contentPadding = PaddingValues(bottom = if (under) Spacing.space24 + foot else Spacing.space8),
             ) {
                 eyebrow?.let { item(key = "tab-eyebrow", span = StaggeredGridItemSpan.FullLine) { it() } }
