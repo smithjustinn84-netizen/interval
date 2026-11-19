@@ -45,7 +45,7 @@ import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.EnterEasing
-import dev.justinsmith.interval.ui.HeartBeatBadge
+import dev.justinsmith.interval.ui.HeartZoneScale
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
@@ -251,7 +251,7 @@ internal fun LandscapeReadout(
                 CapTally(cap, Modifier.padding(top = Spacing.space4), centered = false)
             }
             TapHint(state)
-            HeartBeatBadge(state.liveHeartRate, maxBpm = state.maxHeartRate, onWorkoutGround = true)
+            HeartZoneScale(state.liveHeartRate, maxBpm = state.maxHeartRate)
         }
     }
 }

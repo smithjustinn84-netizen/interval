@@ -23,6 +23,37 @@ class LiveHeartRateTest {
     }
 
     @Test
+    fun `the floor of a zone is the first heart rate sorted into it`() {
+        assertEquals(null, zoneFloor(HeartRateZone.Zone1, 190))
+        assertEquals(listOf(114, 133, 152, 171), HeartRateZone.entries.drop(1).map { zoneFloor(it, 190) })
+        for (max in MAX_BPM_RANGE) {
+            for (zone in HeartRateZone.entries.drop(1)) {
+                val floor = zoneFloor(zone, max) ?: error("no floor")
+                assertEquals(zone, heartRateZone(floor, max))
+                assertEquals(zone.ordinal - 1, heartRateZone(floor - 1, max).ordinal)
+            }
+        }
+    }
+
+    @Test
+    fun `the zone scale runs from half the max to the max`() {
+        assertEquals(0f, zoneScaleFraction(60, 200))
+        assertEquals(0f, zoneScaleFraction(100, 200))
+        assertEquals(0.5f, zoneScaleFraction(150, 200))
+        assertEquals(1f, zoneScaleFraction(200, 200))
+        assertEquals(1f, zoneScaleFraction(215, 200))
+    }
+
+    @Test
+    fun `a sensor is in use once it is connecting`() {
+        assertEquals(false, LiveHeartRateState.Unavailable.inUse)
+        assertEquals(false, LiveHeartRateState.Idle.inUse)
+        assertEquals(true, LiveHeartRateState.Connecting.inUse)
+        assertEquals(true, LiveHeartRateState.Reading(120).inUse)
+        assertEquals(true, LiveHeartRateState.Disconnected.inUse)
+    }
+
+    @Test
     fun `zoneSeconds tallies valid samples and skips zero gaps`() {
         val samples = listOf(100, 130, 0, 165, 185, 190)
         val totals = zoneSeconds(samples, maxBpm = 200, sampleSeconds = 5)

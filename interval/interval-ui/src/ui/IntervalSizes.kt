@@ -84,6 +84,9 @@ object IntervalSizes {
     /** Room the workout leaves under its ring for the "Tap anywhere to pause" line. */
     val tapHint = 48.dp
 
+    /** Room the workout leaves under that line for the live zone scale, while a heart-rate sensor is in use. */
+    val zoneScaleRoom = 100.dp
+
     /** A phase's colour stripe at the start of a field row, and a history mark's width. */
     val stripe = 6.dp
 

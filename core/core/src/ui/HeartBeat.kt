@@ -157,7 +157,7 @@ private fun ZoneTag(zone: HeartRateZone, color: Color, onWorkoutGround: Boolean)
  * `graphicsLayer` so the animation never triggers recomposition; returns `{ 1f }` under reduced motion.
  */
 @Composable
-private fun rememberHeartPulseScale(bpm: Int): () -> Float {
+internal fun rememberHeartPulseScale(bpm: Int): () -> Float {
     val reducedMotion = prefersReducedMotion()
     val scale = remember { Animatable(1f) }
     LaunchedEffect(bpm, reducedMotion) {

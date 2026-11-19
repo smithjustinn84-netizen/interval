@@ -85,6 +85,26 @@ fun heartRateZone(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM): HeartRateZone {
     }
 }
 
+/** Whether a sensor is in use, so there is something to show of it: a reading, or why there is none yet. */
+val LiveHeartRateState.inUse: Boolean
+    get() = this != LiveHeartRateState.Unavailable && this != LiveHeartRateState.Idle
+
+/**
+ * The lowest heart rate in [zone] for [maxBpm], as [heartRateZone] sorts them, so one beat fewer is the zone
+ * below; null for [HeartRateZone.Zone1], which has no floor.
+ */
+fun zoneFloor(zone: HeartRateZone, maxBpm: Int = DEFAULT_MAX_BPM): Int? =
+    if (zone == HeartRateZone.Zone1) null else (1..MAX_BPM_RANGE.last).first { heartRateZone(it, maxBpm) >= zone }
+
+/**
+ * Where [bpm] sits along a scale of the five zones drawn a fifth each: 0 at half of [maxBpm], where the
+ * scale's first zone opens, 1 at the max, and no further either way.
+ */
+fun zoneScaleFraction(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM): Float {
+    val ratio = bpm / maxBpm.coerceIn(MAX_BPM_RANGE).toFloat()
+    return ((ratio - ZONE_SCALE_FLOOR) / (1f - ZONE_SCALE_FLOOR)).coerceIn(0f, 1f)
+}
+
 /** How many seconds of [samples] (each covering [sampleSeconds]) fell in each [HeartRateZone]. */
 fun zoneSeconds(
     samples: List<Int>,
@@ -236,6 +256,7 @@ class HeartRateSampler(private val sampleSeconds: Int = HR_SAMPLE_SECONDS) {
     }
 }
 
+private const val ZONE_SCALE_FLOOR = 0.5f
 private const val ZONE2_THRESHOLD = 0.6f
 private const val ZONE3_THRESHOLD = 0.7f
 private const val ZONE4_THRESHOLD = 0.8f

@@ -106,6 +106,19 @@ object Sizes {
     val zoneBarHeight = 8.dp
     val zoneLabelWidth = 88.dp
 
+    /**
+     * The live zone scale under the workout's ring: the widest it grows, a zone's bar and the lit one's, the
+     * marker of the heart rate along it, and the room its row of numbers takes at arm's length.
+     */
+    val zoneScale = 300.dp
+    val zoneScaleBar = 6.dp
+    val zoneScaleBarLit = 12.dp
+    val zoneScaleMarkerWidth = 4.dp
+    val zoneScaleMarkerHeight = 20.dp
+    val zoneScaleMarkerEdge = 2.dp
+    val zoneScaleReadout = 40.dp
+    val zoneScaleBounds = 16.dp
+
     /** The small glyph inside a chip, such as the streak's flame. */
     val chipIcon = 16.dp
 

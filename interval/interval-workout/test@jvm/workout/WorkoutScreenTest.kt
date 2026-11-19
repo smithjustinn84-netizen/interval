@@ -25,6 +25,7 @@ import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
@@ -76,6 +77,25 @@ class WorkoutScreenTest {
                 onCountSnatches = { calls += "snatches ${it?.perSet} at ${it?.bellKg}" },
             ),
         )
+    }
+
+    @Test
+    fun `a heart rate sensor in use says the zone by name and the last reading once it is lost`() = runUiTest {
+        var state by mutableStateOf(firstWork.toUiState(running = true))
+        setThemedContent { Screen(state) }
+        onNodeWithText("No signal").assertDoesNotExist()
+
+        state = state.copy(liveHeartRate = LiveHeartRateState.Connecting)
+        onNodeWithText("Sensor…").assertExists()
+
+        state = state.copy(liveHeartRate = LiveHeartRateState.Reading(bpm = 158), maxHeartRate = 190)
+        onNodeWithContentDescription("158 beats per minute, Zone 4, Threshold").assertExists()
+        state = state.copy(liveHeartRate = LiveHeartRateState.Reading(bpm = 120))
+        onNodeWithContentDescription("120 beats per minute, Zone 2, Aerobic").assertExists()
+
+        state = state.copy(liveHeartRate = LiveHeartRateState.Disconnected)
+        onNodeWithText("No signal").assertExists()
+        onNodeWithText("Last 120 bpm").assertExists()
     }
 
     @Test

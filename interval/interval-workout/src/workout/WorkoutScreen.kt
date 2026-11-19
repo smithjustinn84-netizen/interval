@@ -53,13 +53,15 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.Sharer
+import dev.justinsmith.interval.platform.inUse
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.HeartBeatBadge
+import dev.justinsmith.interval.ui.HeartZoneScale
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -361,15 +363,17 @@ private fun PortraitWorkout(
                 .tapToPause(state, actions.onTogglePause),
             contentAlignment = Alignment.Center,
         ) {
-            val diameter = minOf(maxWidth, maxHeight - IntervalSizes.tapHint, Sizes.ringMax)
+            // With a sensor in use the ring gives up the room its zone scale takes, on a window too short for both.
+            val under = IntervalSizes.tapHint
+            val room = if (state.liveHeartRate.inUse) under + IntervalSizes.zoneScaleRoom else under
+            val diameter = minOf(maxWidth, maxHeight - room, Sizes.ringMax)
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, progress, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))
-                HeartBeatBadge(
+                HeartZoneScale(
                     state.liveHeartRate,
-                    Modifier.padding(top = Spacing.space8),
+                    Modifier.padding(top = Spacing.space12),
                     maxBpm = state.maxHeartRate,
-                    onWorkoutGround = true,
                 )
             }
         }
@@ -535,6 +539,15 @@ private val previewWork = WorkoutEngine.tick(
 @Composable
 private fun WorkoutScreenPreview() {
     WorkoutPreview(previewWork.toUiState(running = true), previewWork.progress)
+}
+
+@PreviewFormFactors
+@Composable
+private fun WorkoutScreenHeartRatePreview() {
+    WorkoutPreview(
+        previewWork.toUiState(running = true).copy(liveHeartRate = LiveHeartRateState.Reading(bpm = 158)),
+        previewWork.progress,
+    )
 }
 
 /** How far into its first work interval the preview shows the workout, so its ring is part filled. */
