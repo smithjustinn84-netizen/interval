@@ -54,11 +54,9 @@ sealed interface Rung {
 fun nextStep(
     block: Block,
     done: List<SetLog?>,
-    bells: List<Double>,
-    bands: List<Band>,
-    pairs: Set<Double> = emptySet(),
+    gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
-): Block? = (rungOf(block, done, bells, bands, pairs, rest) as? Rung.Step)?.to
+): Block? = (rungOf(block, done, gear, rest) as? Rung.Step)?.to
 
 /**
  * Where [block] stands, [done] being the set logged for each of its planned sets: null unless every one was done at
@@ -66,7 +64,7 @@ fun nextStep(
  * the plan's, or with none named the lightest done.
  *
  * Bells come in fixed sizes, so a bell lift climbs at the same bell first, by how big the jump to the next one of
- * [bells] is ([SMALL_JUMP], [BIG_JUMP]), each rung tried in turn:
+ * [gear]'s bells is ([SMALL_JUMP], [BIG_JUMP]), each rung tried in turn:
  * 1. a block building within a [Block.ranged] range, a rep more until its top;
  * 2. denser, before a medium or big jump: rest [RestClock.STEP_SECONDS] shorter (its own, else [rest]), down to 30
  *    seconds for a thrown lift and 60 for any other; an EMOM a rep more a minute instead, up to 10 or 5;
@@ -78,30 +76,28 @@ fun nextStep(
  *
  * Every other load keeps its own steps: a hold five seconds more; within a range a rep more, then the next load at
  * its bottom; else the next load: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more added to bodyweight, the next of
- * [bands] heavier, else a rep more; an EMOM a minute more; a ladder another, then a rung.
+ * [gear]'s bands heavier, else a rep more; an EMOM a minute more; a ladder another, then a rung.
  *
- * A block done with two bells steps only to a weight of [pairs], the bells owned two of, once the user has said
- * which those are; with none said, to any of [bells]. It moves to two bells at the same bell only once [pairs] has it.
+ * A block done with two bells steps only to a weight of [Gear.pairs], the bells owned two of, once the user has said
+ * which those are; with none said, to any of [Gear.bells]. It moves to two bells at the same bell only once
+ * [Gear.pairs] has it.
  */
-@Suppress("detekt.LongParameterList") // What a step up goes by.
 fun rungOf(
     block: Block,
     done: List<SetLog?>,
-    bells: List<Double>,
-    bands: List<Band>,
-    pairs: Set<Double> = emptySet(),
+    gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
 ): Rung? {
     if (block.kind == BlockKind.Density) return null
     val sets = doneInFull(block, done) ?: return null
-    val at = loadDone(block, sets, bands) ?: return null
+    val at = loadDone(block, sets, gear.bands) ?: return null
     return when {
         block.exercise.measure == Measure.Time ->
             block.copy(reps = (block.reps + HOLD_STEP).coerceAtMost(HOLD_MAX)).takeIf { it != block }?.let(Rung::Step)
 
-        at is Load.Bell -> bellRung(block, at, bells, pairs, rest)
+        at is Load.Bell -> bellRung(block, at, gear.bells, gear.pairs, rest)
 
-        else -> otherRung(block, at, bands)
+        else -> otherRung(block, at, gear.bands)
     }
 }
 
@@ -191,13 +187,10 @@ private fun bandUsed(block: Block, sets: List<SetLog>, bands: List<Band>): Band?
  * at its plan, as [nextStep] has it, from the block as it was done. A block swapped part way earns none. A density
  * block steps by [densityStep], its rounds today after those in the sessions [before] this one.
  */
-@Suppress("detekt.LongParameterList") // What a step up goes by.
 fun progressions(
     day: ProgramDay,
     logged: List<SetLog>,
-    bells: List<Double>,
-    bands: List<Band>,
-    pairs: Set<Double> = emptySet(),
+    gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
     before: List<LiftSession> = emptyList(),
 ): List<BlockChange> =
@@ -210,7 +203,7 @@ fun progressions(
             val next = if (block.kind == BlockKind.Density) {
                 densityStep(block, done.done, densityRounds(block, day.program, before) + done.rounds)
             } else {
-                nextStep(block, done.done, bells, bands, pairs, rest)
+                nextStep(block, done.done, gear, rest)
             }
             next?.let { BlockChange(done.index, block, it) }
         }
@@ -220,20 +213,17 @@ fun progressions(
  * Of [day]'s blocks, done as [logged], those with every step at their load used and nothing heavier to go to:
  * [Rung.ToppedOut]. They have earned more than [rungOf] can offer.
  */
-@Suppress("detekt.LongParameterList") // What a step up goes by.
 fun toppedOut(
     day: ProgramDay,
     logged: List<SetLog>,
-    bells: List<Double>,
-    bands: List<Band>,
-    pairs: Set<Double> = emptySet(),
+    gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
 ): List<Block> =
     if (day.program.test) {
         emptyList()
     } else {
         blocksDone(day, logged).mapNotNull { (_, block, done) ->
-            block.takeIf { rungOf(block, done, bells, bands, pairs, rest) == Rung.ToppedOut }
+            block.takeIf { rungOf(block, done, gear, rest) == Rung.ToppedOut }
         }
     }
 

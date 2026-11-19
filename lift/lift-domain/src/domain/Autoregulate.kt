@@ -35,15 +35,14 @@ fun restFor(block: Block, base: Int): Int {
 
 /**
  * [block] made easier for a taxed day: a grind a bell lighter than [at], the load it would be done at (of
- * [pairs], the bells owned two of, with two bells once any are known; else of [bells]), or the bar a step lighter,
- * no lighter than the user's [bar]; a ballistic EMOM or density block a quarter of its minutes shorter (a cap no
- * shorter than [DensityClock.MIN_MINUTES]), ballistic sets a round fewer; every block but those on the clock resting
- * by its tempo ([restFor]) against the [baseRest] set on Lift.
+ * [Gear.pairs], the bells owned two of, with two bells once any are known; else of [Gear.bells]), or the bar a step
+ * lighter, no lighter than the user's [Gear.bar]; a ballistic EMOM or density block a quarter of its minutes shorter
+ * (a cap no shorter than [DensityClock.MIN_MINUTES]), ballistic sets a round fewer; every block but those on the
+ * clock resting by its tempo ([restFor]) against the [baseRest] set on Lift.
  */
-@Suppress("detekt.LongParameterList") // What an easier block goes by.
-fun Block.easier(at: Load?, bells: List<Double>, pairs: Set<Double>, bar: Double?, baseRest: Int): Block {
+fun Block.easier(at: Load?, gear: Gear, baseRest: Int): Block {
     val tempo = exercise.movement.tempo
-    val lighter = if (tempo == Tempo.Grind) at?.lighter(double, bells, pairs, bar) else null
+    val lighter = if (tempo == Tempo.Grind) at?.lighter(double, gear) else null
     val rounds = when {
         tempo != Tempo.Ballistic -> rounds
         kind == BlockKind.Emom -> ceil(rounds * EASIER_EMOM_SHARE).toInt().coerceAtLeast(1)
@@ -59,14 +58,14 @@ fun Block.easier(at: Load?, bells: List<Double>, pairs: Set<Double>, bar: Double
     )
 }
 
-private fun Load.lighter(double: Boolean, bells: List<Double>, pairs: Set<Double>, bar: Double?): Load? =
+private fun Load.lighter(double: Boolean, gear: Gear): Load? =
     when (this) {
         is Load.Bell -> {
-            val owned = if (double && pairs.isNotEmpty()) bells.filter { it in pairs } else bells
+            val owned = if (double && gear.pairs.isNotEmpty()) gear.bells.filter { it in gear.pairs } else gear.bells
             owned.filter { it < kg }.maxOrNull()?.let { copy(kg = it) }
         }
 
-        is Load.Bar -> stepped(-1, bells, bar, emptyList())
+        is Load.Bar -> stepped(-1, gear.bells, gear.bar, emptyList())
 
         is Load.Bodyweight, is Load.Banded, Load.Mat -> null
     }
@@ -75,12 +74,9 @@ private fun Load.lighter(double: Boolean, bells: List<Double>, pairs: Set<Double
  * This plan made easier for a taxed day, each block by [Block.easier], [loadOf] saying the load each would be done
  * at (its own, else the last used for its lift), resting against [baseRest]; null when nothing in it would change.
  */
-@Suppress("detekt.LongParameterList") // What an easier day goes by.
 fun SessionPlan.easier(
     loadOf: (Block) -> Load?,
-    bells: List<Double>,
-    pairs: Set<Double>,
-    bar: Double?,
+    gear: Gear,
     baseRest: Int,
 ): SessionPlan? {
     val easier = copy(
@@ -88,7 +84,7 @@ fun SessionPlan.easier(
             if (entry.skipped) {
                 entry
             } else {
-                entry.copy(block = entry.block.easier(loadOf(entry.block), bells, pairs, bar, baseRest))
+                entry.copy(block = entry.block.easier(loadOf(entry.block), gear, baseRest))
             }
         },
     )

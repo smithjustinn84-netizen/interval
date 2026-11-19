@@ -117,8 +117,8 @@ class TestsTest {
             listOf(attempt(snatch, 1, 10, 10), attempt(snatch, 30, 10, 10, 10), attempt(snatch, 60, 10, 10, 10, 10))
         val today = attempt(snatch, 90, 10, 10, 10, 10, 10)
         val day = snatch.program.day(1)
-        assertEquals(emptyList(), progressions(day, today.sets, listOf(24.0), emptyList(), before = sessions))
-        assertEquals(emptyList(), toppedOut(day, today.sets, listOf(24.0), emptyList()))
+        assertEquals(emptyList(), progressions(day, today.sets, Gear(listOf(24.0)), before = sessions))
+        assertEquals(emptyList(), toppedOut(day, today.sets, Gear(listOf(24.0))))
     }
 
     @Test

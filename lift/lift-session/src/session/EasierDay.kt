@@ -13,6 +13,7 @@ import dev.justinsmith.lift.data.efforts
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
+import dev.justinsmith.lift.domain.Gear
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
@@ -172,9 +173,7 @@ class EasierDay(
                 block.plannedSets().firstOrNull()
                     ?.let { plannedLoad(it, history, bar, bands, DEFAULT_BELL_KG, Band.Default, owned) }
             },
-            bells = gearStore.bells.value.ifEmpty { standardBells },
-            pairs = gearStore.pairs.value,
-            bar = bar,
+            gear = Gear(gearStore.bells.value.ifEmpty { standardBells }, gearStore.pairs.value, bar),
             baseRest = setStore.restSeconds.value,
         )
     }

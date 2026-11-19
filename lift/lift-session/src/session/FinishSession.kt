@@ -16,6 +16,7 @@ import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.ABC_MINUTES
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
+import dev.justinsmith.lift.domain.Gear
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SNATCH_TEST_MINUTES
@@ -88,9 +89,11 @@ class FinishSession(
         val samples = heartRateSamples?.takeIf { it.isNotEmpty() }
         val done = session.finishedWith(clock.nowMillis(), title, heartRate, samples)
         // Taken now: once the session is saved, the program day moves on to the next.
-        val bells = gearStore.bells.value.ifEmpty { standardBells }
-        val bands = offeredBands(gearStore.bands.value)
-        val pairs = gearStore.pairs.value
+        val gear = Gear(
+            bells = gearStore.bells.value.ifEmpty { standardBells },
+            pairs = gearStore.pairs.value,
+            bands = offeredBands(gearStore.bands.value),
+        )
         val day = programDay(programStore.programDay.value, programStore.programs, session)
         // A test's attempt is said as its own line, against the last at its load: it changes no program, and the
         // marks its clock would set are that line's to say.
@@ -101,9 +104,7 @@ class FinishSession(
                 progressions(
                     it,
                     session.sets,
-                    bells,
-                    bands,
-                    pairs,
+                    gear,
                     setStore.restSeconds.value,
                     before = sessionStore.sessions.value,
                 ),
@@ -132,7 +133,7 @@ class FinishSession(
                 it.key == programStore.following.value?.key && day.number >= it.totalDays
             },
             toppedOut = day?.let {
-                toppedOut(it, session.sets, bells, bands, pairs, setStore.restSeconds.value)
+                toppedOut(it, session.sets, gear, setStore.restSeconds.value)
             }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
             // The day's hands: today's other sessions and 15:15's snatches with this one's.

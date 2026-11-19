@@ -169,7 +169,8 @@ interval/            the interval timer
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
                      sessions, a set's `Load` (sealed: bell, bar, bodyweight, band, mat) and a block's (null
-                     for none named; `Load.named`, `Block.withLoad`), records,
+                     for none named; `Load.named`, `Block.withLoad`), what the lifter owns as one value (`Gear`: bells,
+                     pairs, bar, bands, which a step up and an easier day go by), records,
                      `EmomClock`/`HoldClock`/`RestClock`/`DensityClock` (a density block, `BlockKind.Density`:
                      as many rounds as fit a cap, planned as its first round, which takes every round logged within
                      the cap, `plannedRounds`, and steps a rep a round by `densityStep`; the ABC's two protocols, `AbcProtocol`), suggestions, the ladder past fixed bell sizes (`Progression.kt`'s `rungOf`: reps, denser, more, a harder lift
