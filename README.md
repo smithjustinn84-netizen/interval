@@ -6,8 +6,8 @@
 Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JVM)**, powered by the **Kotlin Toolchain** (Amper-based).
 
 [![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-Android_|_iOS_|_Desktop-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/docs/multiplatform.html)
-[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.12.1-4285F4?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-[![Build System](https://img.shields.io/badge/Build_System-Kotlin_Toolchain_0.13_(Amper)-0095D5)](https://kotlin-toolchain.org/0.13/)
+[![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.13.0--rc01-4285F4?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
+[![Build System](https://img.shields.io/badge/Build_System-Kotlin_Toolchain_0.14_(Amper)-0095D5)](https://kotlin-toolchain.org/0.13/)
 [![Zero Gradle](https://img.shields.io/badge/Gradle-Zero_Daemon_|_Zero_Scripts-brightgreen)](#prerequisites)
 [![Privacy First](https://img.shields.io/badge/Privacy-100%25_Offline_|_No_Tracking-success)](#-privacy-first--offline)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -45,15 +45,15 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ### ⏱️ The Timer, the workout & Lift's session
 
-| The Timer | Describe it in words | The running workout | The summary |
+| The Timer | A time cap | The running workout | The summary |
 |:---:|:---:|:---:|:---:|
-| <img src="docs/screenshots/07_timer.png" width="200" alt="Timer"/> | <img src="docs/screenshots/08_describe.png" width="200" alt="Describe a workout"/> | <img src="docs/screenshots/09_workout.png" width="200" alt="Running workout"/> | <img src="docs/screenshots/10_summary.png" width="200" alt="Workout summary"/> |
-| *Work, rest, rounds, sets, warm-up and cool-down, with the total and a calorie estimate* | *Type "40/20 x8 rower, 5 min warm-up" and use what it reads* | *The phase, the clock, the round and what comes next* | *Time, rounds and calories, then "How was it?" and a note* |
+| <img src="docs/screenshots/07_timer.png" width="200" alt="Timer"/> | <img src="docs/screenshots/08_cap.png" width="200" alt="A time cap running"/> | <img src="docs/screenshots/09_workout.png" width="200" alt="Running workout"/> | <img src="docs/screenshots/10_summary.png" width="200" alt="Workout summary"/> |
+| *Work, rest, rounds, sets, warm-up and cool-down, with the total and a calorie estimate* | *As many rounds as you can: tap Round done, with the pace of the round under way* | *The phase, the clock, the round and what comes next* | *Time, rounds and calories, then "How was it?" and a note* |
 
 | Lift: an EMOM running | Exercise library | An exercise shown by a figure | Tablet & desktop |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/11_lift_emom.png" width="200" alt="EMOM in a Lift session"/> | <img src="docs/screenshots/14_library.png" width="200" alt="Exercise library"/> | <img src="docs/screenshots/15_exercise.png" width="200" alt="Turkish get-up, shown by a figure"/> | <img src="docs/screenshots/16_tablet_today.png" width="320" alt="Today on a tablet"/> |
-| *The Armor Building Complex, a pair of bells every minute* | *102 lifts across kettlebell, barbell, bodyweight, band and mat* | *A rep animated beside its cues, step by step* | *A navigation rail and two columns on a wide window* |
+| *The Armor Building Complex, a pair of bells every minute* | *134 lifts across kettlebell, barbell, bodyweight, band and mat* | *A rep animated beside its cues, step by step* | *A navigation rail and two columns on a wide window* |
 
 ---
 
@@ -72,40 +72,42 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
   - **Multi-Block Sequences**: Chain multiple blocks back-to-back — each with its own work, rest, rounds, sets, and ladder, plus rest between blocks — built in the visual block editor or straight from the Timer.
   - **Time Caps**: As many rounds as you can in so many minutes, on the Timer or as any block of a sequence. Tap **Round done** as each round ends to see the rounds roll up, the pace of the round under way beside the average, and the best of the same workout; the summary and the Log keep every round's time.
 - **Warm-Up & Cool-Down**: Optional warm-up before rounds and cool-down stretch after, configured on the Timer, in presets, or in plain text.
-- **Natural Language Parsing**: Describe workouts in plain English (e.g., `"5 min warm-up, 40/20 x8 on rower, 3 min cool down"`, `"4 sets of 8 rounds 20/10, 1:00 between"`, `"ladder 20 to 60 by 10"`, `"15:15 mvo2"`, `"hangboard 7/3 x6"`).
-- **Built-in & Custom Presets**: built-in protocols (*Tabata*, *HIIT 30/30*, *Hangboard*, *Long efforts*, Kenneth Jay's *15:15 MVO2* kettlebell snatch protocol, and a *20-minute cap*) alongside your own single-block presets and sequences, listed shortest first. A kettlebell preset can call every work after the first "Switch hands. Work" (15:15 MVO2 does).
+- **Built-in & Custom Presets**: built-in protocols (*Tabata*, *HIIT 30/30*, *Hangboard*, *Long efforts*, *Swings on the minute*, *Mat rounds*, Kenneth Jay's *15:15 MVO2* kettlebell snatch protocol, and a *20-minute cap*) alongside your own single-block presets and sequences, listed shortest first. A kettlebell preset can call every work after the first "Switch hands. Work" (15:15 MVO2 does), and asks on its summary about how many snatches a set, which Lift counts with its own sets.
 - **Audio & Haptic Cues**: High-contrast audible beeps, spoken cues via system text-to-speech (including set numbers, block transitions, and rest between sets/blocks), halfway warnings, and vibration pulses.
-- **Android 16 Live Updates & Background Persistence**: Running workouts and rest timers display as interactive status-bar chips with real-time countdowns and per-round, per-set, or per-block progress bars on the lock screen. Android uses a foreground service with lock-screen Pause/End controls; iOS schedules local notifications ahead per phase transition.
+- **Live Updates, Live Activities & Background Persistence**: On Android 16, running workouts and Lift's timers show as status-bar chips with real-time countdowns and per-round, per-set, or per-block progress on the lock screen, from a foreground service with Pause/End controls. On iOS they are Live Activities on the Lock Screen and in the Dynamic Island, with Pause/Resume and End, and local notifications scheduled ahead per phase change.
+- **Live Heart Rate (Android)**: With a Polar sensor paired, a workout shows the heart rate as a scale of the five zones under the ring, lighting the zone you are in and calling each change with a tone.
 - **Shortcuts & Home-Screen Widget**: Long-press app shortcuts on **Android and iOS** to quickly "Start a workout" or "Start a Lift session" without interrupting an active workout, plus an **Android Glance home-screen widget** showing your weekly goal ring, streak, and one-tap start actions (with Android 15+ widget picker previews).
 
 ### 🏋️ Strength & Kettlebell Training (`Lift`)
-- **32 Built-in Programs & Custom Editor**: 32 programs across 6 training families (Beginner, Classic, Dan John including *Armor Building Formula*, *Easy Strength*, and *One-stop shop*, Grappling including *20 minutes beside BJJ*, Mixed, and Barbell), with an interactive block and rep-range editor. Two bells step up only to a weight you own two of.
+- **27 Built-in Programs & Custom Editor**: 27 programs across 6 training families (Beginner, Classic, Dan John including *Armor Building Formula*, *Easy Strength*, and *One-stop shop*, Grappling including *20 minutes beside BJJ* and *One bell beside BJJ*, Mixed, and Barbell), with an interactive block and rep-range editor. Two bells step up only to a weight you own two of. A **density block** is as many rounds of one lift as fit a time cap, and a free session can take a day of any program.
 - **Session Duration Estimates**: Displays estimated workout times (`"about 20 min"`, `"about 12–15 min"`) across Today, program cards, and day sheets — calculated from sets, reps, movement pace, EMOM minutes, and your configured rest between sets.
 - **Make It Yours**: Clone any built-in program into a customizable copy (`(yours)`) to modify rep ranges, timed holds, resistance bands, double bells, and schedules while keeping your current day and progression.
-- **Rep Progression & Balance Preview**: Programs build volume within a rep range before stepping up to the next bell or band; "Very hard" or "All out" exertion ratings hold step-ups back until approved. Program sheets preview weekly muscle balance and highlight untargeted groups.
-- **100+ Exercise Library & Loaded Carries**: 105 built-in movements across kettlebells (including 18/22/26/30 kg competition bells, half snatch, push press, and timed farmer's, suitcase, rack, and bottoms-up carries), barbell, bodyweight, bands, and mat Pilates, every one shown by an animated figure doing a rep beside its form cues, with best-per-session history charts, lifetime totals, best pace, and custom exercise creation.
+- **Rep Progression & Balance Preview**: Programs build volume within a rep range, then denser, then a harder lift at the same bell, before stepping up to the next bell or band; "Very hard" or "All out" exertion ratings hold step-ups back until approved. Program sheets preview weekly muscle balance and highlight untargeted groups.
+- **130+ Exercise Library & Loaded Carries**: 134 built-in movements across kettlebells (including 18/22/26/30 kg competition bells, half snatch, push press, and timed farmer's, suitcase, rack, and bottoms-up carries), barbell, bodyweight, bands, and mat Pilates, every one shown by an animated figure doing a rep beside its form cues, with a line of each session's best (weight × reps) over the latest 24, a dashed rule at each move to another bell, lifetime totals, best pace, and custom exercise creation.
 - **Session Tracking & Muscle Balance**: Log sets, loads (single/double bells, barbell plates, bodyweight + load, bands), reps, EMOM timers, hold clocks, and automatic rest intervals, with a 4-week balance card across 7 muscle groups separating primary and assisting volume.
 - **Screen-Off Timers, Survivability & PRs**: Android counts rests, EMOMs, and timed holds on the lock screen with Live Update chips, wake locks, and beeps; iOS posts local notifications when locked. Active sessions, timers, and drafts survive background process death, with automatic PR detection (including heaviest and longest carry records).
 
-- **Coaching, Worked Out From What You Log**: Lift weighs your grip (each set by its reps and how hard the lift is on the hands, BJJ days included) and warns when the week runs well past the weeks before. After a very hard session, BJJ on a heavy grip week, or an overreached grip, a program day offers an easier version before its first set. Before a big jump in bell it tightens the rest first (density), and challenges sit under the program: 10,000 swings, the snatch test, the Armor Building Complex's best twenty minutes, and a get-up at your body weight. Nothing extra is stored.
+- **Coaching, Worked Out From What You Log**: Lift weighs your grip (each set by its reps and how hard the lift is on the hands, BJJ days included) and warns when the week runs well past the weeks before. After a very hard session, BJJ on a heavy grip week, or an overreached grip, a program day offers an easier version before its first set. Before a big jump in bell it tightens the rest first (density), and challenges sit under the program: 10,000 swings, the snatch test, the Armor Building Complex's best twenty minutes, and a get-up at your body weight. **Tests** (the snatch test, the complex, the press, push-ups, pull-ups and the plank) are attempts done on purpose, charted against the last at the same bell. Nothing extra is stored.
 
 ### 🧘 Guided Mobility Flows
-- **5 Follow-Along Flows**: Two pre-training warm-ups (*Hips and shoulders* 8 min, *Wrists and fingers* 5 min) and three post-training or off-day flows (*Spine and hamstrings* 10 min, *Core on the mat* 11 min, *Full reset* 25 min).
-- **Move-by-Move Execution**: Preview every move's duration and cue on its sheet, then follow along on the workout screen with Hold/Move prompts, 10-second transitions between moves, 5-second side switches, spoken move and side announcements, and Live Update notifications — leaving your Timer settings untouched.
+- **9 Follow-Along Flows**: Four before training (*Hips and shoulders* 8 min, *Wrists and fingers* 5 min, *Core for falls* 6 min, *Before rolling* 9 min) and five after or on a day off (*Daily five* 5 min, *Spine and hamstrings* 10 min, *Core on the mat* 11 min, *After rolling* 12 min, and *Full reset*).
+- **Move-by-Move Execution**: Preview every move's duration and cue on its sheet, then follow along on the workout screen with Hold/Move prompts, a move that is one of Lift's exercises shown by its animated figure, 10-second transitions between moves, 5-second side switches, spoken move and side announcements, and Live Update notifications — leaving your Timer settings untouched.
 - **Build Your Own**: Make flows from the library's mat moves and floor holds, or moves typed in, each timed in five-second steps, one side at a time or not. Any shipped flow can be copied with "Make it yours".
 - **Smart Today Pairing & Stretching Sync**: Automatically leads Today with a pre-class flow on sport days (*Wrists and fingers* before climbing, *Before rolling* before BJJ, *Hips and shoulders* before running), offers time-matched flows in "Or pick by time", tracks mobility count in weekly summaries, and writes sessions to Apple Health and Health Connect as stretching.
 
 ### 📅 The Log, Sport Days & Health Sync
 - **Sport Days & Off-App Training**: Plan classes and days away from the app (BJJ, Climbing, Running, or any custom sport) weekly or on specific dates. One-tap **"Log it"** from Today or the Log (including past days, with Undo) counts toward your weekly goal, streak, and widget, while unlogged class days are never penalized as missed workouts.
+- **A Class on a Heart-Rate Sensor (Android 12+)**: Pair a Polar Verity Sense in Settings, tap **Record class** on a class day and leave the phone in the bag; **Sync class** afterwards logs the day and opens the class: its heart rate drawn with each round shaded, average and peak, and a row a round with how far the heart rate fell in the minute after.
+- **Log After the Fact & Move a Plan**: "Log a workout" on any day's sheet logs a preset, a flow, a sport day or the program's next day done as planned, with Undo. A missed plan has **Move** and today's has **Not today**, to a free day of the week ahead; the day it left reads "Moved to Saturday", not Missed.
 - **One Training Log (`Log`)**: Each kind of workout (strength, conditioning, mobility, sport days) done this week against its plan, what is coming up as a schedule, a month calendar of done, planned and missed days, all-time totals, weekly goals, and streaks.
 - **Post-Workout Reflection ("How was it?")**: Log perceived exertion (Easy, Steady, Hard, Very hard, All out) and a note upon completing any workout or Lift session; reflected in history, share sheets, exports, Apple Health, and Health Connect.
-- **Routines & Reminders**: Schedule recurring interval workouts, Lift program days, and sport days by weekday with reboot-resilient, self-extending daily reminders.
+- **Routines & Reminders**: Schedule recurring interval workouts, Lift program days, and sport days by weekday, or in words (`"tabata mon wed fri"`, `"8 × 20/10 then 5 × 1:00/0:30 mon"`), with reboot-resilient, self-extending daily reminders.
 - **Health Platform Sync (Apple Health & Health Connect)**: Dynamic calorie estimates based on activity, duration, and body weight. Syncs completed workouts, mobility flows, and Lift sessions (with intervals/sets, pauses, calories, and effort notes) to Apple Health (iOS) and Health Connect (Android), and reads smartwatch average/peak heart rate and 30-day scale weight on opt-in.
 
 ### 🔒 Privacy-First & Offline
 - **Zero Tracking**: No accounts, no sign-ups, no ads, and zero analytics or telemetry.
 - **Local SQLite Storage**: Encapsulated Room multiplatform databases running locally on device storage with atomic transactions and foreign-key integrity.
-- **Full Data Ownership & Portability**: Export your entire workout history, sport days, presets, sequences, routines, settings, Lift sessions, programs, exercises, and gear to versioned JSON (schema 10), and import files from schemas 1–10 safely with duplicate prevention and domain range validation.
+- **Full Data Ownership & Portability**: Export your entire workout history, sport days, presets, sequences, routines, settings, Lift sessions, programs, exercises, gear, your own flows, and recorded classes to versioned JSON (schema 15), and import files from schemas 1–15 safely with duplicate prevention and domain range validation.
 - **Android Backup Support**: Native integration with Android system backup and device-to-device migration.
 - **Accessibility**: Semantic headings, full TalkBack and VoiceOver navigation, and reduced-motion mode.
 
@@ -131,12 +133,12 @@ interval/
 │
 ├── interval/            # Conditioning, mobility, Today & history
 │   ├── interval-domain/       # Timer engine, multi-block courses, mobility flows, sport days, calories, parsers
-│   ├── interval-data/         # Room database (AppDatabase v15), DataStore settings, per-store repositories
+│   ├── interval-data/         # Room database (AppDatabase v20), DataStore settings, per-store repositories
 │   ├── interval-platform-api/ # What features ask of the platform: cue player, workout off screen, reminders
-│   ├── interval-platform/     # Audio/speech cues, Android Foreground Service, iOS notifications
+│   ├── interval-platform/     # Audio/speech cues, Android Foreground Service, iOS notifications, the Polar sensor
 │   ├── interval-ui/           # Shared workout widgets, Timeline, PhaseColors, animated Splash
 │   ├── interval-testing/      # FakeStorage, RecordingCuePlayer, fake DAOs, in-memory stores
-│   ├── interval-timer/        # Precision Timer page and natural language describe sheet
+│   ├── interval-timer/        # Precision Timer page, time caps and sequences
 │   ├── interval-workout/      # Live workout & flow screen, circular countdown readout, summaries
 │   ├── interval-presets/      # Train's Conditioning pillar: presets, sequence block editor, custom cards
 │   ├── interval-mobility/     # Train's Mobility pillar: the flows, their sheets, and the editor of your own
@@ -146,7 +148,7 @@ interval/
 ├── lift/                # Lift, the strength side (code in dev.justinsmith.lift)
 │   ├── lift-domain/     # Exercises, programs, estimates, starter program, clocks, PRs, grip, readiness & challenges
 │   ├── lift-api/        # The ports between sides (LiftActivity, IntervalActivity)
-│   ├── lift-data/       # Room database (LiftDatabase v17), per-store repositories
+│   ├── lift-data/       # Room database (LiftDatabase v18), per-store repositories
 │   ├── lift-platform/   # Beeper, TimerService keep-alive, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, BalanceBars, cues mapping
 │   ├── lift-testing/    # FakeLiftStorage, RecordingBeeper, LiftTestClock, fake DAOs
