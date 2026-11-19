@@ -24,7 +24,7 @@ class WorkoutRecorder(
     private val presetStore: PresetStore,
     private val flowStore: FlowStore,
     private val settingsStore: SettingsStore,
-    private val bells: LiftActivity,
+    private val lift: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val health: HealthStore,
@@ -96,7 +96,7 @@ class WorkoutRecorder(
     private fun weekWith(): WeekStanding {
         val today = timestamps.dayNumber(clock.nowMillis())
         val days = historyStore.history.value.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
-            bells.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            lift.sessions.value.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
             historyStore.sportDays.value.map { it.epochDay } +
             today
         return weekStanding(days, today, settingsStore.appSettings.value.weeklyGoal)

@@ -115,7 +115,7 @@ class PlanViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
     private val settingsStore: SettingsStore,
-    private val bells: LiftActivity,
+    private val lift: LiftActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -128,8 +128,8 @@ class PlanViewModel(
         combine(
             historyStore.history,
             historyStore.sportDays,
-            bells.sessions,
-            bells.programDay,
+            lift.sessions,
+            lift.programDay,
             clock.days(timestamps, dayCheckMillis),
         ) { history, sports, sessions, programDay, _ ->
             Done(history, sessions.asLiftWorkouts(), sports) to programDay

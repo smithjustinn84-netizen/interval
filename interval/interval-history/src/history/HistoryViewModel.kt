@@ -101,7 +101,7 @@ class HistoryViewModel(
     private val flowStore: FlowStore,
     private val planStore: PlanStore,
     private val settingsStore: SettingsStore,
-    private val bells: LiftActivity,
+    private val lift: LiftActivity,
     private val liftLogging: LiftLogging,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
@@ -115,7 +115,7 @@ class HistoryViewModel(
 
     // Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing here: only a session finished,
     // the program's day or whether one is under way at all count.
-    private val lifting = bells.lifting()
+    private val lifting = lift.lifting()
 
     private val built = combine(
         combine(
@@ -169,7 +169,7 @@ class HistoryViewModel(
 
     /** Starts the next day of [program], or a free session with none, for the Lifting page about to open. */
     fun startLift(program: ProgramKey?) {
-        bells.startSession(program)
+        lift.startSession(program)
     }
 
     /** Takes the plan off, handing it back for Undo ([restorePlanned]); null when it was gone already. */
