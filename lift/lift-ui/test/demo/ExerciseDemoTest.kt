@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.ui.demo
 
+import androidx.compose.ui.graphics.Color
 import dev.justinsmith.lift.domain.BuiltInExercise
 import kotlin.math.abs
 import kotlin.test.Test
@@ -251,6 +252,27 @@ class ExerciseDemoTest {
         assertEquals(listOf(1, 2, 0), listOf(0.1f, 0.5f, 0.9f).map { TwoHandSwingDemo.phaseAt(it).cue })
         assertEquals(listOf(0, 1, 2, 0), listOf(0.02f, 0.4f, 0.8f, 0.99f).map { GobletSquatDemo.phaseAt(it).cue })
         demos.forEach { demo -> assertEquals(demo.phases.last(), demo.phaseAt(1f)) }
+    }
+
+    @Test
+    fun `the beat colour glides across a phase change and settles on the new beat`() {
+        val colors = FigureColors(
+            body = Color.White,
+            farLeg = Color.Gray,
+            floor = Color.DarkGray,
+            shadow = Color.Black,
+            set = Color.Yellow,
+            drive = Color.Red,
+            ease = Color.Green,
+        )
+        // TwoHandSwing switches from Drive (Red) to Ease (Green) at 0.26f.
+        val boundary = TwoHandSwingDemo.phases.first().until
+        val blended = colors.at(TwoHandSwingDemo, boundary + 0.02f)
+        assertTrue(blended != Color.Red && blended != Color.Green, "Expected blend, got $blended")
+        assertTrue(blended.red > 0.1f && blended.green > 0.1f, "Expected mix of red and green, got $blended")
+        assertEquals(Color.Green, colors.at(TwoHandSwingDemo, boundary + 0.1f))
+        val goblet = assertNotNull(BuiltInExercise.GobletSquat.demo)
+        assertEquals(Color.Yellow, colors.at(goblet, -0.5f))
     }
 }
 

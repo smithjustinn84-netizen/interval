@@ -15,6 +15,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -43,16 +45,39 @@ data class FigureColors(
         DemoBeat.Ease -> ease
     }
 
+    /**
+     * The bell's colour at [progress] through [demo], gliding smoothly across phase boundaries rather than
+     * snapping on a single frame.
+     */
+    internal fun at(demo: ExerciseDemo, progress: Float): Color {
+        val current = demo.phaseAt(progress).beat
+        if (progress < 0f) return of(current)
+        val blend = (BEAT_BLEND_SECONDS / demo.secondsPerRep).coerceAtMost(MAX_BEAT_BLEND)
+        val phases = demo.phases
+        val index = phases.indexOfFirst { progress < it.until || it === phases.last() }
+        val start = if (index == 0) 0f else phases[index - 1].until
+        val elapsed = progress - start
+        if (elapsed >= blend) return of(current)
+        val previous = if (index == 0) {
+            if (demo.setUp != null) DemoBeat.Set else phases.last().beat
+        } else {
+            phases[index - 1].beat
+        }
+        if (previous == current) return of(current)
+        return lerp(of(previous), of(current), (elapsed / blend).coerceIn(0f, 1f))
+    }
+
     companion object {
         /** The theme's: the bell in Get ready's, Work's and Rest's marks, so a demo speaks the workout's colours. */
         @Composable
         fun theme(): FigureColors {
             val palette = IntervalTheme.palette
+            val dark = palette.text.luminance() > MID_LUMINANCE
             return FigureColors(
                 body = palette.text,
                 farLeg = palette.textDim,
                 floor = palette.line,
-                shadow = palette.line,
+                shadow = Color.Black.copy(alpha = if (dark) DARK_SHADOW_ALPHA else LIGHT_SHADOW_ALPHA),
                 set = palette.prepMark,
                 drive = palette.workMark,
                 ease = palette.restMark,
@@ -66,11 +91,12 @@ data class FigureColors(
         @Composable
         fun workout(): FigureColors {
             val colors = IntervalTheme.workout
+            val dark = colors.onGround.luminance() > MID_LUMINANCE
             return FigureColors(
                 body = colors.onGround,
                 farLeg = colors.onGroundDim,
                 floor = colors.control,
-                shadow = colors.control,
+                shadow = Color.Black.copy(alpha = if (dark) DARK_SHADOW_ALPHA else LIGHT_SHADOW_ALPHA),
                 set = colors.prep,
                 drive = colors.work,
                 ease = colors.rest,
@@ -165,7 +191,7 @@ fun ExerciseFigure(
             onDrawBehind {
                 val t = progress()
                 pen.trailCount = demo.trailInto(t, pen.trail)
-                drawFigure(demo, demo.figureAt(t), pen, colors.of(demo.phaseAt(t).beat), colors)
+                drawFigure(demo, demo.figureAt(t), pen, colors.at(demo, t), colors)
             }
         },
     )
@@ -177,3 +203,12 @@ fun ExerciseFigure(
  */
 fun Modifier.showingPlayer(player: DemoPlayer): Modifier =
     onVisibilityChanged(minFractionVisible = 0f) { player.inView = it }
+
+/** Duration over which the bell's colour glides from the previous beat to the current one. */
+private const val BEAT_BLEND_SECONDS = 0.12f
+private const val MAX_BEAT_BLEND = 0.04f
+
+/** Luminance split and ground-shadow opacity tuned for dark and light surfaces. */
+private const val MID_LUMINANCE = 0.5f
+private const val DARK_SHADOW_ALPHA = 0.55f
+private const val LIGHT_SHADOW_ALPHA = 0.22f
