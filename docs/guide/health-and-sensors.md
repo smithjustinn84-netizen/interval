@@ -30,7 +30,8 @@ last reading.
 
 ## A class on a sensor (Android 12+)
 
-Record a whole class on a **Polar Verity Sense** with the phone in your bag:
+Record a whole class on a **Polar Verity Sense** or a **Polar H10** chest strap with the phone in your bag. One
+is paired at a time, and either shows your heart rate live in a workout too:
 
 1. **Pair** it in Settings, under *Heart-rate sensor*. The app asks for leave to reach nearby devices; it never
    asks for your location.
@@ -39,9 +40,10 @@ Record a whole class on a **Polar Verity Sense** with the phone in your bag:
    round shaded, the average and peak, and a row a round:
    *Round 3 · 5:02 · 162 avg · 178 peak · down 24 in 60 s*.
 
-The rounds are found from the heart rate and how much your arm moved. The class's row in the Log opens it again.
+The rounds are found from the heart rate and how much your arm moved. An H10 records the heart rate alone, so
+its rounds go by the heart rate. The class's row in the Log opens it again.
 Deleting the recording leaves the day logged.
 
 !!! note
-    Tried on a real Verity Sense for pairing, recording and syncing, not yet through a whole class. iOS and
+    Tried on a real Verity Sense for pairing, recording and syncing, not yet through a whole class; not yet tried on an H10. iOS and
     desktop don't offer a sensor yet.

@@ -606,12 +606,13 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
 - **A class on a heart-rate sensor**: `ClassSensor` (`interval-platform-api`) is the port: `status` (Unavailable,
   Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync`, each reaching the sensor for as long
   as it takes and letting it go. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
-  through Polar's coroutine SDK: offline recording of the heart rate and the accelerometer on the sensor's own
-  memory; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
+  or H10, one paired at a time and told apart by its name, through Polar's coroutine SDK: the Verity's offline
+  recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart
+  rate a second alone, so its rounds go by the heart rate, started when Record is tapped; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
   Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
   location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
-  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class (docs/backlog.md). A sync hands over
+  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and not yet run on an H10 (docs/backlog.md). A sync hands over
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,

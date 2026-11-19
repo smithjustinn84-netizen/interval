@@ -36,6 +36,11 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   tune `detectRounds`
   (`interval-domain`, `timer/Rounds.kt`) on what real classes look like, a recording or two kept as a fixture
   for `RoundsTest`. *Brings it in:* the sensor in hand.
+- **The H10 on a real chest.** `PolarClassSensor` takes an H10 too (2026-11-19): live heart rate, and a class on
+  its exercise recording, the heart rate a second with no movement. Untried on a strap: pairing by its name,
+  `FEATURE_POLAR_H10_EXERCISE_RECORDING` coming ready, the recording surviving the phone out of reach, the
+  exercise's interval as `fetchExercise` reports it, and rounds found by the heart rate alone on a real class.
+  *Brings it in:* an H10 in hand.
 - **Round tags and trends.** A partner's level, how the round went and the position it stuck in, a tap or two a
   round on the class's page, then the rounds over weeks by tag. Needs the rounds stored once tagged (today they
   are found afresh from the samples at each read, so a retuned detector would move the tags' rounds).

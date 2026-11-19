@@ -125,7 +125,7 @@
     <!-- The heart-rate sensor a class is recorded on: only where the platform can reach one. -->
     <string name="settings_sensor">Heart-rate sensor</string>
     <string name="settings_sensor_pair">Pair a sensor</string>
-    <string name="settings_sensor_pair_hint">A Polar Verity Sense, switched on and close by, to record a class</string>
+    <string name="settings_sensor_pair_hint">A Polar Verity Sense or H10, switched on (an H10 worn) and close by</string>
     <string name="settings_sensor_looking">Looking for it…</string>
     <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day. Tap to forget it</string>
     <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>

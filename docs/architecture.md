@@ -456,7 +456,8 @@ flowchart TD
     taxed day, `EasierDay.taxed`) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
     `IntervalActivity.voice`).
 - **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the armband a class is recorded on. Android's
-  `PolarClassSensor` (`interval-platform`) drives a Polar Verity Sense's offline recording through Polar's SDK;
+  `PolarClassSensor` (`interval-platform`) drives a Polar Verity Sense's offline recording, or an H10's exercise recording (the heart rate alone), through
+  Polar's SDK;
   iOS and desktop bind `NoClassSensor`. A sync yields a `ClassRecording` of five-second `ClassSample`s, kept by
   `HistoryStore.keepClass` (`sport_class`) and read back as a `SportClass` whose rounds `detectRounds`
   (`interval-domain`) finds afresh each time. Today records and syncs (`ClassSensorCard`), Settings pairs, and

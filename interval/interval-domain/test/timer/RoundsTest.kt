@@ -147,6 +147,17 @@ class RoundsTest {
         assertEquals(0f, samples[3].movement)
     }
 
+    @Test
+    fun `a chest strap with the heart rate a second alone finds its rounds`() {
+        // What an H10 hands over: a reading a second and no accelerometer.
+        val bpm = sparring(rounds = 3, restSeconds = 90, restTo = 115).flatMap { List(SAMPLE_SECONDS) { _ -> it.bpm } }
+
+        val samples = classSamples(bpm, bpmSeconds = 1)
+
+        assertTrue(samples.all { it.movement == 0f })
+        assertEquals(3, detectRounds(samples).size)
+    }
+
     private companion object {
         const val STILL = 0.05f
     }

@@ -15,6 +15,8 @@ import com.polar.sdk.api.PolarBleApi.PolarDeviceDataType
 import com.polar.sdk.api.PolarBleApiCallback
 import com.polar.sdk.api.PolarBleApiDefaultImpl
 import com.polar.sdk.api.PolarBleDisconnectInfo
+import com.polar.sdk.api.PolarH10OfflineExerciseApi.RecordingInterval
+import com.polar.sdk.api.PolarH10OfflineExerciseApi.SampleType
 import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarHealthThermometerData
 import com.polar.sdk.api.model.PolarOfflineRecordingData
@@ -44,22 +46,26 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 /**
- * A Polar Verity Sense, through Polar's SDK: the armband records the heart rate and its accelerometer on its own
- * memory (the SDK's offline recording), so the phone needs it in reach only to start and to sync. Which sensor is
+ * A Polar Verity Sense or H10, through Polar's SDK, one paired at a time, which streams the heart rate live and
+ * records a class on its own memory, so the phone needs it in reach only to start and to sync. The armband records
+ * the heart rate and its accelerometer (the SDK's offline recording); the chest strap its one exercise, the heart
+ * rate a second alone (the SDK's H10 exercise recording), so its class's rounds go by the heart rate. Which sensor is
  * the app's, and since when it records, is kept in preferences of its own, since the app may well be closed for
  * the class. Android 12 brought Bluetooth permissions that ask nothing of location; below it this is unavailable
  * rather than ask for that.
  *
  * Run against a Verity Sense on 2026-11-18 (SDK 8.6.0): pairing, a recording of the heart rate, a reading a
  * second, and the accelerometer, and its sync. A stop before the start answers "already in state", passed over.
+ * The H10's path has not yet been run on a real strap.
  */
 internal class PolarClassSensor(private val context: Context, private val clock: WallClock) :
     ClassSensor,
     LiveHeartRate {
     private val log = Logger.withTag("PolarClassSensor")
     private val preferences = context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE)
-    private val ready = MutableStateFlow(emptySet<String>())
-    private val hrReady = MutableStateFlow(emptySet<String>())
+
+    /** What each sensor connected has said it is ready for. */
+    private val ready = MutableStateFlow(emptyMap<String, Set<PolarBleSdkFeature>>())
     private val streamScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private var streamJob: Job? = null
 
@@ -72,18 +78,17 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             setOf(
                 PolarBleSdkFeature.FEATURE_HR,
                 PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING,
+                PolarBleSdkFeature.FEATURE_POLAR_H10_EXERCISE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP,
             ),
         ).also { api ->
             api.setApiCallback(object : PolarBleApiCallback() {
                 override fun bleSdkFeatureReady(identifier: String, feature: PolarBleSdkFeature) {
-                    if (feature == PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING) ready.update { it + identifier }
-                    if (feature == PolarBleSdkFeature.FEATURE_HR) hrReady.update { it + identifier }
+                    ready.update { it + (identifier to (it[identifier].orEmpty() + feature)) }
                 }
 
                 override fun deviceDisconnected(polarDeviceInfo: PolarDeviceInfo, info: PolarBleDisconnectInfo) {
                     ready.update { it - polarDeviceInfo.deviceId }
-                    hrReady.update { it - polarDeviceInfo.deviceId }
                     if (streamJob?.isActive == true) {
                         _reading.value = LiveHeartRateState.Disconnected
                     }
@@ -131,7 +136,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     override suspend fun pair(): SensorFailure? = attempt {
         val found = withTimeoutOrNull(SCAN_MILLIS) {
-            api.searchForDevice().first { SENSOR_NAME in it.name }
+            api.searchForDevice().first { found -> SENSOR_NAMES.any { it in found.name } }
         } ?: return@attempt SensorFailure.NotFound
         preferences.edit {
             putString(KEY_ID, found.deviceId)
@@ -169,7 +174,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
                     },
                 ) {
                     api.connectToDevice(id)
-                    val readyHr = withTimeoutOrNull(CONNECT_MILLIS) { hrReady.first { id in it } }
+                    val readyHr = withTimeoutOrNull(CONNECT_MILLIS) { ready.first { it.has(id, FEATURE_HR) } }
                     if (readyHr == null) {
                         _reading.value = LiveHeartRateState.Disconnected
                         return@launch
@@ -198,7 +203,19 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     override suspend fun startRecording(): SensorFailure? = attempt {
         val id = preferences.getString(KEY_ID, null) ?: return@attempt SensorFailure.NotFound
-        connected(id) {
+        if (model == Model.H10) {
+            // The H10 holds one exercise: whatever is on it goes, and it records the heart rate a second. Status
+            // Recording offers Sync rather than Record, so nothing on the strap now is a class still to sync.
+            return@attempt connected(id, H10_EXERCISE) {
+                quietly { api.stopRecording(id) }
+                api.listExercises(id).toList().forEach { entry -> quietly { api.removeExercise(id, entry) } }
+                api.startRecording(id, EXERCISE_ID, RecordingInterval.INTERVAL_1S, SampleType.HR)
+                preferences.edit { putLong(KEY_SINCE, clock.nowMillis()) }
+                _status.value = stored()
+                null
+            }
+        }
+        connected(id, OFFLINE_RECORDING) {
             api.setLocalTime(id, LocalDateTime.now())
             // A recording left running would refuse the new one.
             TYPES.forEach { type -> quietly { api.stopOfflineRecording(id, type) } }
@@ -208,14 +225,17 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             preferences.edit { putLong(KEY_SINCE, clock.nowMillis()) }
             _status.value = stored()
             null
-        } ?: SensorFailure.NotFound
+        }
     }
 
     override suspend fun sync(): SensorSync {
         var synced: ClassRecording? = null
         val failure = attempt {
             val id = preferences.getString(KEY_ID, null) ?: return@attempt SensorFailure.NotFound
-            connected(id) {
+            if (model == Model.H10) {
+                return@attempt syncExercise(id) { synced = it }
+            }
+            connected(id, OFFLINE_RECORDING) {
                 TYPES.forEach { type -> quietly { api.stopOfflineRecording(id, type) } }
                 val stoppedAt = clock.nowMillis()
                 val entries = api.listOfflineRecordings(id).toList()
@@ -236,6 +256,28 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         return synced?.takeIf { failure == null }?.let(SensorSync::Synced)
             ?: SensorSync.Failed(failure ?: SensorFailure.Failed)
     }
+
+    /**
+     * Stops the H10's exercise and brings it over, handing it to [synced] before it is cleared. Its start is when
+     * Record was tapped, which is when the strap began: its clock is never set, so the entry's date says nothing.
+     */
+    private suspend fun syncExercise(id: String, synced: (ClassRecording) -> Unit): SensorFailure? =
+        connected(id, H10_EXERCISE) {
+            quietly { api.stopRecording(id) }
+            val since = preferences.getLong(KEY_SINCE, 0L)
+            val entries = api.listExercises(id).toList()
+            val entry = entries.maxByOrNull { it.date } ?: return@connected SensorFailure.NothingRecorded
+            val data = api.fetchExercise(id, entry)
+            val startedAt = if (since > 0L) since else entry.date.toInstant(ZoneOffset.UTC).toEpochMilli()
+            synced(ClassRecording(startedAt, classSamples(data.hrSamples, bpmSeconds = data.recordingInterval)))
+            entries.forEach { quietly { api.removeExercise(id, it) } }
+            preferences.edit { remove(KEY_SINCE) }
+            _status.value = stored()
+            null
+        }
+
+    private val model: Model
+        get() = if (preferences.getString(KEY_NAME, null).orEmpty().contains(H10_NAME)) Model.H10 else Model.VeritySense
 
     private fun recording(
         heart: PolarOfflineRecordingData.HrOfflineRecording,
@@ -270,11 +312,15 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         )
     }
 
-    /** [work] with the sensor connected and ready to record, or that it never came; let go after, either way. */
-    private suspend fun connected(id: String, work: suspend () -> SensorFailure?): SensorFailure? {
+    /** [work] with the sensor connected and ready for [feature], or that it never came; let go after, either way. */
+    private suspend fun connected(
+        id: String,
+        feature: PolarBleSdkFeature,
+        work: suspend () -> SensorFailure?,
+    ): SensorFailure? {
         api.connectToDevice(id)
         try {
-            withTimeoutOrNull(CONNECT_MILLIS) { ready.first { id in it } } ?: return SensorFailure.NotFound
+            withTimeoutOrNull(CONNECT_MILLIS) { ready.first { it.has(id, feature) } } ?: return SensorFailure.NotFound
             return work()
         } finally {
             quietly { api.disconnectFromDevice(id) }
@@ -303,8 +349,8 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             },
         ) { work() }
 
-    private fun List<PolarOfflineRecordingEntry>.latest(type: PolarDeviceDataType) =
-        filter { it.type == type }.maxByOrNull { it.date }
+    /** The two sensors, which record a class each its own way. */
+    private enum class Model { VeritySense, H10 }
 
     companion object {
         /** What the app must be allowed before any of this works; asked by core's `rememberBluetoothAccess`. */
@@ -321,8 +367,15 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         private const val KEY_NAME = "name"
         private const val KEY_SINCE = "since"
 
-        /** A Verity Sense advertises as "Polar Sense" and its id. */
-        private const val SENSOR_NAME = "Sense"
+        /** A Verity Sense advertises as "Polar Sense" and its id, an H10 as "Polar H10" and its. */
+        private const val H10_NAME = "H10"
+        private val SENSOR_NAMES = listOf("Sense", H10_NAME)
+        private val FEATURE_HR = PolarBleSdkFeature.FEATURE_HR
+        private val OFFLINE_RECORDING = PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING
+        private val H10_EXERCISE = PolarBleSdkFeature.FEATURE_POLAR_H10_EXERCISE_RECORDING
+
+        /** The name the H10 keeps its one exercise under. */
+        private const val EXERCISE_ID = "interval-class"
         private const val SCAN_MILLIS = 20_000L
         private const val CONNECT_MILLIS = 30_000L
         private const val MILLIS_PER_SECOND = 1000L
@@ -330,3 +383,9 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         private const val MILLI_G = 1000f
     }
 }
+
+private fun Map<String, Set<PolarBleSdkFeature>>.has(id: String, feature: PolarBleSdkFeature) =
+    this[id]?.contains(feature) == true
+
+private fun List<PolarOfflineRecordingEntry>.latest(type: PolarDeviceDataType) =
+    filter { it.type == type }.maxByOrNull { it.date }
