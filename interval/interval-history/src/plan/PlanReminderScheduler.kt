@@ -14,9 +14,9 @@ import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
+import dev.justinsmith.interval.storage.catchingFailures
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.LiftSession
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -98,14 +98,9 @@ class PlanReminderScheduler(
     private fun today(): Long = timestamps.dayNumber(clock.nowMillis())
 
     // A reminder that can't be set must not end the app, nor stop the reminders after it.
-    @Suppress("detekt.TooGenericExceptionCaught")
     private suspend fun scheduleLogged(set: List<PlanReminder>) {
-        try {
+        catchingFailures(onFailure = { e -> log.e(e) { "Couldn't schedule the plan's reminders" } }) {
             reminders.schedule(set)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            log.e(e) { "Couldn't schedule the plan's reminders" }
         }
     }
 }

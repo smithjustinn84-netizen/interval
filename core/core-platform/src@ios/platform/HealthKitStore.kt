@@ -3,8 +3,8 @@
 package dev.justinsmith.interval.platform
 
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.storage.catchingFailures
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
@@ -171,15 +171,13 @@ class HealthKitStore(
     private fun readable(): Boolean = !defaults.boolForKey(TURNED_OFF)
 
     /** Runs [block] against HealthKit, which may refuse: a failure is logged as [what]. */
-    @Suppress("detekt.TooGenericExceptionCaught")
-    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? = try {
-        block()
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log.w(e) { what }
-        null
-    }
+    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? =
+        catchingFailures(
+            onFailure = { e ->
+                log.w(e) { what }
+                null
+            },
+        ) { block() }
 
     private companion object {
         /** The user defaults key of the app's own switch: true once turned off in Settings. */

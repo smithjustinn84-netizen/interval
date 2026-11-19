@@ -26,7 +26,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.GroupLabel
@@ -40,7 +39,6 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.SheetColumns
-import dev.justinsmith.interval.ui.SheetList
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.sheetIsSideways
 import dev.justinsmith.lift.domain.CustomExercise
@@ -51,9 +49,6 @@ import dev.justinsmith.lift.domain.HoldState
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.library.ExerciseDetailContent
 import dev.justinsmith.lift.library.ExerciseDetailUiState
-import dev.justinsmith.lift.library.ExerciseEditorForm
-import dev.justinsmith.lift.library.rememberExerciseEditor
-import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.emom_fewer_minutes
@@ -161,17 +156,7 @@ internal fun LogSetSheet(
         }
         // What the set is first, then how much of it and the action, side by side on a phone on its side.
         val what: @Composable ColumnScope.() -> Unit = {
-            if (!draft.held && !editing) {
-                SegmentedPicker(
-                    LogKind.entries,
-                    kind,
-                    label = {
-                        stringResource(if (it == LogKind.Set) Res.string.log_kind_set else Res.string.log_kind_emom)
-                    },
-                    onSelect = { kindName = it.name },
-                    modifier = Modifier.padding(bottom = Spacing.space8),
-                )
-            }
+            if (!draft.held && !editing) LogKindPicker(kind, onSelect = { kindName = it.name })
             // A set logged keeps its exercise: what it was done with is what it was.
             ExerciseCard(
                 draft.exercise,
@@ -183,12 +168,7 @@ internal fun LogSetSheet(
             )
             DraftLoad(state, actions)
         }
-        val howMuch: @Composable ColumnScope.() -> Unit = {
-            MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions, timing = !editing)
-            if (kind == LogKind.Emom) EmomMinutes(draft, actions)
-            if (draft.exercise.sided(draft.doubled)) SidePicker(draft, first = kind == LogKind.Emom, actions)
-            SheetAction(kind, editing, actions, hide)
-        }
+        val howMuch: @Composable ColumnScope.() -> Unit = { HowMuch(state, kind, actions, hide) }
         SheetColumns(
             sideways,
             first = what,
@@ -196,46 +176,6 @@ internal fun LogSetSheet(
             modifier = Modifier.padding(vertical = Spacing.space8),
         )
     }
-}
-
-/**
- * What the Log sheet shows in place of the set, and the Next set card's sheet shows, while the exercise is
- * being chosen: the library, as the sheet's list, until one is picked ([onPick]) or Add starts a new one by its
- * name ([onAdd]), which [NewExercise] then shows. With [closeOnPick] a pick also hides the sheet.
- */
-@Composable
-internal fun exerciseChoiceList(
-    state: SessionUiState,
-    actions: SessionActions,
-    onPick: () -> Unit,
-    onAdd: (name: String) -> Unit,
-    closeOnPick: Boolean = false,
-): SheetList = rememberPickerList(
-    state.library,
-    actions.onFilters,
-    selected = state.draft.exercise,
-    onPick = { e ->
-        actions.onDraft { it.copy(exercise = e) }
-        onPick()
-    },
-    onAdd = { name ->
-        actions.onAddExercise()
-        onAdd(name)
-    },
-    closeOnPick = closeOnPick,
-)
-
-/** The form of the exercise [adding], by the name searched, until it is saved ([onSave]) and comes back picked. */
-@Composable
-internal fun NewExercise(adding: String, onSave: () -> Unit) {
-    val editor = rememberExerciseEditor(uid = null, name = adding)
-    val editorState by editor.state.collectAsStateWithLifecycle()
-    ExerciseEditorForm(
-        editorState,
-        onChange = editor::change,
-        onSave = { typed, cues -> if (editor.save(typed, cues)) onSave() },
-        modifier = Modifier.padding(vertical = Spacing.space8),
-    )
 }
 
 /**
@@ -279,6 +219,29 @@ private fun ExercisePage(detail: ExerciseDetailUiState, onBack: () -> Unit, acti
             Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
         )
     }
+}
+
+/** A set or an EMOM, while the sheet may still be either. */
+@Composable
+private fun LogKindPicker(kind: LogKind, onSelect: (LogKind) -> Unit, modifier: Modifier = Modifier) {
+    SegmentedPicker(
+        LogKind.entries,
+        kind,
+        label = { stringResource(if (it == LogKind.Set) Res.string.log_kind_set else Res.string.log_kind_emom) },
+        onSelect = onSelect,
+        modifier = modifier.padding(bottom = Spacing.space8),
+    )
+}
+
+/** How much of the set: its reps or time, an EMOM's minutes, the side of a one-sided lift; then the action. */
+@Composable
+private fun ColumnScope.HowMuch(state: SessionUiState, kind: LogKind, actions: SessionActions, hide: () -> Unit) {
+    val draft = state.draft
+    val editing = state.editing != null
+    MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions, timing = !editing)
+    if (kind == LogKind.Emom) EmomMinutes(draft, actions)
+    if (draft.exercise.sided(draft.doubled)) SidePicker(draft, first = kind == LogKind.Emom, actions)
+    SheetAction(kind, editing, actions, hide)
 }
 
 /** The side of a one-sided exercise: the set's, or an EMOM's [first]. */

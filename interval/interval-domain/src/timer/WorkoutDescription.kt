@@ -212,7 +212,9 @@ private class Reading(var text: String) {
             values[ConfigField.Rounds] = it.groupValues[1].toIntOrNull() ?: Int.MAX_VALUE
         }
         // Any other count ("3 sets of 10 reps") is no duration either.
-        while (take(ROUNDS.first()) != null) continue
+        do {
+            val count = take(ROUNDS.first())
+        } while (count != null)
         vagueRest = VAGUE_RESTS.firstOrNull { (regex, _) -> take(regex) != null }?.second
         readLabelled()
         readUnlabelled()

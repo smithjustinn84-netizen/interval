@@ -15,7 +15,7 @@ import kotlin.test.assertNull
  * written out here as the builds of the time left them, so the test keeps working as later versions come.
  */
 class AppMigrationTest {
-    private val file = File.createTempFile("interval-migration", ".db").also { it.delete() }
+    private val file = File.createTempFile("interval-migration", ".db").apply { delete() }
 
     @AfterTest
     fun cleanUp() {

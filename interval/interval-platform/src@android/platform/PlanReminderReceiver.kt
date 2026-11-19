@@ -10,7 +10,7 @@ import co.touchlab.kermit.Logger
 import dev.justinsmith.interval.platform.resources.Res
 import dev.justinsmith.interval.platform.resources.notification_channel_reminders
 import dev.justinsmith.interval.platform.resources.notification_channel_reminders_description
-import kotlinx.coroutines.CancellationException
+import dev.justinsmith.interval.storage.catchingFailures
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -84,11 +84,7 @@ class PlanReminderReceiver :
         val pending = goAsync()
         scope.launch {
             try {
-                work()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
-                log.w(e) { "Couldn't $what" }
+                catchingFailures(onFailure = { e -> log.w(e) { "Couldn't $what" } }) { work() }
             } finally {
                 pending.finish()
             }

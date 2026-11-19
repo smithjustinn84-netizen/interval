@@ -20,7 +20,7 @@ import kotlin.test.assertNull
  * written out here as its `schemas/` JSON has it, so the test keeps working as later versions come.
  */
 class LiftMigrationTest {
-    private val file = File.createTempFile("bells-migration", ".db").also { it.delete() }
+    private val file = File.createTempFile("bells-migration", ".db").apply { delete() }
 
     @AfterTest
     fun cleanUp() {

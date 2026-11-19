@@ -28,14 +28,9 @@ import androidx.compose.material3.adaptive.navigation3.rememberSupportingPaneSce
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableIntState
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +43,7 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.EntryProviderScope
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
+import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
@@ -108,6 +104,7 @@ import dev.justinsmith.interval.today.HomeRoute
 import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.NavigationArea
 import dev.justinsmith.interval.ui.NavigationAreaBar
 import dev.justinsmith.interval.ui.NavigationItems
 import dev.justinsmith.interval.ui.NoticeHost
@@ -116,7 +113,6 @@ import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.PillarPicker
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TRAIN_GROUP
-import dev.justinsmith.interval.ui.TrainPillars
 import dev.justinsmith.interval.ui.WatchForIdle
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
@@ -127,6 +123,7 @@ import dev.justinsmith.interval.ui.pagePopTransition
 import dev.justinsmith.interval.ui.pageTransition
 import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
+import dev.justinsmith.interval.ui.rememberTrainPillar
 import dev.justinsmith.interval.ui.tabGroup
 import dev.justinsmith.interval.ui.tabScenes
 import dev.justinsmith.interval.weeksetup.WeekSetupRoute
@@ -231,28 +228,13 @@ internal fun AppContent(
             ThemeMode.Dark -> true
         }
         IntervalTheme(darkTheme = dark) {
-            // Set up's turn is this open's, if it is a plain one: decided once, as storage stands on arrival, and
-            // marked taken whether or not it opens, so someone with the app already never meets it unasked.
-            val setupTurn = remember { isSetupTurn(offerSetup, shortcut != null, settings.setupOffered) }
-            // A new install is welcomed on the way to Set up, and has its first week on Today from here on.
-            val welcomed = remember { opensOnSetup(setupTurn, nothingYet(repository, lift)) }
-            val start = remember {
-                if (welcomed) arrayOf<NavKey>(TodayTab, Welcome) else arrayOf<NavKey>(TodayTab)
-            }
-            LaunchedEffect(setupTurn) {
-                if (setupTurn) {
-                    repository.settings.updateAppSettings {
-                        it.copy(setupOffered = true, firstWeek = it.firstWeek || welcomed)
-                    }
-                }
-            }
-            // A stack restored takes the place of [start]: the page left open is the one that comes back.
-            val backStack = rememberNavBackStack(navConfiguration, *start)
-            // Once, before anything reads it: a stack saved by a build that opened on the Timer, or had it as a tab.
-            remember(backStack) {
-                backStack.rootAtToday()
-                backStack.timerUnderTrain()
-            }
+            val backStack = rememberAppBackStack(
+                repository,
+                lift,
+                offerSetup = offerSetup,
+                shortcutOpen = shortcut != null,
+                setupOffered = settings.setupOffered,
+            )
             val clock = koinInject<WallClock>()
             val opened by rememberUpdatedState(onShortcutOpen)
             LaunchedEffect(shortcut) {
@@ -260,15 +242,7 @@ internal fun AppContent(
                 backStack.open(shortcut, clock, startLift = { lift.sessions.startSession() })
                 opened()
             }
-            // The workout lives as long as its page is on the back stack, which outlives the screen when Android
-            // destroys it in the background: once the page has gone, whichever way it left, so has the workout.
-            val workout = koinInject<ActiveWorkout>()
-            val workoutOnStack = backStack.any { it is Workout }
-            LaunchedEffect(workoutOnStack) { if (!workoutOnStack) workout.leave() }
-            // Lift's timers the same way: a session's page gone, however it went, takes its rest, EMOM or hold.
-            val timers = koinInject<ActiveTimers>()
-            val liftingOnStack = backStack.any { it is Lifting }
-            LaunchedEffect(liftingOnStack) { if (!liftingOnStack) timers.stopAll() }
+            EndWithTheirPages(backStack)
             val notices = rememberNotices()
             // A save that failed is gone: say so, wherever the app is, rather than let it pass unnoticed.
             val saveFailed = stringResource(Res.string.save_failed)
@@ -282,6 +256,58 @@ internal fun AppContent(
             }
         }
     }
+}
+
+/**
+ * The back stack the app opens on: Today, with the welcome over it when it is a new install's turn for Set up
+ * (decided once, as storage stands on arrival, and marked taken whether or not it opens, so someone with the app
+ * already never meets it unasked), or the stack restored, put right for what older builds saved.
+ */
+@Composable
+private fun rememberAppBackStack(
+    repository: IntervalRepository,
+    lift: LiftRepository,
+    offerSetup: Boolean,
+    shortcutOpen: Boolean,
+    setupOffered: Boolean,
+): NavBackStack<NavKey> {
+    // Set up's turn is this open's, if it is a plain one.
+    val setupTurn = remember { isSetupTurn(offerSetup, shortcutOpen, setupOffered) }
+    // A new install is welcomed on the way to Set up, and has its first week on Today from here on.
+    val welcomed = remember { opensOnSetup(setupTurn, nothingYet(repository, lift)) }
+    val start = remember {
+        if (welcomed) arrayOf<NavKey>(TodayTab, Welcome) else arrayOf<NavKey>(TodayTab)
+    }
+    LaunchedEffect(setupTurn) {
+        if (setupTurn) {
+            repository.settings.updateAppSettings {
+                it.copy(setupOffered = true, firstWeek = it.firstWeek || welcomed)
+            }
+        }
+    }
+    // A stack restored takes the place of [start]: the page left open is the one that comes back.
+    val backStack = rememberNavBackStack(navConfiguration, *start)
+    // Once, before anything reads it: a stack saved by a build that opened on the Timer, or had it as a tab.
+    remember(backStack) {
+        backStack.rootAtToday()
+        backStack.timerUnderTrain()
+    }
+    return backStack
+}
+
+/**
+ * The workout lives as long as its page is on the back stack, which outlives the screen when Android destroys it
+ * in the background: once the page has gone, whichever way it left, so has the workout. Lift's timers the same
+ * way: a session's page gone, however it went, takes its rest, EMOM or hold.
+ */
+@Composable
+private fun EndWithTheirPages(backStack: List<NavKey>) {
+    val workout = koinInject<ActiveWorkout>()
+    val workoutOnStack = backStack.any { it is Workout }
+    LaunchedEffect(workoutOnStack) { if (!workoutOnStack) workout.leave() }
+    val timers = koinInject<ActiveTimers>()
+    val liftingOnStack = backStack.any { it is Lifting }
+    LaunchedEffect(liftingOnStack) { if (!liftingOnStack) timers.stopAll() }
 }
 
 /**
@@ -325,11 +351,7 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                         // Passing this replaces NavDisplay's default list, so the saveable-state holder is
                         // repeated. The ViewModel store decorator follows it: it needs the holder above it.
                         // On Android the back preview's corners clip each entry's content, innermost.
-                        entryDecorators = listOfNotNull(
-                            rememberSaveableStateHolderNavEntryDecorator(),
-                            rememberViewModelStoreNavEntryDecorator(),
-                            if (materialBackPreview) backPreviewCorners() else null,
-                        ),
+                        entryDecorators = appEntryDecorators(),
                         sceneStrategies = panes.strategies,
                         sceneDecoratorStrategies = listOf(tabScenes),
                         // The Timer is in the scene both alone and beside Settings, so it moves between them
@@ -357,45 +379,30 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
                 ) {
                     NavigationItems(shown.tab, area.type, pillar, selectTab)
                 }
-                NoticeHost(
-                    notices,
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .then(
-                            if (currentTab != null) {
-                                Modifier.windowInsetsPadding(area.tabInsets())
-                            } else {
-                                Modifier.safeDrawingPadding()
-                            },
-                        )
-                        .padding(Spacing.space16),
-                )
+                AppNoticeHost(notices, area, onTab = currentTab != null, Modifier.align(Alignment.BottomCenter))
             }
         }
     }
 }
 
-/**
- * The pillar Train opens on from the bar: the one last shown, Strength before either was. It follows the tab over
- * Today however it got there (the picker, a shortcut, a restored stack), pages pushed over it or not.
- */
+/** Each entry's saved state and ViewModels; on Android, the back preview's corners clipping its content. */
 @Composable
-private fun rememberTrainPillar(backStack: List<NavKey>): Tab {
-    // Its place among the pillars, which every platform can save; a key can't be.
-    var last by rememberSaveable(saver = PillarSaver) { mutableIntStateOf(0) }
-    val shown = TrainPillars.indexOf(backStack.getOrNull(1))
-    SideEffect { if (shown >= 0) last = shown }
-    return TrainPillars.getOrElse(last) { TrainPillars.first() }
-}
-
-/**
- * Saves a pillar's place among [TrainPillars]. A build with two pillars saved a Boolean where this is, true for
- * Conditioning, which still reads as that pillar.
- */
-private val PillarSaver = Saver<MutableIntState, Any>(
-    save = { it.intValue },
-    restore = { saved -> mutableIntStateOf(if (saved is Boolean) saved.compareTo(false) else saved as? Int ?: 0) },
+private fun appEntryDecorators(): List<NavEntryDecorator<NavKey>> = listOfNotNull(
+    rememberSaveableStateHolderNavEntryDecorator(),
+    rememberViewModelStoreNavEntryDecorator(),
+    if (materialBackPreview) backPreviewCorners() else null,
 )
+
+/** A notice over the content's foot: above the bar or rail while a tab is on top ([onTab]), else the safe area. */
+@Composable
+private fun AppNoticeHost(notices: Notices, area: NavigationArea, onTab: Boolean, modifier: Modifier = Modifier) {
+    NoticeHost(
+        notices,
+        modifier
+            .then(if (onTab) Modifier.windowInsetsPadding(area.tabInsets()) else Modifier.safeDrawingPadding())
+            .padding(Spacing.space16),
+    )
+}
 
 /** The tab the navigation area names: the one on top, or the last one while the area leaves. */
 private class ShownTab(var tab: Tab)

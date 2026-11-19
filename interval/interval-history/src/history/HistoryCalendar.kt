@@ -73,7 +73,6 @@ import org.jetbrains.compose.resources.stringResource
  */
 @Composable
 internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
     val max = week.maxOfOrNull { it.seconds } ?: 0
     val sports = week.any { it.sport != null }
     Row(
@@ -101,27 +100,34 @@ internal fun WeekStrip(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Mod
                     ) {
                         DayBar(day, if (max > 0) day.seconds.toFloat() / max else 0f, index)
                     }
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            weekdayText(day.weekday, WeekdayForm.Initial),
-                            style = IntervalTheme.type.caption,
-                            color = if (day.today) palette.accent else palette.textDim,
-                        )
-                        if (sports) {
-                            // Empty on a day with no sport: the line keeps its height, and the bars their level.
-                            Text(
-                                day.sport?.let { sportShort(it) }.orEmpty(),
-                                style = IntervalTheme.type.caption,
-                                color = if (day.sportLogged) palette.text else palette.textDim,
-                                maxLines = 1,
-                                softWrap = false,
-                                // A name wider than its day's column runs into the gap beside it, not off its end.
-                                overflow = TextOverflow.Visible,
-                            )
-                        }
-                    }
+                    StripLabels(day, sports)
                 }
             }
+        }
+    }
+}
+
+/** A day's initial under its bar, and its sport's short name under that when the week has any ([sports]). */
+@Composable
+private fun StripLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            weekdayText(day.weekday, WeekdayForm.Initial),
+            style = IntervalTheme.type.caption,
+            color = if (day.today) palette.accent else palette.textDim,
+        )
+        if (sports) {
+            // Empty on a day with no sport: the line keeps its height, and the bars their level.
+            Text(
+                day.sport?.let { sportShort(it) }.orEmpty(),
+                style = IntervalTheme.type.caption,
+                color = if (day.sportLogged) palette.text else palette.textDim,
+                maxLines = 1,
+                softWrap = false,
+                // A name wider than its day's column runs into the gap beside it, not off its end.
+                overflow = TextOverflow.Visible,
+            )
         }
     }
 }

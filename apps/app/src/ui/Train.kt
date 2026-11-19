@@ -2,7 +2,15 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableIntState
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.navigation3.runtime.NavKey
 import dev.justinsmith.interval.nav.ConditioningTab
 import dev.justinsmith.interval.nav.MobilityTab
 import dev.justinsmith.interval.nav.Tab
@@ -44,3 +52,25 @@ internal fun PillarPicker(current: Tab, onSelect: (Tab) -> Unit, modifier: Modif
         modifier = modifier.padding(horizontal = Spacing.space16).padding(bottom = Spacing.space8),
     )
 }
+
+/**
+ * The pillar Train opens on from the bar: the one last shown, Strength before either was. It follows the tab over
+ * Today however it got there (the picker, a shortcut, a restored stack), pages pushed over it or not.
+ */
+@Composable
+internal fun rememberTrainPillar(backStack: List<NavKey>): Tab {
+    // Its place among the pillars, which every platform can save; a key can't be.
+    var last by rememberSaveable(saver = PillarSaver) { mutableIntStateOf(0) }
+    val shown = TrainPillars.indexOf(backStack.getOrNull(1))
+    SideEffect { if (shown >= 0) last = shown }
+    return TrainPillars.getOrElse(last) { TrainPillars.first() }
+}
+
+/**
+ * Saves a pillar's place among [TrainPillars]. A build with two pillars saved a Boolean where this is, true for
+ * Conditioning, which still reads as that pillar.
+ */
+private val PillarSaver = Saver<MutableIntState, Any>(
+    save = { it.intValue },
+    restore = { saved -> mutableIntStateOf(if (saved is Boolean) saved.compareTo(false) else saved as? Int ?: 0) },
+)

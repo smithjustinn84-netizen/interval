@@ -2,6 +2,16 @@
 # list what differs from https://github.com/detekt/detekt/blob/v2.0.0-alpha.6/detekt-core/src/main/resources/default-detekt-config.yml
 # Formatting is ktlint's job (`./kotlin check lint`); detekt's ktlint wrapper is deliberately not added.
 
+comments:
+  KDocReferencesNonPublicProperty:
+    # A link to a private property reads as an API the caller can reach; name it in words instead.
+    active: true
+
+potential-bugs:
+  UnconditionalJumpStatementInLoop:
+    # A loop that always breaks, returns or continues is a missing condition, not a loop.
+    active: true
+
 naming:
   FunctionNaming:
     # Composables are PascalCase functions by convention.
@@ -20,6 +30,11 @@ naming:
     active: false
 
 complexity:
+  CognitiveComplexMethod:
+    # How hard a function is to follow: nesting costs more than length. 25 is a first limit, set where only
+    # the knottiest functions were over it; tighten it as they come down.
+    active: true
+    allowedComplexity: 25
   CyclomaticComplexMethod:
     # A `when` that maps each enum value to one expression is a table, not branching logic.
     ignoreSimpleWhenEntries: true
@@ -52,6 +67,12 @@ style:
   MagicNumber:
     # As FunctionNaming: cover Amper's test@<platform>/ dirs too.
     excludes: ['**/test/**', '**/test@*/**']
+  AlsoCouldBeApply:
+    # An `also` that only calls on `it` is configuring the receiver: say so with `apply`.
+    active: true
+  RangeUntilInsteadOfRangeTo:
+    # `a..<b` says "up to b, not including" without the `- 1` that's easy to get wrong.
+    active: true
   ReturnCount:
     # Early-return guards (`if (state.isDone) return state`) read better than nesting.
     excludeGuardClauses: true

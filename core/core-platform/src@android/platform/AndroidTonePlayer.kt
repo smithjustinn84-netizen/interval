@@ -45,7 +45,7 @@ class AndroidTonePlayer : TonePlayer {
             .setBufferSizeInBytes(pcm.size * ToneSynth.BYTES_PER_SAMPLE)
             .setPerformanceMode(AudioTrack.PERFORMANCE_MODE_LOW_LATENCY)
             .build()
-            .also { it.write(pcm, 0, pcm.size) }
+            .apply { write(pcm, 0, pcm.size) }
     }
 
     override fun release() {

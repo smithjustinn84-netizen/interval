@@ -84,22 +84,34 @@ class SerialWriter(scope: CoroutineScope, private val log: Logger) {
         consumer.join()
     }
 
-    @Suppress("detekt.TooGenericExceptionCaught")
     private suspend fun runLogged(write: suspend () -> Unit) {
-        try {
-            write()
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            log.e(e) { "Couldn't save" }
-            failures.tryEmit(StorageError(e))
-        }
+        catchingFailures(
+            onFailure = { e ->
+                log.e(e) { "Couldn't save" }
+                failures.tryEmit(StorageError(e))
+            },
+        ) { write() }
     }
 
     private companion object {
         const val ERRORS_KEPT = 8
     }
 }
+
+/**
+ * Runs [block] and hands back what it returns; a failure other than cancellation goes to [onFailure], whose answer
+ * is handed back instead, and is never thrown. For work whose failure must not end the app or stop what comes
+ * after it: a cue, a write, a reminder, a sensor. Cancellation still goes up, so a scope cancelled stops here.
+ */
+@Suppress("detekt.TooGenericExceptionCaught") // Whatever the platform or a library throws, by design.
+inline fun <T> catchingFailures(onFailure: (Exception) -> T, block: () -> T): T =
+    try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        onFailure(e)
+    }
 
 /**
  * A read that shows [fallback] at once when it fails, so the app still starts, then is tried again a few

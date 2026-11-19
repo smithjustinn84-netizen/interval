@@ -118,7 +118,6 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
  */
 @Composable
 internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
     val sports = week.any { it.sport != null }
     val doneNow = week.filter { it.state == DayState.Done }.map { it.epochDay }
     var doneDrawn by rememberSaveable(stateSaver = doneDaysSaver) { mutableStateOf(doneNow.toSet()) }
@@ -142,29 +141,36 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
                         drawOn = day.state == DayState.Done && day.epochDay !in doneDrawn,
                         delayMillis = Motion.STAGGER_MILLIS * index,
                     )
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            weekdayText(day.weekday, WeekdayForm.Short),
-                            style = IntervalTheme.type.caption,
-                            color = if (day.today) palette.accent else palette.textDim,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Visible,
-                        )
-                        if (sports) {
-                            Text(
-                                day.sport?.let { sportShort(it) }.orEmpty(),
-                                style = IntervalTheme.type.caption,
-                                color = if (day.sportLogged) palette.text else palette.textDim,
-                                maxLines = 1,
-                                softWrap = false,
-                                // A name wider than its day's column runs into the gap beside it, not off its end.
-                                overflow = TextOverflow.Visible,
-                            )
-                        }
-                    }
+                    DayLabels(day, sports)
                 }
             }
+        }
+    }
+}
+
+/** A day's short name under its block, and its sport's under that when the week has any ([sports]). */
+@Composable
+private fun DayLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            weekdayText(day.weekday, WeekdayForm.Short),
+            style = IntervalTheme.type.caption,
+            color = if (day.today) palette.accent else palette.textDim,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Visible,
+        )
+        if (sports) {
+            Text(
+                day.sport?.let { sportShort(it) }.orEmpty(),
+                style = IntervalTheme.type.caption,
+                color = if (day.sportLogged) palette.text else palette.textDim,
+                maxLines = 1,
+                softWrap = false,
+                // A name wider than its day's column runs into the gap beside it, not off its end.
+                overflow = TextOverflow.Visible,
+            )
         }
     }
 }

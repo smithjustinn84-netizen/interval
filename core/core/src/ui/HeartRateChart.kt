@@ -18,6 +18,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
@@ -122,53 +123,63 @@ fun ZoneBreakdown(
     val totals = zoneSeconds(samples, maxBpm, sampleSeconds)
     val totalSeconds = totals.values.sum()
     if (totalSeconds == 0) return
-    val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
-    val track = if (onWorkoutGround) IntervalTheme.workout.upcoming else IntervalTheme.palette.surfaceVariant
-    val primaryText = if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text
-    val dimText = if (onWorkoutGround) IntervalTheme.workout.onGroundDim else IntervalTheme.palette.textDim
-
+    val ink = zoneInk(onWorkoutGround)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         for (zone in HeartRateZone.entries.asReversed()) {
             val seconds = totals[zone] ?: 0
-            val share = seconds.toFloat() / totalSeconds
-            val color = zones.of(zone)
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                Box(Modifier.size(Sizes.legendSwatch).clip(Corners.full).background(color))
-                Text(
-                    "${stringResource(Res.string.heart_rate_zone_short, zone.number)} ${heartRateZoneName(zone)}",
-                    style = IntervalTheme.type.caption,
-                    color = if (seconds > 0) primaryText else dimText,
-                    modifier = Modifier.width(Sizes.zoneLabelWidth),
-                    maxLines = 1,
-                )
+            ZoneRow(zone, seconds, share = seconds.toFloat() / totalSeconds, ink = ink)
+        }
+    }
+}
+
+/** What a zone's row is drawn in: on the workout's dark ground, or the app's. */
+private class ZoneInk(val zones: HeartZoneColors, val track: Color, val text: Color, val dim: Color)
+
+@Composable
+private fun zoneInk(onWorkoutGround: Boolean): ZoneInk = if (onWorkoutGround) {
+    val workout = IntervalTheme.workout
+    ZoneInk(workout.heartZones, workout.upcoming, workout.onGround, workout.onGroundDim)
+} else {
+    val palette = IntervalTheme.palette
+    ZoneInk(palette.heartZones, palette.surfaceVariant, palette.text, palette.textDim)
+}
+
+/** A zone's swatch and name, its share of the time as a bar, and the time. */
+@Composable
+private fun ZoneRow(zone: HeartRateZone, seconds: Int, share: Float, ink: ZoneInk, modifier: Modifier = Modifier) {
+    val color = ink.zones.of(zone)
+    val textColor = if (seconds > 0) ink.text else ink.dim
+    Row(
+        modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Box(Modifier.size(Sizes.legendSwatch).clip(Corners.full).background(color))
+        Text(
+            "${stringResource(Res.string.heart_rate_zone_short, zone.number)} ${heartRateZoneName(zone)}",
+            style = IntervalTheme.type.caption,
+            color = textColor,
+            modifier = Modifier.width(Sizes.zoneLabelWidth),
+            maxLines = 1,
+        )
+        Box(
+            Modifier
+                .weight(1f)
+                .height(Sizes.zoneBarHeight)
+                .clip(Corners.full)
+                .background(ink.track),
+        ) {
+            if (share > 0f) {
                 Box(
                     Modifier
-                        .weight(1f)
+                        .fillMaxWidth(share.coerceIn(MIN_VISIBLE_SHARE, 1f))
                         .height(Sizes.zoneBarHeight)
                         .clip(Corners.full)
-                        .background(track),
-                ) {
-                    if (share > 0f) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth(share.coerceIn(MIN_VISIBLE_SHARE, 1f))
-                                .height(Sizes.zoneBarHeight)
-                                .clip(Corners.full)
-                                .background(color),
-                        )
-                    }
-                }
-                Text(
-                    formatClock(seconds),
-                    style = IntervalTheme.type.caption,
-                    color = if (seconds > 0) primaryText else dimText,
+                        .background(color),
                 )
             }
         }
+        Text(formatClock(seconds), style = IntervalTheme.type.caption, color = textColor)
     }
 }
 

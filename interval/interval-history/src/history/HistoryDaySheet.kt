@@ -71,62 +71,85 @@ internal fun DaySheetContent(
     onLogWorkout: () -> Unit,
     programDay: ProgramDay? = null,
 ) {
-    val palette = IntervalTheme.palette
     val title = dayHeading(sheet.day)
     IntervalSheet(title = title, onDismiss = { actions.onOpenDay(null) }) { hide ->
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-            Column {
-                Text(
-                    title,
-                    style = IntervalTheme.type.title,
-                    color = palette.text,
-                    modifier = Modifier.semantics { heading() },
-                )
-                if (sheet.plans.isNotEmpty()) {
-                    Text(
-                        pluralStringResource(Res.plurals.history_day_planned, sheet.plans.size, sheet.plans.size),
-                        style = IntervalTheme.type.meta,
-                        color = palette.textDim,
-                    )
-                }
-            }
+            DayTitle(title, sheet)
             if (sheet.plans.isEmpty() && sheet.workouts.isEmpty() && sheet.sports.isEmpty()) {
                 Text(
                     stringResource(Res.string.history_day_nothing),
                     style = IntervalTheme.type.body,
-                    color = palette.textDim,
+                    color = IntervalTheme.palette.textDim,
                 )
             }
-            if (sheet.plans.isNotEmpty()) {
-                ListCard {
-                    sheet.plans.forEachIndexed { index, plan ->
-                        if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                        PlanRow(plan, sheet, programDay, actions, hide)
-                    }
-                }
-                if (sheet.plans.any { it.weekly }) {
-                    Text(
-                        stringResource(Res.string.history_routine_note),
-                        style = IntervalTheme.type.meta,
-                        color = palette.textDim,
-                    )
-                }
-            }
-            val sports = sportLines(sheet.sports, sheet.classes)
-            if (sheet.workouts.isNotEmpty() || sports.isNotEmpty()) {
-                ListCard {
-                    sheet.workouts.forEachIndexed { index, item ->
-                        if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                        HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift)
-                    }
-                    sports.forEachIndexed { index, line ->
-                        val first = index == 0 && sheet.workouts.isEmpty()
-                        if (!first) RowDivider(Modifier.padding(start = Spacing.space20))
-                        SportRow(line.sport, sheet.epochDay, actions, recorded = line.recorded, logged = line.logged)
-                    }
-                }
-            }
+            if (sheet.plans.isNotEmpty()) DayPlans(sheet, programDay, actions, hide)
+            DayDone(sheet, actions)
             DayActions(sheet, hide, onPlan = actions.onPlan, onAddWorkout = onAddWorkout, onLogWorkout = onLogWorkout)
+        }
+    }
+}
+
+/** The day's heading, and how many plans it holds. */
+@Composable
+private fun DayTitle(title: String, sheet: DaySheet, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier) {
+        Text(
+            title,
+            style = IntervalTheme.type.title,
+            color = palette.text,
+            modifier = Modifier.semantics { heading() },
+        )
+        if (sheet.plans.isNotEmpty()) {
+            Text(
+                pluralStringResource(Res.plurals.history_day_planned, sheet.plans.size, sheet.plans.size),
+                style = IntervalTheme.type.meta,
+                color = palette.textDim,
+            )
+        }
+    }
+}
+
+/** The day's plans on a card, and the note that a weekly one is changed in Plan. */
+@Composable
+private fun DayPlans(
+    sheet: DaySheet,
+    programDay: ProgramDay?,
+    actions: HistoryActions,
+    hide: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+        ListCard {
+            sheet.plans.forEachIndexed { index, plan ->
+                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+                PlanRow(plan, sheet, programDay, actions, hide)
+            }
+        }
+        if (sheet.plans.any { it.weekly }) {
+            Text(
+                stringResource(Res.string.history_routine_note),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+            )
+        }
+    }
+}
+
+/** What was done on the day, on one card: the workouts, then the sports logged. */
+@Composable
+private fun DayDone(sheet: DaySheet, actions: HistoryActions, modifier: Modifier = Modifier) {
+    val sports = sportLines(sheet.sports, sheet.classes)
+    if (sheet.workouts.isEmpty() && sports.isEmpty()) return
+    ListCard(modifier) {
+        sheet.workouts.forEachIndexed { index, item ->
+            if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
+            HistoryRow(item, actions.onOpenWorkout, onOpenLift = actions.onOpenLift)
+        }
+        sports.forEachIndexed { index, line ->
+            val first = index == 0 && sheet.workouts.isEmpty()
+            if (!first) RowDivider(Modifier.padding(start = Spacing.space20))
+            SportRow(line.sport, sheet.epochDay, actions, recorded = line.recorded, logged = line.logged)
         }
     }
 }

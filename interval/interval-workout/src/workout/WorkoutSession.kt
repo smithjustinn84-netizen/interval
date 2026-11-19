@@ -327,29 +327,24 @@ class WorkoutSession(
         zoneTracker = ZoneTracker(maxBpm = maxBpm)
         heartRateJob?.cancel()
         liveHeartRate.start()
-        heartRateJob = heartRateScope.launch {
-            liveHeartRate.reading.collect { state ->
-                val current = run ?: return@collect
-                if (state !is LiveHeartRateState.Reading || !current.running || current.over) return@collect
-                val now = clock.nowMillis()
-                sampler.add(state.bpm, now)
-                val cues = settingsStore.cueSettings.value
-                if (!cues.heartRateAlerts) return@collect
-                when (zoneTracker.record(state.bpm, now)) {
-                    ZoneTransition.EnteredHigh -> {
-                        if (cues.sound) player.beep(Beep.ZoneUp)
-                        if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
-                    }
+        heartRateJob = heartRateScope.launch { liveHeartRate.reading.collect { onHeartRate(it) } }
+    }
 
-                    ZoneTransition.EnteredRecovery -> {
-                        if (cues.sound) player.beep(Beep.ZoneDown)
-                        if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
-                    }
-
-                    null -> Unit
-                }
-            }
+    /** Keeps a reading taken while the workout runs, and says a change of zone when the alerts are on. */
+    private fun onHeartRate(state: LiveHeartRateState) {
+        val current = run ?: return
+        if (state !is LiveHeartRateState.Reading || !current.running || current.over) return
+        val now = clock.nowMillis()
+        sampler.add(state.bpm, now)
+        val cues = settingsStore.cueSettings.value
+        if (!cues.heartRateAlerts) return
+        val beep = when (zoneTracker.record(state.bpm, now)) {
+            ZoneTransition.EnteredHigh -> Beep.ZoneUp
+            ZoneTransition.EnteredRecovery -> Beep.ZoneDown
+            null -> return
         }
+        if (cues.sound) player.beep(beep)
+        if (cues.vibrate) player.vibrate(Haptic.Heartbeat)
     }
 
     private fun stopHeartRate() {

@@ -28,7 +28,7 @@ data class DraftContext(
 /**
  * The Log sheet's draft: the set it will log, kept in range, starting a lift picked from what it was last done
  * with, stepping its load through what the user has; and a set logged opened on it to change, the draft for a new
- * set put aside meanwhile. Pure: what it goes by comes from [context], read at each change.
+ * set put aside meanwhile. Pure: what it goes by comes from the `context` it is handed, read at each change.
  */
 class SetDraftEditor(private val context: () -> DraftContext) {
     private val current = MutableStateFlow(SetDraft())

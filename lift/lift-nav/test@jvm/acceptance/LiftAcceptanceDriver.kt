@@ -31,7 +31,7 @@ import kotlin.test.assertEquals
  * (`IntervalAcceptanceDriver`): one selector per control, every check waits, outcomes are checked in
  * [LiftAppFixture.storage] too, and time moves only through [LiftAppFixture.clock].
  */
-@Suppress("detekt.TooManyFunctions")
+@Suppress("detekt.TooManyFunctions") // A step per journey action, as the journeys say them.
 class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : AcceptanceSteps(ui) {
 
     // Today

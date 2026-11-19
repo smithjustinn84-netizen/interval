@@ -22,6 +22,7 @@ import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.playCue
+import dev.justinsmith.interval.storage.catchingFailures
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Cue
 import dev.justinsmith.interval.timer.Effort
@@ -31,7 +32,6 @@ import dev.justinsmith.interval.timer.fromKg
 import dev.justinsmith.interval.timer.stepped
 import dev.justinsmith.interval.timer.toKg
 import dev.justinsmith.interval.timer.withValue
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.Flow
@@ -229,16 +229,11 @@ class SettingsViewModel(
      * Builds the export of everything stored and offers it to share or save; a second tap while one is under
      * way does nothing. A file that can't be written is logged, and the share sheet just doesn't open.
      */
-    @Suppress("detekt.TooGenericExceptionCaught")
     fun export() {
         if (exporting?.isActive == true) return
         exporting = viewModelScope.launch {
-            try {
+            catchingFailures(onFailure = { e -> log.e(e) { "Couldn't export" } }) {
                 sharer.shareFile(exporter.export())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.e(e) { "Couldn't export" }
             }
         }
     }
@@ -252,40 +247,33 @@ class SettingsViewModel(
      * Reads [file], picked to import, and has the review sheet say what it comes to. Nothing is written yet. A
      * read that fails says so, as an import that fails does, and leaves the way open for another file.
      */
-    @Suppress("detekt.TooGenericExceptionCaught")
     fun reviewImport(file: ShareableFile) {
         if (importStep.value == ImportStep.Reading || importStep.value == ImportStep.Importing) return
         importStep.value = ImportStep.Reading
         viewModelScope.launch {
-            importStep.value = try {
+            importStep.value = catchingFailures(onFailure = { e -> importFailed(e, "Couldn't read the import") }) {
                 val review = importer.review(file)
                 val day = (review as? ImportReview.Ready)?.let { timestamps.date(it.exportedAtEpochMillis) }
                 ImportStep.Review(file, review, day)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.e(e) { "Couldn't read the import" }
-                ImportStep.Failed
             }
         }
     }
 
     /** Imports the file under review, its settings too when [withSettings]. */
-    @Suppress("detekt.TooGenericExceptionCaught")
     fun confirmImport(withSettings: Boolean) {
         val review = importStep.value as? ImportStep.Review ?: return
         if (review.review !is ImportReview.Ready) return
         importStep.value = ImportStep.Importing
         viewModelScope.launch {
-            importStep.value = try {
+            importStep.value = catchingFailures(onFailure = { e -> importFailed(e, "Couldn't import") }) {
                 ImportStep.Done(importer.import(review.file, withSettings))
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                log.e(e) { "Couldn't import" }
-                ImportStep.Failed
             }
         }
+    }
+
+    private fun importFailed(e: Exception, what: String): ImportStep {
+        log.e(e) { what }
+        return ImportStep.Failed
     }
 
     /** Closes the review sheet, or lets go of what the import came to once it is said. */

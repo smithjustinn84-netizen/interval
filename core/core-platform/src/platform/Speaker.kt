@@ -1,7 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CancellationException
+import dev.justinsmith.interval.storage.catchingFailures
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -51,15 +51,8 @@ class SpokenLines<T : Any>(
 
     // A line that fails is logged and skipped, never thrown: as for every cue, a missing one must not
     // crash a workout, nor stop the lines after it.
-    @Suppress("detekt.TooGenericExceptionCaught")
     private suspend fun speakLogged(line: T) {
-        try {
-            say(words(line))
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            log.w(e) { "Couldn't speak $line" }
-        }
+        catchingFailures(onFailure = { e -> log.w(e) { "Couldn't speak $line" } }) { say(words(line)) }
     }
 
     fun speak(line: T) {

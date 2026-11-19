@@ -22,8 +22,8 @@ import com.polar.sdk.api.model.PolarOfflineRecordingEntry
 import com.polar.sdk.api.model.PolarSensorSetting
 import com.polar.sdk.api.model.PolarSensorSetting.SettingType
 import dev.justinsmith.interval.model.ClassRecording
+import dev.justinsmith.interval.storage.catchingFailures
 import dev.justinsmith.interval.timer.classSamples
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -162,26 +162,28 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         _reading.value = LiveHeartRateState.Connecting
         streamJob = streamScope.launch {
             try {
-                api.connectToDevice(id)
-                val readyHr = withTimeoutOrNull(CONNECT_MILLIS) { hrReady.first { id in it } }
-                if (readyHr == null) {
-                    _reading.value = LiveHeartRateState.Disconnected
-                    return@launch
-                }
-                api.startHrStreaming(id).collect { data ->
-                    val sample = data.samples.lastOrNull() ?: return@collect
-                    if (sample.hr in HeartRate.BPM_RANGE) {
-                        _reading.value = LiveHeartRateState.Reading(
-                            bpm = sample.hr,
-                            contact = sample.contactStatus,
-                        )
+                catchingFailures(
+                    onFailure = { e ->
+                        log.w(e) { "Live HR streaming failed" }
+                        _reading.value = LiveHeartRateState.Disconnected
+                    },
+                ) {
+                    api.connectToDevice(id)
+                    val readyHr = withTimeoutOrNull(CONNECT_MILLIS) { hrReady.first { id in it } }
+                    if (readyHr == null) {
+                        _reading.value = LiveHeartRateState.Disconnected
+                        return@launch
+                    }
+                    api.startHrStreaming(id).collect { data ->
+                        val sample = data.samples.lastOrNull() ?: return@collect
+                        if (sample.hr in HeartRate.BPM_RANGE) {
+                            _reading.value = LiveHeartRateState.Reading(
+                                bpm = sample.hr,
+                                contact = sample.contactStatus,
+                            )
+                        }
                     }
                 }
-            } catch (e: CancellationException) {
-                throw e
-            } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
-                log.w(e) { "Live HR streaming failed" }
-                _reading.value = LiveHeartRateState.Disconnected
             } finally {
                 quietly { api.disconnectFromDevice(id) }
             }
@@ -283,26 +285,23 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     private suspend fun attempt(work: suspend () -> SensorFailure?): SensorFailure? {
         if (!supported || !mayUseBluetooth()) return SensorFailure.NoAccess
         return working.withLock {
-            try {
-                work()
-            } catch (e: CancellationException) {
-                throw e
-            } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
-                // The SDK throws its own errors and the platform's alike; none may take the app down.
-                log.w(e) { "The sensor failed" }
-                SensorFailure.Failed
-            }
+            // The SDK throws its own errors and the platform's alike; none may take the app down.
+            catchingFailures(
+                onFailure = { e ->
+                    log.w(e) { "The sensor failed" }
+                    SensorFailure.Failed
+                },
+            ) { work() }
         }
     }
 
-    private suspend fun <T> quietly(work: suspend () -> T): T? = try {
-        work()
-    } catch (e: CancellationException) {
-        throw e
-    } catch (@Suppress("detekt.TooGenericExceptionCaught") e: Exception) {
-        log.i(e) { "A step with the sensor failed and was passed over" }
-        null
-    }
+    private suspend fun <T> quietly(work: suspend () -> T): T? =
+        catchingFailures(
+            onFailure = { e ->
+                log.i(e) { "A step with the sensor failed and was passed over" }
+                null
+            },
+        ) { work() }
 
     private fun List<PolarOfflineRecordingEntry>.latest(type: PolarDeviceDataType) =
         filter { it.type == type }.maxByOrNull { it.date }

@@ -104,9 +104,9 @@ data class HomeUiState(
 
 /**
  * Today, the app's first tab: the answer to "what now?" from what the log, the plan and Lift already know. The
- * week and what is up next are History's own ([TrainingLog], [upNext]), built on [computation] as History builds
- * them and checked every [dayCheckMillis] so they move on at midnight; the presets by time are worked out apart,
- * so a length picked rebuilds nothing else. The length picked is kept in the entry's saved state.
+ * week and what is up next are History's own ([TrainingLog], [TimestampFormatter.upNext]), built on [computation]
+ * as History builds them and checked every [dayCheckMillis] so they move on at midnight; the presets by time are
+ * worked out apart, so a length picked rebuilds nothing else. The length picked is kept in the entry's saved state.
  *
  * It starts nothing itself: [putOnTimer] and [startLift] set up what the page about to open runs, as History's
  * Up next does.

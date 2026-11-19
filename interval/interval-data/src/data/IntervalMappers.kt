@@ -15,7 +15,6 @@ import dev.justinsmith.interval.timer.Preset
 // Between the stored rows and the plain models, the same for every repository: what Room keeps stays here.
 
 /** The [IntervalConfig] a row's columns hold, the same in every table, each value read into its range. */
-@Suppress("detekt.LongParameterList")
 private fun intervalConfig(
     prepSeconds: Int,
     workSeconds: Int,

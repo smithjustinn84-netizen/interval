@@ -225,7 +225,7 @@ class TrainingLog(
     /** The totals for [range]: this week, the month [monthOf] is in, or everything. */
     fun stats(range: TrainingRange, body: BodySettings, monthOf: Long = today): RangeStats {
         val span = when (range) {
-            TrainingRange.Week -> weekStartOf(today).let { it..it + DAYS_PER_WEEK - 1 }
+            TrainingRange.Week -> weekStartOf(today).let { it..<it + DAYS_PER_WEEK }
             TrainingRange.Month -> monthDaysOf(monthOf)
             TrainingRange.AllTime -> allTimeStart()..today
         }

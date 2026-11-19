@@ -16,7 +16,7 @@ import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import androidx.health.connect.client.units.Energy
 import co.touchlab.kermit.Logger
-import kotlinx.coroutines.CancellationException
+import dev.justinsmith.interval.storage.catchingFailures
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -148,15 +148,13 @@ class HealthConnectStore(
     }
 
     /** Runs [block] against the store, which may be missing or refuse: a failure is logged as [what]. */
-    @Suppress("detekt.TooGenericExceptionCaught")
-    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? = try {
-        block()
-    } catch (e: CancellationException) {
-        throw e
-    } catch (e: Exception) {
-        log.w(e) { what }
-        null
-    }
+    private suspend fun <T> attempt(what: String, block: suspend () -> T): T? =
+        catchingFailures(
+            onFailure = { e ->
+                log.w(e) { what }
+                null
+            },
+        ) { block() }
 
     companion object {
         /** The leave to write exercise sessions and total calories: holding it is being connected. */

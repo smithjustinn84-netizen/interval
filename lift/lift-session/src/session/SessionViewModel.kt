@@ -111,10 +111,10 @@ class SessionViewModel(
             logged = sessionStore.active.value?.sets.orEmpty(),
             made = exerciseStore.customExercises.value,
         )
-    }.also {
+    }.apply {
         // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
         // else its last set, the other side for a one-sided lift.
-        it.start(
+        start(
             owned = gearStore.bells.value,
             restored = savedState.restoredDraft(exerciseStore.customExercises.value, gearStore.bands.value),
             last = sessionStore.active.value?.sets?.lastOrNull(),
