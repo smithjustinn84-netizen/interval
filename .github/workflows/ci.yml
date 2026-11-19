@@ -199,7 +199,7 @@ jobs:
     name: test (ios ${{ matrix.shard }})
     needs: plan
     # Each module's tests link a Kotlin/Native binary, minutes apiece on this runner's three cores,
-    # so one job running all sixteen outlasts any sensible timeout. Each shard is a line of
+    # so one job running them all outlasts any sensible timeout. Each shard is a line of
     # tools/ios-test-shards.txt: the first, the quick shard, runs on every push; the rest group modules
     # by the part of the tree they compile, as most of a shard's time is its first, cold compile. A full
     # run is five shards beside the app's build, one more than the five macOS runners a public repository

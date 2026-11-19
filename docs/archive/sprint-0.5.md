@@ -4,11 +4,11 @@ Two weeks, 2026-11-09 to 2026-11-20, one developer and Claude Code, ten working 
 0.5.0 whose headline is the shape 0.4 left out on purpose: a workout as a sequence of blocks ("3 min easy, then
 8 × 20/10, then 5 × 1:00/0:30"), each block the shape a workout has today, sets and ladders included. Beside it,
 the week the Android widget shows, on iOS's Home Screen. What landed before and how a release goes:
-[release.md](release.md) and [CHANGELOG.md](../CHANGELOG.md).
+[release.md](../release.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Context
 
-Every ticket of [sprint-0.4.md](archive/sprint-0.4.md) is built, the cut line's too, and 0.4.0 is tagged (`v0.4.0`). Every finding of the 2026-10-31 review is resolved but E5, the documented trade-off.
+Every ticket of [sprint-0.4.md](sprint-0.4.md) is built, the cut line's too, and 0.4.0 is tagged (`v0.4.0`). Every finding of the 2026-10-31 review is resolved but E5, the documented trade-off.
 
 0.4 gave the engine a course to walk: `Course.of(config)` lays out every interval, prep to cool-down, and
 `WorkoutEngine`, the outline, the totals, the calories and the Timeline read it. A sequence is a longer course,
@@ -167,7 +167,7 @@ agenda:
 - **Pairs of bells and a grappler's week** (`8b4fdd17` to `82c19900`): a preset can switch hands (15:15 MVO2 does;
   `AppDatabase` version 15), bells are owned in pairs (`LiftDatabase` version 17, `ExportBundle.SCHEMA` 9), *20
   minutes beside BJJ* joins the Grappling programs, and Set up builds a grappler's week with it and 15:15 MVO2.
-- **Lift's coaching** (`c7d0c5e3` to `310a617f`, [kettlebell-coaching.md](kettlebell-coaching.md)): each lift's
+- **Lift's coaching** (`c7d0c5e3` to `310a617f`, [kettlebell-coaching.md](../kettlebell-coaching.md)): each lift's
   `Movement`, the grip's load with BJJ days in it, readiness and an easier day offered on a taxed one, density before
   a big jump in bell (a block's own rest, `ExportBundle.SCHEMA` 10) and the best pace, and challenges, lifetime totals
   and new bests. Section 2 of that doc, Lift's timers speaking cues, is still planned.

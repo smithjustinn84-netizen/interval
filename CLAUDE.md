@@ -1,7 +1,7 @@
 # interval — Claude Code Guide
 
 Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the **Kotlin Toolchain**
-(`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.13/
+(`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.14/
 Full architecture guide: [docs/architecture.md](docs/architecture.md). The current sprint: [docs/sprint-0.6.md](docs/sprint-0.6.md);
 what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md). Finished sprints and reviews: `docs/archive/`.
 

@@ -16,7 +16,7 @@ androidx-lifecycle = "2.11.0"
 # runtime's 1.2.1 under it builds, links iOS and passes every JVM test. Bump the UI to match once JetBrains ships one.
 androidx-navigation3-runtime = "1.2.1"
 androidx-navigation3-ui = "1.2.0"
-# Keep sqlite (the bundled driver) at the version room-runtime resolves: `./kotlin show dependencies -m shared`.
+# Keep sqlite (the bundled driver) at the version room-runtime resolves: `./kotlin show dependencies -m interval-data`.
 androidx-room = "2.8.5"
 androidx-sqlite = "2.6.2"
 # Since 1.13 JetBrains versions material3 with Compose itself, and the toolchain can't name it for a Compose it
