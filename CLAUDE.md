@@ -165,11 +165,12 @@ interval/            the interval timer
   interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
                      workout) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
-                     in step with the plan. And the sensor's card Today shows (`sensor/`)
+                     in step with the plan
   interval-today     Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`, named Home since Lift's tab is
                      `TodayRoute`; `todayModule`, di/): the week, what is up next and the presets that fit a few
                      minutes, with the flow that does (`QuickPicks.kt`), over History's log (`history/UpNext.kt`,
-                     `TodayAgenda.kt`), so the one feature over `interval-history`
+                     `TodayAgenda.kt`), so the one feature over `interval-history`; and the card that records a
+                     class on a sensor (`sensor/`: `ClassSensorCard`, `ClassSensorViewModel`)
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
@@ -636,7 +637,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   the arm goes still for thirty seconds, each with its drop 30 and 60 seconds after; its constants are a first
   reading), so nothing of a round is stored and a retuned detector reads old classes anew. Settings pairs and
   forgets (`SensorSettingsViewModel`, the "sensor" group, shown unless Unavailable); Today's `ClassSensorCard`
-  (`interval-history/sensor/`, `ClassSensorViewModel`, its events said as notices) offers Record class on a day
+  (`interval-today/sensor/`, `ClassSensorViewModel`, its events said as notices) offers Record class on a day
   with a sport still to log and Sync class while one is on the sensor (`TodayPlan.sensorCard`), asking Bluetooth's
   leave first; a sync keeps the class, logs its sport's day (the day it started) and opens `ClassDetail` (an app
   key, by the moment it started) in the Log: `ClassDetailScreen`, the heart rate drawn with a band a round

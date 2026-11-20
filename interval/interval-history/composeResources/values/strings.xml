@@ -241,17 +241,6 @@
     <string name="class_detail_delete_title">Delete this recording?</string>
     <string name="class_detail_delete_text">The heart rate and rounds of %1$s on %2$s go. The day stays logged.</string>
     <string name="notice_class_deleted">Recording deleted</string>
-    <string name="sensor_ready_title">Record the class</string>
-    <string name="sensor_ready_text">%1$s records on its own, so the phone can stay in the bag.</string>
-    <string name="sensor_record">Record class</string>
-    <string name="sensor_recording_title">Recording since %1$s</string>
-    <string name="sensor_recording_text">Sync it when the class is over, with the sensor close.</string>
-    <string name="sensor_sync">Sync class</string>
-    <string name="sensor_working">Reaching the sensor…</string>
-    <string name="notice_sensor_no_access">Bluetooth is off, or the app may not use it.</string>
-    <string name="notice_sensor_not_found">Couldn’t find the sensor. Wake it (wear an H10) and keep it close.</string>
-    <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
-    <string name="notice_sensor_nothing">Nothing was recorded on the sensor.</string>
 
     <!-- Logging a workout done away from the app, or without the Timer, on its day -->
     <string name="history_log_workout">Log a workout</string>

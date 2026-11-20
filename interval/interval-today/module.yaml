@@ -1,7 +1,7 @@
 # Today, the first tab: the day in order on one card, the week, what is up next and the presets and the flow that
-# fit a few minutes, with the first week's card. It reads History's log and the plan (`TrainingLog`, `todayAgenda`,
-# the Up next words, the Move sheet), so it is the one feature over `interval-history`; an edit here leaves the
-# Log and Plan alone.
+# fit a few minutes, with the first week's card and the card that records a class on a heart-rate sensor
+# (`sensor/`). It reads History's log and the plan (`TrainingLog`, `todayAgenda`, the Up next words, the Move
+# sheet), so it is the one feature over `interval-history`; an edit here leaves the Log and Plan alone.
 description: "Today: the day's steps, the week and the picks by time"
 product:
   type: kmp/lib
