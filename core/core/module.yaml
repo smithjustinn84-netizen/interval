@@ -7,7 +7,7 @@ product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
-# `lib`, not `compose-lib` or `tested-lib`: those depend on core and core-testing, which depend on this.
+# `lib`, not `compose-lib` or `tested-lib`: `compose-lib` depends on core, and on core-ui-testing, which depends on this.
 apply:
   - //templates/lib.module-template.yaml
   - //templates/compose-stability.module-template.yaml

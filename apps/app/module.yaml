@@ -51,9 +51,11 @@ dependencies:
   - $kotlin.serialization.json
 
 test-dependencies:
-  # Each side's storage fakes (`tested-lib` adds the shared fakes and the UI harness in `core-testing`).
+  # Each side's storage fakes (`tested-lib` adds the shared fakes in `core-testing`).
   - //interval/interval-testing
   - //lift/lift-testing
+  # The Compose UI harness, for the app's flows and the acceptance specs.
+  - //core/core-ui-testing
 
 # Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests,
 # which have no Robolectric here, so `runComposeUiTest` lives in `test@jvm/`.

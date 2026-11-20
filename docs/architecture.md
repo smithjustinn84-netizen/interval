@@ -181,12 +181,12 @@ as `WorkoutSession` and `SessionTimers` do), and give a ViewModel's parts classe
 
 ## Module Architecture
 
-The project contains 32 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
+The project contains 33 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
 [project.yaml](../project.yaml) and each module's `module.yaml`; `./kotlin show modules` describes each.
 Each module applies a reusable template from `templates/`:
 - `lib`: Standard Kotlin Multiplatform library with warnings-as-errors, ktlint, and detekt.
-- `tested-lib`: Adds test dependencies and `core-testing`.
-- `compose-lib`: Adds Compose Multiplatform, lifecycle, Koin compose, and resource accessors.
+- `tested-lib`: Adds test dependencies and `core-testing` (the shared fakes, no Compose).
+- `compose-lib`: Adds Compose Multiplatform, lifecycle, Koin compose, and `core-ui-testing` (the Compose UI test harness).
 - `room-lib`: Configures Room KSP, bundled SQLite driver, and `-Xexpect-actual-classes`.
 
 ### Module Classification
@@ -195,7 +195,7 @@ Each module applies a reusable template from `templates/`:
 |---|---|---|
 | **App Targets** | `androidApp`, `iosApp`, `desktopApp` | Platform entry points, manifests, splash/launch assets, packaging; Android's home-screen widget (Glance, `androidApp/src/widget/`) and launcher shortcuts; iOS Home Screen quick actions and the Home and Lock Screen widget (`iosApp/widget/`). |
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table and `Train` pillar host, Koin graph assembly, root theme host, `Set up` (`weeksetup/`), `WeekStandingSource`, `About`, and JSON export/import (`export/`). |
-| **Core** | `core`, `core-platform`, `core-time`, `core-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; UI test harness. |
+| **Core** | `core`, `core-platform`, `core-time`, `core-testing`, `core-ui-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; the shared fakes in `core-testing`, which has none either, so the pure layers' tests link none, and the Compose UI test harness in `core-ui-testing`. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
 | **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest/density timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |

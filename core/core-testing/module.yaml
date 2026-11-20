@@ -1,18 +1,18 @@
-# The fakes and harness every module's tests share. The toolchain has no test fixtures (a module's tests can't
-# see another's `test/`), so this is an ordinary library that modules list under `test-dependencies`.
-# Common: `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar. JVM: the
-# Compose UI harness (`runUiTest`, `setThemedContent`, `StateRestoration`, `waitForText`).
-description: "Test helpers: dispatcher, fixed clock and formatter, Compose UI harness"
+# The fakes every module's tests share. The toolchain has no test fixtures (a module's tests can't see
+# another's `test/`), so this is an ordinary library that modules list under `test-dependencies`.
+# `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, the tests' calendar. No Compose, so the pure
+# layers' tests link none: the Compose UI harness is `core-ui-testing`.
+description: "Test helpers: dispatcher, fixed clock and formatter, the platform's fakes"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
 apply:
   - //templates/lib.module-template.yaml
-  - //templates/compose-stability.module-template.yaml
 
 dependencies:
-  - //core/core
+  # What the fakes stand in for (`WallClock`, `Sharer`, `HealthStore`, …).
+  - //core/core-platform
   - $kotlin.test: exported
   - $libs.kotlinx.coroutines.test: exported
   # `fakeCorePlatformModule`, which stands in for core's `corePlatformModule`.
@@ -22,16 +22,5 @@ dependencies:
 dependencies@android:
   - $kotlin.test.junit5: exported
 
-# Compose UI tests run on the desktop JVM only: common `test/` also runs as Android local tests, which have
-# no Robolectric here.
 dependencies@jvm:
   - $kotlin.test.junit5: exported
-  - $compose.uiTest: exported
-  # Skiko's native renderer; without it `runComposeUiTest` fails with LibraryLoadException.
-  - $compose.desktop.currentOs
-  # Dispatchers.Main for viewModelScope: whole-app tests compose the real routes.
-  - $libs.kotlinx.coroutines.swing
-
-settings:
-  compose:
-    enabled: true

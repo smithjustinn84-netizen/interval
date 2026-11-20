@@ -1,4 +1,4 @@
-# A library with tests: coroutines' test scheduler, and the shared fakes and UI harness in `core-testing`.
+# A library with tests: coroutines' test scheduler, and the shared fakes in `core-testing`.
 apply:
   - //templates/lib.module-template.yaml
 

@@ -118,7 +118,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ## 🏗️ Architecture & Tech Stack
 
-Interval is designed around modern multiplatform architecture principles, cleanly separated into 32 modules in five folders:
+Interval is designed around modern multiplatform architecture principles, cleanly separated into 33 modules in five folders:
 
 ```
 interval/
@@ -132,7 +132,8 @@ interval/
 │   ├── core/            # Design tokens, IntervalTheme, NavigationArea, components
 │   ├── core-platform/   # Clocks, timestamp formatter, HealthStore, storage plumbing (zero Compose dependencies)
 │   ├── core-time/       # Pure calendar & clock maths (zero dependencies)
-│   └── core-testing/    # MainDispatcherTest, UI test harness, fake platform services
+│   ├── core-testing/    # MainDispatcherTest, fake platform services (no Compose)
+│   └── core-ui-testing/ # Compose UI test harness
 │
 ├── interval/            # Conditioning, mobility, Today & history
 │   ├── interval-domain/       # Timer engine, multi-block courses, mobility flows, sport days, calories, parsers
@@ -267,7 +268,7 @@ Interval follows a strict testing pyramid designed for fast local iteration and 
 ```
 
 - **Logic & ViewModels**: Tested in `<module>/test/` across JVM, Android, and iOS simulator.
-- **Compose UI Tests**: Located in `<module>/test@jvm/` to render off-screen with Skiko via the `core-testing` harness.
+- **Compose UI Tests**: Located in `<module>/test@jvm/` to render off-screen with Skiko via the `core-ui-testing` harness.
 - **Acceptance Specs**: End-to-end user flows validated on the JVM (`apps/app/test@jvm/acceptance/` and `lift/lift-nav/test@jvm/acceptance/`).
 - **On-Device Journeys**: XML-driven end-to-end flows in `journeys/*.xml` executed via the `android` CLI.
 

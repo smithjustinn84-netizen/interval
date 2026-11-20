@@ -1,6 +1,6 @@
 # A library of screens: Compose over `core`'s theme and components, ViewModels resolved through Koin in
 # composition, its own strings in `composeResources/` (set `settings.compose.resources.packageName`), and
-# the test libraries and fakes of `tested-lib`.
+# the test libraries and fakes of `tested-lib`, with the UI harness in `core-ui-testing`.
 apply:
   - //templates/tested-lib.module-template.yaml
   - //templates/compose-stability.module-template.yaml
@@ -23,6 +23,10 @@ dependencies:
   - $libs.koin.core.viewmodel
   - $libs.koin.compose.viewmodel
   - $libs.kermit
+
+# The Compose UI harness, for the screen tests in `test@jvm/`.
+test-dependencies:
+  - //core/core-ui-testing
 
 # Renders the @Preview functions in the IDE. Amper has no debug-only dependency scope, so it ships in release
 # builds too; R8 strips what the app never calls.

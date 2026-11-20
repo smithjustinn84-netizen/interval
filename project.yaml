@@ -11,6 +11,7 @@ modules:
   - core/core
   - core/core-platform
   - core/core-testing
+  - core/core-ui-testing
   - core/core-time
 
   # The interval timer: its foundation (domain, data, platform, ui, testing) and a module per feature.

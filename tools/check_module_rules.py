@@ -11,7 +11,10 @@ core-testing, domain, api, data, platform, ui, testing, feature, entry, app, hos
   and only the app, the testing modules and the platform's own tests see the platform.
 - the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules. Any other
   test dependency is one the module's `dependencies` could take.
-- the pure layers (time, core-platform, domain, api, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
+- the tests of time, core-platform, a domain and an api link no Compose: nothing their dependencies and test
+  dependencies reach brings it, so the iOS tests' quick shard stays quick. (`core-testing` has none;
+  the UI harness is `core-ui-testing`.)
+- the pure layers (time, core-platform, core-testing, domain, api, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
   `$libs.koin.compose`, no `compose-lib`, and no `settings: compose: enabled`.
 - every library (all but the hosts and the tooling plugins) applies a template from `templates/`.
 - no source under `interval/*/src*` names `LiftRepository`: the interval side reads Lift through `LiftActivity`.
@@ -49,7 +52,7 @@ ALLOWED = {
     "time": set(),
     "core-platform": {"time"},
     "core": {"time", "core-platform"},
-    "core-testing": {"time", "core-platform", "core"},
+    "core-testing": {"time", "core-platform"},
     # The two domains stand apart: a Lift session becomes interval's `LiftWorkout` in interval-history.
     "domain": {"time"},
     # The contracts a side offers: the platform's services (`interval-platform-api`), the ports between the sides
@@ -81,7 +84,10 @@ CROSS_SIDE_KINDS = {"domain", "api", "ui"}
 PLATFORM_SEERS = {"app", "testing"}
 
 TEST_ONLY = {"testing", "core-testing"}
-NO_COMPOSE = {"time", "core-platform", "domain", "api", "data"}
+NO_COMPOSE = {"time", "core-platform", "core-testing", "domain", "api", "data"}
+# Whose tests link no Compose either, whatever they reach. Not data: Lift's tests take `lift-testing`, which
+# carries `lift-platform` and its notification words.
+COMPOSE_FREE_TESTS = {"time", "core-platform", "domain", "api"}
 # What brings Compose in under `dependencies`.
 COMPOSE_PREFIXES = ("$compose.", "$libs.compose.", "$libs.koin.compose")
 # The kinds that apply no template: the hosts are applications, the tooling plugins build plugins.
@@ -89,7 +95,14 @@ UNTEMPLATED = {"host", "tooling"}
 # The interval side reads Lift through `LiftActivity`, never the whole repository.
 LIFT_REPOSITORY = re.compile(r"\bLiftRepository\b")
 
-CORE_KINDS = {"core-time": "time", "core-platform": "core-platform", "core": "core", "core-testing": "core-testing"}
+CORE_KINDS = {
+    "core-time": "time",
+    "core-platform": "core-platform",
+    "core": "core",
+    "core-testing": "core-testing",
+    # The Compose UI harness: a testing module like a side's, over core.
+    "core-ui-testing": "testing",
+}
 SUFFIX_KINDS = {"domain", "api", "data", "platform", "ui", "testing"}
 
 # The diagram's layers, top down, and the kind of module each draws; a feature's is its side's. The testing
@@ -269,7 +282,23 @@ def check(modules: dict[str, Module]) -> list[str]:
             problems.append(f"{module.name}: {a(kind)} module takes no Compose ({', '.join(sorted(set(module.compose)))})")
         if kind not in UNTEMPLATED and not module.templates:
             problems.append(f"{module.name}: a library applies a template from templates/")
+        if kind in COMPOSE_FREE_TESTS:
+            through = sorted(name for name in reached(modules, module) if modules[name].compose)
+            if through:
+                problems.append(f"{module.name}: {a(kind)} module's tests link no Compose (through {', '.join(through)})")
     return problems
+
+
+def reached(modules: dict[str, Module], module: Module) -> set[str]:
+    """Every module [module]'s tests link: its dependencies and test dependencies, and all theirs depend on."""
+    found: set[str] = set()
+    pending = [name for name in module.deps | module.test_deps if name in modules]
+    while pending:
+        name = pending.pop()
+        if name not in found:
+            found.add(name)
+            pending += [dep for dep in modules[name].deps if dep in modules]
+    return found
 
 
 def lift_repository_uses(root: Path) -> list[str]:
@@ -369,7 +398,8 @@ def self_test() -> None:
             fake("core-time", "core"),
             fake("core-platform", "core", ["core-time"]),
             fake("core", "core", ["core-platform", "core-time"], compose=["$compose.ui"]),
-            fake("core-testing", "core", ["core"]),
+            fake("core-testing", "core", ["core-platform"]),
+            fake("core-ui-testing", "core", ["core"], compose=["$compose.ui"]),
             fake("lift-domain", "lift"),
             fake("lift-api", "lift", ["lift-domain"]),
             fake("lift-data", "lift", ["lift-domain", "lift-api", "core-platform"]),
@@ -422,6 +452,16 @@ def self_test() -> None:
     graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
     graph["lift-api"].compose.append("$compose.runtime")
     assert any("takes no Compose" in p for p in check(graph)), "an api takes no Compose"
+
+    graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
+    graph["interval-domain"].test_deps.add("core-ui-testing")
+    assert any("tests link no Compose (through core, core-ui-testing)" in p for p in check(graph)), "pure tests link no Compose"
+
+    graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
+    graph["core-testing"].deps.add("core")
+    found = check(graph)
+    assert any("a core-testing module doesn't depend on a core module" in p for p in found), "core-testing takes no core"
+    assert any("interval-platform-api: an api module's tests link no Compose" in p for p in found), "nor through a testing module"
 
     graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}
     graph["lift-ui"].templates.clear()

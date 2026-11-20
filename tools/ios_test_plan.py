@@ -2,7 +2,7 @@
 """Prints which iOS test shards a CI run needs, as `shards=[...]` for $GITHUB_OUTPUT.
 
 Each iOS test binary takes minutes to link on a CI runner, so a push runs only the first line of
-tools/ios-test-shards.txt, the quick shard: the pure domains, the quickest to link. Every line runs
+tools/ios-test-shards.txt, the quick shard: the pure domains, which link without Compose. Every line runs
 when native behavior may have changed under the common tests, or nightly to catch the rest:
 - a scheduled or manual run, or a version tag;
 - a change to iOS code (`src@ios/`), to the build (`module.yaml`, `project.yaml`, `templates/`, the

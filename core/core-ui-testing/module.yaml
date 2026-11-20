@@ -1,0 +1,30 @@
+# The Compose UI harness the screens' tests share (`runUiTest`, `setThemedContent`, `StateRestoration`,
+# `waitForText`, `RecordingHaptics`, the acceptance steps), apart from `core-testing` so the fakes there bring
+# no Compose to the pure layers' tests. All of it is in `src@jvm/`: Compose UI tests run on the desktop JVM only,
+# since common `test/` also runs as Android local tests, which have no Robolectric here.
+description: "Compose UI test harness: themed content, windows, state restoration, acceptance steps"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+  - //templates/compose-stability.module-template.yaml
+
+dependencies:
+  - //core/core
+
+dependencies@jvm:
+  - $compose.runtime
+  - $compose.ui
+  - $compose.uiTest: exported
+  - $kotlin.test.junit5
+  - $libs.kotlinx.coroutines.test
+  # Skiko's native renderer; without it `runComposeUiTest` fails with LibraryLoadException.
+  - $compose.desktop.currentOs
+  # Dispatchers.Main for viewModelScope: whole-app tests compose the real routes.
+  - $libs.kotlinx.coroutines.swing
+
+settings:
+  compose:
+    enabled: true

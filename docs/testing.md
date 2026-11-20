@@ -93,11 +93,12 @@ The UI tests render offscreen with Skiko and need no display, including on the L
 ## Test infrastructure
 
 The toolchain shares no test sources between modules, so what tests share lives in ordinary library
-modules that a module lists under `test-dependencies` (the `tested-lib` template adds `core-testing`;
-a module adds its side's). A data module's tests may depend on its side's `*-testing` module even though
+modules that a module lists under `test-dependencies` (the `tested-lib` template adds `core-testing`,
+`compose-lib` `core-ui-testing` as well; a module adds its side's). A data module's tests may depend on its side's `*-testing` module even though
 that depends on the data module.
 
-- **`core-testing`** (common, every platform):
+- **`core-testing`** (common, every platform; no Compose, so the tests of the domains, `core-time`,
+  `core-platform` and the `*-api` modules link none, which `check_module_rules.py` holds):
   - `MainDispatcherTest`: the base class for a ViewModel's test, which stands in a test dispatcher
     for `Dispatchers.Main` (unconfined unless the test passes another).
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`, `monthTitle()` `"M/YYYY"`.
@@ -105,15 +106,16 @@ that depends on the data module.
     `DAY_MILLIS`.
   - `fakeCorePlatformModule(...)` stands in for core's `corePlatformModule`: a wall clock, `IdGenerator`, the fixed
     formatter, `FakeAppInfo`, a sharer and `RecordingHealthStore`, for `testKoin` and `liftTestKoin` alike.
-- **`core/core-testing/src@jvm/ui/UiTestHarness.kt`**:
+- **`core-ui-testing`** is the Compose UI harness, a module of its own that `compose-lib` adds to a module's
+  tests, all of it in `src@jvm/`. **`core/core-ui-testing/src@jvm/ui/UiTestHarness.kt`**:
   - `runUiTest(Window.Phone | PhoneSideways | Tablet | TabletPortrait | Desktop)`: sized windows that match the previews. The
     window size drives the same layout decisions as on a device (bar vs rail, Settings as a
     supporting pane).
   - `setThemedContent { }`: content inside `IntervalTheme`, light (`dark = true` for dark).
   - `waitForText`, `scrollToText`: for whole-app tests, whose ViewModels emit on Swing's thread.
-- **`core/core-testing/src@jvm/ui/RecordingHaptics.kt`**: `RecordingHaptics` records what a screen performs through
+- **`core/core-ui-testing/src@jvm/ui/RecordingHaptics.kt`**: `RecordingHaptics` records what a screen performs through
   `LocalHapticFeedback`, provided by `WithHaptics(haptics) { … }` round the content under test.
-- **`core/core-testing/src@jvm/ui/MainThreadInput.kt`**: input on the app's main thread, Swing's.
+- **`core/core-ui-testing/src@jvm/ui/MainThreadInput.kt`**: input on the app's main thread, Swing's.
   - `performClick`: Compose's, made on the main thread. Every test over `appTest` or `liftAppTest` imports
     `dev.justinsmith.interval.ui.performClick` rather than `androidx.compose.ui.test.performClick` (the
     whole of `apps/app/test@jvm/` and `lift/lift-nav/test@jvm/` does), so a tap never runs beside the app's
@@ -289,7 +291,7 @@ fun `a workout ended before its first round saves nothing`() = acceptanceScenari
 
 **The drivers.** `IntervalAcceptanceDriver` (over `appTest`, the whole app) and `LiftAcceptanceDriver`
 (over `liftAppTest`) turn each step into Compose semantics. Both build on `AcceptanceSteps`
-(`core/core-testing/src@jvm/ui/`): `see`, `seeNo`, `tap`, `tapDescribed` and `scrollTo`. `acceptanceScenario` and
+(`core/core-ui-testing/src@jvm/ui/`): `see`, `seeNo`, `tap`, `tapDescribed` and `scrollTo`. `acceptanceScenario` and
 `liftScenario` give a journey `JOURNEY_TIMEOUT` (3 minutes) rather than the 1 minute other UI tests get
 (`UI_TEST_TIMEOUT`): a long journey takes seconds locally but once ran past a minute on a busy CI runner.
 The specs hold no selectors, and the drivers keep these rules:
@@ -308,7 +310,7 @@ The specs hold no selectors, and the drivers keep these rules:
    main thread, but dispatches a tap on the thread that asked for it, the test's, where what the tap calls
    runs beside the view models and the timers: a workout's tick that read the workout as a skip began
    put the old interval back, and the skip was lost. So `tap`, like every whole-app test, clicks with
-   core-testing's `performClick`, which goes in through `onMainThread`, and so does anything else a test
+   core-ui-testing's `performClick`, which goes in through `onMainThread`, and so does anything else a test
    hands the app directly (the fixtures' `back()`). Typing and scrolling are semantics actions, which the
    harness runs there itself. Waiting stays outside it.
 6. **Domain words.** An operation is named for what a person does (`endWorkoutAfterFirstRound()`,
