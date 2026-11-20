@@ -14,15 +14,14 @@ import kotlinx.serialization.json.Json
 
 private val json = Json { ignoreUnknownKeys = true }
 
-/** A day of samples, far past any class: what a row is cut to. */
-private const val MAX_SAMPLES = 24 * 60 * 60 / SportClass.SAMPLE_SECONDS
-
 @Serializable
 internal class StoredSamples(val bpm: List<Int> = emptyList(), val movement: List<Float> = emptyList())
 
-/** [samples] as the text a column holds. */
-internal fun encodeSamples(samples: List<ClassSample>): String =
-    json.encodeToString(StoredSamples(samples.map { it.bpm }, samples.map { it.movement }))
+/** [samples] as the text a column holds, cut to [SportClass.MAX_SAMPLES] as they are when read back. */
+internal fun encodeSamples(samples: List<ClassSample>): String {
+    val kept = samples.take(SportClass.MAX_SAMPLES)
+    return json.encodeToString(StoredSamples(kept.map { it.bpm }, kept.map { it.movement }))
+}
 
 /** The samples [text] holds, each heart rate one a heart can have or 0 for none; none when it can't be read. */
 internal fun decodeSamples(text: String): List<ClassSample> =
@@ -30,7 +29,7 @@ internal fun decodeSamples(text: String): List<ClassSample> =
         .onFailure { Logger.withTag("Classes").w(it) { "Couldn't read a class's samples" } }
         .getOrNull()
         ?.let { stored ->
-            stored.bpm.take(MAX_SAMPLES).mapIndexed { index, bpm ->
+            stored.bpm.take(SportClass.MAX_SAMPLES).mapIndexed { index, bpm ->
                 val movement = stored.movement.getOrNull(index)?.takeIf { it.isFinite() && it > 0f } ?: 0f
                 ClassSample(bpm.takeIf { it in HeartRate.BPM_RANGE } ?: 0, movement)
             }

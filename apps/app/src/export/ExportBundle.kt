@@ -17,7 +17,9 @@ import kotlinx.serialization.Serializable
  * bell, `origin`, and about how many snatches a set a workout held and the bell, `snatchesPerSet` and `snatchBellKg`;
  * schema 12 the Lift exercise a flow's move is, `exercise`, and the day a one-off plan was moved from, `movedFromDay`,
  * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`; schema 14
- * the classes recorded on a heart-rate sensor, `classes`, the rest absent from older files). Lift's
+ * the classes recorded on a heart-rate sensor, `classes`; schema 15 the max heart rate in the settings and a
+ * workout's or a session's heart rate as a sensor read it live, `heartRateSamples`, the rest absent from older
+ * files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable

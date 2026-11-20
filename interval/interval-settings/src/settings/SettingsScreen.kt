@@ -20,6 +20,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.SensorFailure
+import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.rememberBluetoothAccess
 import dev.justinsmith.interval.platform.rememberFileOpener
 import dev.justinsmith.interval.platform.rememberHealthConnector
@@ -33,6 +34,9 @@ import dev.justinsmith.interval.settings.resources.settings_clear_log_confirm
 import dev.justinsmith.interval.settings.resources.settings_clear_log_text
 import dev.justinsmith.interval.settings.resources.settings_clear_log_title
 import dev.justinsmith.interval.settings.resources.settings_close_cd
+import dev.justinsmith.interval.settings.resources.settings_sensor_forget
+import dev.justinsmith.interval.settings.resources.settings_sensor_forget_text
+import dev.justinsmith.interval.settings.resources.settings_sensor_forget_title
 import dev.justinsmith.interval.settings.resources.settings_title
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
@@ -160,6 +164,11 @@ fun SettingsScreen(
     var editingWeight by rememberSaveable { mutableStateOf(false) }
     var editingMaxHeartRate by rememberSaveable { mutableStateOf(false) }
     var clearingLog by rememberSaveable { mutableStateOf(false) }
+    var forgettingSensor by rememberSaveable { mutableStateOf(false) }
+    // A sensor with a class on it is forgotten only once that is confirmed: forgotten, the class can't be synced.
+    val sensorRow = SensorRow(sensor.status, sensor.looking, sensor.onPair) {
+        if (sensor.status is SensorStatus.Recording) forgettingSensor = true else sensor.onForget()
+    }
     val groups = settingsGroups(
         state,
         onToggle,
@@ -173,7 +182,7 @@ fun SettingsScreen(
         imports.onPick,
         onClearLog = { clearingLog = true },
         HealthActions(onConnectHealth, onDisconnectHealth, onInstallHealth),
-        sensor,
+        sensorRow,
         onShowPlan,
         onShowSetup,
         onShowAbout,
@@ -205,20 +214,8 @@ fun SettingsScreen(
         })
     }
     ImportProgress(importStep, imports)
-    if (clearingLog) {
-        ConfirmDialog(
-            title = stringResource(Res.string.settings_clear_log_title),
-            text = stringResource(Res.string.settings_clear_log_text),
-            confirm = stringResource(Res.string.settings_clear_log_confirm),
-            dismiss = stringResource(Res.string.settings_cancel),
-            onConfirm = {
-                onClearLog()
-                clearingLog = false
-            },
-            onDismiss = { clearingLog = false },
-            destructive = true,
-        )
-    }
+    if (clearingLog) ClearLogDialog(onClearLog) { clearingLog = false }
+    if (forgettingSensor) ForgetSensorDialog(sensor.onForget) { forgettingSensor = false }
     if (editingWeight) {
         WeightSheet(
             state.weight,
@@ -234,6 +231,40 @@ fun SettingsScreen(
     if (editingMaxHeartRate) {
         MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
     }
+}
+
+/** Asks before the log is cleared: it can't be undone. */
+@Composable
+private fun ClearLogDialog(onClear: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(Res.string.settings_clear_log_title),
+        text = stringResource(Res.string.settings_clear_log_text),
+        confirm = stringResource(Res.string.settings_clear_log_confirm),
+        dismiss = stringResource(Res.string.settings_cancel),
+        onConfirm = {
+            onClear()
+            onDismiss()
+        },
+        onDismiss = onDismiss,
+        destructive = true,
+    )
+}
+
+/** Asks before a sensor with a class on it is forgotten: the class could no longer be synced. */
+@Composable
+private fun ForgetSensorDialog(onForget: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(Res.string.settings_sensor_forget_title),
+        text = stringResource(Res.string.settings_sensor_forget_text),
+        confirm = stringResource(Res.string.settings_sensor_forget),
+        dismiss = stringResource(Res.string.settings_cancel),
+        onConfirm = {
+            onForget()
+            onDismiss()
+        },
+        onDismiss = onDismiss,
+        destructive = true,
+    )
 }
 
 /** The import under way: its review sheet, then a notice of what came in, or that it couldn't finish. */

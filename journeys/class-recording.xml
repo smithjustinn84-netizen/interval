@@ -8,7 +8,7 @@
   <actions>
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the gear on "Today" and scroll to "Heart-rate sensor"</action>
-    <action>Verify that its row reads "Pair a sensor" over "A Polar Verity Sense, switched on and close by, to record a class"</action>
+    <action>Verify that its row reads "Pair a sensor" over "A Polar Verity Sense or H10, switched on (an H10 worn) and close by"</action>
     <action>Tap "Pair a sensor" and allow "Nearby devices" when Android asks</action>
     <action>Verify that the row reads "Looking for it…", then the sensor's name ("Polar Sense" and its id) over "Paired. Record a class from Today on its day. Tap to forget it"</action>
     <action>Go back to "Today", tap "Plan your week", add "BJJ" from "Sport" on today's weekday row, and tap "Back"</action>
@@ -27,6 +27,6 @@
     <action>Tap the "Log" tab, open the "BJJ class" row, tap "More options", "Delete recording", then "Delete"</action>
     <action>Verify that a notice says "Recording deleted" and the "BJJ class" row reads "Logged" with an "×"</action>
     <action>Switch the sensor off, plan nothing more, and on a day with a class still to log tap "Record class"</action>
-    <action>Verify that after a while a notice says "Couldn’t find the sensor. Wake it and keep it close." and the card still offers "Record class"</action>
+    <action>Verify that after a while a notice says "Couldn’t find the sensor. Wake it (wear an H10) and keep it close." and the card still offers "Record class"</action>
   </actions>
 </journey>

@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.model
 
+import kotlin.math.roundToInt
+
 /**
  * A stretch of a class as a sensor on the arm read it: the heart rate, and how much the arm moved (the spread of
  * the accelerometer's magnitude over the stretch, in g). A [bpm] of 0 is a stretch the sensor read nothing in.
@@ -28,15 +30,12 @@ data class ClassRound(
  * What a sensor hands over as a class is synced: when it started, and a [ClassSample] every
  * [SportClass.SAMPLE_SECONDS].
  */
-data class ClassRecording(val startedAtEpochMillis: Long, val samples: List<ClassSample>) {
-    val seconds: Int get() = samples.size * SportClass.SAMPLE_SECONDS
-
-    val endedAtEpochMillis: Long get() = startedAtEpochMillis + seconds * MILLIS_PER_SECOND
-}
+data class ClassRecording(val startedAtEpochMillis: Long, val samples: List<ClassSample>)
 
 /**
  * A class of [sport] recorded on a sensor and kept beside the day it was logged on ([epochDay], as a
- * [LoggedSport]'s): its samples, and the [rounds] found in them as it was synced.
+ * [LoggedSport]'s): its samples, and the [rounds] found in them, afresh each time it is read, so nothing of a
+ * round is stored.
  */
 data class SportClass(
     val id: Long,
@@ -48,20 +47,19 @@ data class SportClass(
 ) {
     val seconds: Int get() = samples.size * SAMPLE_SECONDS
 
-    val endedAtEpochMillis: Long get() = startedAtEpochMillis + seconds * MILLIS_PER_SECOND
-
     /** The whole class's heart rate, null when the sensor read none. */
-    val averageBpm: Int? get() = samples.filter { it.read }.takeIf { it.isNotEmpty() }?.let { read ->
-        (read.sumOf { it.bpm }.toDouble() / read.size + HALF).toInt()
-    }
+    val averageBpm: Int? get() = samples.filter { it.read }.map { it.bpm }.meanBpm()
 
     val peakBpm: Int? get() = samples.filter { it.read }.maxOfOrNull { it.bpm }
 
     companion object {
         /** How long a [ClassSample] covers. */
         const val SAMPLE_SECONDS = 5
+
+        /** The most samples a class is kept or read with: a day of them, far past any class. */
+        const val MAX_SAMPLES = 24 * 60 * 60 / SAMPLE_SECONDS
     }
 }
 
-private const val MILLIS_PER_SECOND = 1000L
-private const val HALF = 0.5
+/** The mean of these heart rates to the nearest beat, null of none. */
+fun List<Int>.meanBpm(): Int? = if (isEmpty()) null else (sum().toDouble() / size).roundToInt()

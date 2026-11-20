@@ -34,7 +34,8 @@ import kotlinx.coroutines.IO
  * in rows from before; version 17 the day a one-off plan was moved from ([PlannedEntity.movedFromDay]), none in
  * rows from before; version 18 whether a workout's, preset's or plan's first block is a time cap
  * ([HistoryEntity.capped]) and the rounds done in a workout's caps ([HistoryEntity.capRounds]), neither in rows
- * from before; version 19 the classes recorded on a heart-rate sensor ([SportClassEntity]).
+ * from before; version 19 the classes recorded on a heart-rate sensor ([SportClassEntity]); version 20 a workout's
+ * heart rate as a sensor read it live ([HistoryEntity.heartRateSamples]), none in rows from before.
  */
 @Database(
     entities = [

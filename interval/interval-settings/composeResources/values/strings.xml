@@ -130,6 +130,8 @@
     <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day. Tap to forget it</string>
     <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>
     <string name="settings_sensor_forget">Forget</string>
+    <string name="settings_sensor_forget_title">Forget the sensor?</string>
+    <string name="settings_sensor_forget_text">A class is still on it. Once the sensor is forgotten, that class can’t be synced.</string>
     <string name="notice_sensor_no_access">Bluetooth is off, or the app may not use it.</string>
     <string name="notice_sensor_none_nearby">Couldn’t find a sensor. Switch it on and keep it close.</string>
     <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>

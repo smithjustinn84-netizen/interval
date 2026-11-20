@@ -29,6 +29,6 @@ actual val healthStoreName: StringResource = Res.string.health_connect
 @Composable
 actual fun rememberHealthConnector(store: HealthStore): HealthConnector = NoHealthConnector
 
-/** Nothing to ask here: no sensor is offered, and iOS asks for Bluetooth itself as it is first used. */
+/** Nothing to ask here: the desktop offers no sensor. */
 @Composable
 actual fun rememberBluetoothAccess(): BluetoothAccess = BluetoothAccess { then -> then(true) }

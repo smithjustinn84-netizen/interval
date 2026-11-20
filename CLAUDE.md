@@ -616,15 +616,17 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   revoke, so its switch off is the app's own (user defaults), and one refused on HealthKit's sheet is sent to the
   Health app. Screens name the store by core's `healthStoreName`, never a literal.
 - **A class on a heart-rate sensor**: `ClassSensor` (`interval-platform-api`) is the port: `status` (Unavailable,
-  Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync`, each reaching the sensor for as long
-  as it takes and letting it go. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
-  or H10, one paired at a time and told apart by its name, through Polar's coroutine SDK: the Verity's offline
+  Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync(keep)`, each reaching the sensor for as
+  long as it takes and letting it go. A sync hands the recording to `keep` and clears the sensor only once that
+  returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
+  or H10, one paired at a time and told apart by its name, through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`, the live stream giving
+  way to a recording's start or its sync: the Verity's offline
   recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart
   rate a second alone, so its rounds go by the heart rate, started when Record is tapped; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
   Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
   location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
-  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10, its class recording not yet tried (docs/backlog.md). A sync hands over
+  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10, its class recording not yet tried (docs/backlog.md). A sync hands its `keep`
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,

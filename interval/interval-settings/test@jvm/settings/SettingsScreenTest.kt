@@ -27,6 +27,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.Window
@@ -50,7 +51,11 @@ class SettingsScreenTest {
     private val calls = mutableListOf<Any>()
 
     @Composable
-    private fun Screen(state: SettingsUiState = defaults, inPane: Boolean = false) {
+    private fun Screen(
+        state: SettingsUiState = defaults,
+        inPane: Boolean = false,
+        sensor: SensorStatus = SensorStatus.Unavailable,
+    ) {
         SettingsScreen(
             state = state,
             onBack = { calls += "back" },
@@ -73,6 +78,7 @@ class SettingsScreenTest {
             onConnectHealth = { calls += "connect health" },
             onDisconnectHealth = { calls += "disconnect health" },
             onInstallHealth = { calls += "install health" },
+            sensor = SensorRow(sensor, onPair = { calls += "pair" }, onForget = { calls += "forget" }),
         )
     }
 
@@ -99,6 +105,38 @@ class SettingsScreenTest {
         state = defaults.copy(health = HealthStatus.NotInstalled)
         onNodeWithText("Health Connect").performClick()
         assertEquals(listOf<Any>("connect health", "disconnect health", "install health"), calls)
+    }
+
+    @Test
+    fun `the sensor's row pairs one and forgets a paired one at a tap`() = runUiTest {
+        var sensor by mutableStateOf<SensorStatus>(SensorStatus.Unavailable)
+        setThemedContent { Screen(sensor = sensor) }
+        scrollToText("Appearance")
+        onNodeWithText("Heart-rate sensor").assertDoesNotExist()
+
+        sensor = SensorStatus.Unpaired
+        scrollToText("Pair a sensor")
+        onNodeWithText("Pair a sensor").performClick()
+
+        sensor = SensorStatus.Paired("Polar Sense 1A2B3C4D")
+        onNode(hasText("Polar Sense 1A2B3C4D")).performClick()
+        assertEquals(listOf<Any>("pair", "forget"), calls)
+    }
+
+    @Test
+    fun `a sensor with a class on it is forgotten only once that is confirmed`() = runUiTest {
+        setThemedContent { Screen(sensor = SensorStatus.Recording("Polar H10 1A2B3C4D", sinceEpochMillis = 1)) }
+        scrollToText("Polar H10 1A2B3C4D")
+
+        onNode(hasText("Polar H10 1A2B3C4D")).performClick()
+        onNodeWithText("Forget the sensor?").assertExists()
+        onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<Any>(), calls)
+
+        onNode(hasText("Polar H10 1A2B3C4D")).performClick()
+        onNodeWithText("Forget").performClick()
+        onNodeWithText("Forget the sensor?").assertDoesNotExist()
+        assertEquals(listOf<Any>("forget"), calls)
     }
 
     @Test

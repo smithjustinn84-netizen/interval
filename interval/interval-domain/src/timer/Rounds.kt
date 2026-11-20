@@ -3,15 +3,16 @@ package dev.justinsmith.interval.timer
 import dev.justinsmith.interval.model.ClassRound
 import dev.justinsmith.interval.model.ClassSample
 import dev.justinsmith.interval.model.SportClass.Companion.SAMPLE_SECONDS
+import dev.justinsmith.interval.model.meanBpm
 import kotlin.math.sqrt
 
 // The detector's numbers are a first reading, to be tuned on classes recorded on the mat.
 
 /** A round is at least this long: anything shorter is a drill or a scramble to the water. */
-const val MIN_ROUND_SECONDS = 120
+private const val MIN_ROUND_SECONDS = 120
 
 /** A lull shorter than this neither ends a round nor splits one. */
-const val ROUND_GAP_SECONDS = 30
+private const val ROUND_GAP_SECONDS = 30
 
 /** The class's heart rate must range at least this far for any of it to stand out as a round. */
 private const val MIN_SPREAD_BPM = 20f
@@ -45,7 +46,7 @@ private const val HALF = 0.5f
  * [ROUND_GAP_SECONDS], when the recording has movement to go by. A class at one steady effort has no rounds.
  */
 fun detectRounds(samples: List<ClassSample>): List<ClassRound> {
-    val bpm = smoothed(samples.map { it.bpm.toFloat() })
+    val bpm = smoothed(samples.map { it.bpm.toFloat() }, skipUnread = true)
     val read = bpm.filter { it > 0f }.sorted()
     val minSamples = MIN_ROUND_SECONDS / SAMPLE_SECONDS
     if (read.size < minSamples) return emptyList()
@@ -74,15 +75,16 @@ private fun round(samples: List<ClassSample>, run: IntRange, next: Int): ClassRo
     val read = samples.subList(run.first, run.last + 1).filter { it.read }
     val end = read.lastOrNull()?.bpm
 
+    // Null once the next round has begun: its first sample is that round's work, not this one's rest.
     fun drop(seconds: Int): Int? {
         val at = run.last + seconds / SAMPLE_SECONDS
-        val then = samples.getOrNull(at)?.takeIf { at <= next && it.read } ?: return null
+        val then = samples.getOrNull(at)?.takeIf { at < next && it.read } ?: return null
         return end?.let { it - then.bpm }
     }
     return ClassRound(
         startSecond = run.first * SAMPLE_SECONDS,
         endSecond = (run.last + 1) * SAMPLE_SECONDS,
-        averageBpm = if (read.isEmpty()) 0 else (read.sumOf { it.bpm }.toFloat() / read.size + HALF).toInt(),
+        averageBpm = read.map { it.bpm }.meanBpm() ?: 0,
         peakBpm = read.maxOfOrNull { it.bpm } ?: 0,
         drop30 = drop(RECOVERY_SHORT_SECONDS),
         drop60 = drop(RECOVERY_LONG_SECONDS),
@@ -91,7 +93,7 @@ private fun round(samples: List<ClassSample>, run: IntRange, next: Int): ClassRo
 
 /** Where the arm is still, by the class's own movement; nowhere when the movement hardly varies. */
 private fun stillness(samples: List<ClassSample>): BooleanArray {
-    val movement = smoothed(samples.map { it.movement }, missing = -1f)
+    val movement = smoothed(samples.map { it.movement })
     val sorted = movement.sorted()
     if (sorted.isEmpty()) return BooleanArray(0)
     val low = sorted.share(STILL_SHARE)
@@ -101,10 +103,14 @@ private fun stillness(samples: List<ClassSample>): BooleanArray {
     return BooleanArray(samples.size) { movement[it] < threshold }
 }
 
-/** Each value averaged with its neighbours, leaving out any that are [missing]; one with none left stays missing. */
-private fun smoothed(values: List<Float>, missing: Float = 0f): List<Float> = values.indices.map { index ->
-    val near = (index - SMOOTH_REACH..index + SMOOTH_REACH).mapNotNull { values.getOrNull(it) }.filter { it != missing }
-    if (near.isEmpty()) missing else near.sum() / near.size
+/**
+ * Each value averaged with its neighbours. For the heart rate, where 0 is a stretch unread, [skipUnread] leaves
+ * those out, and one with none read beside it stays 0; the movement's 0 is an arm that is still, and counts.
+ */
+private fun smoothed(values: List<Float>, skipUnread: Boolean = false): List<Float> = values.indices.map { index ->
+    val near = (index - SMOOTH_REACH..index + SMOOTH_REACH).mapNotNull { values.getOrNull(it) }
+        .filter { !skipUnread || it > 0f }
+    if (near.isEmpty()) 0f else near.sum() / near.size
 }
 
 /** The value [share] of the way up a sorted list. */
@@ -137,14 +143,17 @@ fun classSamples(
     accelerometerHz: Int = 0,
     bpmSeconds: Int = 1,
 ): List<ClassSample> {
-    val perSample = (SAMPLE_SECONDS / bpmSeconds.coerceAtLeast(1)).coerceAtLeast(1)
+    // Each reading goes to the sample its own time falls in, so one that comes less often than a second still
+    // makes samples of [SAMPLE_SECONDS], with fewer readings in each.
+    val every = bpmSeconds.coerceAtLeast(1)
+    val readings = bpm.withIndex().groupBy({ it.index * every / SAMPLE_SECONDS }, { it.value })
+    val count = (bpm.size * every + SAMPLE_SECONDS - 1) / SAMPLE_SECONDS
     val perWindow = accelerometerHz * SAMPLE_SECONDS
-    return bpm.chunked(perSample).mapIndexed { index, chunk ->
-        val read = chunk.filter { it > 0 }
+    return List(count) { index ->
         val from = (index * perWindow).coerceAtMost(magnitudes.size)
         val window = magnitudes.subList(from, (from + perWindow).coerceAtMost(magnitudes.size))
         ClassSample(
-            bpm = if (read.isEmpty()) 0 else (read.sum().toFloat() / read.size + HALF).toInt(),
+            bpm = readings[index].orEmpty().filter { it > 0 }.meanBpm() ?: 0,
             movement = spread(window),
         )
     }

@@ -15,6 +15,7 @@ import dev.justinsmith.interval.model.ClassSample
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -24,7 +25,8 @@ import kotlin.test.assertNull
 
 class ClassSensorViewModelTest : MainDispatcherTest() {
     private val started = noonOf(TODAY)
-    private val repository = FakeStorage().repository()
+    private val storage = FakeStorage()
+    private val repository = storage.repository()
     private val sensor = RecordingClassSensor(SensorStatus.Paired(SENSOR_NAME), now = { started })
 
     private val viewModel by lazy { ClassSensorViewModel(sensor, repository.history, FixedTimestampFormatter) }
@@ -100,6 +102,51 @@ class ClassSensorViewModelTest : MainDispatcherTest() {
         assertEquals(ClassSensorEvent.Failed(SensorFailure.NothingRecorded), viewModel.events.first())
         assertEquals(emptyList(), repository.history.classes.value)
         assertEquals(emptyList(), repository.history.sportDays.value)
+    }
+
+    @Test
+    fun `a class that cannot be stored stays on the sensor to sync again`() = runTest {
+        sensor.status.value = SensorStatus.Recording(SENSOR_NAME, started)
+        sensor.recorded = sparringRecording(rounds = 4, startedAtEpochMillis = started)
+        storage.classes.failWrites = true
+
+        viewModel.sync(Sport.Bjj)
+
+        assertEquals(ClassSensorEvent.Failed(SensorFailure.Failed), viewModel.events.first())
+        assertEquals(emptyList(), repository.history.sportDays.value)
+        assertEquals(SensorCard.Recording(FixedTimestampFormatter.time(started)), viewModel.state.value.card)
+
+        storage.classes.failWrites = false
+        viewModel.sync(Sport.Bjj)
+
+        assertEquals(ClassSensorEvent.Synced(started), viewModel.events.first())
+        assertEquals(4, repository.history.classes.value.single().rounds.size)
+        assertEquals(SensorCard.Ready(SENSOR_NAME), viewModel.state.value.card)
+    }
+
+    @Test
+    fun `a sensor with nothing on it says so and stands ready again`() = runTest {
+        sensor.status.value = SensorStatus.Recording(SENSOR_NAME, started)
+
+        viewModel.sync(Sport.Bjj)
+
+        assertEquals(ClassSensorEvent.Failed(SensorFailure.NothingRecorded), viewModel.events.first())
+        assertEquals(SensorCard.Ready(SENSOR_NAME), viewModel.state.value.card)
+    }
+
+    @Test
+    fun `a second tap while the sensor is being reached does nothing`() = runTest {
+        val held = CompletableDeferred<Unit>()
+        sensor.holding = held
+
+        viewModel.record()
+        viewModel.record()
+        assertEquals(true, viewModel.state.value.busy)
+        held.complete(Unit)
+
+        assertEquals(ClassSensorEvent.Started, viewModel.events.first())
+        assertEquals(1, sensor.starts)
+        assertEquals(false, viewModel.state.value.busy)
     }
 
     @Test

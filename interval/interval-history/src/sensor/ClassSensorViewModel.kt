@@ -7,7 +7,6 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.ClassSensor
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
-import dev.justinsmith.interval.platform.SensorSync
 import dev.justinsmith.interval.platform.TimestampFormatter
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
@@ -43,7 +42,8 @@ sealed interface ClassSensorEvent {
 
 /**
  * A class recorded on the heart-rate sensor, from Today: set recording before it, synced after. A sync keeps the
- * recording, with the rounds found in it, and logs the sport's day it started on, as "Log it" would.
+ * recording and logs the sport's day it started on, as "Log it" would; the sensor is cleared of it only once it is
+ * stored.
  */
 class ClassSensorViewModel(
     private val sensor: ClassSensor,
@@ -70,22 +70,23 @@ class ClassSensorViewModel(
         sensor.startRecording()?.let(ClassSensorEvent::Failed) ?: ClassSensorEvent.Started
     }
 
-    /** Brings the recording over as a class of [sport], on the day it started. */
+    /**
+     * Brings the recording over as a class of [sport], on the day it started. One with no heart rate read is
+     * nothing to keep, and is let go from the sensor all the same.
+     */
     fun sync(sport: Sport) = reach {
-        when (val synced = sensor.sync()) {
-            is SensorSync.Failed -> ClassSensorEvent.Failed(synced.why)
-
-            is SensorSync.Synced -> {
-                val recording = synced.recording
-                if (recording.samples.none { it.read }) {
-                    ClassSensorEvent.Failed(SensorFailure.NothingRecorded)
-                } else {
-                    val day = timestamps.dayNumber(recording.startedAtEpochMillis)
-                    historyStore.keepClass(sport, day, recording)
-                    historyStore.logSport(sport, day)
-                    ClassSensorEvent.Synced(recording.startedAtEpochMillis)
-                }
+        var kept: Long? = null
+        val failure = sensor.sync { recording ->
+            if (recording.samples.any { it.read }) {
+                val day = timestamps.dayNumber(recording.startedAtEpochMillis)
+                historyStore.keepClass(sport, day, recording)
+                historyStore.logSport(sport, day)
+                kept = recording.startedAtEpochMillis
             }
+        }
+        when {
+            failure != null -> ClassSensorEvent.Failed(failure)
+            else -> kept?.let(ClassSensorEvent::Synced) ?: ClassSensorEvent.Failed(SensorFailure.NothingRecorded)
         }
     }
 

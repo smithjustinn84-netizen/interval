@@ -123,9 +123,10 @@ interface HistoryStore {
 
     /**
      * Keeps [recording] as a class of [sport] on [epochDay]. It is known by the moment it started: one synced
-     * again replaces itself. It logs nothing: the day is [logSport]'s.
+     * again replaces itself. It logs nothing: the day is [logSport]'s. Returns once it is stored and throws if it
+     * couldn't be, unlike the store's other writes: the sensor is cleared of the recording only after.
      */
-    fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording)
+    suspend fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording)
 
     /** Removes the class that started at [startedAtEpochMillis]; its day stays logged. */
     fun removeClass(startedAtEpochMillis: Long)

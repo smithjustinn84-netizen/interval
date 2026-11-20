@@ -1,8 +1,9 @@
 # What a workout needs from the platform, built: the cue player (beeps, speech, haptics) and the words it speaks,
 # the workout kept off screen (Android's foreground service and notification, iOS's scheduled
-# notifications), the plan's reminders, and the Koin module each platform builds them in, with its storage
+# notifications), the plan's reminders, Android's heart-rate sensor (Polar's, for a class and the live heart
+# rate), and the Koin module each platform builds them in, with its storage
 # locations. It implements `interval-platform-api`, which the features take; only the app depends on this.
-description: "Interval platform services: cues, background workout, plan reminders"
+description: "Interval platform services: cues, background workout, plan reminders, the heart-rate sensor"
 product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
@@ -28,7 +29,7 @@ dependencies@android:
   - $libs.androidx.core.ktx
   # The plan reminders' alarm record, a DataStore of its own the boot receiver reads.
   - $libs.androidx.datastore.preferences.core
-  # Polar's SDK: the Verity Sense a class is recorded on (`PolarClassSensor`).
+  # Polar's SDK: the Verity Sense or H10 a class is recorded on (`PolarClassSensor`).
   - $libs.polar.ble.sdk
 
 # Polar publishes its SDK on JitPack alone.

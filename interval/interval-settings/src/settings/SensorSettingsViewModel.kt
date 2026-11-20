@@ -49,5 +49,8 @@ class SensorSettingsViewModel(private val sensor: ClassSensor) : ViewModel() {
         }
     }
 
-    fun forget() = sensor.forget()
+    /** Lets the paired sensor go, once whatever is being done with it is over. */
+    fun forget() {
+        viewModelScope.launch { sensor.forget() }
+    }
 }

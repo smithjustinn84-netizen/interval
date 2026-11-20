@@ -50,12 +50,9 @@ internal fun SportClass.export() = ClassExport(
     movement = samples.map { it.movement },
 )
 
-/** A day of readings, far past any class. */
-private const val MAX_CLASS_SAMPLES = 24 * 60 * 60 / SportClass.SAMPLE_SECONDS
-
 /** The class a file holds, its rounds found afresh; a heart rate no heart has makes the file unreadable. */
 internal fun ClassExport.toDomain(): SportClass {
-    require(bpm.isNotEmpty() && bpm.size <= MAX_CLASS_SAMPLES) { "class length" }
+    require(bpm.isNotEmpty() && bpm.size <= SportClass.MAX_SAMPLES) { "class length" }
     val samples = bpm.mapIndexed { index, rate ->
         require(rate == 0 || rate in HeartRate.BPM_RANGE) { "class heart rate" }
         val moved = movement.getOrNull(index) ?: 0f

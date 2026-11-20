@@ -9,6 +9,7 @@ import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.model.ClassSample
 import dev.justinsmith.interval.model.Sport
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -19,12 +20,17 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
     private val started = noonOf(TODAY) - 7_200_000
     private val repository = FakeStorage().repository(now = { clock })
 
+    /** Kept before the page opens: its ViewModel follows midnight for good, which a test's own scope would wait on. */
+    private fun keep(sport: Sport, epochDay: Long, recording: ClassRecording) = runTest {
+        repository.history.keepClass(sport, epochDay, recording)
+    }
+
     private fun viewModel(startedAt: Long = started) =
         ClassDetailViewModel(startedAt, repository.history, FixedTimestampFormatter, { clock })
 
     @Test
     fun `a class shows when it was its length and its heart rate`() {
-        repository.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
+        keep(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
 
         val recorded = requireNotNull(viewModel().state.value.recorded)
 
@@ -39,7 +45,7 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `each round says its length its heart rate and how far that fell`() {
-        repository.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
+        keep(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
 
         val rounds = requireNotNull(viewModel().state.value.recorded).rounds
 
@@ -55,7 +61,7 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `the line runs from the lowest reading to the highest with a band a round`() {
-        repository.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 2, startedAtEpochMillis = started))
+        keep(Sport.Bjj, TODAY, sparringRecording(rounds = 2, startedAtEpochMillis = started))
 
         val line = requireNotNull(viewModel().state.value.recorded).line
 
@@ -68,7 +74,7 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
     @Test
     fun `a stretch the sensor read nothing in breaks the line`() {
         val samples = List(40) { ClassSample(if (it in 10..12) 0 else 100 + it, movement = 0.2f) }
-        repository.history.keepClass(Sport.Climbing, TODAY, ClassRecording(started, samples))
+        keep(Sport.Climbing, TODAY, ClassRecording(started, samples))
 
         val recorded = requireNotNull(viewModel().state.value.recorded)
 
@@ -79,7 +85,7 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
     @Test
     fun `deleting takes the recording and leaves the day logged`() {
         repository.history.logSport(Sport.Bjj, TODAY)
-        repository.history.keepClass(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
+        keep(Sport.Bjj, TODAY, sparringRecording(rounds = 3, startedAtEpochMillis = started))
         val viewModel = viewModel()
 
         viewModel.delete()

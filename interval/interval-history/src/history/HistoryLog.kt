@@ -140,12 +140,15 @@ internal class DayMark(val text: String, val today: Boolean)
 internal class SportLine(val sport: Sport, val recorded: ClassRow?, val logged: Boolean)
 
 /**
- * A day's sport rows: each sport logged, with the class recorded of it that day, then any class whose day was
- * never logged or was taken off again, which keeps a row so its recording can still be reached.
+ * A day's sport rows: each sport logged, with the class recorded of it that day, then every other class, which
+ * keeps a row so its recording can still be reached: a second class of a sport that day, and any whose day was
+ * never logged or was taken off again. Only a sport's first row is [SportLine.logged], so a day is taken off once.
  */
-internal fun sportLines(sports: List<Sport>, classes: List<ClassRow>): List<SportLine> =
-    sports.map { sport -> SportLine(sport, classes.firstOrNull { it.sport == sport }, logged = true) } +
-        classes.filter { it.sport !in sports }.map { SportLine(it.sport, it, logged = false) }
+internal fun sportLines(sports: List<Sport>, classes: List<ClassRow>): List<SportLine> {
+    val logged = sports.map { sport -> SportLine(sport, classes.firstOrNull { it.sport == sport }, logged = true) }
+    val shown = logged.mapNotNull { it.recorded }.toSet()
+    return logged + classes.filter { it !in shown }.map { SportLine(it.sport, it, logged = false) }
+}
 
 /**
  * A day of a sport logged: its name, that it was logged, and the × that takes it off again. One with a class

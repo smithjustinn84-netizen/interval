@@ -148,6 +148,32 @@ class RoundsTest {
     }
 
     @Test
+    fun `a reading every two or three seconds still makes samples of five`() {
+        // A minute of readings two seconds apart, then of three: twelve samples each, not fifteen and twenty.
+        assertEquals(12, classSamples(List(30) { 120 }, bpmSeconds = 2).size)
+        assertEquals(12, classSamples(List(20) { 120 }, bpmSeconds = 3).size)
+        // Each reading lands in the sample its own time falls in: seconds 0, 2, 4, then 6, 8, then 10, 12, 14.
+        val samples = classSamples(listOf(100, 100, 100, 130, 130, 160, 160, 160), bpmSeconds = 2)
+        assertEquals(listOf(100, 130, 160, 0), samples.map { it.bpm })
+    }
+
+    @Test
+    fun `a drop is not read from the next round's first sample`() {
+        // The next round begins exactly a minute after this one ends: that sample is its work, not a rest.
+        val samples = steady(seconds = 600, bpm = 110, movement = 0.3f) +
+            steady(seconds = 300, bpm = 170, movement = 1f) +
+            steady(seconds = 55, bpm = 110, movement = 0f) +
+            steady(seconds = 300, bpm = 170, movement = 1f) +
+            steady(seconds = 300, bpm = 100, movement = 0.1f)
+
+        val rounds = detectRounds(samples)
+
+        assertEquals(2, rounds.size)
+        assertEquals(60, rounds.first().drop30)
+        assertNull(rounds.first().drop60)
+    }
+
+    @Test
     fun `a chest strap with the heart rate a second alone finds its rounds`() {
         // What an H10 hands over: a reading a second and no accelerometer.
         val bpm = sparring(rounds = 3, restSeconds = 90, restTo = 115).flatMap { List(SAMPLE_SECONDS) { _ -> it.bpm } }

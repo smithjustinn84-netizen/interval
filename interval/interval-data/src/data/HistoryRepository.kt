@@ -24,10 +24,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
- * The finished workouts and the sport days logged, which follow the database: the [HistoryStore]. Each workout is
- * stored under a uid from [ids]; a deleted one stays behind as a tombstone. A sport day is a row that comes and
- * goes. Written through [writer], the queue every interval repository shares, so how a workout felt never lands
- * before the workout.
+ * The finished workouts, the sport days logged and the classes recorded on a sensor, which follow the database:
+ * the [HistoryStore]. Each workout is stored under a uid from [ids]; a deleted one stays behind as a tombstone. A
+ * sport day is a row that comes and goes, and so is a class, known by the moment it started and the one write
+ * here that is waited on ([keepClass]). Written through [writer], the queue every interval repository shares, so
+ * how a workout felt never lands before the workout.
  */
 class HistoryRepository(
     private val historyDao: HistoryDao,
@@ -168,9 +169,9 @@ class HistoryRepository(
         writer.persist { sportLogDao.delete(epochDay, sport.key, sport.storedName) }
     }
 
-    override fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording) {
+    override suspend fun keepClass(sport: Sport, epochDay: Long, recording: ClassRecording) {
         val row = classEntity(sport, epochDay, recording.startedAtEpochMillis, recording.samples)
-        writer.persist { classDao.insert(row) }
+        writer.await { classDao.insert(row) }
     }
 
     override fun removeClass(startedAtEpochMillis: Long) {

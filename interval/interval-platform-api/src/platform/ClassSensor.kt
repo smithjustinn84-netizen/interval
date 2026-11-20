@@ -33,18 +33,11 @@ enum class SensorFailure {
     NothingRecorded,
 }
 
-/** What a sync came to. */
-sealed interface SensorSync {
-    data class Synced(val recording: ClassRecording) : SensorSync
-
-    data class Failed(val why: SensorFailure) : SensorSync
-}
-
 /**
  * The heart-rate sensor worn through a class, which records on its own memory while the phone is in the bag:
  * paired once, set recording before the class and synced after. Each call reaches the sensor for as long as it
- * takes and lets it go again, so nothing here holds a connection. A failure leaves things as they stood: a
- * recording that wouldn't sync is on the sensor still.
+ * takes and lets it go again, so none of these holds a connection once it returns. A failure leaves things as
+ * they stood: a recording that wouldn't sync, or couldn't be kept, is on the sensor still.
  */
 interface ClassSensor {
     val status: StateFlow<SensorStatus>
@@ -53,13 +46,18 @@ interface ClassSensor {
     suspend fun pair(): SensorFailure?
 
     /** Lets the paired sensor go. A recording on it stays there, the app's no longer. */
-    fun forget()
+    suspend fun forget()
 
     /** Sets the paired sensor recording; null once it is. */
     suspend fun startRecording(): SensorFailure?
 
-    /** Stops the recording, brings it over and clears it from the sensor. */
-    suspend fun sync(): SensorSync
+    /**
+     * Stops the recording and brings it over to [keep]; null once it is kept and cleared from the sensor. The
+     * sensor is cleared only after [keep] returns, so a recording it couldn't store (it throws, answered as
+     * [SensorFailure.Failed]) is there to sync again. With nothing on the sensor, [keep] isn't called, and the
+     * sensor stands ready again.
+     */
+    suspend fun sync(keep: suspend (ClassRecording) -> Unit): SensorFailure?
 }
 
 /** The sensor of a platform with none. */
@@ -68,9 +66,9 @@ object NoClassSensor : ClassSensor {
 
     override suspend fun pair(): SensorFailure = SensorFailure.NotFound
 
-    override fun forget() = Unit
+    override suspend fun forget() = Unit
 
     override suspend fun startRecording(): SensorFailure = SensorFailure.NotFound
 
-    override suspend fun sync(): SensorSync = SensorSync.Failed(SensorFailure.NotFound)
+    override suspend fun sync(keep: suspend (ClassRecording) -> Unit): SensorFailure = SensorFailure.NotFound
 }

@@ -31,11 +31,12 @@ import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
-import dev.justinsmith.interval.platform.SensorSync
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.storage.catchingFailures
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -267,11 +268,15 @@ class FakeSportClassDao : SportClassDao {
     private val rows = MutableStateFlow(emptyList<SportClassEntity>())
     private val ids = AutoIds()
 
+    /** While on, every insert fails as a full disk would. */
+    var failWrites = false
+
     override fun observeAll(): Flow<List<SportClassEntity>> =
         rows.map { all -> all.sortedByDescending { it.startedAtEpochMillis } }
 
     // As the unique index with REPLACE does.
     override suspend fun insert(row: SportClassEntity) {
+        check(!failWrites) { "disk full" }
         rows.update { all ->
             all.filterNot { it.startedAtEpochMillis == row.startedAtEpochMillis } + row.copy(id = ids.assign(row.id))
         }
@@ -412,9 +417,10 @@ class RecordingBackgroundWorkout : BackgroundWorkout {
 
 /**
  * A [ClassSensor] in memory, whose [status] a test sets as it likes: [nearby] is the sensor a pairing finds (null:
- * none in reach), [recorded] what a sync brings over (null: nothing on it), [failing] what every call answers while
- * set. [now] dates a recording's start. It starts as a platform with no sensor has it, so nothing of one shows
- * until a test offers one ([SensorStatus.Unpaired]).
+ * none in reach), [recorded] what a sync brings over (null: nothing on it), there still after a sync whose class
+ * couldn't be kept, [failing] what every call answers while set, [holding] what every call waits on first, for a
+ * test to catch it at work. [now] dates a recording's start. It starts as a platform with no sensor has it, so
+ * nothing of one shows until a test offers one ([SensorStatus.Unpaired]).
  */
 class RecordingClassSensor(
     initial: SensorStatus = SensorStatus.Unavailable,
@@ -425,8 +431,9 @@ class RecordingClassSensor(
 ) : ClassSensor {
     private val _status = MutableStateFlow(initial)
     override val status: MutableStateFlow<SensorStatus> get() = _status
+    var holding: CompletableDeferred<Unit>? = null
+    var pairings = 0
     var starts = 0
-    var syncs = 0
 
     private val name: String? get() = when (val status = _status.value) {
         is SensorStatus.Paired -> status.name
@@ -435,6 +442,8 @@ class RecordingClassSensor(
     }
 
     override suspend fun pair(): SensorFailure? {
+        pairings++
+        holding?.await()
         val found = nearby
         return when {
             failing != null -> failing
@@ -443,11 +452,12 @@ class RecordingClassSensor(
         }
     }
 
-    override fun forget() {
+    override suspend fun forget() {
         _status.value = SensorStatus.Unpaired
     }
 
     override suspend fun startRecording(): SensorFailure? {
+        holding?.await()
         val paired = name
         return when {
             failing != null -> failing
@@ -461,18 +471,26 @@ class RecordingClassSensor(
         }
     }
 
-    override suspend fun sync(): SensorSync {
+    override suspend fun sync(keep: suspend (ClassRecording) -> Unit): SensorFailure? {
+        holding?.await()
         val paired = name
         val recording = recorded
-        val failure = failing ?: SensorFailure.NotFound.takeIf { paired == null }
-            ?: SensorFailure.NothingRecorded.takeIf { recording == null }
-        if (failure != null || paired == null || recording == null) {
-            return SensorSync.Failed(failure ?: SensorFailure.Failed)
+        return when {
+            failing != null -> failing
+
+            paired == null -> SensorFailure.NotFound
+
+            // With nothing on it, a sensor reached stands ready again.
+            recording == null -> SensorFailure.NothingRecorded.also { _status.value = SensorStatus.Paired(paired) }
+
+            // As a real sensor has it: cleared only once the class is kept.
+            catchingFailures(onFailure = { true }) { keep(recording).let { false } } -> SensorFailure.Failed
+
+            else -> null.also {
+                recorded = null
+                _status.value = SensorStatus.Paired(paired)
+            }
         }
-        syncs++
-        recorded = null
-        _status.value = SensorStatus.Paired(paired)
-        return SensorSync.Synced(recording)
     }
 }
 

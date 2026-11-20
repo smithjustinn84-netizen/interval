@@ -95,6 +95,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Spacing
@@ -510,3 +511,18 @@ private val ThemeMode.labelRes: StringResource
         ThemeMode.Light -> Res.string.theme_light
         ThemeMode.Dark -> Res.string.theme_dark
     }
+
+@PreviewFormFactors
+@Composable
+private fun SensorGroupPreview() {
+    IntervalTheme {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            listOf(
+                SensorRow(SensorStatus.Unpaired),
+                SensorRow(SensorStatus.Unpaired, looking = true),
+                SensorRow(SensorStatus.Paired("Polar Sense 1A2B3C4D")),
+                SensorRow(SensorStatus.Recording("Polar H10 1A2B3C4D", sinceEpochMillis = 0)),
+            ).forEach { sensor -> ListCard { SensorRowContent(sensor) } }
+        }
+    }
+}

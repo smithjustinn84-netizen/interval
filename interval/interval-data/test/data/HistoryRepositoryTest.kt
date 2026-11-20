@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -233,7 +234,7 @@ class HistoryRepositoryTest {
     }
 
     @Test
-    fun `a class kept is read back with its rounds and the latest first`() {
+    fun `a class kept is read back with its rounds and the latest first`() = runTest {
         val repository = repository()
         repository.history.keepClass(
             Sport.Bjj,
@@ -254,7 +255,7 @@ class HistoryRepositoryTest {
     }
 
     @Test
-    fun `a class synced again replaces itself and one removed is gone`() {
+    fun `a class synced again replaces itself and one removed is gone`() = runTest {
         val repository = repository()
         repository.history.keepClass(
             Sport.Bjj,
@@ -273,7 +274,18 @@ class HistoryRepositoryTest {
     }
 
     @Test
-    fun `clearing the history clears the classes with it`() {
+    fun `a class that cannot be stored says so to whoever keeps it`() = runTest {
+        val repository = repository()
+        storage.classes.failWrites = true
+
+        assertFailsWith<IllegalStateException> {
+            repository.history.keepClass(Sport.Bjj, epochDay = 20_744, sparringRecording(rounds = 3))
+        }
+        assertEquals(emptyList(), repository.history.classes.value)
+    }
+
+    @Test
+    fun `clearing the history clears the classes with it`() = runTest {
         val repository = repository()
         repository.history.keepClass(Sport.Bjj, epochDay = 20_744, sparringRecording(rounds = 3))
         repository.history.clearHistory()
