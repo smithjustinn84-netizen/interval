@@ -242,7 +242,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      (`liftEntries`), which `App` registers and composes; its flow tests drive those entries
 
 apps/
-  app                the app: `App.kt` (the back stack and every entry), `BackStack.kt` (what the app does to
+  app                the app: `App.kt` (the back stack and the shell), `AppEntries.kt` (every entry), `BackStack.kt` (what the app does to
                      it: `selectTab`, `showTimer`, a shortcut's `open`, the fix-ups for a stack an older build saved), `di/AppKoin.kt` (`appModules`,
                      `initAppKoin`, the `IntervalActivity` Lift reads, over `IntervalRepository`, and the
                      `WeekStandingSource` the widget shows, over both sides' stores; `data/`),
@@ -302,7 +302,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   1. `@Serializable data object/class X : NavKey` in `apps/app/src/nav/Routes.kt` (a Lift page: `lift/lift-nav/src/nav/LiftRoutes.kt`)
   2. `subclass(X::class)` in `navConfiguration` (App.kt; a Lift key in `liftRoutes()`). Without it saving the
      back stack fails on iOS/desktop.
-  3. `entry<X> { XRoute() }` in the `entryProvider` (App.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
+  3. `entry<X> { XRoute() }` in the `entryProvider` (`appEntries`, AppEntries.kt; a Lift page in `liftEntries`, `lift/lift-nav/src/nav/LiftEntries.kt`)
   `TodayTab` is the start destination and the back stack's root: Back from Train or History returns to it
   (`selectTab`), and a stack saved by a build that opened on the Timer gets it put underneath (`rootAtToday`).
   A new install's first open has the welcome over it, which ends on Set up (see Set up, below).
