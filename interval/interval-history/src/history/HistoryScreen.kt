@@ -104,11 +104,20 @@ fun HistoryRoute(
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
     onOpenSettings: () -> Unit = {},
+    openDay: Long? = null,
+    onClearOpenDay: () -> Unit = {},
 ) {
     val viewModel = koinViewModel<HistoryViewModel>()
     val flows = koinInject<FlowStore>()
     val locale = LocalLocale.current.toLanguageTag()
     LaunchedEffect(locale) { viewModel.setLocale(locale) }
+    val clearOpenDay by rememberUpdatedState(onClearOpenDay)
+    LaunchedEffect(openDay) {
+        if (openDay != null) {
+            viewModel.openDay(openDay)
+            clearOpenDay()
+        }
+    }
     val state by viewModel.state.collectAsStateWithLifecycle()
     // The actions are remembered once, so they read the latest navigation callbacks rather than the first.
     val startWorkout by rememberUpdatedState(onStartWorkout)

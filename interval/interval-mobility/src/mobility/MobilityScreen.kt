@@ -28,6 +28,8 @@ import dev.justinsmith.interval.mobility.resources.mobility_build_hint
 import dev.justinsmith.interval.mobility.resources.mobility_open_cd
 import dev.justinsmith.interval.mobility.resources.mobility_own
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.IconAction
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
@@ -88,7 +90,10 @@ fun MobilityScreen(
     TabGrid(
         page.title,
         modifier,
-        actions = { SettingsAction(page.onOpenSettings) },
+        actions = {
+            IconAction(IntervalIcons.Add, stringResource(Res.string.mobility_build), actions.onBuild)
+            SettingsAction(page.onOpenSettings)
+        },
         header = page.header,
     ) {
         item(key = "before") {

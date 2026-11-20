@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -27,6 +28,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
@@ -35,10 +37,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 
 /**
- * One of a few [options] as a segmented control: the chosen option is a white card on the variant
- * ground. The card slides to a newly chosen option, its check growing in once it has settled under it.
- * With [selected] null, or not among them, none is chosen and no card shows. Many options on a narrow row
- * ([check] off, two [maxLines]) leave the check out and let a label wrap, rather than lose its words.
+ * One of a few [options] as a segmented control: the chosen option is an elevated pill
+ * ([IntervalPalette.segmentSelected]) on the recessed track ([IntervalPalette.segmentTrack]), with unselected labels
+ * dimmed so the active choice reads at a glance in both light and dark themes. The pill slides to a newly chosen
+ * option, its check growing in once it has settled under it. With [selected] null, or not among them, none is chosen
+ * and no pill shows. Many options on a narrow row ([check] off, two [maxLines]) leave the check out and tighten
+ * spacing rather than losing words.
  */
 @Composable
 fun <T> SegmentedPicker(
@@ -52,25 +56,33 @@ fun <T> SegmentedPicker(
 ) {
     val palette = IntervalTheme.palette
     val haptics = LocalHapticFeedback.current
-    // The card is drawn, not laid out, at the option's index along the row: it needs no size of its own.
+    val compact = options.size >= COMPACT_SEGMENTS
+    val horizontalPadding = if (compact) Spacing.space4 else Spacing.space8
+    val textStyle = if (compact && maxLines > 1) IntervalTheme.type.caption else IntervalTheme.type.label
+    // The pill is drawn, not laid out, at the option's index along the row: it needs no size of its own.
     val index = options.indexOf(selected)
     val slide by animateFloatAsState(index.coerceAtLeast(0).toFloat(), settleSpring(), label = "indicator")
     Row(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
-            .background(palette.surfaceVariant)
+            .background(palette.segmentTrack)
             .padding(Spacing.space4)
             .drawBehind {
                 if (index < 0) return@drawBehind
                 val gap = Spacing.space4.toPx()
                 val width = (size.width - gap * (options.size - 1)) / options.size
                 val visualSlide = if (layoutDirection == LayoutDirection.Rtl) options.lastIndex - slide else slide
+                val topLeft = Offset((width + gap) * visualSlide, 0f)
+                val pillSize = Size(width, size.height)
+                val radius = CornerRadius(Radius.radius12.toPx())
+                drawRoundRect(palette.segmentSelected, topLeft = topLeft, size = pillSize, cornerRadius = radius)
                 drawRoundRect(
-                    palette.surface,
-                    topLeft = Offset((width + gap) * visualSlide, 0f),
-                    size = Size(width, size.height),
-                    cornerRadius = CornerRadius(Radius.radius12.toPx()),
+                    palette.line,
+                    topLeft = topLeft,
+                    size = pillSize,
+                    cornerRadius = radius,
+                    style = Stroke(width = Sizes.hairline.toPx()),
                 )
             }
             .selectableGroup(),
@@ -78,6 +90,11 @@ fun <T> SegmentedPicker(
     ) {
         options.forEach { option ->
             val isSelected = option == selected
+            val textColor by animateColorAsState(
+                if (isSelected) palette.text else palette.textDim,
+                tween(Motion.STATE_MILLIS),
+                label = "segmentText",
+            )
             Row(
                 Modifier
                     .weight(1f)
@@ -87,7 +104,7 @@ fun <T> SegmentedPicker(
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         onSelect(option)
                     }
-                    .padding(horizontal = Spacing.space8),
+                    .padding(horizontal = horizontalPadding),
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -106,8 +123,8 @@ fun <T> SegmentedPicker(
                 }
                 Text(
                     label(option),
-                    style = IntervalTheme.type.label,
-                    color = palette.text,
+                    style = textStyle,
+                    color = textColor,
                     textAlign = TextAlign.Center,
                     maxLines = maxLines,
                     overflow = TextOverflow.Ellipsis,
@@ -116,3 +133,6 @@ fun <T> SegmentedPicker(
         }
     }
 }
+
+/** At five or more segments across a phone, tighten padding and use caption text so labels stay balanced. */
+private const val COMPACT_SEGMENTS = 5

@@ -60,7 +60,6 @@ import org.koin.compose.viewmodel.koinViewModel
 fun TimerRoute(
     onStart: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
     onBack: (() -> Unit)? = null,
 ) {
@@ -73,7 +72,6 @@ fun TimerRoute(
         onSavePreset = viewModel::savePreset,
         onStart = onStart,
         onOpenSettings = onOpenSettings,
-        onSeeAllPresets = onSeeAllPresets,
         onSetActivity = viewModel::setActivity,
         onApplyConfig = viewModel::applyConfig,
         onCapChange = viewModel::setCapped,
@@ -85,10 +83,9 @@ fun TimerRoute(
 /**
  * The Timer: the session total, then Work, Rest and Rounds as three tall rows, each with its own − and +
  * (hold to run), the sets, the warm-up and the cool-down as a row of chips under them, and Start within thumb
- * reach beside the way to the presets, all over the lanes. Tapping a value opens its edit sheet for the quick
- * picks, and for what changes it: the ladder on the work's, the rest between sets on the sets'. A page pushed
- * from the presets, it has a Back ([onBack]) and keeps inside the safe area itself, the lanes filling the
- * window behind.
+ * reach, all over the lanes. Tapping a value opens its edit sheet for the quick picks, and for what changes it:
+ * the ladder on the work's, the rest between sets on the sets'. A page pushed from the presets, it has a Back
+ * ([onBack]) and keeps inside the safe area itself, the lanes filling the window behind.
  */
 @Composable
 fun TimerScreen(
@@ -98,7 +95,6 @@ fun TimerScreen(
     onSavePreset: (Preset) -> Unit,
     onStart: () -> Unit,
     onOpenSettings: () -> Unit,
-    onSeeAllPresets: () -> Unit,
     modifier: Modifier = Modifier,
     onSetActivity: (Activity) -> Unit = {},
     onApplyConfig: (IntervalConfig) -> Unit = {},
@@ -123,7 +119,7 @@ fun TimerScreen(
                     TimerTitleBar(state.canSavePreset, onSave, onOpenSettings, onBack)
                     Total(state, onEditActivity, Modifier.padding(horizontal = Spacing.space20))
                     Spacer(Modifier.weight(1f))
-                    StartRow(onStart, onSeeAllPresets, Modifier.padding(Spacing.space16))
+                    StartRow(onStart, Modifier.padding(Spacing.space16))
                 }
                 Column(
                     Modifier
@@ -153,7 +149,6 @@ fun TimerScreen(
                     TimerBody(state, expandRows, onStep, onEdit, onEditActivity, onEditBlocks, Modifier.weight(1f))
                     StartRow(
                         onStart,
-                        onSeeAllPresets,
                         Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
                     )
                 }
@@ -282,7 +277,7 @@ private fun TimerPreview() {
             onSavePreset = {},
             onStart = {},
             onOpenSettings = {},
-            onSeeAllPresets = {},
+            onBack = {},
         )
     }
 }

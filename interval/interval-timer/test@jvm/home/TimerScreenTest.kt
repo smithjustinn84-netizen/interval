@@ -62,7 +62,7 @@ class TimerScreenTest {
             onSavePreset = { saved += it },
             onStart = { calls += "start" },
             onOpenSettings = { calls += "settings" },
-            onSeeAllPresets = { calls += "see all" },
+            onBack = { calls += "back" },
             onSetActivity = { activities += it },
             onApplyConfig = { applied += it },
             onCapChange = { capped += it },
@@ -98,8 +98,8 @@ class TimerScreenTest {
         setThemedContent { Screen() }
         onNodeWithText("Start workout").performClick()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithContentDescription("All presets").performClick()
-        assertEquals(listOf("start", "settings", "see all"), calls)
+        onNodeWithContentDescription("Back").performClick()
+        assertEquals(listOf("start", "settings", "back"), calls)
     }
 
     @Test

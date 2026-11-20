@@ -10,7 +10,6 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
@@ -46,7 +45,6 @@ import dev.justinsmith.interval.home.resources.activity_choose_cd
 import dev.justinsmith.interval.home.resources.common_calories_estimate
 import dev.justinsmith.interval.home.resources.common_joined
 import dev.justinsmith.interval.home.resources.common_prep_line
-import dev.justinsmith.interval.home.resources.timer_all_presets_cd
 import dev.justinsmith.interval.home.resources.timer_block
 import dev.justinsmith.interval.home.resources.timer_block_rest
 import dev.justinsmith.interval.home.resources.timer_edit_blocks
@@ -366,27 +364,8 @@ private fun StepperRow(
     }
 }
 
-/** Start workout, and beside it the way to every preset. */
+/** Start workout, full-width at the foot of the Timer. */
 @Composable
-internal fun StartRow(onStart: () -> Unit, onSeeAllPresets: () -> Unit, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val description = stringResource(Res.string.timer_all_presets_cd)
-    val interaction = remember { MutableInteractionSource() }
-    Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        StartButton(onStart, Modifier.weight(1f))
-        Box(
-            Modifier
-                .size(IntervalSizes.start)
-                .surfaceButton(interaction, Corners.radius18, palette.surface, onSeeAllPresets)
-                .semantics { contentDescription = description },
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(
-                IntervalIcons.Presets,
-                contentDescription = null,
-                tint = palette.text,
-                modifier = Modifier.size(Sizes.icon),
-            )
-        }
-    }
+internal fun StartRow(onStart: () -> Unit, modifier: Modifier = Modifier) {
+    StartButton(onStart, modifier.fillMaxWidth())
 }

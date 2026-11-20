@@ -172,7 +172,6 @@ internal fun SummaryLayout(
                     onRepeat,
                     onSave = onSave,
                     onExit = onExit,
-                    onShare = share,
                     modifier = Modifier.width(Sizes.setupColumnLandscape),
                 )
             }
@@ -185,11 +184,11 @@ internal fun SummaryLayout(
                     onRepeat,
                     onSave = onSave,
                     onExit = onExit,
-                    onShare = share,
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
         }
+        SummaryShareAction(entrance, share, Modifier.align(Alignment.TopEnd))
     }
     PresetEditorHost(
         draft = draft,
@@ -201,13 +200,27 @@ internal fun SummaryLayout(
 }
 
 @Composable
+private fun SummaryShareAction(
+    entrance: MutableTransitionState<Boolean>,
+    onShare: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    AnimatedVisibility(
+        entrance,
+        modifier.safeDrawingPadding().padding(top = Sizes.phaseBand + Spacing.space8, end = Spacing.space12),
+        enter = risingEnter(Motion.STAGGER_MILLIS * ACTIONS_STEP),
+    ) {
+        QuietTextButton(stringResource(Res.string.workout_share), onShare)
+    }
+}
+
+@Composable
 private fun SummaryActions(
     state: WorkoutUiState,
     entrance: MutableTransitionState<Boolean>,
     onRepeat: () -> Unit,
     onSave: () -> Unit,
     onExit: () -> Unit,
-    onShare: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     AnimatedVisibility(entrance, modifier, enter = risingEnter(Motion.STAGGER_MILLIS * ACTIONS_STEP)) {
@@ -226,11 +239,6 @@ private fun SummaryActions(
                     )
                 }
             }
-            QuietTextButton(
-                stringResource(Res.string.workout_share),
-                onShare,
-                Modifier.align(Alignment.CenterHorizontally),
-            )
             BigButton(
                 stringResource(Res.string.common_done),
                 onExit,

@@ -134,7 +134,7 @@ fun HomeRoute(
     onStartSession: () -> Unit,
     onPlan: () -> Unit,
     onPrograms: () -> Unit,
-    onOpenHistory: () -> Unit,
+    onOpenHistory: (Long?) -> Unit,
     onOpenTimer: () -> Unit,
     modifier: Modifier = Modifier,
     onOpenSettings: () -> Unit = {},
@@ -216,7 +216,7 @@ fun HomeRoute(
             onPlanOnce = viewModel::planOnce,
             onPlan = { plan() },
             onPrograms = { programs() },
-            onOpenHistory = { openHistory() },
+            onOpenHistory = { openHistory(it) },
             onOpenTimer = { openTimer() },
             onOpenSettings = { openSettings() },
             onSetup = { setup() },
@@ -253,7 +253,7 @@ class HomeActions(
     val onPlanOnce: (PlanWorkout, Long) -> Unit = { _, _ -> },
     val onPlan: () -> Unit = {},
     val onPrograms: () -> Unit = {},
-    val onOpenHistory: () -> Unit = {},
+    val onOpenHistory: (Long?) -> Unit = {},
     val onOpenTimer: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
     /** Opens Set up, which builds a week from four answers. */
@@ -322,7 +322,7 @@ fun HomeScreen(
             SummaryCard(card) {
                 WeekHeader(state.weekGoal, actions.onPlan)
                 // A day leads to the log, where its sheet opens.
-                WeekDots(state.week, onDay = { actions.onOpenHistory() })
+                WeekDots(state.week, onDay = actions.onOpenHistory)
             }
         }
         dayItems(state, plan, actions, card, onLook = { looking = LEAD })

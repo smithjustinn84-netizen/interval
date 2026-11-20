@@ -24,6 +24,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -125,7 +126,7 @@ fun TabGrid(
                     .fillMaxWidth()
                     .weight(1f)
                     .then(if (bottomBar != null) Modifier.fadeWhenMoreBelow(gridState) else Modifier),
-                contentPadding = PaddingValues(bottom = if (under) Spacing.space24 + foot else Spacing.space8),
+                contentPadding = PaddingValues(bottom = if (under) Spacing.space24 + foot else Spacing.space24),
             ) {
                 eyebrow?.let { item(key = "tab-eyebrow", span = StaggeredGridItemSpan.FullLine) { it() } }
                 item(key = "title", span = StaggeredGridItemSpan.FullLine) {
@@ -134,7 +135,15 @@ fun TabGrid(
                 header?.let { item(key = "tab-header", span = StaggeredGridItemSpan.FullLine) { it() } }
                 content()
             }
-            bottomBar?.invoke()
+            bottomBar?.let { bar ->
+                Column(
+                    Modifier.fillMaxWidth().background(IntervalTheme.palette.background),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    HorizontalDivider(color = IntervalTheme.palette.line, thickness = Sizes.hairline)
+                    bar()
+                }
+            }
         }
     }
 }

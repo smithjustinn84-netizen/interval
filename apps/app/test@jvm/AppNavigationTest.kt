@@ -193,8 +193,8 @@ class AppNavigationTest {
     @Test
     fun `a preset put on the Timer from All presets becomes the next workout`() = appTest { app ->
         openTimer()
-        // The Timer's way to the presets is the way back to them.
-        onNodeWithContentDescription("All presets").performClick()
+        // Back from the Timer returns to Conditioning's presets.
+        onNodeWithContentDescription("Back").performClick()
         scrollToText("Hangboard")
         onNodeWithText("Hangboard").performClick()
         onNodeWithText("Put on Timer").performClick()

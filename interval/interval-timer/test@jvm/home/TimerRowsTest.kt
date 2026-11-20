@@ -39,7 +39,6 @@ class TimerRowsTest {
             onSavePreset = {},
             onStart = {},
             onOpenSettings = {},
-            onSeeAllPresets = {},
         )
     }
 

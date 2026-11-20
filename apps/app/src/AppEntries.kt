@@ -12,6 +12,7 @@ import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
 import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
 import androidx.compose.material3.adaptive.navigation3.SupportingPaneSceneStrategy
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -88,8 +89,9 @@ internal fun appEntries(
     selectTab: (Tab) -> Unit,
     sharedScope: SharedTransitionScope,
     clock: WallClock,
+    pendingHistoryDay: MutableState<Long?>,
 ): (NavKey) -> NavEntry<NavKey> = entryProvider {
-    todayEntry(backStack, selectTab, clock)
+    todayEntry(backStack, selectTab, clock, pendingHistoryDay)
     timerEntry(backStack, settingsBeside, sharedScope, clock)
     trainEntries(backStack, twoPane, selectTab, clock)
     entry<HistoryTab>(
@@ -110,6 +112,8 @@ internal fun appEntries(
             onShowTimer = { backStack.showTimer() },
             onStartSession = { backStack.push(Lifting) },
             onOpenSettings = { backStack.push(Settings) },
+            openDay = pendingHistoryDay.value,
+            onClearOpenDay = { pendingHistoryDay.value = null },
         )
     }
     entry<Settings>(
@@ -205,7 +209,6 @@ private fun EntryProviderScope<NavKey>.timerEntry(
                     settingsBeside -> backStack.removeLastOrNull()
                 }
             },
-            onSeeAllPresets = { backStack.leaveTimer() },
             onBack = { backStack.leaveTimer() },
             // As Settings opens or closes beside it, the Timer lays out at the size it is going to, once,
             // rather than squeezing through every width on the way, and shows only as much as its pane
@@ -278,6 +281,7 @@ private fun EntryProviderScope<NavKey>.todayEntry(
     backStack: NavBackStack<NavKey>,
     selectTab: (Tab) -> Unit,
     clock: WallClock,
+    pendingHistoryDay: MutableState<Long?>,
 ) {
     entry<TodayTab>(metadata = pageKind(PageKind.Tab)) {
         HomeRoute(
@@ -285,7 +289,10 @@ private fun EntryProviderScope<NavKey>.todayEntry(
             onStartSession = { backStack.push(Lifting) },
             onPlan = { backStack.push(Plan) },
             onPrograms = { backStack.push(Programs) },
-            onOpenHistory = { selectTab(HistoryTab) },
+            onOpenHistory = { day ->
+                pendingHistoryDay.value = day
+                selectTab(HistoryTab)
+            },
             onOpenTimer = { backStack.showTimer() },
             onOpenSettings = { backStack.push(Settings) },
             onSetup = { backStack.push(WeekSetup) },

@@ -98,10 +98,14 @@ internal fun BottomControls(
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         // A time cap runs as it was set: Undo takes Back's place, and there is no time to add.
+        // While running a cap, Round done is the sole phase-coloured primary button; Pause steps back to a secondary
+        // control fill so tired thumbs never confuse the two.
         val side = Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height)
         val inCap = state.cap?.live == true
+        val secondaryFill = IntervalTheme.workout.control
+        val pauseFill = if (inCap && state.running) ({ secondaryFill }) else primaryFill
         if (inCap) UndoRoundButton(actions.onUndoRound, side) else BackButton(actions.onBack, side)
-        PrimaryButton(state, primaryFill, actions.onTogglePause, Modifier.weight(1f).heightIn(min = height))
+        PrimaryButton(state, pauseFill, actions.onTogglePause, Modifier.weight(1f).heightIn(min = height))
         if (!inCap) AddTimeButton(actions.onAddTime, side)
     }
 }

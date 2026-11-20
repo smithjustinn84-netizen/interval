@@ -89,8 +89,8 @@ class WeekSetupScreenTest {
         onNodeWithContentDescription("24 kg").assertIsOff().performClick()
         onNode(hasText("30 min") and isSelectable()).performScrollTo().performClick()
         onNodeWithText("Pick another program").performScrollTo().performClick()
-        onNode(hasText("Build my week") and hasClickAction()).performScrollTo().assertIsEnabled().performClick()
-        onNodeWithText("Skip for now").performScrollTo().performClick()
+        onNode(hasText("Build my week") and hasClickAction()).assertIsEnabled().performClick()
+        onNodeWithText("Skip for now").performClick()
 
         // Tuesday joins Monday, Wednesday and Friday: bits 0, 1, 2 and 4.
         assertEquals(

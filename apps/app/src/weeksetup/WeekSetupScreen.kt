@@ -1,8 +1,18 @@
 package dev.justinsmith.interval.weeksetup
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -25,8 +35,10 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.ScrollPage
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TitleBar
+import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.program
@@ -95,30 +107,53 @@ class WeekSetupActions(
  */
 @Composable
 fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier: Modifier = Modifier) {
-    ScrollPage(stringResource(Res.string.setup_title), modifier, navigation = { BackAction(actions.onBack) }) {
-        Text(
-            stringResource(Res.string.setup_intro),
-            style = IntervalTheme.type.body,
-            color = IntervalTheme.palette.textDim,
-            modifier = Modifier.padding(horizontal = Spacing.space4),
-        )
-        SportQuestion(state, actions)
-        AnimatedVisibility(state.asksDays) { DaysQuestion(state.weekdays, actions.onWeekdays) }
-        BellsQuestion(state, actions.onBell)
-        AnimatedVisibility(state.bells.isNotEmpty()) { PairsQuestion(state, actions.onPair) }
-        MinutesQuestion(state.minutes, actions.onMinutes)
-        YourWeek(state, actions.onPrograms)
-        AccentButton(
-            stringResource(Res.string.setup_build),
-            actions.onBuild,
-            Modifier.fillMaxWidth().padding(top = Spacing.space24),
-            enabled = state.canBuild,
-        )
-        QuietTextButton(
-            stringResource(Res.string.setup_skip),
-            actions.onBack,
-            Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8),
-        )
+    val palette = IntervalTheme.palette
+    val scroll = rememberScrollState()
+    Box(modifier.fillMaxSize().background(palette.background), contentAlignment = Alignment.TopCenter) {
+        Column(
+            Modifier
+                .widthIn(max = Sizes.content)
+                .fillMaxSize()
+                .safeDrawingPadding()
+                .imePadding(),
+        ) {
+            TitleBar(
+                stringResource(Res.string.setup_title),
+                navigation = { BackAction(actions.onBack) },
+                actions = { QuietTextButton(stringResource(Res.string.setup_skip), actions.onBack) },
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .fadeWhenMoreBelow(scroll)
+                    .verticalScroll(scroll)
+                    .padding(horizontal = Spacing.space16)
+                    .padding(bottom = Spacing.space24),
+            ) {
+                Text(
+                    stringResource(Res.string.setup_intro),
+                    style = IntervalTheme.type.body,
+                    color = palette.textDim,
+                    modifier = Modifier.padding(horizontal = Spacing.space4),
+                )
+                SportQuestion(state, actions)
+                AnimatedVisibility(state.asksDays) { DaysQuestion(state.weekdays, actions.onWeekdays) }
+                BellsQuestion(state, actions.onBell)
+                AnimatedVisibility(state.bells.isNotEmpty()) { PairsQuestion(state, actions.onPair) }
+                MinutesQuestion(state.minutes, actions.onMinutes)
+                YourWeek(state, actions.onPrograms)
+            }
+            HorizontalDivider(color = palette.line, thickness = Sizes.hairline)
+            AccentButton(
+                stringResource(Res.string.setup_build),
+                actions.onBuild,
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                enabled = state.canBuild,
+            )
+        }
     }
 }
 

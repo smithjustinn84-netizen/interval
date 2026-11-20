@@ -119,7 +119,7 @@ class HomeScreenTest {
 
     @Test
     fun `each day of the week is a dot read by its state that opens the log`() = runUiTest {
-        var opened = 0
+        val opened = mutableListOf<Long?>()
         val week = restWeek.mapIndexed { i, day ->
             when (i) {
                 0 -> day.copy(state = DayState.Done, seconds = 480, mobilitySeconds = 480)
@@ -129,14 +129,14 @@ class HomeScreenTest {
                 else -> day
             }
         }
-        setThemedContent { HomeScreen(empty.copy(week = week), HomeActions(onOpenHistory = { opened++ })) }
+        setThemedContent { HomeScreen(empty.copy(week = week), HomeActions(onOpenHistory = { opened += it })) }
 
         onNodeWithContentDescription("Monday, done").assertIsDisplayed()
         onNodeWithContentDescription("Tuesday, missed").assertIsDisplayed()
         onNodeWithContentDescription("Today, done, BJJ logged").performClick()
         onNodeWithContentDescription("Saturday, planned").assertIsDisplayed()
         onNodeWithText("BJJ", useUnmergedTree = true).assertExists()
-        assertEquals(1, opened)
+        assertEquals(listOf<Long?>(THURSDAY), opened)
     }
 
     @Test

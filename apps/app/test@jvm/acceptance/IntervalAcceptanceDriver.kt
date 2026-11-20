@@ -615,7 +615,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun seeTimerTotalFor(name: String) = see("$name · Total")
 
     fun openAllPresets() {
-        tapDescribed("All presets")
+        tapDescribed("Back")
         see("Built-in")
     }
 

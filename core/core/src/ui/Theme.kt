@@ -115,10 +115,17 @@ data class IntervalPalette(
     /** Every other lane's fill: a whisper of [surface] over the page. */
     val laneFill: Color get() = lerp(background, surface, LANE_FILL_STRENGTH)
 
+    /** Recessed track behind a [SegmentedPicker]: darker than the selected pill in both themes. */
+    val segmentTrack: Color get() = if (background.luminance() < DARK_LUMINANCE) surface else surfaceVariant
+
+    /** Raised pill of the selected option in a [SegmentedPicker]: lighter than [segmentTrack] in both themes. */
+    val segmentSelected: Color get() = if (background.luminance() < DARK_LUMINANCE) surfaceVariant else surface
+
     private companion object {
         const val TINT_STRENGTH = 0.1f
         const val LANE_LINE_STRENGTH = 0.6f
         const val TIMELINE_REST_STRENGTH = 0.24f
+        const val DARK_LUMINANCE = 0.5f
     }
 }
 

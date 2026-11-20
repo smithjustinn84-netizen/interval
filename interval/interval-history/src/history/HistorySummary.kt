@@ -119,6 +119,7 @@ internal fun RangePicker(range: TrainingRange, onRange: (TrainingRange) -> Unit,
         },
         onSelect = onRange,
         modifier = modifier,
+        check = false,
     )
 }
 
