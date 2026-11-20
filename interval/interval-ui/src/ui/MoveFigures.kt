@@ -70,7 +70,9 @@ fun MoveFigureBand(
     fill: Color = IntervalTheme.palette.surfaceVariant,
     colors: FigureColors = FigureColors.theme(),
 ) {
-    val player = rememberDemoPlayer(demo)
+    // A band is short: the figure takes all of its height the move needs.
+    val framed = remember(demo) { demo.framed() }
+    val player = rememberDemoPlayer(framed)
     LaunchedEffect(player, paused) {
         if (paused) player.pause() else player.play()
     }
@@ -88,7 +90,7 @@ fun MoveFigureBand(
             ),
     ) {
         ExerciseFigure(
-            demo,
+            framed,
             player,
             contentDescription = stringResource(Res.string.move_figure_cd, move.name),
             modifier = Modifier.fillMaxSize().padding(Spacing.space8),

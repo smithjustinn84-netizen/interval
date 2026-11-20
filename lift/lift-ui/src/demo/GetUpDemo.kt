@@ -11,9 +11,9 @@ private fun getUp(
 /** On the back, the bell side's knee bent with the foot flat, the other leg long on the floor, the free arm out. */
 private val lying = getUp(
     Pose(
-        shin = -40f,
-        thigh = -126f,
-        torso = -82f,
+        shin = -37.9f,
+        thigh = -123.3f,
+        torso = -87f,
         upperArm = 90f,
         forearm = 90f,
         farShin = -92f,

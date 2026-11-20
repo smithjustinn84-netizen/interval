@@ -11,11 +11,11 @@ import androidx.compose.ui.geometry.Rect
 // left); the ones that come up off the mat stand on the near foot, and the sit-out leans on the near hand.
 
 /** Lying on the back, the knees bent and the feet flat: the shins and thighs the shoulder bridge lies with. */
-private const val BENT_SHIN = -40.8f
-private const val BENT_THIGH = -126.2f
+private const val BENT_SHIN = -38.3f
+private const val BENT_THIGH = -123f
 
 /** Lying flat, the head and the hips both on the mat. */
-private const val FLAT = -82f
+private const val FLAT = -87f
 
 /** Arms overhead along the mat. */
 private const val OVERHEAD = 265f
@@ -190,7 +190,7 @@ val HipEscapeDemo: ExerciseDemo = run {
  * shoulder bridge does.
  */
 val BridgeAndRollDemo: ExerciseDemo = run {
-    val lying = Pose(shin = BENT_SHIN, thigh = BENT_THIGH, torso = -80f, upperArm = 90f, forearm = 90f)
+    val lying = Pose(shin = BENT_SHIN, thigh = BENT_THIGH, torso = FLAT, upperArm = 90f, forearm = 90f)
     val bridged = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     val turned = bridged.copy(upperArm = 200f, forearm = 210f, farThigh = -115f, farShin = -35f)
     ExerciseDemo(
@@ -222,8 +222,8 @@ val TechnicalStandUpDemo: ExerciseDemo = run {
     fun guarding(pose: Pose) = pose.copy(upperArm = guard.upperArm, forearm = guard.forearm)
     val posted = guarding(
         Pose(
-            shin = -40f,
-            thigh = -126f,
+            shin = -37.9f,
+            thigh = -123.3f,
             torso = -25f,
             upperArm = 0f,
             forearm = 0f,

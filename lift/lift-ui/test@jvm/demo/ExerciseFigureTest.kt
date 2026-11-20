@@ -17,9 +17,11 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -111,6 +113,26 @@ class ExerciseFigureTest {
         settle()
         onNode(celebrating("Taking a bow")).assertDoesNotExist()
         assertTrue(player.playing)
+    }
+
+    @Test
+    fun `a figure shown a place moves there over a moment rather than jumping`() = runUiTest {
+        lateinit var player: DemoPlayer
+        setThemedContent {
+            player = rememberDemoPlayer(GobletSquatDemo)
+            ExerciseFigure(GobletSquatDemo, player, "Goblet squat", Modifier.size(200.dp))
+        }
+        player.seek(0.2f)
+        waitForIdle()
+        mainClock.autoAdvance = false
+        player.show(0.6f)
+        settle()
+        mainClock.advanceTimeBy(Motion.CONTENT_MILLIS / 2L)
+        assertTrue(player.progress > 0.2f && player.progress < 0.6f, "Partway, it is at ${player.progress}")
+        assertFalse(player.playing)
+        mainClock.advanceTimeBy(Motion.CONTENT_MILLIS.toLong())
+        settle()
+        assertEquals(0.6f, player.progress)
     }
 
     private fun celebrating(words: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, words)

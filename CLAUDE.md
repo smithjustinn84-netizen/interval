@@ -223,7 +223,10 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      its latest 24, `exerciseTrend` in lift-domain), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
                      figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
                      `Exercise.demo`, `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
-                     a figure on its feet gives a record, a one-rep demo from where it stood), and `Demonstration`,
+                     a figure on its feet gives a record, a one-rep demo from where it stood; its body is `Build`'s,
+                     `FigureSilhouette.kt`, each near part with a gap cut round it in a layer of its own, and beside
+                     its pose it breathes and its weight flares as a drive starts, `FigureMotion.kt`; a figure shown
+                     alone takes `ExerciseDemo.framed()`), and `Demonstration`,
                      the card of the figure over its timeline and cues lit in turn, which the exercise page and a
                      flow's move both show; most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,

@@ -364,7 +364,7 @@ val HollowHoldDemo: ExerciseDemo = breathing(
 
 /** The dead bug: on the back, the arms up and the knees over the hips, each arm reaching back with the other leg. */
 val DeadBugDemo: ExerciseDemo = run {
-    val rest = supine(torso = -82f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
+    val rest = supine(torso = -87f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
     val nearArm = rest.copy(upperArm = 250f, forearm = 250f, farShin = -110f, farThigh = -110f)
     val farArm = rest.copy(farUpperArm = 250f, farForearm = 250f, shin = 250f, thigh = 250f)
     ExerciseDemo(
@@ -387,7 +387,7 @@ val DeadBugDemo: ExerciseDemo = run {
 
 /** The kettlebell dead bug: the dead bug with one bell held up over the chest in both hands, only the legs reaching. */
 val KettlebellDeadBugDemo: ExerciseDemo = run {
-    val rest = supine(torso = -82f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
+    val rest = supine(torso = -87f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
     val farLeg = rest.copy(farShin = -110f, farThigh = -110f)
     val nearLeg = rest.copy(shin = 250f, thigh = 250f)
     ExerciseDemo(
@@ -600,7 +600,7 @@ private fun breathing(
  * with [props] round it.
  */
 internal fun bridge(single: Boolean, props: List<Prop> = emptyList()): ExerciseDemo {
-    val down = Pose(shin = -40.8f, thigh = -126.2f, torso = -80f, upperArm = 90f, forearm = 90f)
+    val down = Pose(shin = -38.3f, thigh = -123f, torso = -87f, upperArm = 90f, forearm = 90f)
     val up = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     fun leg(pose: Pose) = if (single) pose.copy(farShin = pose.thigh, farThigh = pose.thigh) else pose
     return ExerciseDemo(

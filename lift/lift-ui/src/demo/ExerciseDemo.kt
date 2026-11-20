@@ -254,6 +254,27 @@ class ExerciseDemo(
         )
     }
 
+    /**
+     * This demo with its [view]'s ceiling brought down to just over the highest its rep reaches, for a figure
+     * shown alone and moving: a swing or a squat fills its card rather than standing small under the room a
+     * press overhead needs. The floor and the sides stay, and nothing past the view comes in. Figures seen
+     * together keep the view they share; one with [props] keeps its view, which holds them too.
+     */
+    fun framed(): ExerciseDemo {
+        if (props.isNotEmpty()) return this
+        var highest = Float.MAX_VALUE
+        for (step in 0 until FRAME_STEPS) {
+            val figure = figureAt(step / FRAME_STEPS.toFloat())
+            val drawn = if (hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+            highest = minOf(highest, drawn.minOf { it.y })
+        }
+        val top = (highest - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom)
+        return ExerciseDemo(
+            keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root,
+            Rect(view.left, top, view.right, view.bottom), props, anchor, setUp,
+        )
+    }
+
     private val times = FloatArray(keyframes.size) { keyframes[it].at }
     private val angles = keyframes.map { it.pose.angles() }
 
@@ -334,6 +355,27 @@ class ExerciseDemo(
         return TRAIL_STEPS
     }
 
+    /**
+     * The mat under a figure with nothing in its hands, from where along the floor to where: under everywhere the
+     * rep takes it, and still while it moves. It is drawn in the beat's colour, which a bell, a bar or a band
+     * shows for a figure that has one; so none for those.
+     */
+    internal val mat: ClosedFloatingPointRange<Float>? by lazy {
+        if (hold != Hold.Free || bands.isNotEmpty()) return@lazy null
+        var from = Float.MAX_VALUE
+        var to = -Float.MAX_VALUE
+        for (step in 0 until MAT_STEPS) {
+            val joints = figureAt(step / MAT_STEPS.toFloat()).joints
+            from = minOf(from, joints.minOf { it.x })
+            to = maxOf(to, joints.maxOf { it.x })
+        }
+        // No shorter than a mat is, under a figure that takes little floor (one hanging from a bar).
+        val reach = maxOf(Rig.MAT_REACH, (Rig.MAT_LENGTH - (to - from)) / 2)
+        val left = (from - reach).coerceAtLeast(view.left + Rig.MAT)
+        val right = (to + reach).coerceAtMost(view.right - Rig.MAT)
+        left..right.coerceAtLeast(left)
+    }
+
     /** The props drawn behind the figure, every one but a bar to hang from, which goes over the fists. */
     internal val propsBehind: List<Prop> = props.filter { it !is Rail }
 
@@ -352,6 +394,10 @@ class ExerciseDemo(
 
         /** How many places a trail remembers. */
         const val TRAIL_STEPS = 9
+
+        /** How many moments of the rep a mat is measured over, and a frame. */
+        private const val MAT_STEPS = 24
+        private const val FRAME_STEPS = 48
 
         /** The room a close-up leaves round the joints: a plate's, the widest thing in a hand, and a little air. */
         private const val CLOSE_UP_MARGIN = 44f
@@ -433,9 +479,13 @@ object Rig {
     const val FAR_LEG_OFFSET = 9f
     const val FAR_ARM_OFFSET = 7f
 
+    /**
+     * How far from what it rests on the middle of each part is: a knee and an elbow (half of [LEG] and [ARM]),
+     * the hips (half of [TRUNK]), the head and a fist. Poses that kneel, sit or lean are made to these, and
+     * [Build] draws the body about as thick, a knee and an elbow a little thicker, so they press into a mat.
+     */
     const val LEG = 14f
-    const val FAR_LEG = 13f
-    const val TRUNK = 17f
+    const val TRUNK = 28f
     const val ARM = 11f
     const val HEAD = 17f
     const val HAND = 7.5f
@@ -456,6 +506,11 @@ object Rig {
     const val TRAIL_DOT_NEWEST = 9f
 
     const val FLOOR_LINE = 1.5f
+
+    /** A mat's thickness, how far it reaches past the figure at either end, and the least it is long. */
+    const val MAT = 5f
+    const val MAT_REACH = 18f
+    const val MAT_LENGTH = 130f
     const val SHADOW_WIDTH = 140f
     const val SHADOW_HEIGHT = 12f
 
@@ -555,7 +610,7 @@ internal fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
 private fun Figure.lowest(): Float = maxOf(
     maxOf(toe.y, heel.y, farToe.y, farHeel.y),
     maxOf(knee.y, farKnee.y) + Rig.LEG / 2,
-    maxOf(hip.y, shoulder.y) + Rig.TRUNK / 2,
+    maxOf(hip.y + Build.PELVIS, chest().y + Build.CHEST, shoulder.y + Build.SHOULDERS),
     head.y + Rig.HEAD,
     maxOf(elbow.y, farElbow.y) + Rig.ARM / 2,
     maxOf(hand.y, farHand.y) + Rig.HAND,

@@ -11,7 +11,7 @@ import androidx.compose.ui.geometry.Rect
 // at the ceiling, 240 is a leg held long and low. The far leg takes the same numbers as the near one.
 
 /** Lying flat: the torso tipped just enough that the head and the hips both rest on the mat. */
-private const val FLAT = -85f
+private const val FLAT = -87f
 
 /** The head and shoulders curled up off the mat. */
 private const val CURLED = -65f
@@ -307,7 +307,7 @@ val SwimmingDemo: ExerciseDemo = run {
 
 /** The shoulder bridge: the hips bridged up, one leg lifted to the ceiling and lowered long, the hips level. */
 val ShoulderBridgeDemo: ExerciseDemo = run {
-    val lying = Pose(shin = -40.8f, thigh = -126.2f, torso = -80f, upperArm = 90f, forearm = 90f)
+    val lying = Pose(shin = -38.3f, thigh = -123f, torso = FLAT, upperArm = 90f, forearm = 90f)
     val bridged = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     fun leg(angle: Float) = bridged.copy(farShin = angle, farThigh = angle, farFoot = 90f + angle)
     val up = leg(-180f)

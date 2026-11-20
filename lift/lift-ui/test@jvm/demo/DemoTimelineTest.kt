@@ -19,6 +19,7 @@ import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class DemoTimelineTest {
@@ -31,6 +32,26 @@ class DemoTimelineTest {
         player.seek(1.4f)
         assertEquals(1f, player.progress)
         player.toggle()
+        assertTrue(player.playing)
+    }
+
+    @Test
+    fun `showing a place stops the figure and heads it there until something else moves it`() {
+        val player = DemoPlayer(progress = 0.2f, playing = true)
+        player.show(1.4f)
+        assertFalse(player.playing)
+        assertEquals(1f, player.heading)
+        assertEquals(0.2f, player.progress)
+        player.arrive()
+        assertEquals(1f, player.progress)
+        assertNull(player.heading)
+        player.show(0.5f)
+        player.seek(0.3f)
+        assertNull(player.heading)
+        assertEquals(0.3f, player.progress)
+        player.show(0.5f)
+        player.toggle()
+        assertNull(player.heading)
         assertTrue(player.playing)
     }
 

@@ -40,6 +40,105 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a framed demo lowers the ceiling to its rep and keeps every moment of it in view`() {
+        demos.forEach { demo ->
+            val framed = demo.framed()
+            (0..100).forEach { step ->
+                val figure = framed.figureAt(step / 100f)
+                assertEquals(demo.figureAt(step / 100f).joints, figure.joints)
+                val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+                drawn.forEach { joint -> assertTrue(framed.view.contains(joint), "$joint is outside the frame") }
+            }
+            assertEquals(demo.view.intersect(framed.view), framed.view, "The frame reaches past the view")
+            assertEquals(demo.view.bottom, framed.view.bottom, "The floor is not under it")
+            assertEquals(demo.view.left..demo.view.right, framed.view.left..framed.view.right)
+        }
+        // A swing never goes overhead, so it stands taller in its frame; a snatch needs all the room there is.
+        assertTrue(TwoHandSwingDemo.framed().view.height < TwoHandSwingDemo.view.height * 0.9f)
+        assertTrue(SnatchDemo.framed().view.height > SnatchDemo.view.height * 0.9f)
+        demos.filter { it.props.isNotEmpty() }.forEach { assertSame(it, it.framed()) }
+    }
+
+    @Test
+    fun `a figure with nothing in its hands has a mat under all of its rep and one with a weight has none`() {
+        demos.forEach { demo ->
+            val mat = demo.mat
+            if (demo.hold != Hold.Free || demo.props.any { it is Band }) {
+                assertNull(mat, "A mat under a figure that holds something")
+                return@forEach
+            }
+            assertNotNull(mat)
+            assertTrue(mat.start >= demo.view.left && mat.endInclusive <= demo.view.right, "The mat leaves the view")
+            (0..20).forEach { step ->
+                val figure = demo.figureAt(step / 20f)
+                // Wherever the figure touches down it is on the mat, short of a view that ends first.
+                listOf(figure.toe, figure.heel, figure.hand).filter { it.y > Rig.FLOOR - Rig.HAND - 1f }.forEach {
+                    assertTrue(
+                        it.x in mat.start - 0.5f..mat.endInclusive + 0.5f ||
+                            it.x < demo.view.left + Rig.MAT_REACH ||
+                            it.x > demo.view.right - Rig.MAT_REACH,
+                        "It touches down at $it, off the mat $mat",
+                    )
+                }
+            }
+        }
+        // One hanging from a bar takes little floor, and still has a mat's length under it.
+        val hanging = assertNotNull(PullUpDemo.mat)
+        assertTrue(hanging.endInclusive - hanging.start >= Rig.MAT_LENGTH - 0.5f)
+    }
+
+    @Test
+    fun `the breath loops with the rep and runs on from the set-up`() {
+        demos.forEach { demo ->
+            assertEquals(demo.breathAt(0f), demo.breathAt(1f), 0.001f)
+            assertEquals(0f, demo.breathAt(0f), 0.001f)
+            (0..40).forEach { step -> assertTrue(demo.breathAt(demo.earliest + step / 20f) in -1f..1f) }
+        }
+        // A quick rep takes one breath; a long hold takes several.
+        val swing = (1..99).map { TwoHandSwingDemo.breathAt(it / 100f) }
+        assertEquals(1, swing.zipWithNext().count { (a, b) -> a > 0f && b <= 0f })
+        val plank = (1..99).map { PlankDemo.breathAt(it / 100f) }
+        assertTrue(plank.zipWithNext().count { (a, b) -> a > 0f && b <= 0f } >= 1)
+        val goblet = assertNotNull(BuiltInExercise.GobletSquat.demo)
+        assertTrue(abs(goblet.breathAt(-0.01f)) < 0.05f, "The set-up's breath jumps into the rep's")
+    }
+
+    @Test
+    fun `the drive pulses as it starts and is spent before the rep is`() {
+        // The swing drives from the hike, at the very start of its rep.
+        assertEquals(1f, TwoHandSwingDemo.pulseAt(0f))
+        assertTrue(TwoHandSwingDemo.pulseAt(0.05f) in 0.2f..0.95f)
+        assertEquals(0f, TwoHandSwingDemo.pulseAt(0.5f), "The float pulses")
+        assertEquals(0f, TwoHandSwingDemo.pulseAt(0.9f), "The hike back pulses")
+        val goblet = assertNotNull(BuiltInExercise.GobletSquat.demo)
+        assertEquals(0f, goblet.pulseAt(-0.5f), "The set-up pulses")
+        demos.forEach { demo ->
+            (0..100).forEach { step ->
+                val at = step / 100f
+                val pulse = demo.pulseAt(at)
+                assertTrue(pulse in 0f..1f)
+                if (demo.phaseAt(at).beat != DemoBeat.Drive) assertEquals(0f, pulse, "A pulse off the drive at $at")
+            }
+        }
+    }
+
+    @Test
+    fun `the short way between two places goes round the rep's end and never through the set-up`() {
+        assertEquals(0.3f, placeBetween(0.2f, 0.4f, 0.5f), 0.001f)
+        assertEquals(0.3f, placeBetween(0.4f, 0.2f, 0.5f), 0.001f)
+        // From late in the rep to early in it: on through the end, not back through all of it.
+        assertEquals(0f, placeBetween(0.9f, 0.1f, 0.5f), 0.001f)
+        assertEquals(0.95f, placeBetween(0.9f, 0.1f, 0.25f), 0.001f)
+        assertEquals(0.95f, placeBetween(0.1f, 0.9f, 0.75f), 0.001f)
+        // Out of the set-up there is one way, forward.
+        assertEquals(0.15f, placeBetween(-0.5f, 0.8f, 0.5f), 0.001f)
+        listOf(0.2f to 0.4f, 0.9f to 0.1f, -1f to 0.6f, 0.3f to 1f).forEach { (from, to) ->
+            assertEquals(from, placeBetween(from, to, 0f), 0.001f)
+            assertEquals(looped(to), looped(placeBetween(from, to, 1f)), 0.001f)
+        }
+    }
+
+    @Test
     fun `a rep ends where it starts so it loops without a jump`() {
         demos.forEach { demo ->
             demo.figureAt(0f).joints.zip(demo.figureAt(1f).joints).forEach { (start, end) ->

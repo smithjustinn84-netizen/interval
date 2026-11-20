@@ -446,7 +446,16 @@ flowchart TD
   (`ExerciseFigure`, joint angles per `ExerciseDemo` pose, the bell turning with the hand), keyed by `Exercise.demo`.
   `rememberDemoPlayer` sets up once then loops the reps, standing still under `prefersReducedMotion()`;
   `DemoTimeline` scrubs a rep's parts beside its cues on an exercise's page (`lift-library`), and the session's
-  set card shows the next lift's (`lift-session`).
+  set card shows the next lift's (`lift-session`). The body is drawn from `Build`'s sizes (`FigureSilhouette.kt`:
+  hips, waist, chest, a calf, a shoe on its sole), the far limbs dimmer, and each near part has a gap cut round it
+  (`gapped`, `BlendMode.Clear` in a layer the body has to itself) so a limb over the trunk reads apart on any
+  ground. `Rig`'s `LEG`, `TRUNK`, `ARM`, `HEAD` and `HAND` are how far a part's middle rests from the floor, which
+  the poses that kneel, sit and lie are made to: change `Build` and they need solving again. What moves beside the
+  pose is in `FigureMotion.kt`, a function of the place in the rep like the pose itself: the chest's breath
+  (`breathAt`), the weight's flare as a drive starts (`pulseAt`), and the short way a picked cue takes the figure
+  (`DemoPlayer.show`, `placeBetween`). A figure with nothing in its hands stands on a mat in the beat's colour
+  (`ExerciseDemo.mat`), and one shown alone (`Demonstration`, a flow's band) lowers its view's ceiling to its own
+  rep (`framed()`), where a list's still draws right in (`closeUp()`).
 - **A session's program day (Lift)**: a session is stored with its program and day (`SessionEntity.programId`,
   `programDay`), and `lift-session` reads the day it is from them among every program (`List<Program>.dayOf`,
   `lift-domain`), falling back to the followed program's next day only for a session logged before days were kept.

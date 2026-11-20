@@ -53,13 +53,25 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * A figure doing the exercise over and over, its rep laid out on a timeline under it and its [cues] under that,
- * each lit while the figure does what it says: all in one card. Dragging along the timeline or tapping a cue
- * stops the figure there. Pause and Play sit in its corner, since moving content that runs on is something a
- * user must be able to stop; with reduced motion it stands still and offers neither, though it still moves where
- * it is dragged. An exercise's page shows it, and a flow's move that is one of Lift's exercises.
+ * each lit while the figure does what it says: all in one card. Dragging along the timeline stops the figure
+ * there, and tapping a cue takes it to where the cue starts. Pause and Play sit in its corner, since moving content
+ * that runs on is something a user must be able to stop; with reduced motion it stands still and offers neither,
+ * though it still moves where it is dragged. An exercise's page shows it, and a flow's move that is one of Lift's
+ * exercises.
  */
 @Composable
 fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>, modifier: Modifier = Modifier) {
+    // Shown alone, the figure takes all the card's height its rep needs, not the room every standing lift shares.
+    FramedDemonstration(remember(demo) { demo.framed() }, name, cues, modifier)
+}
+
+@Composable
+private fun FramedDemonstration(
+    demo: ExerciseDemo,
+    name: String,
+    cues: List<String>,
+    modifier: Modifier = Modifier,
+) {
     val player = rememberDemoPlayer(demo)
     val colors = FigureColors.theme()
     // Read as the phase changes, not every frame the figure moves.
@@ -101,7 +113,7 @@ fun Demonstration(demo: ExerciseDemo, name: String, cues: List<String>, modifier
             onShow = when {
                 i == setUp && still -> { -> player.seek(SET_UP_STILL) }
                 i == setUp -> player::replaySetUp
-                else -> demo.startOf(i)?.let { start -> { player.seek(start) } }
+                else -> demo.startOf(i)?.let { start -> { player.show(start) } }
             },
             showLabel = stringResource(
                 if (i == setUp) Res.string.demo_set_up_jump else Res.string.demo_cue_jump,

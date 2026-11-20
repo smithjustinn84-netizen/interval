@@ -1,10 +1,8 @@
 package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -12,19 +10,10 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import kotlin.math.hypot
 
-/** What a figure draws with, kept from frame to frame: the path each limb is traced on and the bell's trail. */
-internal class FigurePen {
-    val path = Path()
-    val trail = FloatArray(2 * ExerciseDemo.TRAIL_STEPS)
-    var trailCount = 0
-}
-
 /**
  * Draws [demo]'s [figure] fitted and centred in the canvas, its bell in [bell] with [pen]'s trail behind it. Back to
- * front: the floor and dynamic shadow, props behind, the far limbs, the tapered trunk and head, then the near arm
- * and leg in whichever order keeps a bell low between the legs behind the near one and a bell held high in front of
- * it. A bell circled behind the head goes behind the trunk. A band tied to a post behind the figure runs behind it;
- * any other is drawn over it.
+ * front: the floor, its shadow and a mat, the props behind, the bell's glow and trail, then the body in a layer of
+ * its own, and over it a bar's plate, a band held in front and a bar to hang from.
  */
 internal fun DrawScope.drawFigure(
     demo: ExerciseDemo,
@@ -33,7 +22,6 @@ internal fun DrawScope.drawFigure(
     bell: Color,
     colors: FigureColors,
 ) {
-    val path = pen.path
     val view = demo.view
     val scale = minOf(size.width / view.width, size.height / view.height)
     val left = (size.width - view.width * scale) / 2
@@ -43,44 +31,19 @@ internal fun DrawScope.drawFigure(
         scale(scale, scale, pivot = Offset.Zero)
         translate(-view.left, -view.top)
     }) {
-        drawFloor(figure, view, colors)
+        drawFloor(demo, figure, pen, bell, colors)
         // Indexed loops, here and below: a for-each would make an iterator every frame.
         val props = demo.propsBehind
         for (i in props.indices) drawProp(props[i], colors.farLeg)
         // A band tied behind the figure runs behind it; any other is held in front.
         drawBands(demo.bands, figure, bell, behind = true)
+        drawGlow(demo.hold, figure, pen.pulse, bell)
         drawTrail(pen, figure.bell, bell)
-        val behind = Offset(-Rig.FAR_LEG_OFFSET, 0f)
-        drawTaperedLeg(
-            hip = figure.hip,
-            knee = figure.farKnee + behind,
-            ankle = figure.farAnkle + behind,
-            heel = figure.farHeel + behind,
-            toe = figure.farToe + behind,
-            color = colors.farLeg,
-            path = path,
-            scale = Silhouette.FAR_SCALE,
-        )
-        if (demo.hold == Hold.NearHand || demo.hold == Hold.Pair || demo.hold == Hold.Free) {
-            drawFarArm(figure, demo.hold == Hold.Pair, bell, colors.farLeg, path)
-        }
-        val behindHead = figure.bell.x < figure.shoulder.x && figure.bell.y < figure.shoulder.y
-        if (behindHead) drawArmAndBell(figure, demo.hold, bell, colors, separation = null, path = path)
-        drawTorsoAndHead(figure, colors.body, path)
-        val armSeparation = colors.floor.copy(alpha = Silhouette.SEPARATION_ALPHA)
-        when {
-            behindHead -> drawNearLeg(figure, colors.body, path)
-
-            figure.bell.y > figure.hip.y -> {
-                drawArmAndBell(figure, demo.hold, bell, colors, separation = armSeparation, path = path)
-                drawNearLeg(figure, colors.body, path)
-            }
-
-            else -> {
-                drawNearLeg(figure, colors.body, path)
-                drawArmAndBell(figure, demo.hold, bell, colors, separation = armSeparation, path = path)
-            }
-        }
+        // The body has a layer to itself, so a gap cut round a near part cuts only the body behind it, never the
+        // floor or a prop, and shows whatever ground the figure is drawn on.
+        drawContext.canvas.saveLayer(pen.layerBounds, pen.layer)
+        drawBody(demo, figure, pen, bell, colors)
+        drawContext.canvas.restore()
         if (demo.hold == Hold.Bar) drawPlate(figure.hand, bell, colors.body)
         drawBands(demo.bands, figure, bell, behind = false)
         // A bar to hang from goes over the fists that grip it.
@@ -90,10 +53,42 @@ internal fun DrawScope.drawFigure(
 }
 
 /**
- * The floor line and a dynamic ground shadow that tracks the figure's horizontal footprint and softens when the
- * figure rises off the floor (hanging, jumping, or elevated on a bench).
+ * The body, back to front: the far leg and arm, the trunk and head, then the near arm and leg. The arm goes over
+ * the leg, as an arm at the side is nearer the eye, unless its bell is low between the legs: one in both hands,
+ * or one that swings, which passes behind the near leg. A bell circled behind the head goes behind the trunk.
+ * Each part after the far leg has a gap cut round it where it crosses what is behind, so a limb over the trunk
+ * or over its twin reads apart from it.
  */
-private fun DrawScope.drawFloor(figure: Figure, view: Rect, colors: FigureColors) {
+private fun DrawScope.drawBody(demo: ExerciseDemo, figure: Figure, pen: FigurePen, bell: Color, colors: FigureColors) {
+    val hold = demo.hold
+    pen.ink(colors.farLeg)
+    drawLeg(pen, figure, far = true)
+    if (hold == Hold.NearHand || hold == Hold.Pair || hold == Hold.Free) {
+        if (hold == Hold.Pair) gapped(pen, bell) { drawBell(pen, figure.farHand, figure.farBell) }
+        gapped(pen, colors.farLeg) { drawArm(pen, figure, far = true) }
+    }
+    val behindHead = figure.bell.x < figure.shoulder.x && figure.bell.y < figure.shoulder.y
+    val betweenLegs = figure.bell.y > figure.hip.y && (hold == Hold.BothHands || demo.bellLag > 0f)
+    if (behindHead) drawNearArm(hold, figure, pen, bell, colors.body)
+    gapped(pen, colors.body) { drawTrunk(pen, figure) }
+    if (betweenLegs) drawNearArm(hold, figure, pen, bell, colors.body)
+    gapped(pen, colors.body) { drawLeg(pen, figure) }
+    if (!behindHead && !betweenLegs) drawNearArm(hold, figure, pen, bell, colors.body)
+}
+
+/**
+ * The floor from one side of the view to the other, fading at its ends; a ground shadow that tracks the figure's
+ * footprint and softens as it rises off the floor (hanging, jumping, up on a bench); and, under a figure with
+ * nothing in its hands, a mat in the [beat]'s colour, which a bell, a bar or a band would otherwise show.
+ */
+private fun DrawScope.drawFloor(demo: ExerciseDemo, figure: Figure, pen: FigurePen, beat: Color, colors: FigureColors) {
+    drawLine(
+        pen.floor,
+        Offset(pen.floorFrom, Rig.FLOOR),
+        Offset(pen.floorTo, Rig.FLOOR),
+        Rig.FLOOR_LINE,
+        StrokeCap.Round,
+    )
     val minX = minOf(
         minOf(figure.toe.x, figure.heel.x, figure.farToe.x, figure.farHeel.x),
         minOf(figure.knee.x, figure.farKnee.x, figure.hip.x, figure.shoulder.x),
@@ -129,17 +124,23 @@ private fun DrawScope.drawFloor(figure: Figure, view: Rect, colors: FigureColors
         topLeft = Offset(centerX - innerW * HALF, shadowY - innerH * HALF),
         size = Size(innerW, innerH),
     )
-    val floorLeft = minOf(Rig.ANKLE_X - Rig.FLOOR_REACH, centerX - outerW * HALF - FLOOR_MARGIN)
-        .coerceAtLeast(view.left + FLOOR_EDGE_INSET)
-    val floorRight = maxOf(Rig.ANKLE_X + Rig.FLOOR_REACH_FORWARD, centerX + outerW * HALF + FLOOR_MARGIN)
-        .coerceAtMost(view.right - FLOOR_EDGE_INSET)
-    drawLine(
-        colors.floor,
-        Offset(floorLeft, Rig.FLOOR),
-        Offset(floorRight, Rig.FLOOR),
-        Rig.FLOOR_LINE,
-        StrokeCap.Round,
-    )
+    val mat = demo.mat ?: return
+    val matY = Rig.FLOOR + Rig.MAT * HALF
+    drawLine(beat, Offset(mat.start, matY), Offset(mat.endInclusive, matY), Rig.MAT, StrokeCap.Round)
+}
+
+/**
+ * A soft light round the weight in the beat's colour, behind everything: faint while the bell is carried, and
+ * flaring wider and brighter with the [pulse] as a drive starts, so the moment to put the effort in is seen.
+ */
+private fun DrawScope.drawGlow(hold: Hold, figure: Figure, pulse: Float, color: Color) {
+    if (hold == Hold.Free) return
+    val bar = hold == Hold.Bar
+    val at = if (bar) figure.hand else figure.bell
+    val radius = (if (bar) Rig.PLATE * GLOW_PLATE_REACH else Rig.BELL * GLOW_BELL_REACH) * (1f + pulse * GLOW_FLARE)
+    val step = (GLOW_ALPHA + pulse * GLOW_PULSE_ALPHA) / GLOW_STEPS
+    // Rings one inside the next, each as faint as the last: the light is strongest where they all overlap.
+    for (i in GLOW_STEPS downTo 1) drawCircle(color.copy(alpha = step), radius * i / GLOW_STEPS, at)
 }
 
 /**
@@ -216,49 +217,26 @@ private fun trailNormal(pen: FigurePen, tip: Offset, index: Int): Offset {
  * resting on the back of the forearm (the rack, a lockout) goes over it, on the side nearer the eye, unless
  * both hands hold it by the horns.
  */
-private fun DrawScope.drawArmAndBell(
-    figure: Figure,
-    hold: Hold,
-    bell: Color,
-    colors: FigureColors,
-    separation: Color?,
-    path: Path,
-) {
-    if (hold == Hold.Bar || hold == Hold.Free) {
-        drawTaperedArm(figure.shoulder, figure.elbow, figure.hand, colors.body, path, separation = separation)
-        return
-    }
-    val resting = hold != Hold.BothHands && rests(figure.elbow, figure.hand, figure.bell)
-    if (!resting) drawBell(figure.hand, figure.bell, bell, path)
-    drawTaperedArm(figure.shoulder, figure.elbow, figure.hand, colors.body, path, separation = separation)
-    if (resting) drawBell(figure.hand, figure.bell, bell, path)
-}
-
-/** The far arm, behind the trunk, with its own bell in a [pair]. */
-private fun DrawScope.drawFarArm(figure: Figure, pair: Boolean, bell: Color, far: Color, path: Path) {
-    val behind = Offset(-Rig.FAR_ARM_OFFSET, 0f)
-    if (pair) drawBell(figure.farHand, figure.farBell, bell, path)
-    drawTaperedArm(
-        figure.shoulder + behind,
-        figure.farElbow,
-        figure.farHand,
-        far,
-        path,
-        scale = Silhouette.FAR_SCALE,
-    )
+private fun DrawScope.drawNearArm(hold: Hold, figure: Figure, pen: FigurePen, bell: Color, body: Color) {
+    val held = hold == Hold.BothHands || hold == Hold.NearHand || hold == Hold.Pair
+    val resting = held && hold != Hold.BothHands && rests(figure.elbow, figure.hand, figure.bell)
+    if (held && !resting) gapped(pen, bell) { drawBell(pen, figure.hand, figure.bell) }
+    gapped(pen, body) { drawArm(pen, figure) }
+    if (resting) gapped(pen, bell) { drawBell(pen, figure.hand, figure.bell) }
 }
 
 /**
- * A sculpted kettlebell held at [hand], its body at [body]: a curved U-arch handle meeting the bell shoulders,
- * and a cast body with a subtle specular highlight and lower shading arc for three-dimensional weight.
+ * A kettlebell held at [hand], its body at [body]: a handle arched from the body's shoulders to the grip, and a
+ * cast body with a highlight above and a shade below, to give it weight. Cutting, only its outline.
  */
-private fun DrawScope.drawBell(hand: Offset, body: Offset, color: Color, path: Path) {
+private fun DrawScope.drawBell(pen: FigurePen, hand: Offset, body: Offset) {
     val along = (body - hand) / Rig.BELL_REACH
     val across = Offset(-along.y, along.x)
     val gripHalf = across * Rig.HANDLE_HALF
     val shoulderHalf = across * BELL_SHOULDER_HALF
     val sides = along * Rig.HANDLE_SIDES
     val corner = across * BELL_HANDLE_CORNER
+    val path = pen.path
     path.rewind()
     val rightBase = hand + shoulderHalf + sides
     val rightCorner = hand + gripHalf
@@ -270,9 +248,9 @@ private fun DrawScope.drawBell(hand: Offset, body: Offset, color: Color, path: P
     path.quadraticTo(rightCorner.x, rightCorner.y, rightGrip.x, rightGrip.y)
     path.lineTo(leftGrip.x, leftGrip.y)
     path.quadraticTo(leftCorner.x, leftCorner.y, leftBase.x, leftBase.y)
-    drawPath(path, color, style = HandleStroke)
-    drawCircle(color, Rig.BELL, body)
-    // Lower depth rim and upper-left specular highlight give the iron sphere clear form at any size.
+    drawPath(path, pen.color, style = if (pen.cutting) HandleGapStroke else HandleStroke, blendMode = pen.blend)
+    drawCircle(pen.color, Rig.BELL + pen.pad, body, blendMode = pen.blend)
+    if (pen.cutting) return
     val arcBox = Size(BELL_DETAIL_DIAMETER, BELL_DETAIL_DIAMETER)
     val arcTopLeft = Offset(body.x - BELL_DETAIL_RADIUS, body.y - BELL_DETAIL_RADIUS)
     drawArc(
@@ -307,10 +285,8 @@ private fun DrawScope.drawPlate(sleeve: Offset, color: Color, axle: Color) {
     drawCircle(axle.copy(alpha = PLATE_AXLE_ALPHA), PLATE_AXLE_RADIUS, sleeve)
 }
 
-private fun DrawScope.drawNearLeg(figure: Figure, color: Color, path: Path) =
-    drawTaperedLeg(figure.hip, figure.knee, figure.ankle, figure.heel, figure.toe, color, path)
-
 private val HandleStroke = Stroke(Rig.HANDLE, cap = StrokeCap.Round, join = StrokeJoin.Round)
+private val HandleGapStroke = Stroke(Rig.HANDLE + 2 * Build.GAP, cap = StrokeCap.Round, join = StrokeJoin.Round)
 private val PlateRimStroke = Stroke(Rig.PLATE_RIM)
 private val PlateInnerStroke = Stroke(PLATE_INNER_STROKE)
 private val BellDetailStroke = Stroke(BELL_SHADE_STROKE, cap = StrokeCap.Round)
@@ -330,8 +306,14 @@ private const val SHADOW_CORE_RATIO = 0.62f
 private const val SHADOW_CORE_HEIGHT_RATIO = 0.6f
 private const val SHADOW_OUTER_ALPHA = 0.38f
 private const val SHADOW_INNER_ALPHA = 0.68f
-private const val FLOOR_MARGIN = 18f
-private const val FLOOR_EDGE_INSET = 8f
+
+/** The light round the weight: how far past it it reaches, how strong it is carried and at a drive's start. */
+private const val GLOW_STEPS = 16
+private const val GLOW_BELL_REACH = 2.3f
+private const val GLOW_PLATE_REACH = 1.35f
+private const val GLOW_FLARE = 0.35f
+private const val GLOW_ALPHA = 0.16f
+private const val GLOW_PULSE_ALPHA = 0.2f
 
 /** Tapered motion trail ribbon tuning. */
 private const val MIN_TRAIL_STEP = 0.001f

@@ -170,7 +170,8 @@ fun ExerciseFigure(
 /**
  * [demo] at [progress] (0 to 1) through a rep, read while drawing so a moving figure redraws without
  * recomposing. A still picture passes a constant. A moving one draws every frame, so the drawing makes nothing
- * it can keep: one path for every limb, the strokes and the trail's places held from frame to frame.
+ * it can keep: one path for every limb, the strokes, the body's layer and the trail's places held from frame to
+ * frame. Beside its pose the figure breathes ([breathAt]) and its weight flares as a drive starts ([pulseAt]).
  */
 @Composable
 fun ExerciseFigure(
@@ -187,10 +188,12 @@ fun ExerciseFigure(
     }
     Spacer(
         described.drawWithCache {
-            val pen = FigurePen()
+            val pen = FigurePen(demo.view, colors.floor)
             onDrawBehind {
                 val t = progress()
                 pen.trailCount = demo.trailInto(t, pen.trail)
+                pen.breath = demo.breathAt(t)
+                pen.pulse = demo.pulseAt(t)
                 drawFigure(demo, demo.figureAt(t), pen, colors.at(demo, t), colors)
             }
         },
