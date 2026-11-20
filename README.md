@@ -118,7 +118,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ## 🏗️ Architecture & Tech Stack
 
-Interval is designed around modern multiplatform architecture principles, cleanly separated into 34 modules in five folders:
+Interval is designed around modern multiplatform architecture principles, cleanly separated into 35 modules in five folders:
 
 ```
 interval/
@@ -146,7 +146,8 @@ interval/
 │   ├── interval-workout/      # Live workout & flow screen, circular countdown readout, summaries
 │   ├── interval-presets/      # Train's Conditioning pillar: presets, sequence block editor, custom cards
 │   ├── interval-mobility/     # Train's Mobility pillar: the flows, their sheets, and the editor of your own
-│   ├── interval-history/      # Today home tab, the Log (calendar & training log), routine & sport day planner
+│   ├── interval-history/      # The Log (calendar & training log), routine & sport day planner
+│   ├── interval-today/        # Today home tab: the day's steps, the week, picks by time
 │   └── interval-settings/     # Settings page (from every tab), Health Connect / Apple Health, export & import
 │
 ├── lift/                # Lift, the strength side (code in dev.justinsmith.lift)

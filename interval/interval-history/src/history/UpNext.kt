@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * Lift's side: its finished sessions, the followed program's next day, whether one is in progress, and the rest
  * between sets, which a day's length is estimated with.
  */
-internal data class Lifting(
+data class Lifting(
     val sessions: List<LiftSession>,
     val programDay: ProgramDay?,
     val inProgress: Boolean,
@@ -49,7 +49,7 @@ internal data class Logged(
  * Lift's side as it changes. Distinct, so a set logged on Lift (which changes `active`) rebuilds nothing: only a
  * session finished, the program's day or whether one is under way at all count.
  */
-internal fun LiftActivity.lifting(): Flow<Lifting> =
+fun LiftActivity.lifting(): Flow<Lifting> =
     combine(sessions, programDay, active, restSeconds) { sessions, day, active, rest ->
         Lifting(sessions, day, active != null, rest, active?.program)
     }.distinctUntilChanged()
@@ -60,7 +60,7 @@ internal fun LiftActivity.lifting(): Flow<Lifting> =
  * all, the program's next day falls today, unless a day of it was finished today already, and leads the plans of
  * its day. A sport planned today and not yet logged brings the flow to do before it, until mobility is done.
  */
-internal fun TimestampFormatter.upNext(
+fun TimestampFormatter.upNext(
     log: TrainingLog,
     planned: List<PlannedWorkout>,
     lifting: Lifting,
@@ -112,7 +112,7 @@ internal fun TimestampFormatter.upNext(
 }
 
 /** [day] as the week strip or the calendar draws it. */
-internal fun TimestampFormatter.dayCell(day: TrainingDay, inMonth: Boolean = true) = DayCell(
+fun TimestampFormatter.dayCell(day: TrainingDay, inMonth: Boolean = true) = DayCell(
     epochDay = day.epochDay,
     weekday = day.weekday,
     dayOfMonth = dateOfEpochDay(day.epochDay).day,

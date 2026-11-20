@@ -165,9 +165,11 @@ interval/            the interval timer
   interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
                      workout) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
-                     in step with the plan. And Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`,
-                     named Home since Lift's tab is `TodayRoute`): the week, what is up next and the presets that
-                     fit a few minutes, with the flow that does (`QuickPicks.kt`), over the same log (`history/UpNext.kt`)
+                     in step with the plan. And the sensor's card Today shows (`sensor/`)
+  interval-today     Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`, named Home since Lift's tab is
+                     `TodayRoute`; `todayModule`, di/): the week, what is up next and the presets that fit a few
+                     minutes, with the flow that does (`QuickPicks.kt`), over History's log (`history/UpNext.kt`,
+                     `TodayAgenda.kt`), so the one feature over `interval-history`
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-domain        Lift's pure domain (`dev.justinsmith.lift.domain`): exercises, programs, sets and
@@ -280,9 +282,9 @@ the `*-api` modules and the data modules) take no Compose, and their tests link 
 feature never depends on a platform module that has an `*-api`, the data modules depend on `core-platform` rather than `core`, the
 `*-testing` modules appear only under `test-dependencies`, a test dependency keeps every rule a dependency does
 (the interval side's tests take `lift-testing`, and so Lift's storage, only where `LIFT_FAKES` lists the pair:
-`interval-history` and `interval-workout`), a feature depends on another only where its
-`FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `lift-session` on
-`lift-library`), every library applies a template, and no source under `interval/` names `LiftRepository`. The
+`interval-history`, `interval-today` and `interval-workout`), a feature depends on another only where its
+`FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `interval-today` on
+`interval-history`, `lift-session` on `lift-library`), every library applies a template, and no source under `interval/` names `LiftRepository`. The
 `*-testing` modules are ordinary libraries listed under `test-dependencies` (the toolchain shares no test
 sources between modules); a data module's tests may depend on its side's `*-testing` even though that depends
 back on it.
@@ -344,7 +346,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   `rememberViewModelStoreNavEntryDecorator`.
 - **DI is Koin DSL** (no annotations/KSP), **one container per process**, assembled in `apps/app/src/di/AppKoin.kt`
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
-  `historyModule` in `interval/interval-history/src/di/`, `liftModules` in `lift/lift-data/src/di/`, and the three
+  `historyModule` in `interval/interval-history/src/di/` (and each feature's own, as `todayModule`), `liftModules` in `lift/lift-data/src/di/`, and the three
   platform modules: core's `corePlatformModule` (what both sides take: the clock, ids, formatter, `AppInfo`, `Sharer`),
   `interval-platform`'s `platformModule` and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a
   `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
@@ -588,7 +590,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   page each for Today, Train and Log, each an example drawn from the tab's own parts that takes no tap
   (`WelcomePages.kt`). The system's Back steps a page back; its last page and Skip put Set up in its place
   (`replaceTop`), so Back and Skip there land on Today. The same open turns on Today's First week card
-  (`AppSettings.firstWeek`, not in the export; `today/FirstWeek.kt`, `FirstWeekCard.kt` in `interval-history`): its
+  (`AppSettings.firstWeek`, not in the export; `today/FirstWeek.kt`, `FirstWeekCard.kt` in `interval-today`): its
   steps are worked out from the plan, the log and Lift (`firstWeek`: the week built, a workout or session done, a
   flow followed and, with a sport planned or logged, a day of it logged), nothing of them stored, and Hide
   (`HomeViewModel.hideFirstWeek`) turns it off for good. `App()` passes `offerSetup = true`;

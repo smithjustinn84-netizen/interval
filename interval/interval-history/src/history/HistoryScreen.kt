@@ -602,7 +602,7 @@ private fun FirstRun(actions: HistoryActions, modifier: Modifier = Modifier) {
 
 /** A day's heading: "Today", "Yesterday", "Tomorrow", or the date. */
 @Composable
-internal fun dayHeading(day: HistoryDay): String = when (day) {
+fun dayHeading(day: HistoryDay): String = when (day) {
     HistoryDay.Today -> stringResource(Res.string.history_today)
     HistoryDay.Yesterday -> stringResource(Res.string.history_yesterday)
     HistoryDay.Tomorrow -> stringResource(Res.string.history_tomorrow)

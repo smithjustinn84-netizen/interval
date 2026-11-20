@@ -37,6 +37,7 @@ graph TD
         intervalPresets["interval-presets"]
         intervalSettings["interval-settings"]
         intervalTimer["interval-timer"]
+        intervalToday["interval-today"]
         intervalWorkout["interval-workout"]
     end
 
@@ -80,10 +81,10 @@ graph TD
     desktopApp --> app
     iosApp --> app
 
-    app --> intervalHistory
     app --> intervalMobility
     app --> intervalSettings
     app --> intervalTimer
+    app --> intervalToday
     app --> intervalWorkout
     app --> liftNav
     app --> intervalPlatform
@@ -101,6 +102,7 @@ graph TD
     intervalSettings --> intervalData
     intervalSettings --> intervalPlatformApi
     intervalTimer --> intervalPresets
+    intervalToday --> intervalHistory
     intervalWorkout --> intervalPresets
     intervalWorkout --> intervalPlatformApi
     intervalWorkout --> liftApi
@@ -157,7 +159,7 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-api`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`: only the tests of `interval-history` and `interval-workout` reach it, through `lift-testing`, to run their ViewModels against Lift's own repositories (`LIFT_FAKES` in `check_module_rules.py` lists the two). Data crosses as values, never
+   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`: only the tests of `interval-history`, `interval-today` and `interval-workout` reach it, through `lift-testing`, to run their ViewModels against Lift's own repositories (`LIFT_FAKES` in `check_module_rules.py` lists them). Data crosses as values, never
    as writes: 15:15's snatches, counted on the interval side's `HistoryEntry` (`SnatchCount`), reach Lift as an
    `IntervalWorkout`'s `IntervalSnatches` and are read as sets (`intervalSets`, `lift-domain`) at every read, so
    neither side writes the other's store and nothing is counted twice.
@@ -186,7 +188,7 @@ as `WorkoutSession` and `SessionTimers` do), and give a ViewModel's parts classe
 
 ## Module Architecture
 
-The project contains 34 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
+The project contains 35 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
 [project.yaml](../project.yaml) and each module's `module.yaml`; `./kotlin show modules` describes each.
 Each module applies a reusable template from `templates/`:
 - `lib`: Standard Kotlin Multiplatform library with warnings-as-errors, ktlint, and detekt.
@@ -202,7 +204,7 @@ Each module applies a reusable template from `templates/`:
 | **Container** | `app` | Application entry (`App.kt`), Navigation 3 routing table and `Train` pillar host, Koin graph assembly, root theme host, `Set up` (`weeksetup/`), `WeekStandingSource`, `About`, and JSON export/import (`export/`). |
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing`, `core-ui-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; the shared fakes in `core-testing`, which has none either, so the pure layers' tests link none, and the Compose UI test harness in `core-ui-testing`. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
-| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
+| **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-today`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
 | **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform-api`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest/density timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); the timers' contracts (`Beeper`, `LiftVoice`, `SessionKeepAlive`) in `lift-platform-api`, which `lift-session` takes, and what implements them (`ToneBeeper`, the `TimerService` keep-alive) in `lift-platform`. |
 | **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (`TodayRoute`) & gear, active session logger & timers, exercise library & editor, shared Lift UI (its words, widgets and the exercise figures in `lift-ui`'s `demo/`). |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
@@ -413,7 +415,7 @@ flowchart TD
   - The followed program's next day is logged from the same sheet, done as planned (its Strength side, which leads, or a planned program day's row's "Log it"), through `LiftLogging` (`lift-api`, implemented by `SessionRepository`). `doneAsPlanned` (`lift-domain`, pure) makes every planned set at the load a session started then would suggest, a density block as many rounds as it last came to, timed as the day would run, and `SessionStore.logPastSession` writes it as a finished session of that day beside any session in progress, so the program's place, the week and the streak move on (starting no earlier than the program was taken up, `SessionAsPlanned.within`, and never while a session of the program is under way); Undo deletes it. No block steps and nothing goes to the health store. It is offered from the day the program was taken up, or the last day a session of it finished, to today (`LiftLog`), so its days stay in order.
   - A kettlebell preset that switches hands (`asksSnatches`) asks on its summary, or its page in the Log, about how many snatches a set and the bell (`SnatchQuestion`, `interval-ui`; the bells from `LiftActivity.bells`). Lift counts them toward the snatch test (named by the preset), reps in all, pace and grip through `IntervalActivity.workouts`.
   - A plan moves to another day, one day at a time (`PlanStore.movePlanned`, `unmovePlanned` its Undo): a missed one from its row in the Log ("Move"), today's from Today's "Not today", to a day of the week ahead (`moveSheet`, `plan/MovePlan.kt`: the first free day picked, never earlier and never back to the day it first left). A weekly plan's day becomes a one-off that remembers the day it left (`PlanSchedule.Once.movedFromDay`, `PlannedEntity.movedFromDay` since version 17, exported in schema 12), matched back by what it holds (`PlanWorkout.sameAs`) rather than by id, so an import keeps it. `TrainingLog.plansOn` leaves the day it left out, and `TrainingDay.movedAway` holds the move for the day sheet alone, so no count, mark, reminder or Up next sees it there.
-  - `todayAgenda` (`interval-history`) orders what `Today` leads with: on an unlogged sport day with no user-planned workout, it leads with a pre-class mobility flow (`flowBefore`) until mobility is completed that day, then the sport day itself, with an unplanned followed-program day stood back beside it. `todayPlan` (`today/TodayPlan.kt`) lays the agenda out as the day's steps with what is done today ticked: one card in order (`DayCard`) under a coach's line (`CoachLine`), "Done for today" once no step is left, a rest day when none was asked, and what comes after behind a quiet button. On a taxed day it reads `LiftReadiness` (`lift-api`, implemented by lift-session's `EasierDay`) to say why and to start the program's day eased.
+  - `todayAgenda` (`interval-history`) orders what `Today` (`interval-today`) leads with: on an unlogged sport day with no user-planned workout, it leads with a pre-class mobility flow (`flowBefore`) until mobility is completed that day, then the sport day itself, with an unplanned followed-program day stood back beside it. `todayPlan` (`today/TodayPlan.kt`) lays the agenda out as the day's steps with what is done today ticked: one card in order (`DayCard`) under a coach's line (`CoachLine`), "Done for today" once no step is left, a rest day when none was asked, and what comes after behind a quiet button. On a taxed day it reads `LiftReadiness` (`lift-api`, implemented by lift-session's `EasierDay`) to say why and to start the program's day eased.
   - `WeekSetup` (`apps/app/src/weeksetup/`) combines pure `starterProgram` (`lift-domain`, choosing a fitting `Program.oneBell`, or with a pair of bells owned `Program.pairOfBells`, within `sessionMinutes`; a grappler's first for BJJ, with a pair `BjjKettlebell`) and `buildWeek` (`BuiltWeek.kt`) to populate `PlanStore`, `SettingsStore`, `GearStore`, and `ProgramStore` in one step, offered once on a clean install (`FirstRun.kt`).
 - **Finish Reflection ("How was it?")**:
   - Finished interval workouts and Lift sessions prompt a lightweight reflection row (`HowWasIt` in `core`): a 5-level

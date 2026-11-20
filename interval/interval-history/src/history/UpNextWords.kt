@@ -60,7 +60,7 @@ internal fun dayColumn(day: HistoryDay, epochDay: Long): String =
 
 /** What an item in Up next is called: the plan's name, the program's, a session on Lift, the sport's day. */
 @Composable
-internal fun upNextName(item: UpNextItem): String = when (item) {
+fun upNextName(item: UpNextItem): String = when (item) {
     is UpNextItem.Planned -> item.name
 
     is UpNextItem.Lift -> item.programDay?.let { programName(it.program) }
@@ -72,7 +72,7 @@ internal fun upNextName(item: UpNextItem): String = when (item) {
 }
 
 /** The kind of what is up next, for its mark: a plan's by its activity, a session on Lift strength, a flow mobility. */
-internal fun upNextKind(item: UpNextItem): WorkoutKind = when (item) {
+fun upNextKind(item: UpNextItem): WorkoutKind = when (item) {
     is UpNextItem.Planned ->
         if (item.config.activity == Activity.Mobility) WorkoutKind.Mobility else WorkoutKind.Conditioning
 
@@ -88,7 +88,7 @@ internal fun upNextKind(item: UpNextItem): WorkoutKind = when (item) {
  * week 1 · Deadlift · Goblet squat", "Mobility · 6 moves", "Sport day · Counts toward your week".
  */
 @Composable
-internal fun upNextMeta(item: UpNextItem): String = when (item) {
+fun upNextMeta(item: UpNextItem): String = when (item) {
     is UpNextItem.Planned -> kindDescription(item.config)
 
     is UpNextItem.Lift -> {
@@ -116,7 +116,7 @@ internal fun upNextMeta(item: UpNextItem): String = when (item) {
 
 /** How long what is up next takes, as a figure: a workout's clock, a program day's "15 min"; a sport has none. */
 @Composable
-internal fun upNextFigure(item: UpNextItem): String? = when (item) {
+fun upNextFigure(item: UpNextItem): String? = when (item) {
     is UpNextItem.Planned -> formatClock(item.config.totalSeconds)
     is UpNextItem.Lift -> item.minutes?.let { stringResource(Res.string.home_minutes, it) }
     is UpNextItem.Flow -> formatClock(item.totalSeconds)

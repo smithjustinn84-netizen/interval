@@ -71,11 +71,12 @@ ALLOWED = {
     "tooling": set(),
 }
 
-# The only features that build on another: the editor the Timer and the workout open, and the exercise
-# picker a session logs from.
+# The only features that build on another: the editor the Timer and the workout open, the log and the plan Today
+# reads, and the exercise picker a session logs from.
 FEATURE_EDGES = {
     ("interval-timer", "interval-presets"),
     ("interval-workout", "interval-presets"),
+    ("interval-today", "interval-history"),
     ("lift-session", "lift-library"),
 }
 
@@ -88,6 +89,7 @@ PLATFORM_SEERS = {"app", "testing"}
 # The ViewModels still see only the ports. No other interval module's tests reach Lift's storage.
 LIFT_FAKES = {
     ("interval-history", "lift-testing"),
+    ("interval-today", "lift-testing"),
     ("interval-workout", "lift-testing"),
 }
 

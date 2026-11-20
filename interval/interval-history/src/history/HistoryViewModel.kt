@@ -467,4 +467,4 @@ private fun HistoryUiState.keepingListsOf(before: HistoryUiState) = copy(
 )
 
 /** [before] where it equals this, so a state rebuilt with the same contents hands on the instance it had. */
-internal fun <T> T.keptFrom(before: T): T = if (this == before) before else this
+fun <T> T.keptFrom(before: T): T = if (this == before) before else this

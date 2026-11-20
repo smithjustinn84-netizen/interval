@@ -23,6 +23,7 @@ dependencies:
   - //interval/interval-workout
   - //interval/interval-settings
   - //interval/interval-history
+  - //interval/interval-today
   # Kettlebell training, behind the Lift tab: its screens, and its repository and Koin modules.
   - //lift/lift-nav
   - //lift/lift-data

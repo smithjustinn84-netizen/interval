@@ -176,7 +176,7 @@ private fun EditPlan(onPlan: () -> Unit, modifier: Modifier = Modifier) {
  * session".
  */
 @Composable
-internal fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier, count: Int = 2) {
+fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier, count: Int = 2) {
     if (later.isEmpty()) return
     val parts = later.take(count).map {
         stringResource(Res.string.common_joined, shortDay(it.day, it.epochDay, midSentence = true), upNextName(it))
@@ -256,7 +256,7 @@ private fun GroupLabelText(text: String, modifier: Modifier = Modifier) {
 
 /** Start, or another [label], as a small pill: accent when [primary], on a quiet fill otherwise. */
 @Composable
-internal fun StartPill(
+fun StartPill(
     primary: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -320,7 +320,7 @@ internal fun MostDone(rows: List<ShapeRow>, modifier: Modifier = Modifier) {
 
 /** A day in a line of them: "Today", "Tomorrow", else its weekday, "Fri"; [midSentence], after "Then", "tomorrow". */
 @Composable
-internal fun shortDay(day: HistoryDay, epochDay: Long, midSentence: Boolean = false): String = when (day) {
+fun shortDay(day: HistoryDay, epochDay: Long, midSentence: Boolean = false): String = when (day) {
     HistoryDay.Today, HistoryDay.Tomorrow, HistoryDay.Yesterday ->
         dayHeading(day).let { if (midSentence) it.replaceFirstChar { first -> first.lowercase() } else it }
 

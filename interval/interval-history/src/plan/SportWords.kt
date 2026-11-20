@@ -24,7 +24,7 @@ fun sportName(sport: Sport): String = when (sport) {
 
 /** A day of a sport, as the plan and Today name it: "BJJ class", "Climbing", "Run", or the user's own. */
 @Composable
-internal fun sportTitle(sport: Sport): String = when (sport) {
+fun sportTitle(sport: Sport): String = when (sport) {
     Sport.Bjj -> stringResource(Res.string.sport_bjj_title)
     Sport.Climbing -> stringResource(Res.string.sport_climbing)
     Sport.Running -> stringResource(Res.string.sport_running_title)
@@ -33,7 +33,7 @@ internal fun sportTitle(sport: Sport): String = when (sport) {
 
 /** A sport short enough to sit under a day of the week: "BJJ", "Climb", "Run", or the start of the user's own. */
 @Composable
-internal fun sportShort(sport: Sport): String = when (sport) {
+fun sportShort(sport: Sport): String = when (sport) {
     Sport.Bjj -> stringResource(Res.string.sport_bjj)
     Sport.Climbing -> stringResource(Res.string.sport_climbing_short)
     Sport.Running -> stringResource(Res.string.sport_running_short)

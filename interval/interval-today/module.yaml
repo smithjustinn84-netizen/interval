@@ -1,0 +1,29 @@
+# Today, the first tab: the day in order on one card, the week, what is up next and the presets and the flow that
+# fit a few minutes, with the first week's card. It reads History's log and the plan (`TrainingLog`, `todayAgenda`,
+# the Up next words, the Move sheet), so it is the one feature over `interval-history`; an edit here leaves the
+# Log and Plan alone.
+description: "Today: the day's steps, the week and the picks by time"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/compose-lib.module-template.yaml
+
+dependencies:
+  - //interval/interval-history: exported
+  # Why the sensor's card failed (`SensorFailure`), said as a notice.
+  - //interval/interval-platform-api
+  # The program's day beside the day's steps, Lift's reading of a taxed day, and its figure for a flow's move.
+  - //lift/lift-api
+  - //lift/lift-domain
+  - //lift/lift-ui
+
+test-dependencies:
+  - //interval/interval-testing
+  - //lift/lift-testing
+
+settings:
+  compose:
+    resources:
+      packageName: dev.justinsmith.interval.today.resources

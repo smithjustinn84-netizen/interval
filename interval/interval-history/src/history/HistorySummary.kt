@@ -124,7 +124,7 @@ internal fun RangePicker(range: TrainingRange, onRange: (TrainingRange) -> Unit,
 
 /** The summary card's frame: a surface card with its sections spaced out. */
 @Composable
-internal fun SummaryCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+fun SummaryCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
             .fillMaxWidth()
@@ -286,7 +286,7 @@ internal fun GoalRow(week: WeekGoal, onSetGoal: () -> Unit, split: Boolean = tru
 
 /** The streak as a small chip: a flame and "3-week streak". */
 @Composable
-internal fun StreakChip(weeks: Int, modifier: Modifier = Modifier) {
+fun StreakChip(weeks: Int, modifier: Modifier = Modifier) {
     StreakBadge(weeks, label = { pluralStringResource(Res.plurals.history_streak, it, it) }, modifier)
 }
 
@@ -541,7 +541,7 @@ private fun WeekBars(goal: Int?, weeks: List<WeekCount>, modifier: Modifier = Mo
 
 /** A pill-shaped quiet action, such as "Set a weekly goal". */
 @Composable
-internal fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier

@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="common_joined">%1$s · %2$s</string>
+    <string name="history_empty_plan">Plan your week</string>
+    <string name="history_this_week">This week</string>
+    <string name="history_today">Today</string>
+    <string name="history_goal_set">Set a weekly goal</string>
+    <string name="history_up_next">Up next · %1$s</string>
+    <string name="history_edit_plan">Edit plan</string>
+    <string name="history_start">Start</string>
+    <string name="home_not_today">Not today</string>
+    <plurals name="history_week_count">
+        <item quantity="one">%1$d workout</item>
+        <item quantity="other">%1$d workouts</item>
+    </plurals>
+    <string name="history_lift_session">Lift session</string>
+    <string name="history_lift_any">Any session on Lift</string>
+    <string name="notice_undo">Undo</string>
+    <string name="home_title">Today</string>
+    <string name="home_empty_title">Nothing planned</string>
+    <string name="home_empty_text">Answer four questions and Today picks for you, or plan the week yourself.</string>
+    <string name="home_setup">Set up your week</string>
+    <string name="home_follow_program">Follow a program</string>
+    <!-- The First week card, on Today from a new install's first open until it is hidden.
+         "First week · 1 of 4": how many of its steps are done. -->
+    <string name="first_week_title">First week · %1$d of %2$d</string>
+    <string name="first_week_hide">Hide</string>
+    <!-- The same button once every step is done -->
+    <string name="first_week_done">Done</string>
+    <string name="first_week_build">Build the week</string>
+    <string name="first_week_build_hint">Four answers in Set up</string>
+    <string name="first_week_workout">Do the first workout</string>
+    <!-- Where the first workout is: under what is up next, or with nothing up next among the picks by time -->
+    <string name="first_week_workout_start">Start, above</string>
+    <string name="first_week_workout_pick">Pick by time, below</string>
+    <string name="first_week_flow">Follow a flow</string>
+    <string name="first_week_flow_hint">Train · Mobility</string>
+    <!-- %1$s is the sport: "Log BJJ", "Log Climbing" -->
+    <string name="first_week_sport">Log %1$s</string>
+    <string name="first_week_sport_hint">Here, on its day</string>
+    <!-- A step's state, for screen readers -->
+    <string name="first_week_step_done">Done</string>
+    <string name="first_week_step_todo">To do</string>
+    <string name="home_done_title">Nothing more due</string>
+    <string name="home_done_text">What's planned for the next seven days is done. Pick by time, or add to the plan.</string>
+    <string name="home_start_session">Start session</string>
+    <string name="home_start_day">Start day %1$d</string>
+    <string name="home_resume_session">Resume session</string>
+    <string name="home_pick_by_time">Or pick by time</string>
+    <string name="home_minutes">%1$d min</string>
+    <string name="home_no_pick">Nothing that short yet</string>
+    <string name="home_no_pick_hint">Set one up on the Timer</string>
+    <string name="home_week_done">%1$d of %2$d done</string>
+    <string name="home_week_goal_met">Goal met</string>
+    <string name="sport_counts">Counts toward your week</string>
+    <string name="sport_log_it">Log it</string>
+    <string name="notice_sport_logged">%1$s logged</string>
+    <string name="notice_sensor_started">Recording. The phone can go in the bag.</string>
+    <string name="home_before_class">Before class</string>
+    <string name="home_before_climbing">Before climbing</string>
+    <string name="home_before_run">Before your run</string>
+    <string name="home_before_sport">Before %1$s</string>
+    <string name="home_do_it_now">Do it now</string>
+    <!-- Today, coached: the line over the day ("Thursday · class day"), and what there is to say of it. -->
+    <string name="home_day_caption">%1$s · %2$s</string>
+    <string name="home_day_class">class day</string>
+    <string name="home_day_climbing">climbing day</string>
+    <string name="home_day_run">running day</string>
+    <string name="home_day_sport">%1$s day</string>
+    <string name="home_day_strength">strength day</string>
+    <string name="home_day_conditioning">conditioning day</string>
+    <string name="home_day_mobility">mobility day</string>
+    <string name="home_day_rest">rest day</string>
+    <string name="home_day_done">done</string>
+    <string name="home_coach_hard">The last session felt very hard. Take today a notch easier.</string>
+    <string name="home_coach_conditioning">A workout in the last two days felt very hard. Take today a notch easier.</string>
+    <string name="home_coach_mat">The mat, and a grip that has done more than usual this week. Take today a notch easier.</string>
+    <string name="home_coach_grip">The grip has done a lot more this week than in the weeks before. Take today a notch easier.</string>
+    <string name="home_coach_sport_flow">Today is for %1$s. Loosen up first.</string>
+    <string name="home_coach_sport">Today is for %1$s.</string>
+    <string name="home_coach_the_mat">the mat</string>
+    <string name="home_coach_the_wall">the wall</string>
+    <string name="home_coach_the_run">the run</string>
+    <string name="home_coach_done">That is the day.</string>
+    <string name="home_coach_done_goal">That is the day, and the goal for the week is met.</string>
+    <string name="home_coach_rest">Nothing is planned today. Rest is part of the week.</string>
+    <!-- The day's card: its steps, what is done, a rest day, and what can wait. -->
+    <string name="home_spare">If there is time</string>
+    <string name="home_done_today">Done for today</string>
+    <string name="home_done_logged">Logged</string>
+    <string name="home_done_cd">Done</string>
+    <string name="home_rest_title">Rest day</string>
+    <string name="home_rest_until">Nothing due until %1$s</string>
+    <string name="home_rest_move">If moving feels good</string>
+    <string name="home_do_it_today">Do it today</string>
+    <string name="home_easier_title">Easier today</string>
+    <string name="home_easier_what">Presses and squats a bell lighter, swings and snatches shorter</string>
+    <string name="home_start_day_easier">Start day %1$d, easier</string>
+    <string name="home_something_else">Something else</string>
+    <string name="home_pick_time">Pick by time · %1$s</string>
+    <string name="history_kind_strength">Strength</string>
+    <string name="history_kind_conditioning">Conditioning</string>
+    <string name="history_kind_mobility">Mobility</string>
+    <string name="preview_open_cd">Look at %1$s</string>
+</resources>
