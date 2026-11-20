@@ -53,6 +53,7 @@ import dev.justinsmith.lift.ui.resources.program_countdown_summary
 import dev.justinsmith.lift.ui.resources.program_daily_name
 import dev.justinsmith.lift.ui.resources.program_daily_summary
 import dev.justinsmith.lift.ui.resources.program_day
+import dev.justinsmith.lift.ui.resources.program_days_a_week
 import dev.justinsmith.lift.ui.resources.program_days_count
 import dev.justinsmith.lift.ui.resources.program_easy_strength_name
 import dev.justinsmith.lift.ui.resources.program_easy_strength_summary
@@ -91,6 +92,7 @@ import dev.justinsmith.lift.ui.resources.program_rite_of_passage_summary
 import dev.justinsmith.lift.ui.resources.program_rounds_name
 import dev.justinsmith.lift.ui.resources.program_rounds_summary
 import dev.justinsmith.lift.ui.resources.program_schedule
+import dev.justinsmith.lift.ui.resources.program_schedule_days
 import dev.justinsmith.lift.ui.resources.program_shoulder_armor_name
 import dev.justinsmith.lift.ui.resources.program_shoulder_armor_summary
 import dev.justinsmith.lift.ui.resources.program_simple_sinister_name
@@ -101,6 +103,7 @@ import dev.justinsmith.lift.ui.resources.program_strong_for_life_name
 import dev.justinsmith.lift.ui.resources.program_strong_for_life_summary
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_name
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_summary
+import dev.justinsmith.lift.ui.resources.program_weeks
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -179,12 +182,17 @@ fun programName(id: ProgramId): String = stringResource(
 )
 
 /**
- * What a program asks for, in a line; for one the user made, its days and schedule: "2 days · 3 a week for
- * 6 weeks".
+ * What a program asks for and its schedule, in a line: "3 sets of 10 of each · 2 days a week for 4 weeks"; for
+ * one the user made, its days and schedule: "2 days · 3 a week for 6 weeks". The schedule is the program's own
+ * numbers, so the words can't drift from them.
  */
 @Composable
 fun programSummary(program: Program): String = when (val key = program.key) {
-    is ProgramKey.BuiltIn -> programSummary(key.id)
+    is ProgramKey.BuiltIn -> stringResource(
+        Res.string.common_joined,
+        programAbout(key.id),
+        pluralStringResource(Res.plurals.program_schedule_days, program.weeks, program.weeks, program.daysPerWeek),
+    )
 
     is ProgramKey.Custom -> stringResource(
         Res.string.common_joined,
@@ -195,8 +203,27 @@ fun programSummary(program: Program): String = when (val key = program.key) {
     is ProgramKey.Test -> testProtocol(key.id)
 }
 
+/**
+ * What a program asks for alone, without its schedule, for a list that leads with [programFacts]: a built-in's
+ * lifts in a sentence, the count of days of one the user made.
+ */
 @Composable
-private fun programSummary(id: ProgramId): String = stringResource(
+fun programAbout(program: Program): String = when (val key = program.key) {
+    is ProgramKey.BuiltIn -> programAbout(key.id)
+    is ProgramKey.Custom -> pluralStringResource(Res.plurals.program_days_count, program.days.size, program.days.size)
+    is ProgramKey.Test -> testProtocol(key.id)
+}
+
+/** What a list is chosen from by: "3 days a week · 4 weeks · about 15–20 min", a day taking [minutes]. */
+@Composable
+fun programFacts(program: Program, minutes: IntRange): String = listOf(
+    pluralStringResource(Res.plurals.program_days_a_week, program.daysPerWeek, program.daysPerWeek),
+    pluralStringResource(Res.plurals.program_weeks, program.weeks, program.weeks),
+    estimateLine(minutes),
+).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
+
+@Composable
+private fun programAbout(id: ProgramId): String = stringResource(
     when (id) {
         ProgramId.DailySwingsGetUps -> Res.string.program_daily_summary
         ProgramId.PressLadders -> Res.string.program_ladders_summary

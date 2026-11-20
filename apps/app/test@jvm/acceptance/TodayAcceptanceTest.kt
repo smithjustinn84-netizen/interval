@@ -120,7 +120,7 @@ class TodayAcceptanceTest {
         goBack()
 
         // The app's clock starts on a Thursday.
-        seeCoachSays("rest day", "Nothing is planned today. Rest is part of the week.")
+        seeCoachSays("rest day", "Rest is part of the week.")
         see("Rest day")
         see("Nothing due until tomorrow")
         see("Up next · Tomorrow")

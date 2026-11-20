@@ -42,6 +42,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.em
 import dev.justinsmith.interval.home.resources.Res
 import dev.justinsmith.interval.home.resources.activity_choose_cd
+import dev.justinsmith.interval.home.resources.activity_title
 import dev.justinsmith.interval.home.resources.common_calories_estimate
 import dev.justinsmith.interval.home.resources.common_joined
 import dev.justinsmith.interval.home.resources.common_prep_line
@@ -167,8 +168,8 @@ internal fun Total(state: TimerUiState, onEditActivity: () -> Unit, modifier: Mo
 }
 
 /**
- * What the work intervals are spent doing, as a small pill with a chevron that opens the picker. Shown
- * with or without a body weight, so the activity can be set before calories are turned on.
+ * What the work intervals are spent doing, as a small pill, "Activity" before it, with a chevron that opens the
+ * picker. Shown with or without a body weight, so the activity can be set before calories are turned on.
  */
 @Composable
 private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -185,6 +186,13 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
     ) {
+        // Named, since "General" alone says nothing of what it is.
+        Text(
+            stringResource(Res.string.activity_title),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+            modifier = Modifier.padding(end = Spacing.space4),
+        )
         Text(label, style = IntervalTheme.type.label, color = palette.text)
         Icon(
             IntervalIcons.Chevron,

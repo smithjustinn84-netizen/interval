@@ -426,7 +426,7 @@ class HomeScreenTest {
         setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
 
         onNodeWithText("Thursday · rest day").assertIsDisplayed()
-        onNodeWithText("Nothing is planned today. Rest is part of the week.").assertIsDisplayed()
+        onNodeWithText("Rest is part of the week.").assertIsDisplayed()
         onNode(hasText("Rest day") and isHeading()).assertIsDisplayed()
         onNodeWithText("Nothing due until tomorrow").assertIsDisplayed()
         onNodeWithText("If moving feels good").assertIsDisplayed()

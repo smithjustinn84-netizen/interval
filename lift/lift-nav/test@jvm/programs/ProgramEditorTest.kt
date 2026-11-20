@@ -47,7 +47,9 @@ class ProgramEditorTest {
         onNode(hasSetTextAction()).performTextInput("Hill day")
         onNodeWithText("Save program").performScrollTo().performClick()
         waitForText("Hill day")
-        onNodeWithText("2 days · 3 a week for 4 weeks").assertExists()
+        // Its row leads with what it is chosen by, then its days.
+        onNodeWithText("3 days a week · 4 weeks", substring = true).assertExists()
+        onNodeWithText("2 days").assertExists()
         assertEquals("Hill day", app.storage.programs.rows.value.single().name)
 
         onNodeWithText("Hill day").performClick()

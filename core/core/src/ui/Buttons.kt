@@ -168,7 +168,8 @@ fun SecondaryButton(
 }
 
 /**
- * A borderless action in the dim ink, for the quiet choices of a sheet: Cancel, Edit, Delete. With [expanded]
+ * A borderless action in the text's ink, which tells it from the dim lines of description it often sits by, for
+ * the quiet choices of a sheet: Cancel, Edit, Delete. With [expanded]
  * it opens and closes what sits under it (a library's Filters): a chevron points down while closed and flips up
  * while open, and a screen reader hears which.
  */
@@ -182,7 +183,7 @@ fun QuietTextButton(
 ) {
     val interaction = remember { MutableInteractionSource() }
     val palette = IntervalTheme.palette
-    val ink = if (destructive) palette.danger else palette.textDim
+    val ink = if (destructive) palette.danger else palette.text
     val haptic = if (destructive) HapticFeedbackType.Reject else null
     Row(
         modifier

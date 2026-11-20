@@ -145,7 +145,7 @@
     <string name="settings_max_hr">Max heart rate</string>
     <string name="settings_max_hr_hint">Sets the five heart-rate training zones</string>
     <string name="settings_max_hr_value">%1$d bpm</string>
-    <string name="settings_max_hr_default">%1$d bpm (default)</string>
+    <string name="settings_max_hr_hint_default">Sets the five training zones. %1$d is the default.</string>
     <string name="settings_max_hr_edit">Edit max heart rate</string>
     <string name="settings_max_hr_less_cd">Lower max heart rate</string>
     <string name="settings_max_hr_more_cd">Higher max heart rate</string>

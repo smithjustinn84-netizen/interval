@@ -84,7 +84,7 @@
     <string name="home_coach_the_run">the run</string>
     <string name="home_coach_done">That is the day.</string>
     <string name="home_coach_done_goal">That is the day, and the goal for the week is met.</string>
-    <string name="home_coach_rest">Nothing is planned today. Rest is part of the week.</string>
+    <string name="home_coach_rest">Rest is part of the week.</string>
     <!-- The day's card: its steps, what is done, a rest day, and what can wait. -->
     <string name="home_spare">If there is time</string>
     <string name="home_done_today">Done for today</string>

@@ -53,9 +53,9 @@ import dev.justinsmith.interval.settings.resources.settings_import_hint
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on
 import dev.justinsmith.interval.settings.resources.settings_keep_screen_on_hint
 import dev.justinsmith.interval.settings.resources.settings_max_hr
-import dev.justinsmith.interval.settings.resources.settings_max_hr_default
 import dev.justinsmith.interval.settings.resources.settings_max_hr_edit
 import dev.justinsmith.interval.settings.resources.settings_max_hr_hint
+import dev.justinsmith.interval.settings.resources.settings_max_hr_hint_default
 import dev.justinsmith.interval.settings.resources.settings_max_hr_value
 import dev.justinsmith.interval.settings.resources.settings_plan
 import dev.justinsmith.interval.settings.resources.settings_plan_open
@@ -487,14 +487,16 @@ private fun CaloriesCard(
         val maxHr = state.body.maxHeartRate
         ValueRow(
             stringResource(Res.string.settings_max_hr),
-            stringResource(Res.string.settings_max_hr_hint),
-            value = if (maxHr == null) {
-                stringResource(Res.string.settings_max_hr_default, DEFAULT_MAX_BPM)
+            // The default is said in the line, not the value, which a phone has no room to widen.
+            if (maxHr == null) {
+                stringResource(Res.string.settings_max_hr_hint_default, DEFAULT_MAX_BPM)
             } else {
-                stringResource(Res.string.settings_max_hr_value, maxHr)
+                stringResource(Res.string.settings_max_hr_hint)
             },
+            value = stringResource(Res.string.settings_max_hr_value, maxHr ?: DEFAULT_MAX_BPM),
             onClick = onEditMaxHeartRate,
             onClickLabel = stringResource(Res.string.settings_max_hr_edit),
+            dim = maxHr == null,
         )
         RowDivider()
         val resting = state.body.restingHeartRate

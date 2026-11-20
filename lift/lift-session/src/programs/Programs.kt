@@ -25,6 +25,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
@@ -92,6 +93,8 @@ import dev.justinsmith.lift.ui.BalanceBars
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.programAbout
+import dev.justinsmith.lift.ui.programFacts
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.programSummary
 import org.jetbrains.compose.resources.stringResource
@@ -458,8 +461,8 @@ private fun YoursGroup(
 }
 
 /**
- * A program, opened on a tap, checked while it is followed, with about how long its days take under what it
- * asks for; one the user made ends in a way to change it.
+ * A program, opened on a tap, checked while it is followed: under its name how often, for how long and about how
+ * long a day takes, then what it asks for; one the user made ends in a way to change it.
  */
 @Composable
 private fun ProgramRow(
@@ -490,11 +493,18 @@ private fun ProgramRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
-            Text(programSummary(program), style = IntervalTheme.type.meta, color = palette.textDim)
+            // What it is chosen by first, in the text's ink; then what it asks for, cut to two lines.
             Text(
-                estimateLine(remember(program, restSeconds) { program.dayMinutes(restSeconds) }),
+                programFacts(program, remember(program, restSeconds) { program.dayMinutes(restSeconds) }),
+                style = IntervalTheme.type.meta,
+                color = palette.text,
+            )
+            Text(
+                programAbout(program),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
             )
         }
         if (current) {
