@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -378,7 +377,8 @@ private val Gutter = Modifier.padding(horizontal = Spacing.space16)
 
 /**
  * The tab laid out in two: the title across the top, and under it the range and its summary in a column of
- * their own beside the log, a day after another down one column, newest first. Each scrolls by itself.
+ * their own beside the log, a day after another down one column, newest first. Each scrolls by itself. The two
+ * share the title bar's width evenly, so their edges are its edges and a row has the room the window gives.
  */
 @Composable
 private fun SummaryBesideLog(
@@ -397,7 +397,7 @@ private fun SummaryBesideLog(
             Row(Modifier.fillMaxWidth().weight(1f), horizontalArrangement = Arrangement.Center) {
                 Column(
                     Modifier
-                        .width(Sizes.listColumn)
+                        .weight(1f)
                         .fillMaxHeight()
                         .verticalScroll(rememberScrollState())
                         .padding(bottom = Spacing.space24),
@@ -416,7 +416,7 @@ private fun SummaryBesideLog(
                     if (state.showsMostDone) MostDone(state.mostDone, Gutter)
                 }
                 LazyColumn(
-                    Modifier.weight(1f, fill = false).widthIn(max = Sizes.content).fillMaxHeight(),
+                    Modifier.weight(1f).fillMaxHeight(),
                     contentPadding = PaddingValues(bottom = Spacing.space24),
                 ) {
                     groups.forEach { (heading, sections) ->

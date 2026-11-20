@@ -42,7 +42,6 @@ internal fun HeartInsights(recovery: Recovery?, load: Int?, modifier: Modifier =
                 Stat(
                     stringResource(Res.string.detail_recovery_in, it.seconds),
                     stringResource(Res.string.detail_bpm_value, it.average),
-                    accent = true,
                 )
             }
             load?.let { Stat(stringResource(Res.string.detail_heart_load), it.toString()) }

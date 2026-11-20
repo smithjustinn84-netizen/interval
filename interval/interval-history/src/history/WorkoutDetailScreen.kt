@@ -265,7 +265,7 @@ private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
         }
         Timeline(workout.config, Modifier.fillMaxWidth())
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            Stat(stringResource(Res.string.detail_work), workout.work, accent = true)
+            Stat(stringResource(Res.string.detail_work), workout.work)
             workout.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
         }
         workout.caps.forEach { cap -> CapFigures(cap, block = cap.block.takeIf { workout.config.isSequence }) }
@@ -325,7 +325,6 @@ private fun CapFigures(cap: CapScore, block: Int?) {
             Stat(
                 stringResource(Res.string.detail_cap_rounds, cap.capSeconds / SECONDS_PER_MINUTE),
                 cap.rounds.toString(),
-                accent = true,
             )
             cap.paceMillis?.let {
                 Stat(stringResource(Res.string.detail_cap_pace), formatClock((it / MILLIS_PER_SECOND).toInt()))

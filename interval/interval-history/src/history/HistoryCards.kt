@@ -93,10 +93,12 @@ internal fun ComingUp(
             GroupLabel(stringResource(Res.string.history_coming_up), Modifier.weight(1f))
             EditPlan(actions.onPlan)
         }
+        // One raised Start a card, as Today has one: the first of today's that starts; the rest are quiet.
+        val lead = upNext.indexOfFirst { it.day == HistoryDay.Today && it !is UpNextItem.SportDay }
         ListCard {
             upNext.forEachIndexed { index, item ->
                 if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                ComingUpRow(item, actions, onLook = { onLook(index) })
+                ComingUpRow(item, actions, onLook = { onLook(index) }, raised = index == lead)
             }
         }
     }
@@ -104,11 +106,18 @@ internal fun ComingUp(
 
 /**
  * One plan coming up: its day in the column ("Today", "Sat"), its kind's mark, its name over one line of what it
- * is, and on today's rows the way to do it (Start, Resume, Log it). A later row shows its length instead and
+ * is, and on today's rows the way to do it (Start, Resume, Log it), in the accent only when [raised]. A later row
+ * shows its length instead and
  * opens a look at it before Start, where Start is; a sport, which nothing starts, has no look to open.
  */
 @Composable
-private fun ComingUpRow(item: UpNextItem, actions: HistoryActions, onLook: () -> Unit, modifier: Modifier = Modifier) {
+private fun ComingUpRow(
+    item: UpNextItem,
+    actions: HistoryActions,
+    onLook: () -> Unit,
+    modifier: Modifier = Modifier,
+    raised: Boolean = true,
+) {
     val palette = IntervalTheme.palette
     val today = item.day == HistoryDay.Today
     val figure = upNextFigure(item)
@@ -137,7 +146,7 @@ private fun ComingUpRow(item: UpNextItem, actions: HistoryActions, onLook: () ->
         val meta = if (today && figure != null) joined(listOf(upNextMeta(item), figure)) else upNextMeta(item)
         UpNextText(upNextName(item), meta, Modifier.weight(1f), maxLines = if (today) 2 else 1)
         if (today) {
-            UpNextAction(item, actions)
+            UpNextAction(item, actions, raised)
         } else {
             figure?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
             if (looks) {
@@ -205,22 +214,25 @@ private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modi
 
 /**
  * The way to do what is up next: Start on a plan or a flow, Start or Resume on a session on Lift, Log it on a
- * sport's own day. Nothing starts a sport: before its day it is only named.
+ * sport's own day. Nothing starts a sport: before its day it is only named. The pill is the accent's unless
+ * [raised] is off, as it is on a row after the card's first.
  */
 @Composable
-private fun UpNextAction(item: UpNextItem, actions: HistoryActions) {
+private fun UpNextAction(item: UpNextItem, actions: HistoryActions, raised: Boolean = true) {
     when (item) {
-        is UpNextItem.Planned -> StartPill(primary = true, onClick = { actions.onStart(item.name, item.config) })
+        is UpNextItem.Planned -> StartPill(primary = raised, onClick = { actions.onStart(item.name, item.config) })
 
         is UpNextItem.Lift -> StartPill(
-            primary = true,
+            primary = raised,
             // Lift starts nothing while a session is in progress, so with one under way this resumes it.
             onClick = { actions.onStartLift(item.programDay?.program?.key.takeUnless { item.resume }) },
             label = stringResource(if (item.resume) Res.string.history_resume else Res.string.history_start),
         )
 
         // Left out of History's list (HistoryViewModel), which is of what is planned: drawn all the same.
-        is UpNextItem.Flow -> StartPill(primary = true, onClick = { actions.onStart(item.flow.name, item.flow.config) })
+        is UpNextItem.Flow -> StartPill(primary = raised, onClick = {
+            actions.onStart(item.flow.name, item.flow.config)
+        })
 
         is UpNextItem.SportDay -> if (item.day == HistoryDay.Today) {
             val logged = stringResource(Res.string.notice_sport_logged, sportTitle(item.sport))

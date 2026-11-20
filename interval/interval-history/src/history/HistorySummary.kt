@@ -162,7 +162,6 @@ internal fun WeekSummary(
                     stringResource(Res.string.history_time),
                     summary.time,
                     summary.totalSeconds,
-                    accent = true,
                 )
                 summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
             }
@@ -380,10 +379,11 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
 
 /**
  * A small figure under its caption, rolling to its new value as [rank] (the number behind it) rises or
- * falls; a figure that never changes on its page passes none.
+ * falls; a figure that never changes on its page passes none. Always in the text's ink: the accent is kept for
+ * what can be tapped and for strength's mark, so a number in it would read as a link.
  */
 @Composable
-internal fun RowScope.Stat(caption: String, value: String, rank: Int = 0, accent: Boolean = false) {
+internal fun RowScope.Stat(caption: String, value: String, rank: Int = 0) {
     val palette = IntervalTheme.palette
     Column(Modifier.weight(1f)) {
         Text(caption, style = IntervalTheme.type.caption, color = palette.textDim)
@@ -391,7 +391,7 @@ internal fun RowScope.Stat(caption: String, value: String, rank: Int = 0, accent
             value,
             rising = rememberRising(rank),
             style = IntervalTheme.type.stat,
-            color = if (accent) palette.accent else palette.text,
+            color = palette.text,
         )
     }
 }
@@ -422,7 +422,7 @@ internal fun MonthSummary(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
-            Stat(stringResource(Res.string.history_time), summary.time, summary.totalSeconds, accent = true)
+            Stat(stringResource(Res.string.history_time), summary.time, summary.totalSeconds)
             if (summary.plannedDue > 0) {
                 Stat(
                     stringResource(Res.string.history_planned_done),
@@ -466,7 +466,6 @@ internal fun AllTimeSummary(
                 stringResource(Res.string.history_time),
                 longTotal(summary.totalSeconds),
                 summary.totalSeconds,
-                accent = true,
             )
         }
         val calories = summary.calories

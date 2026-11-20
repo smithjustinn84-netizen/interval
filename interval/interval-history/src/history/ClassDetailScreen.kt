@@ -188,7 +188,6 @@ private fun ClassFigures(recorded: RecordedClass) {
                 Stat(
                     stringResource(Res.string.detail_peak_heart_rate),
                     stringResource(Res.string.detail_bpm_value, peak),
-                    accent = true,
                 )
             }
         }

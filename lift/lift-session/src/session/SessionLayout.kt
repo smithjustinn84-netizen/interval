@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
@@ -24,13 +25,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.HeartCard
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.density_start
@@ -59,8 +65,8 @@ internal val BoxWithConstraintsScope.isWideUpright: Boolean
 /** The session screen's parts, which [SessionLayout] lays out in one column or two. */
 internal class SessionParts(
     val bar: @Composable () -> Unit,
-    /** The session's numbers, in one row when [wide] and two otherwise. */
-    val tiles: @Composable (wide: Boolean) -> Unit,
+    /** The session's numbers, in the form the layout has room for. */
+    val tiles: @Composable (form: TilesForm) -> Unit,
     val plan: @Composable ColumnScope.() -> Unit,
     /** The rest counting down, while one does, over Finish and Log set. */
     val foot: @Composable () -> Unit,
@@ -68,8 +74,9 @@ internal class SessionParts(
 
 /**
  * Upright, one column: the title, then the clock, what is next and what is done scrolling, then the rest and Log
- * set; on a tablet ([isWideUpright]) the column widens and the numbers sit in one row. On its side, the title,
- * the clock, the rest and Log set on the left, and what is next and what is done on the right.
+ * set, the numbers one strip; on a tablet ([isWideUpright]) the column widens and they are a row of tiles. On
+ * its side, the title, the clock, the rest and Log set on the left, and what is next and what is done on the
+ * right.
  */
 @Composable
 internal fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
@@ -85,7 +92,7 @@ internal fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                     parts.bar()
                     Column(
                         Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
-                    ) { parts.tiles(false) }
+                    ) { parts.tiles(TilesForm.Stacked) }
                     parts.foot()
                 }
                 Column(
@@ -114,7 +121,7 @@ internal fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
                     Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = Spacing.space16),
                     verticalArrangement = scrolling,
                 ) {
-                    parts.tiles(wide)
+                    parts.tiles(if (wide) TilesForm.Row else TilesForm.Strip)
                     parts.plan(this)
                 }
                 parts.foot()
@@ -123,47 +130,78 @@ internal fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
     }
 }
 
+/** How the session's numbers are laid out: see [SessionTiles]. */
+internal enum class TilesForm { Strip, Stacked, Row }
+
 /**
- * The session's time and weight moved, and from the first set on how long since the last: in one row when
- * [wide]; under them the live heart rate on its card ([HeartCard]) while a sensor is in use. The rest counts
- * down at the foot ([SessionFoot]), so the tiles keep one shape as it comes and goes.
+ * The session's time and weight moved, and from the first set on how long since the last. On a phone upright
+ * they are one strip ([TilesForm.Strip]), so the set up next and its steppers stay over the rest band; a tablet
+ * upright has a tile each in a row, and a window on its side, whose column holds nothing else, two rows of
+ * tiles. Under them the live heart rate on its card ([HeartCard]) while a sensor is in use. The rest counts
+ * down at the foot ([SessionFoot]), so the numbers keep one shape as it comes and goes.
  */
 @Composable
-internal fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, wide: Boolean) {
+internal fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, form: TilesForm) {
     val moved = state.session?.tonnageKg ?: 0.0
     val now = clocks()
-    val time = @Composable { modifier: Modifier ->
-        StatTile(stringResource(Res.string.session_time), now.elapsed, modifier)
-    }
-    val weight = @Composable { modifier: Modifier ->
-        StatTile(
+    val stats = listOfNotNull(
+        SessionStat(stringResource(Res.string.session_time), now.elapsed),
+        SessionStat(
             stringResource(Res.string.session_moved),
             stringResource(Res.string.kg_value, formatKg(moved)),
-            modifier,
             rank = moved.toInt(),
-        )
-    }
-    val third = now.sinceLast?.let { since ->
-        @Composable { modifier: Modifier ->
-            StatTile(stringResource(Res.string.session_since_last), since, modifier)
-        }
-    }
+        ),
+        now.sinceLast?.let { SessionStat(stringResource(Res.string.session_since_last), it) },
+    )
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        if (wide) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                time(Modifier.weight(1f))
-                weight(Modifier.weight(1f))
-                third?.invoke(Modifier.weight(1f))
+        when (form) {
+            TilesForm.Strip -> StatStrip(stats)
+
+            TilesForm.Row -> TileRow(stats)
+
+            TilesForm.Stacked -> {
+                TileRow(stats.take(2))
+                stats.getOrNull(2)?.let { StatTile(it.label, it.value, Modifier.fillMaxWidth(), it.rank) }
             }
-        } else {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                time(Modifier.weight(1f))
-                weight(Modifier.weight(1f))
-            }
-            third?.invoke(Modifier.fillMaxWidth())
         }
         // The heart, while a sensor is in use: the number, its zone and the session so far.
         HeartCard(now.liveHeartRate, now.liveSamples, maxBpm = now.maxHeartRate)
+    }
+}
+
+/** One of the session's numbers under its caption; [rank] as [StatTile] takes it. */
+private class SessionStat(val label: String, val value: String, val rank: Int? = null)
+
+@Composable
+private fun TileRow(stats: List<SessionStat>) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        stats.forEach { StatTile(it.label, it.value, Modifier.weight(1f), it.rank) }
+    }
+}
+
+/** The session's numbers on one card, a column each: a third of the height of a tile apiece. */
+@Composable
+private fun StatStrip(stats: List<SessionStat>) {
+    val palette = IntervalTheme.palette
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(Corners.radius18)
+            .background(palette.surface)
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        stats.forEach { stat ->
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+                Text(stat.label, style = IntervalTheme.type.caption, color = palette.textDim, maxLines = 1)
+                if (stat.rank != null) {
+                    val rising = rememberRising(stat.rank)
+                    RollingText(stat.value, rising = rising, style = IntervalTheme.type.value, color = palette.text)
+                } else {
+                    Text(stat.value, style = IntervalTheme.type.value, color = palette.text, maxLines = 1)
+                }
+            }
+        }
     }
 }
 

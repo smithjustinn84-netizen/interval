@@ -163,7 +163,7 @@ fun SessionScreen(
                 },
             )
         },
-        tiles = { wide -> SessionTiles(state, clocks, wide) },
+        tiles = { form -> SessionTiles(state, clocks, form) },
         plan = {
             SessionPlanContent(
                 state = state,

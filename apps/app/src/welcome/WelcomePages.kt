@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -184,7 +184,10 @@ private fun ColumnScope.LogPage() {
                     color = palette.text,
                 )
             }
-            Row(Modifier.fillMaxWidth().clearAndSetSemantics {}) {
+            Row(
+                Modifier.fillMaxWidth().clearAndSetSemantics {},
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
                 ExampleWeek.forEachIndexed { index, day -> ExampleDot(index + 1, day, Modifier.weight(1f)) }
             }
         }
@@ -316,7 +319,7 @@ private fun ExampleDot(weekday: Int, day: ExampleDay, modifier: Modifier = Modif
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        Dot(day, Modifier.size(Sizes.weekBarMark))
+        Dot(day, Modifier.fillMaxWidth().height(Sizes.weekBarMark))
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 weekdayText(weekday, WeekdayForm.Initial),
@@ -334,8 +337,8 @@ private fun ExampleDot(weekday: Int, day: ExampleDay, modifier: Modifier = Modif
 }
 
 /**
- * The dot alone: filled and checked once done, ringed in the text colour today, outlined in the accent while
- * planned.
+ * A day's mark alone, the block Today's week and Log's draw: filled and checked once done, ringed in the text
+ * colour today, outlined in the accent while planned.
  */
 @Composable
 private fun Dot(day: ExampleDay, modifier: Modifier = Modifier) {
@@ -347,11 +350,11 @@ private fun Dot(day: ExampleDay, modifier: Modifier = Modifier) {
         else -> palette.surfaceVariant
     }
     val ring = when (day) {
-        ExampleDay.Today -> Modifier.border(Sizes.border, palette.text, CircleShape)
-        ExampleDay.Planned -> Modifier.border(Sizes.border, palette.accent, CircleShape)
+        ExampleDay.Today -> Modifier.border(Sizes.border, palette.text, BlockShape)
+        ExampleDay.Planned -> Modifier.border(Sizes.border, palette.accent, BlockShape)
         else -> Modifier
     }
-    Box(modifier.clip(CircleShape).background(fill).then(ring), contentAlignment = Alignment.Center) {
+    Box(modifier.clip(BlockShape).background(fill).then(ring), contentAlignment = Alignment.Center) {
         if (done) {
             Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.fillMaxSize(CHECK_SHARE))
         }
@@ -370,6 +373,9 @@ private fun Legend(day: ExampleDay, text: String, modifier: Modifier = Modifier)
         Text(text, style = IntervalTheme.type.meta, color = IntervalTheme.palette.textDim)
     }
 }
+
+/** The block's corners at any size, a legend's swatch too: Today's [Sizes.weekBarMark] block rounds by this much. */
+private val BlockShape = RoundedCornerShape(percent = 36)
 
 /** How much of its dot a check takes. */
 private const val CHECK_SHARE = 0.6f
