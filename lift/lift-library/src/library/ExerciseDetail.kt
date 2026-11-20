@@ -41,8 +41,7 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseHistory
-import dev.justinsmith.lift.domain.Muscle
-import dev.justinsmith.lift.domain.Muscles
+import dev.justinsmith.lift.domain.MuscleMap
 import dev.justinsmith.lift.domain.Pace
 import dev.justinsmith.lift.domain.PastSession
 import dev.justinsmith.lift.domain.Trend
@@ -50,10 +49,7 @@ import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.collapsedSets
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
-import dev.justinsmith.lift.domain.muscles
 import dev.justinsmith.lift.library.resources.Res
-import dev.justinsmith.lift.library.resources.common_joined
-import dev.justinsmith.lift.library.resources.detail_also
 import dev.justinsmith.lift.library.resources.detail_best
 import dev.justinsmith.lift.library.resources.detail_best_pace
 import dev.justinsmith.lift.library.resources.detail_done
@@ -65,16 +61,18 @@ import dev.justinsmith.lift.library.resources.detail_no_cues
 import dev.justinsmith.lift.library.resources.detail_open_session
 import dev.justinsmith.lift.library.resources.detail_sets_repeated
 import dev.justinsmith.lift.library.resources.detail_works
+import dev.justinsmith.lift.library.resources.detail_works_focus
 import dev.justinsmith.lift.library.resources.exercise_archived_note
 import dev.justinsmith.lift.library.resources.exercise_cues
 import dev.justinsmith.lift.library.resources.exercise_editor_edit
 import dev.justinsmith.lift.ui.Demonstration
+import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.cues
 import dev.justinsmith.lift.ui.demo.demo
 import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
-import dev.justinsmith.lift.ui.muscleName
+import dev.justinsmith.lift.ui.focusName
 import dev.justinsmith.lift.ui.setLine
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringArrayResource
@@ -199,13 +197,20 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
             val cues = stringArrayResource(exercise.cues())
             val demo = exercise.demo
             if (demo == null) Cues(cues) else Demonstration(demo, exerciseName(exercise), cues)
-            Works(exercise.muscles)
+            Works(exercise)
         }
 
-        is CustomExercise -> if (exercise.cues.isBlank()) {
-            Text(stringResource(Res.string.detail_no_cues), style = IntervalTheme.type.meta, color = palette.textDim)
-        } else {
-            Cues(listOf(exercise.cues))
+        is CustomExercise -> {
+            if (exercise.cues.isBlank()) {
+                Text(
+                    stringResource(Res.string.detail_no_cues),
+                    style = IntervalTheme.type.meta,
+                    color = palette.textDim,
+                )
+            } else {
+                Cues(listOf(exercise.cues))
+            }
+            Works(exercise)
         }
 
         is UnknownExercise -> Unit
@@ -230,29 +235,15 @@ private fun Cues(lines: List<String>) {
     }
 }
 
-/** What it works most, then what it works [Muscles.also]: "Glutes · Hamstrings", "Also Lower back · Abs". */
+/** What [exercise] works: front and back body map over its primary and assisted muscles. */
 @Composable
-private fun Works(muscles: Muscles) {
-    val palette = IntervalTheme.palette
+private fun Works(exercise: Exercise) {
+    val map = remember(exercise) { MuscleMap.of(exercise) }
+    if (map.isEmpty) return
+    val note = (exercise as? CustomExercise)?.let { stringResource(Res.string.detail_works_focus, focusName(it.focus)) }
     GroupLabel(stringResource(Res.string.detail_works))
-    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
-        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(joined(muscles.primary), style = IntervalTheme.type.label, color = palette.text)
-            if (muscles.also.isNotEmpty()) {
-                Text(
-                    stringResource(Res.string.detail_also, joined(muscles.also)),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            }
-        }
-    }
+    MusclesWorkedCard(map, fill = IntervalTheme.palette.surfaceVariant, note = note)
 }
-
-/** Muscles in a line: "Glutes · Hamstrings · Lower back". */
-@Composable
-private fun joined(muscles: List<Muscle>): String =
-    muscles.map { muscleName(it) }.reduce { line, name -> stringResource(Res.string.common_joined, line, name) }
 
 /**
  * The user's history with it: how often and when last, their best, its reps in all and pace (15:15's snatches

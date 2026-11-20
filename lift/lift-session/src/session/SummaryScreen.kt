@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.Burst
 import dev.justinsmith.interval.ui.FinishHaptic
+import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
@@ -49,6 +51,7 @@ import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.MuscleMap
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.SetLog
@@ -57,6 +60,7 @@ import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
+import dev.justinsmith.lift.session.resources.detail_muscles_worked
 import dev.justinsmith.lift.session.resources.summary_done
 import dev.justinsmith.lift.session.resources.summary_hand_care
 import dev.justinsmith.lift.session.resources.summary_heavy_grip
@@ -70,6 +74,7 @@ import dev.justinsmith.lift.session.resources.summary_streak
 import dev.justinsmith.lift.session.resources.summary_week_count
 import dev.justinsmith.lift.session.resources.summary_week_of_goal
 import dev.justinsmith.lift.session.resources.today_goal_met
+import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
@@ -193,6 +198,15 @@ private fun SummaryBody(
     Arrival(entrance, BESTS_STEP) { BestsCard(finished) }
     Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }
     Arrival(entrance, HOW_STEP) { SummaryHowWasIt(finished, reflection) }
+    val muscles = remember(finished.session) { MuscleMap.of(finished.session) }
+    if (!muscles.isEmpty) {
+        Arrival(entrance, MUSCLES_STEP) {
+            Column(Modifier.padding(top = Spacing.space16)) {
+                GroupLabel(stringResource(Res.string.detail_muscles_worked))
+                MusclesWorkedCard(muscles)
+            }
+        }
+    }
 }
 
 /** What follows the numbers: the grip's notes, then what to keep for next time. */
@@ -231,7 +245,8 @@ private const val STATS_STEP = 2
 private const val BESTS_STEP = 3
 private const val CHANGES_STEP = 4
 private const val HOW_STEP = 5
-private const val FOOTER_STEP = 6
+private const val MUSCLES_STEP = 6
+private const val FOOTER_STEP = 7
 
 /** What the summary's "How was it?" does: keeps the effort and the note, and hands on their words. */
 class SummaryReflection(

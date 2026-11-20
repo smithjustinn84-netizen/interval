@@ -70,6 +70,9 @@ fun BalanceBars(
             )
             Text(stringResource(span), style = IntervalTheme.type.meta, color = palette.textDim)
         }
+        if (!balance.muscles.isEmpty) {
+            MuscleBodyMap(balance.muscles, height = LiftSizes.bodyMapCompact, describe = false)
+        }
         balance.loads.forEach { load -> LoadRow(load, balance.max) }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space16)) {
             Legend(palette.accent, stringResource(Res.string.balance_worked))

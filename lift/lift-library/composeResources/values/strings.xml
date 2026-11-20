@@ -24,6 +24,7 @@
     <string name="library_archived">Archived</string>
     <string name="library_new">New exercise</string>
     <string name="detail_works">Works</string>
+    <string name="detail_works_focus">From its focus: %1$s</string>
     <string name="detail_also">Also %1$s</string>
     <string name="detail_history">Your history</string>
     <plurals name="detail_done">

@@ -71,6 +71,7 @@
     <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>
     <string name="detail_how_it_went">How it went</string>
+    <string name="detail_muscles_worked">Muscles worked</string>
     <string name="effort_easy">Easy</string>
     <string name="effort_steady">Steady</string>
     <string name="effort_hard">Hard</string>

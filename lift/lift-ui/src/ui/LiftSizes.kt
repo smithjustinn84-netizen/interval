@@ -19,6 +19,10 @@ object LiftSizes {
     /** A muscle group's bar on the Lift tab's balance: thin, so seven of them and their names fit a phone's card. */
     val balanceBar = 8.dp
 
+    /** The front/back anatomical body map on exercise detail and session summaries, and compactly in balance cards. */
+    val bodyMap = 168.dp
+    val bodyMapCompact = 148.dp
+
     /** The marker on a demo's timeline, the gap between its stretches, and the bar beside a cue it lights. */
     val demoMarkerWidth = 4.dp
     val demoMarkerHeight = 16.dp

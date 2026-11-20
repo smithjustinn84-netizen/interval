@@ -331,6 +331,11 @@
     <string name="balance_title">Balance</string>
     <string name="balance_worked">Worked most</string>
     <string name="balance_assisted">Assisted</string>
+    <string name="muscle_map_front">Front</string>
+    <string name="muscle_map_back">Back</string>
+    <string name="muscle_map_cd">Muscles worked: front and back body map</string>
+    <string name="muscles_worked_also">Also %1$s</string>
+    <string name="muscles_worked_joined">%1$s · %2$s</string>
     <plurals name="balance_row_cd">
         <item quantity="one">%1$s: %2$d set worked it most, %3$d assisted</item>
         <item quantity="other">%1$s: %2$d sets worked it most, %3$d assisted</item>

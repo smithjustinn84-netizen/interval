@@ -36,7 +36,7 @@ data class MuscleLoad(val group: MuscleGroup, val worked: Double, val assisted: 
  * Sets per muscle group over some sessions, every group in [MuscleGroup]'s order: the Lift tab's balance over the
  * last four weeks.
  */
-data class MuscleBalance(val loads: List<MuscleLoad>) {
+data class MuscleBalance(val loads: List<MuscleLoad>, val muscles: MuscleMap = MuscleMap.Empty) {
     /** The groups no set worked or assisted in: the one line of advice the card gives. */
     val untrained: List<MuscleGroup> get() = loads.filter { it.total == 0.0 }.map { it.group }
 
@@ -70,7 +70,8 @@ data class MuscleBalance(val loads: List<MuscleLoad>) {
                 (also - most).forEach { assisted[it] = assisted.getValue(it) + weight }
             }
             return MuscleBalance(
-                MuscleGroup.entries.map { MuscleLoad(it, worked.getValue(it), assisted.getValue(it)) },
+                loads = MuscleGroup.entries.map { MuscleLoad(it, worked.getValue(it), assisted.getValue(it)) },
+                muscles = MuscleMap.ofSets(sets),
             )
         }
 

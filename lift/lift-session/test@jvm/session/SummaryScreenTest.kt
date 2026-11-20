@@ -80,6 +80,13 @@ class SummaryScreenTest {
     }
 
     @Test
+    fun `the summary shows the muscles worked in the session`() = runUiTest {
+        setThemedContent(dark = true) { SummaryScreen(Finished(session, emptyList()), onDone = {}) }
+        onNodeWithText("Muscles worked").performScrollTo().assertExists()
+        onNodeWithText("Glutes · Hamstrings").assertExists()
+    }
+
+    @Test
     fun `a session with no bests has no card for them`() = runUiTest {
         setThemedContent(dark = true) { SummaryScreen(Finished(session, emptyList()), onDone = {}) }
         onNodeWithText("How was it?").performScrollTo()

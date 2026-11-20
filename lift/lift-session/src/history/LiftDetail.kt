@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -33,6 +34,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.MuscleMap
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.newRecords
@@ -42,6 +44,7 @@ import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.detail_how_it_went
+import dev.justinsmith.lift.session.resources.detail_muscles_worked
 import dev.justinsmith.lift.session.resources.history_close_cd
 import dev.justinsmith.lift.session.resources.history_delete
 import dev.justinsmith.lift.session.resources.history_delete_text
@@ -52,6 +55,7 @@ import dev.justinsmith.lift.session.resources.history_share
 import dev.justinsmith.lift.session.resources.notice_session_deleted
 import dev.justinsmith.lift.session.resources.session_undo
 import dev.justinsmith.lift.session.sessionShareText
+import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.setLine
@@ -108,11 +112,11 @@ fun LiftDetailScreen(
     val back by rememberUpdatedState(onBack)
     LaunchedEffect(session == null) { if (session == null) back() }
     if (session == null) return
-    val palette = IntervalTheme.palette
     val shareText =
         sessionShareText(session, state.records, stringResource(Res.string.common_joined, state.date, state.time))
     var menu by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
+    val muscles = remember(session) { MuscleMap.of(session) }
     val gutter = Modifier.padding(horizontal = Spacing.space16)
     // One column on a phone; a wider window puts the numbers in one column and the lifts beside them.
     TabGrid(
@@ -153,21 +157,11 @@ fun LiftDetailScreen(
         session.sets.groupBy { it.exercise to it.double }.forEach { (lift, sets) ->
             item(key = "lift-${lift.first.key}-${lift.second}") {
                 // Spaced below rather than above, so beside the numbers a lift's label lines up with their top.
-                Column(gutter.padding(bottom = Spacing.space16)) {
-                    GroupLabel(liftName(lift.first, lift.second))
-                    ListCard {
-                        sets.forEachIndexed { j, set ->
-                            if (j > 0) RowDivider()
-                            Text(
-                                setLine(set),
-                                style = IntervalTheme.type.body,
-                                color = palette.text,
-                                modifier = Modifier.padding(Spacing.space16),
-                            )
-                        }
-                    }
-                }
+                LiftSets(liftName(lift.first, lift.second), sets, gutter.padding(bottom = Spacing.space16))
             }
+        }
+        if (!muscles.isEmpty) {
+            item(key = "muscles") { MusclesWorked(muscles, gutter.padding(bottom = Spacing.space16)) }
         }
     }
     if (confirming) {
@@ -197,6 +191,35 @@ private fun DetailMenuItems(onShare: () -> Unit, onDelete: () -> Unit) {
 @Composable
 private fun Numbers(session: LiftSession, state: LiftDetailUiState, modifier: Modifier = Modifier) {
     SessionStats(session, state.records, modifier, maxBpm = state.maxHeartRate)
+}
+
+/** One lift's logged sets in a card under its name. */
+@Composable
+private fun LiftSets(name: String, sets: List<SetLog>, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Column(modifier) {
+        GroupLabel(name)
+        ListCard {
+            sets.forEachIndexed { j, set ->
+                if (j > 0) RowDivider()
+                Text(
+                    setLine(set),
+                    style = IntervalTheme.type.body,
+                    color = palette.text,
+                    modifier = Modifier.padding(Spacing.space16),
+                )
+            }
+        }
+    }
+}
+
+/** The muscles the session worked, as a body map over their names. */
+@Composable
+private fun MusclesWorked(muscles: MuscleMap, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        GroupLabel(stringResource(Res.string.detail_muscles_worked))
+        MusclesWorkedCard(muscles)
+    }
 }
 
 /** How hard it felt and the note on it, as said on its summary. */
