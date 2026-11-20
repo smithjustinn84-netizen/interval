@@ -97,8 +97,9 @@ modules that a module lists under `test-dependencies` (the `tested-lib` template
 `compose-lib` `core-ui-testing` as well; a module adds its side's). A data module's tests may depend on its side's `*-testing` module even though
 that depends on the data module.
 
-- **`core-testing`** (common, every platform; no Compose, so the tests of the domains, `core-time`,
-  `core-platform` and the `*-api` modules link none, which `check_module_rules.py` holds):
+- **`core-testing`** (common, every platform; no Compose, nor has either side's testing module, so the tests of
+  the domains, `core-time`, `core-platform`, the `*-api` and the data modules link none, which
+  `check_module_rules.py` holds):
   - `MainDispatcherTest`: the base class for a ViewModel's test, which stands in a test dispatcher
     for `Dispatchers.Main` (unconfined unless the test passes another).
   - `FixedTimestampFormatter`: time-zone free; `date()` is `"day N"`, `monthTitle()` `"M/YYYY"`.

@@ -9,7 +9,10 @@ apply:
   - //templates/lib.module-template.yaml
 
 dependencies:
-  - //lift/lift-platform: exported
+  # The fakes stand in for the platform's contracts and Lift's storage; not the platform module, so Lift's tests
+  # link no Compose through this.
+  - //lift/lift-platform-api: exported
+  - //lift/lift-data: exported
   # `WallClock` and `TimestampFormatter`, which the container is given.
   - //core/core-platform
   - //core/core-testing: exported

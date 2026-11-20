@@ -35,6 +35,7 @@ modules:
   - lift/lift-library
   - lift/lift-nav
   - lift/lift-platform
+  - lift/lift-platform-api
   - lift/lift-session
   - lift/lift-testing
   - lift/lift-today

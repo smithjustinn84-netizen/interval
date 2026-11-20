@@ -1,7 +1,7 @@
 # Lift's storage: its Room database (`bells.db`; schemas in `schemas/`), a repository per store the Lift screens
 # take under `LiftRepository`, and its Koin modules. The ports between the sides (`IntervalActivity`, `LiftActivity`) are
 # `lift-api`'s, which it exports. No Compose: what it
-# needs from the platform (the database builder, `Beeper`, `SessionKeepAlive`) is in `lift-platform`.
+# needs from the platform (the database builder, the timers' beeper and keep-alive) is in `lift-platform`, behind `lift-platform-api`.
 # Room's KSP runs here and nowhere else on the Lift side.
 description: "Lift storage: a repository per store over Room; exports lift-api's ports"
 product:

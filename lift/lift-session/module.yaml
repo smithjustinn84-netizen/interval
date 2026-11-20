@@ -11,7 +11,7 @@ apply:
 dependencies:
   - //lift/lift-library: exported
   # The timers' `Beeper` and `SessionKeepAlive`, and the `ActiveTimers` port `SessionTimers` is.
-  - //lift/lift-platform: exported
+  - //lift/lift-platform-api: exported
 
 test-dependencies:
   - //lift/lift-testing

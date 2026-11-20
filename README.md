@@ -118,7 +118,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 
 ## 🏗️ Architecture & Tech Stack
 
-Interval is designed around modern multiplatform architecture principles, cleanly separated into 33 modules in five folders:
+Interval is designed around modern multiplatform architecture principles, cleanly separated into 34 modules in five folders:
 
 ```
 interval/
@@ -153,7 +153,8 @@ interval/
 │   ├── lift-domain/     # Exercises, programs, estimates, starter program, clocks, PRs, grip, readiness & challenges
 │   ├── lift-api/        # The ports between sides (LiftActivity, IntervalActivity)
 │   ├── lift-data/       # Room database (LiftDatabase v18), per-store repositories
-│   ├── lift-platform/   # Beeper, TimerService keep-alive, platform Koin module
+│   ├── lift-platform-api/ # What Lift's features ask of the platform: Beeper, LiftVoice, SessionKeepAlive
+│   ├── lift-platform/   # ToneBeeper, TimerService keep-alive, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, BalanceBars, cues mapping
 │   ├── lift-testing/    # FakeLiftStorage, RecordingBeeper, LiftTestClock, fake DAOs
 │   ├── lift-today/      # Train's Strength pillar, muscle balance, gear inventory (bells, bar, bands, records)

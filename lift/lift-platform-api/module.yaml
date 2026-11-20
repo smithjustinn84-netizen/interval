@@ -1,0 +1,14 @@
+# What Lift's features ask of the platform, over `lift-domain` and no Compose: the timers' `Beeper`, `LiftVoice`
+# and its typed `Coaching` lines, `SessionKeepAlive` with the `TimerRun` it keeps, and the `ActiveTimers` port.
+# `lift-platform` implements it; `lift-session` takes this, so only the app depends on the platform module.
+# Lift's counterpart of `interval-platform-api`.
+description: "Lift platform contracts: the timers' beeper, voice and keep-alive"
+product:
+  type: kmp/lib
+  platforms: [android, iosArm64, iosSimulatorArm64, jvm]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  - //lift/lift-domain: exported

@@ -7,16 +7,16 @@ core-testing, domain, api, data, platform, ui, testing, feature, entry, app, hos
   apps sees the rest; tooling sees nothing. Test dependencies follow this rule too.
 - kinds: each kind may depend on the kinds below it (`ALLOWED`). A feature depends on another feature only
   where `FEATURE_EDGES` lists the pair; interval may use only Lift's domain, api and ui, never its storage.
-- a platform with an api module (`interval-platform-api`) is seen through it: features and ui take the api,
-  and only the app, the testing modules and the platform's own tests see the platform.
+- a platform with an api module (`interval-platform-api`, `lift-platform-api`) is seen through it: features
+  and ui take the api, and only the app, the testing modules and the platform's own tests see the platform.
 - the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules. Any other
   test dependency is one the module's `dependencies` could take, by every rule above. The interval side's tests
   take Lift's fakes, which carry its storage, only where `LIFT_FAKES` lists the pair.
-- the tests of time, core-platform, a domain and an api link no Compose: nothing their dependencies and test
-  dependencies reach brings it, so the iOS tests' quick shard stays quick. (`core-testing` has none;
-  the UI harness is `core-ui-testing`.)
 - the pure layers (time, core-platform, core-testing, domain, api, data) take no Compose: no `$compose.*`, `$libs.compose.*` or
   `$libs.koin.compose`, no `compose-lib`, and no `settings: compose: enabled`.
+- nor do their tests link any Compose: nothing their dependencies and test dependencies reach brings Compose in, so
+  the iOS tests' quick shard stays quick. (`core-testing` and the sides' testing modules have none; the UI
+  harness is `core-ui-testing`.)
 - every library (all but the hosts and the tooling plugins) applies a template from `templates/`.
 - no source under `interval/*/src*` names `LiftRepository`: the interval side reads Lift through `LiftActivity`.
 - the module diagram in docs/architecture.md is the one these modules draw (`--diagram` prints it,
@@ -93,9 +93,6 @@ LIFT_FAKES = {
 
 TEST_ONLY = {"testing", "core-testing"}
 NO_COMPOSE = {"time", "core-platform", "core-testing", "domain", "api", "data"}
-# Whose tests link no Compose either, whatever they reach. Not data: Lift's tests take `lift-testing`, which
-# carries `lift-platform` and its notification words.
-COMPOSE_FREE_TESTS = {"time", "core-platform", "domain", "api"}
 # What brings Compose in under `dependencies`.
 COMPOSE_PREFIXES = ("$compose.", "$libs.compose.", "$libs.koin.compose")
 # The kinds that apply no template: the hosts are applications, the tooling plugins build plugins.
@@ -291,7 +288,7 @@ def check(modules: dict[str, Module]) -> list[str]:
             problems.append(f"{module.name}: {a(kind)} module takes no Compose ({', '.join(sorted(set(module.compose)))})")
         if kind not in UNTEMPLATED and not module.templates:
             problems.append(f"{module.name}: a library applies a template from templates/")
-        if kind in COMPOSE_FREE_TESTS:
+        if kind in NO_COMPOSE:
             through = sorted(name for name in reached(modules, module) if modules[name].compose)
             if through:
                 problems.append(f"{module.name}: {a(kind)} module's tests link no Compose (through {', '.join(through)})")

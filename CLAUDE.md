@@ -206,11 +206,14 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `ProgramRepository`, `ExerciseRepository`, `GearRepository`, over one `SerialWriter`; the
                      mappers in `LiftMappers.kt`), `LiftDatabase` (Room, KSP, `schemas/`), `liftModules` (di/);
                      exports `lift-api`. No Compose
-  lift-platform      `Beeper`, `LiftVoice` (the timers' typed `Coaching` lines, the safety lines among them in place of a set-up cue; `SpokenCoaching` in lift-session
-                     words them, from lift-ui's `cues()` and each `Fault`'s `words()`), `SessionKeepAlive` and its
-                     `TimerRun` (+ Android's `TimerService`), the `ActiveTimers` port, the timers' notification
-                     words, and each platform's `liftPlatformModule` (the database builder too); Lift's
-                     `interval-platform`
+  lift-platform-api  what Lift's features ask of the platform, over `lift-domain` and no Compose: `Beeper`,
+                     `LiftVoice` (the timers' typed `Coaching` lines, the safety lines among them in place of a
+                     set-up cue; `SpokenCoaching` in lift-session words them, from lift-ui's `cues()` and each
+                     `Fault`'s `words()`), `SessionKeepAlive` and its `TimerRun`, the `ActiveTimers` port; package
+                     `dev.justinsmith.lift.platform`. Lift's `interval-platform-api`
+  lift-platform      implements it: `ToneBeeper`, each platform's `SessionKeepAlive` (Android's `TimerService`),
+                     `liftActivity`, the timers' notification words, and each platform's `liftPlatformModule`
+                     (the database builder too). Only `app` depends on it; Lift's `interval-platform`
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`, `BalanceBars`, `Sparkline`: an exercise's trend, each session's best set by its kg × reps over
                      its latest 24, `exerciseTrend` in lift-domain), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
@@ -269,10 +272,11 @@ Dependencies point toward `core/`: a feature depends on its side's `*-ui`, `*-da
 `exported`), `app` on every feature and `lift-nav`, the interval side on `lift-api`/`lift-domain`/`lift-ui`
 where History and the workout count Lift's sessions (their ViewModels take `LiftActivity`, never Lift's
 storage) and `interval-ui` on `lift-ui` for the figure (a side's shared ui may take the other side's), the
-interval features on `interval-platform-api` (only `app` sees `interval-platform`), and `lift-nav`
+interval features on `interval-platform-api` and Lift's on `lift-platform-api` (only `app` sees
+`interval-platform` and `lift-platform`), and `lift-nav`
 never on anything of the interval side. `tools/check_module_rules.py`
 enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, `core-testing`, the domains,
-the `*-api` modules and the data modules) take no Compose, and but for the data modules their tests link none, an `*-api` module depends on a domain alone, a
+the `*-api` modules and the data modules) take no Compose, and their tests link none, an `*-api` module depends on a domain alone, a
 feature never depends on a platform module that has an `*-api`, the data modules depend on `core-platform` rather than `core`, the
 `*-testing` modules appear only under `test-dependencies`, a test dependency keeps every rule a dependency does
 (the interval side's tests take `lift-testing`, and so Lift's storage, only where `LIFT_FAKES` lists the pair:
@@ -504,7 +508,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   `corePlatformModule` binds it for both sides), tick only while one runs, beep and log as they go, and end with
   the session (finish, discard, Leave), when the `Lifting` key leaves the back stack (`App.kt`, through the
   `ActiveTimers` port) or when the task is swiped away. Whichever runs is kept off screen through `SessionKeepAlive`
-  (`lift/lift-platform/src/platform/`, a `TimerRun` with its end): Android's `TimerService` holds the CPU awake and
+  (`lift/lift-platform-api/src/platform/`, a `TimerRun` with its end): Android's `TimerService` holds the CPU awake and
   counts the run down in a notification while the timers beep; iOS schedules one notification for the run's end and
   shows the run as a Live Activity (`liftActivity`, counting down to its end); desktop nothing. The run going is saved on the session in progress (`SavedTimer`, its `timer` column) at each
   change of course, and `SessionViewModel` restores it once as the session opens, by the wall clock (one over meanwhile is

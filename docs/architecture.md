@@ -66,6 +66,7 @@ graph TD
     subgraph contracts ["Contracts"]
         intervalPlatformApi["interval-platform-api"]
         liftApi["lift-api"]
+        liftPlatformApi["lift-platform-api"]
     end
 
     subgraph pureLayers ["Pure layers"]
@@ -86,6 +87,7 @@ graph TD
     app --> intervalWorkout
     app --> liftNav
     app --> intervalPlatform
+    app --> liftPlatform
 
     intervalHistory --> intervalUi
     intervalHistory --> intervalData
@@ -108,7 +110,7 @@ graph TD
     liftNav --> liftSession
     liftNav --> liftToday
     liftSession --> liftLibrary
-    liftSession --> liftPlatform
+    liftSession --> liftPlatformApi
     liftToday --> liftUi
     liftToday --> liftData
 
@@ -121,6 +123,7 @@ graph TD
     intervalPlatform --> intervalData
     intervalPlatform --> intervalPlatformApi
     liftPlatform --> liftData
+    liftPlatform --> liftPlatformApi
 
     intervalData --> corePlatform
     intervalData --> intervalDomain
@@ -129,6 +132,7 @@ graph TD
 
     intervalPlatformApi --> intervalDomain
     liftApi --> liftDomain
+    liftPlatformApi --> liftDomain
 
     corePlatform --> coreTime
     intervalDomain --> coreTime
@@ -158,7 +162,8 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
    `IntervalWorkout`'s `IntervalSnatches` and are read as sets (`intervalSets`, `lift-domain`) at every read, so
    neither side writes the other's store and nothing is counted twice.
    The same goes for the platform: the interval features take `interval-platform-api` (the cue player, the
-   workout off screen, the plan's reminders), and only `app` sees `interval-platform`, which implements it. The
+   workout off screen, the plan's reminders) and Lift's `lift-platform-api` (the timers' beeper, voice and
+   keep-alive), and only `app` sees `interval-platform` and `lift-platform`, which implement them. The
    platform draws nothing of the design system: the workout's notification takes its colours as ARGB
    (`StatusColors`, bound by the workout feature from `PhaseColors`).
 3. **Pure Domains**: `interval-domain` and `lift-domain` contain only pure Kotlin models and calculation engines.
@@ -181,7 +186,7 @@ as `WorkoutSession` and `SessionTimers` do), and give a ViewModel's parts classe
 
 ## Module Architecture
 
-The project contains 33 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
+The project contains 34 modules in five folders (`apps/`, `core/`, `interval/`, `lift/`, `tooling/`), configured via
 [project.yaml](../project.yaml) and each module's `module.yaml`; `./kotlin show modules` describes each.
 Each module applies a reusable template from `templates/`:
 - `lib`: Standard Kotlin Multiplatform library with warnings-as-errors, ktlint, and detekt.
@@ -198,7 +203,7 @@ Each module applies a reusable template from `templates/`:
 | **Core** | `core`, `core-platform`, `core-time`, `core-testing`, `core-ui-testing` | Design tokens (`Spacing`, `Radius`, `Sizes`, `Motion`), `IntervalTheme`, navigation primitives; the clocks, timestamp formatter, `HealthStore`, and storage utilities in `core-platform`, which has no Compose so the data modules (and their Room KSP) don't rebuild on a UI change; calendar and clock maths in `core-time`, which has no dependencies so the domains compile without Compose; the shared fakes in `core-testing`, which has none either, so the pure layers' tests link none, and the Compose UI test harness in `core-ui-testing`. |
 | **Interval Domain & Data** | `interval-domain`, `interval-data`, `interval-platform-api`, `interval-platform` | Timer calculation engine, multi-block `Course`, mobility `Flow`s, `Sport` days, Room database (`AppDatabase`), DataStore preferences, audio/speech cues, Android Foreground Service, iOS notifications. |
 | **Interval Features** | `interval-timer`, `interval-workout`, `interval-presets`, `interval-mobility`, `interval-history`, `interval-settings`, `interval-ui` | The Timer, active workout & flow screen, preset & block sequence editor, mobility flows, `Today` home tab, the Log (calendar & training log) & routine/sport-day planner, settings, shared workout components. |
-| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest/density timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); `Beeper` and `TimerService` keep-alive in `lift-platform`. |
+| **Lift Domain & Data** | `lift-domain`, `lift-api`, `lift-data`, `lift-platform-api`, `lift-platform` | Kettlebell exercises, training programs, duration estimates, starter program selection, EMOM/hold/rest/density timers, each lift's `Movement` and the coaching read from it (grip, readiness, autoregulation, density, benchmarks), the ports to the interval side (`lift-api`), Room database (`LiftDatabase`); the timers' contracts (`Beeper`, `LiftVoice`, `SessionKeepAlive`) in `lift-platform-api`, which `lift-session` takes, and what implements them (`ToneBeeper`, the `TimerService` keep-alive) in `lift-platform`. |
 | **Lift Features** | `lift-nav`, `lift-today`, `lift-session`, `lift-library`, `lift-ui` | Lift navigation registry, Train's Strength pillar (`TodayRoute`) & gear, active session logger & timers, exercise library & editor, shared Lift UI (its words, widgets and the exercise figures in `lift-ui`'s `demo/`). |
 | **Test Fakes** | `interval-testing`, `lift-testing` | In-memory storage, recording cue players, fake DAOs, and mock platform services for tests. |
 | **Toolchain Plugins** | `lint-plugin`, `detekt-plugin` | Kotlin Toolchain task plugins for ktlint formatting and Detekt static analysis. |
