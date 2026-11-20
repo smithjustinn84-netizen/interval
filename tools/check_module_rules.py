@@ -10,7 +10,8 @@ core-testing, domain, api, data, platform, ui, testing, feature, entry, app, hos
 - a platform with an api module (`interval-platform-api`) is seen through it: features and ui take the api,
   and only the app, the testing modules and the platform's own tests see the platform.
 - the `*-testing` modules and `core-testing` are for `test-dependencies`, outside the testing modules. Any other
-  test dependency is one the module's `dependencies` could take.
+  test dependency is one the module's `dependencies` could take, by every rule above. The interval side's tests
+  take Lift's fakes, which carry its storage, only where `LIFT_FAKES` lists the pair.
 - the tests of time, core-platform, a domain and an api link no Compose: nothing their dependencies and test
   dependencies reach brings it, so the iOS tests' quick shard stays quick. (`core-testing` has none;
   the UI harness is `core-ui-testing`.)
@@ -82,6 +83,13 @@ FEATURE_EDGES = {
 CROSS_SIDE_KINDS = {"domain", "api", "ui"}
 # Who may see a platform that has an api module; everyone else takes the api.
 PLATFORM_SEERS = {"app", "testing"}
+# The interval tests that take Lift's fakes, and with them its storage: History's and the workout's run their
+# ViewModels against Lift's own repositories over fake DAOs, so the program's days move on as they do in the app.
+# The ViewModels still see only the ports. No other interval module's tests reach Lift's storage.
+LIFT_FAKES = {
+    ("interval-history", "lift-testing"),
+    ("interval-workout", "lift-testing"),
+}
 
 TEST_ONLY = {"testing", "core-testing"}
 NO_COMPOSE = {"time", "core-platform", "core-testing", "domain", "api", "data"}
@@ -264,14 +272,15 @@ def check(modules: dict[str, Module]) -> list[str]:
             if dep.side not in SIDES_SEEN[module.side]:
                 problems.append(f"{where}: {module.side}/ never depends on {dep.side}/")
                 continue
-            if test:
-                if dep_kind not in TEST_ONLY and dep_kind not in ALLOWED[kind]:
-                    problems.append(f"{where}: {a(kind)} module's tests don't depend on {a(dep_kind)} module")
+            if test and dep_kind in TEST_ONLY:
+                if module.side == "interval" and dep.side == "lift" and (module.name, dep.name) not in LIFT_FAKES:
+                    problems.append(f"{where}: the interval side's tests take no Lift fakes (add it to LIFT_FAKES if it must)")
                 continue
             if dep_kind in TEST_ONLY and kind not in {"testing", "core-testing"}:
                 problems.append(f"{where}: a testing module belongs under test-dependencies")
             elif dep_kind not in ALLOWED[kind]:
-                problems.append(f"{where}: {a(kind)} module doesn't depend on {a(dep_kind)} module")
+                whose = "module's tests don't" if test else "module doesn't"
+                problems.append(f"{where}: {a(kind)} {whose} depend on {a(dep_kind)} module")
             elif module.side == "interval" and dep.side == "lift" and dep_kind not in CROSS_SIDE_KINDS:
                 problems.append(f"{where}: the interval side uses only Lift's domain, api and ui")
             elif dep_kind == "platform" and f"{dep.name}-api" in modules and kind not in PLATFORM_SEERS:
@@ -405,6 +414,7 @@ def self_test() -> None:
             fake("lift-data", "lift", ["lift-domain", "lift-api", "core-platform"]),
             fake("lift-ui", "lift", ["lift-domain", "core"]),
             fake("lift-library", "lift", ["lift-data", "lift-ui", "core"]),
+            fake("lift-testing", "lift", ["lift-data", "core-testing"]),
             fake("interval-domain", "interval", ["core-time"]),
             fake("interval-data", "interval", ["interval-domain", "core-platform"]),
             fake("interval-ui", "interval", ["interval-domain", "lift-domain", "lift-ui", "core"]),
@@ -414,7 +424,7 @@ def self_test() -> None:
             fake("interval-presets", "interval", ["interval-data", "core"], ["interval-testing"]),
             fake("interval-timer", "interval", ["interval-presets", "core"]),
             fake("interval-settings", "interval", ["interval-data", "interval-platform-api", "core"]),
-            fake("interval-history", "interval", ["interval-data", "lift-api", "lift-domain", "lift-ui", "core"]),
+            fake("interval-history", "interval", ["interval-data", "lift-api", "lift-domain", "lift-ui", "core"], ["lift-testing"]),
             fake("app", "apps", ["interval-timer", "interval-platform", "lift-library", "core"], ["interval-testing"]),
             fake("androidApp", "apps", ["app"]),
         ]
@@ -438,6 +448,10 @@ def self_test() -> None:
         "nothing depends on a host": ("app", "deps", "androidApp", "doesn't depend on a host module"),
         "every dependency is a module": ("app", "deps", "nowhere", "no such module"),
         "tests take what the module could": ("lift-ui", "test_deps", "lift-library", "tests don't depend on a feature"),
+        "no Lift fakes in interval tests": ("interval-settings", "test_deps", "lift-testing", "take no Lift fakes"),
+        "no Lift storage in interval tests": ("interval-settings", "test_deps", "lift-data", "uses only Lift's domain, api and ui"),
+        "tests take the platform's api": ("interval-settings", "test_deps", "interval-platform", "takes interval-platform-api"),
+        "features' tests stand alone": ("interval-settings", "test_deps", "interval-presets", "features don't depend on each other"),
     }
     for rule, (name, attr, dep, expected) in breaches.items():
         graph = {k: fake(v.name, v.side, v.deps, v.test_deps, v.compose) for k, v in base.items()}

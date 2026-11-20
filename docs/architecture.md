@@ -153,7 +153,7 @@ disagree; `--write-diagram` puts the current one here. The module table below sa
    Where cross-domain interaction is needed (e.g. History counting Lift sessions or Today showing workout recaps),
    it is mediated via minimal interfaces in `lift-api`: `IntervalActivity` (what Lift reads of the interval side,
    implemented in `app`) and `LiftActivity` (what History, Plan and the workout read of Lift, implemented by
-   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`. Data crosses as values, never
+   `SessionRepository`). The interval side depends on `lift-api`, never on `lift-data`: only the tests of `interval-history` and `interval-workout` reach it, through `lift-testing`, to run their ViewModels against Lift's own repositories (`LIFT_FAKES` in `check_module_rules.py` lists the two). Data crosses as values, never
    as writes: 15:15's snatches, counted on the interval side's `HistoryEntry` (`SnatchCount`), reach Lift as an
    `IntervalWorkout`'s `IntervalSnatches` and are read as sets (`intervalSets`, `lift-domain`) at every read, so
    neither side writes the other's store and nothing is counted twice.

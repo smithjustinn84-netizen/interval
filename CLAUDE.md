@@ -274,7 +274,9 @@ never on anything of the interval side. `tools/check_module_rules.py`
 enforces this in CI: `lift/` never sees `interval/`, the pure layers (`core-time`, `core-platform`, `core-testing`, the domains,
 the `*-api` modules and the data modules) take no Compose, and but for the data modules their tests link none, an `*-api` module depends on a domain alone, a
 feature never depends on a platform module that has an `*-api`, the data modules depend on `core-platform` rather than `core`, the
-`*-testing` modules appear only under `test-dependencies`, a feature depends on another only where its
+`*-testing` modules appear only under `test-dependencies`, a test dependency keeps every rule a dependency does
+(the interval side's tests take `lift-testing`, and so Lift's storage, only where `LIFT_FAKES` lists the pair:
+`interval-history` and `interval-workout`), a feature depends on another only where its
 `FEATURE_EDGES` lists the pair (`interval-timer` and `interval-workout` on `interval-presets`, `lift-session` on
 `lift-library`), every library applies a template, and no source under `interval/` names `LiftRepository`. The
 `*-testing` modules are ordinary libraries listed under `test-dependencies` (the toolchain shares no test
