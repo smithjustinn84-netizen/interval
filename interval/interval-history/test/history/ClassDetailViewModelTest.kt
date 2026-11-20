@@ -26,7 +26,7 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
     }
 
     private fun viewModel(startedAt: Long = started) =
-        ClassDetailViewModel(startedAt, repository.history, FixedTimestampFormatter, { clock })
+        ClassDetailViewModel(startedAt, repository.history, repository.settings, FixedTimestampFormatter, { clock })
 
     @Test
     fun `a class shows when it was its length and its heart rate`() {
@@ -60,25 +60,25 @@ class ClassDetailViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the line runs from the lowest reading to the highest with a band a round`() {
-        keep(Sport.Bjj, TODAY, sparringRecording(rounds = 2, startedAtEpochMillis = started))
+    fun `the chart takes every sample with a mark a round`() {
+        val recording = sparringRecording(rounds = 2, startedAtEpochMillis = started)
+        keep(Sport.Bjj, TODAY, recording)
 
-        val line = requireNotNull(viewModel().state.value.recorded).line
+        val recorded = requireNotNull(viewModel().state.value.recorded)
 
-        assertEquals(0f, line.heights.first())
-        assertEquals(1f, line.heights.filterNotNull().max())
-        assertEquals(2, line.rounds.size)
-        assertTrue(line.rounds.all { it.start in 0f..1f && it.endInclusive in 0f..1f && it.start < it.endInclusive })
+        assertEquals(recording.samples.map { it.bpm }, recorded.samples)
+        assertEquals(2, recorded.marks.size)
+        assertTrue(recorded.marks.all { it.start in 0f..1f && it.endInclusive in 0f..1f && it.start < it.endInclusive })
     }
 
     @Test
-    fun `a stretch the sensor read nothing in breaks the line`() {
+    fun `a stretch the sensor read nothing in stays a gap`() {
         val samples = List(40) { ClassSample(if (it in 10..12) 0 else 100 + it, movement = 0.2f) }
         keep(Sport.Climbing, TODAY, ClassRecording(started, samples))
 
         val recorded = requireNotNull(viewModel().state.value.recorded)
 
-        assertEquals(listOf(null, null, null), recorded.line.heights.subList(10, 13))
+        assertEquals(listOf(0, 0, 0), recorded.samples.subList(10, 13))
         assertEquals(emptyList(), recorded.rounds)
     }
 

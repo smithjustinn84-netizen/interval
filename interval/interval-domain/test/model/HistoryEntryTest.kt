@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.model
 
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.snatchIntervals
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -58,5 +59,42 @@ class HistoryEntryTest {
         assertNull(SnatchCount.of(null, 16.0))
         assertNull(SnatchCount.of(0, 16.0))
         assertNull(SnatchCount.of(8, -1.0))
+    }
+
+    private val minutes = IntervalConfig(prepSeconds = 0, workSeconds = 60, restSeconds = 60, rounds = 3)
+
+    /** [minutes] run to its end, taking [wallSeconds] on the wall for [elapsedSeconds] on its clock. */
+    private fun ran(
+        elapsedSeconds: Int = minutes.totalSeconds,
+        wallSeconds: Int = elapsedSeconds,
+        endedEarly: Boolean = false,
+    ) = HistoryEntry(
+        finishedAtEpochMillis = start + wallSeconds * 1_000L,
+        config = minutes,
+        elapsedSeconds = elapsedSeconds,
+        endedEarly = endedEarly,
+        workActiveSeconds = 180,
+        startedAtEpochMillis = start,
+    )
+
+    @Test
+    fun `a workout run straight through has a rest between each two works`() {
+        assertEquals(listOf(60 until 120, 180 until 240), ran().rests())
+    }
+
+    @Test
+    fun `a paused workout says nothing of where its rests fell`() {
+        assertNull(ran(wallSeconds = minutes.totalSeconds + 40).rests())
+    }
+
+    @Test
+    fun `a workout skipped through or ended early says nothing either`() {
+        assertNull(ran(elapsedSeconds = minutes.totalSeconds - 30).rests())
+        assertNull(ran(elapsedSeconds = 130, endedEarly = true).rests())
+    }
+
+    @Test
+    fun `a workout logged by hand has no rests to read`() {
+        assertNull(HistoryEntry.loggedByHand(minutes, start).rests())
     }
 }

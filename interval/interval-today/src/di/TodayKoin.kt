@@ -12,5 +12,5 @@ import org.koin.dsl.module
  */
 val todayModule: Module = module {
     viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
-    viewModel { ClassSensorViewModel(get(), get(), get()) }
+    viewModel { ClassSensorViewModel(get(), get(), get(), get(), get()) }
 }

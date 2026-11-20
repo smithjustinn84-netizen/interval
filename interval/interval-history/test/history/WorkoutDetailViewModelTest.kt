@@ -18,6 +18,7 @@ import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -214,5 +215,73 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
         health.status.value = HealthStatus.Connected
         viewModel.readHeartRate()
         assertEquals(HeartRate(142, 171), viewModel.state.value.workout?.heartRate)
+    }
+
+    private val minutes = IntervalConfig(prepSeconds = 0, workSeconds = 60, restSeconds = 60, rounds = 3)
+
+    /** A sample every five seconds: [work] through each minute of work, falling 3 a sample through each rest. */
+    private fun minuteSamples(work: Int) =
+        List(3) { round ->
+            List(12) { work } + if (round <
+                2
+            ) {
+                List(12) { work - 3 * (it + 1) }
+            } else {
+                emptyList()
+            }
+        }.flatten()
+
+    private fun recordMinutes(work: Int, wallSeconds: Int = minutes.totalSeconds) {
+        repository.history.recordWorkout(
+            minutes,
+            elapsedSeconds = minutes.totalSeconds,
+            workSeconds = 180,
+            startedAtEpochMillis = clock - wallSeconds * 1_000L,
+            heartRate = HeartRate(averageBpm = work - 10, peakBpm = work),
+            heartRateSamples = minuteSamples(work),
+        )
+    }
+
+    @Test
+    fun `a workout with samples reads its recovery and its load`() {
+        recordMinutes(work = 170)
+
+        val workout = requireNotNull(viewModel().state.value.workout)
+
+        assertEquals(Recovery(listOf(36, 36), seconds = 60), workout.recovery)
+        assertTrue(requireNotNull(workout.heartLoad) > 0)
+        assertNull(workout.peakAboveMax)
+    }
+
+    @Test
+    fun `a paused workout reads its load and no recovery`() {
+        recordMinutes(work = 170, wallSeconds = minutes.totalSeconds + 60)
+
+        val workout = requireNotNull(viewModel().state.value.workout)
+
+        assertNull(workout.recovery)
+        assertTrue(requireNotNull(workout.heartLoad) > 0)
+    }
+
+    @Test
+    fun `a peak over the max is offered and taking it sets the max`() {
+        recordMinutes(work = 196)
+        val viewModel = viewModel()
+        assertEquals(196, viewModel.state.value.workout?.peakAboveMax)
+
+        viewModel.useMaxHeartRate(196)
+
+        assertEquals(196, repository.settings.appSettings.value.body.maxHeartRate)
+        assertNull(viewModel.state.value.workout?.peakAboveMax)
+    }
+
+    @Test
+    fun `a workout a watch read has neither`() {
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580, heartRate = HeartRate(140, 170))
+
+        val workout = requireNotNull(viewModel().state.value.workout)
+
+        assertNull(workout.recovery)
+        assertNull(workout.heartLoad)
     }
 }

@@ -22,6 +22,7 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.intervalSets
 import dev.justinsmith.lift.domain.sets
 import dev.justinsmith.lift.domain.wantsHandCare
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -61,15 +62,26 @@ class WorkoutViewModel(
      */
     private var bests: CapBestsKept? = null
 
+    /** Whether the heart rate under the ring shows as its trace; the scale until tapped. Before [state] too. */
+    private val heartTrace = MutableStateFlow(false)
+
     // Followed rather than read once: a preset saved from the summary lands later, and the summary must then
     // name it. Matched once per change of either, not only on a tick.
     val state: StateFlow<WorkoutUiState> = combine(
-        combine(session.state.filterNotNull().filter { it.id == id }, session.liveHeartRateState, ::Pair),
+        combine(session.state.filterNotNull().filter { it.id == id }, session.liveHeartRateState, heartTrace) {
+                run,
+                liveHr,
+                trace,
+            ->
+            Triple(run, liveHr, trace)
+        },
         presetStore.presets,
         flowStore.flows,
         historyStore.history,
         combine(lift.bells, lift.sessions, lift.active, ::LiftSide),
-    ) { (run, liveHr), presets, flows, history, lifted -> run.shown(presets, flows, history, lifted, liveHr) }
+    ) { (run, liveHr, trace), presets, flows, history, lifted ->
+        run.shown(presets, flows, history, lifted, liveHr).copy(heartTrace = trace)
+    }
         .stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
@@ -81,6 +93,11 @@ class WorkoutViewModel(
                 session.liveHeartRateState.value,
             ),
         )
+
+    /** Turns the heart rate under the ring between the zones' scale and the trace of the workout so far. */
+    fun toggleHeartTrace() {
+        heartTrace.value = !heartTrace.value
+    }
 
     /** What the summary reads of Lift: the [bells] owned, and every set lifted, finished or under way. */
     private class LiftSide(val bells: List<Double>, sessions: List<LiftSession>, active: LiftSession?) {

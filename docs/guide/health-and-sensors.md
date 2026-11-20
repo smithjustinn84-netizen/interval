@@ -28,6 +28,24 @@ beats a minute, the zone by name and number, a marker where in it you are, and t
 at. A Lift session shows it as a badge in its title bar, and its summary draws the session's heart rate and the
 time in each zone. The zones are worked out from the max heart rate set in Settings, the same on both.
 
+Tap the scale and it turns into your heart rate so far, drawn over the zones with each work interval shaded;
+tap again for the scale. In a Lift session the heart has a card of its own under the session's numbers, with the
+session so far as a line, and a rest says how the heart stands: *high*, *easing* or *ready* once it is back
+in an easy zone. It only advises; the rest's clock stays yours.
+
+Afterwards a workout's summary and its page in the Log say two more things. **Recovery** is how far your heart
+rate fell in the minute after each work interval: the further, the fitter and the fresher, and a last round
+that comes down much less than the first is fatigue showing. It is read only for a workout run straight through,
+with no pause or skip. **Heart load** is the minutes in each zone weighed by the zone, one number to set a day
+against another. A day that cost the heart half again your usual day is a reason Today gives for taking the
+next one easier. If you peak above the max you set, the Log offers that peak as your new max.
+
+Set a **resting heart rate** in Settings (count it lying still just after waking) and the zones are cut from
+the range between it and your max rather than from the max alone. Every zone starts higher, so an easy heart
+rate between sets is no longer read as aerobic work.
+
+The sensor's row in Settings shows its battery as last heard, and Today warns before a class when it is low.
+
 A move into high effort or back down to recovery is called with a tone, while **Heart-rate alerts** and **Sound**
 are both on in Settings. If the signal is lost, or the strap comes off, the reading says "No signal" (the scale
 stays in place unlit with the last reading) and the sensor is tried again until it is back.

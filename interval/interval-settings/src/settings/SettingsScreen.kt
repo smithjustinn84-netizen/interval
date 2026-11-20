@@ -99,6 +99,7 @@ fun SettingsRoute(
         onClearWeight = viewModel::clearWeight,
         onUseHealthWeight = viewModel::useHealthWeight,
         onSetMaxHeartRate = viewModel::setMaxHeartRate,
+        onSetRestingHeartRate = viewModel::setRestingHeartRate,
         onSetEffort = viewModel::setEffort,
         onExport = viewModel::export,
         onClearLog = viewModel::clearLog,
@@ -108,6 +109,7 @@ fun SettingsRoute(
         sensor = SensorRow(
             sensor.status,
             sensor.looking,
+            battery = sensor.battery,
             // Looked for only once Bluetooth may be used; a refusal says so as a sensor out of reach does.
             onPair = {
                 bluetooth.ask { granted ->
@@ -150,6 +152,7 @@ fun SettingsScreen(
     onClearWeight: () -> Unit = {},
     onUseHealthWeight: () -> Unit = {},
     onSetMaxHeartRate: (Int?) -> Unit = {},
+    onSetRestingHeartRate: (Int?) -> Unit = {},
     onSetEffort: (Effort) -> Unit = {},
     onExport: () -> Unit = {},
     onClearLog: () -> Unit = {},
@@ -163,12 +166,11 @@ fun SettingsScreen(
     var editingPrep by rememberSaveable { mutableStateOf(false) }
     var editingWeight by rememberSaveable { mutableStateOf(false) }
     var editingMaxHeartRate by rememberSaveable { mutableStateOf(false) }
+    var editingRestingHeartRate by rememberSaveable { mutableStateOf(false) }
     var clearingLog by rememberSaveable { mutableStateOf(false) }
     var forgettingSensor by rememberSaveable { mutableStateOf(false) }
     // A sensor with a class on it is forgotten only once that is confirmed: forgotten, the class can't be synced.
-    val sensorRow = SensorRow(sensor.status, sensor.looking, sensor.onPair) {
-        if (sensor.status is SensorStatus.Recording) forgettingSensor = true else sensor.onForget()
-    }
+    val sensorRow = sensor.askingFirst { forgettingSensor = true }
     val groups = settingsGroups(
         state,
         onToggle,
@@ -176,6 +178,7 @@ fun SettingsScreen(
         onToggleKeepScreenOn,
         onEditWeight = { editingWeight = true },
         onEditMaxHeartRate = { editingMaxHeartRate = true },
+        onEditRestingHeartRate = { editingRestingHeartRate = true },
         onSetEffort,
         onSetTheme,
         onExport,
@@ -228,10 +231,26 @@ fun SettingsScreen(
             onUseHealthWeight,
         )
     }
-    if (editingMaxHeartRate) {
-        MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
+    when {
+        editingMaxHeartRate ->
+            MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
+
+        editingRestingHeartRate -> RestingHeartRateSheet(
+            state.body.restingHeartRate,
+            onSetRestingHeartRate,
+            onDismiss = { editingRestingHeartRate = false },
+        )
     }
 }
+
+/** The row with its forgetting put behind [ask] while a class is on the sensor, and as it was otherwise. */
+private fun SensorRow.askingFirst(ask: () -> Unit) = SensorRow(
+    status,
+    looking,
+    onPair,
+    onForget = { if (status is SensorStatus.Recording) ask() else onForget() },
+    battery = battery,
+)
 
 /** Asks before the log is cleared: it can't be undone. */
 @Composable

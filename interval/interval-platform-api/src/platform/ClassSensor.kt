@@ -18,6 +18,9 @@ sealed interface SensorStatus {
     data class Recording(val name: String, val sinceEpochMillis: Long) : SensorStatus
 }
 
+/** Under this share of its battery a sensor is said to want charging: a class is an hour and a half. */
+const val LOW_SENSOR_BATTERY = 20
+
 /** Why the sensor didn't do what was asked. */
 enum class SensorFailure {
     /** The app may not use Bluetooth, or it is switched off. */
@@ -42,6 +45,12 @@ enum class SensorFailure {
 interface ClassSensor {
     val status: StateFlow<SensorStatus>
 
+    /**
+     * The paired sensor's battery as it last said, a percentage: heard whenever the sensor is reached, kept
+     * between, so it may be hours old. Null until it has said, and with no sensor paired.
+     */
+    val battery: StateFlow<Int?>
+
     /** Takes the sensor found nearby as the app's own; null once it is. */
     suspend fun pair(): SensorFailure?
 
@@ -63,6 +72,7 @@ interface ClassSensor {
 /** The sensor of a platform with none. */
 object NoClassSensor : ClassSensor {
     override val status: StateFlow<SensorStatus> = MutableStateFlow(SensorStatus.Unavailable)
+    override val battery: StateFlow<Int?> = MutableStateFlow(null)
 
     override suspend fun pair(): SensorFailure = SensorFailure.NotFound
 

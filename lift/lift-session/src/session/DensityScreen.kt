@@ -109,6 +109,7 @@ fun DensityScreen(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
     progress: () -> Float = { state.progress },
+    heart: @Composable () -> Unit = {},
 ) {
     val colors = IntervalTheme.workout
     val phaseColor = when (state.phase) {
@@ -150,9 +151,9 @@ fun DensityScreen(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeDensity(run, state, color, progress, sideWidth, onFinishRound, requestStop)
+            LandscapeDensity(run, state, color, progress, sideWidth, onFinishRound, requestStop, heart)
         } else {
-            PortraitDensity(run, state, color, progress, onFinishRound, requestStop, roomy)
+            PortraitDensity(run, state, color, progress, onFinishRound, requestStop, roomy, heart)
         }
     }
     if (confirmingStop && state.phase != DensityPhase.Done) {
@@ -205,6 +206,7 @@ private fun PortraitDensity(
     onFinishRound: () -> Unit,
     onStop: () -> Unit,
     roomy: Boolean,
+    heart: @Composable () -> Unit,
 ) {
     Column(
         Modifier.widthIn(max = Sizes.contentWide).fillMaxSize().safeDrawingPadding()
@@ -218,6 +220,7 @@ private fun PortraitDensity(
         ) {
             StopPill(onStop)
             CapText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+            heart()
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
@@ -251,6 +254,7 @@ private fun LandscapeDensity(
     sideWidth: Dp,
     onFinishRound: () -> Unit,
     onStop: () -> Unit,
+    heart: @Composable () -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -289,6 +293,7 @@ private fun LandscapeDensity(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StopPill(onStop)
                     CapText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+                    heart()
                 }
                 Spacer(Modifier.weight(1f))
                 PhaseWord(state, color)

@@ -19,6 +19,8 @@ import kotlinx.coroutines.launch
 data class SensorSettingsUiState(
     val status: SensorStatus = SensorStatus.Unavailable,
     val looking: Boolean = false,
+    /** The paired sensor's battery as it last said, a percentage; null until it has. */
+    val battery: Int? = null,
 )
 
 /**
@@ -33,8 +35,11 @@ class SensorSettingsViewModel(private val sensor: ClassSensor) : ViewModel() {
     val failures: Flow<SensorFailure> = failed.receiveAsFlow()
 
     val state: StateFlow<SensorSettingsUiState> =
-        combine(sensor.status, looking, ::SensorSettingsUiState)
-            .stateIn(viewModelScope, SharingStarted.Eagerly, SensorSettingsUiState(sensor.status.value))
+        combine(sensor.status, looking, sensor.battery, ::SensorSettingsUiState).stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            SensorSettingsUiState(sensor.status.value, battery = sensor.battery.value),
+        )
 
     /** Looks for a sensor nearby and takes it; a second tap while it looks does nothing. */
     fun pair() {

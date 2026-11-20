@@ -462,6 +462,12 @@ flowchart TD
     first" before a thrown lift's first set at a new bell, `firstAtBell`, and "Stop a rep early" once a session on a
     taxed day, `EasierDay.taxed`) in `SpokenCoaching`. Settings' Voice switch governs both (Lift reads it as
     `IntervalActivity.voice`).
+- **The heart rate, read** (core-platform's `LiveHeartRate.kt` and `HeartInsights.kt`, pure): zones by the max
+  heart rate or, with a resting rate set, by the reserve between the two; `recovery`, `heartLoad` and `peakAbove`
+  worked out from the stored five-second samples at each read, nothing of them stored. The UI reads the resting
+  rate from `LocalRestingHeartRate`, provided once in `AppContent`. Lift's readiness takes each day's heart load
+  as a number (`HeartLoad`, `heavyHeartDay`), since `lift-domain` depends on nothing: the app's
+  `IntervalActivity` works out the interval side's, `lift-data`'s `heartLoads` Lift's own. CLAUDE.md has the detail.
 - **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the armband a class is recorded on. Android's
   `PolarClassSensor` (`interval-platform`) drives a Polar Verity Sense's offline recording, or an H10's exercise recording (the heart rate alone), through
   Polar's SDK;

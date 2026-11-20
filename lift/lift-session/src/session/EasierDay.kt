@@ -9,7 +9,10 @@ import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.data.efforts
+import dev.justinsmith.lift.data.heartLoads
+import dev.justinsmith.lift.data.matSeconds
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
@@ -71,7 +74,7 @@ class EasierDay(
             dayToEase(active, day, programs),
             sessions,
             workouts,
-            sportDays.filter { it.grappling }.map { it.epochDay },
+            sportDays,
         )
     }
 
@@ -84,7 +87,7 @@ class EasierDay(
         intervals.sportDays,
         intervals.workouts,
     ) { sessions, sportDays, workouts ->
-        check(sessions, workouts, sportDays.filter { it.grappling }.map { it.epochDay })
+        check(sessions, workouts, sportDays)
             .readiness == Readiness.Taxed
     }
 
@@ -93,7 +96,7 @@ class EasierDay(
         intervals.sportDays,
         intervals.workouts,
     ) { sessions, sportDays, workouts ->
-        val check = check(sessions, workouts, sportDays.filter { it.grappling }.map { it.epochDay })
+        val check = check(sessions, workouts, sportDays)
         check.reason?.takeIf { check.readiness == Readiness.Taxed }
     }
 
@@ -109,7 +112,7 @@ class EasierDay(
             day?.takeIf { !it.program.test },
             sessions,
             workouts,
-            sportDays.filter { it.grappling }.map { it.epochDay },
+            sportDays,
         ) != null
     }
 
@@ -129,10 +132,10 @@ class EasierDay(
         today: ProgramDay?,
         sessions: List<LiftSession>,
         workouts: List<IntervalWorkout>,
-        grappling: List<Long>,
+        sportDays: List<SportDay>,
     ): EasierOffer? {
         if (today == null) return null
-        val check = check(sessions, workouts, grappling)
+        val check = check(sessions, workouts, sportDays)
         val reason = check.reason?.takeIf { check.readiness == Readiness.Taxed } ?: return null
         eased(today, sessions) ?: return null
         return EasierOffer(reason, today.program.lighterDayThan(today.number))
@@ -140,17 +143,30 @@ class EasierDay(
 
     /**
      * How ready the lifter is now, from the [sessions] finished, the interval [workouts] (their snatches on the grip,
-     * their efforts) and the [grappling] days.
+     * their efforts), the [sportDays] (the grappling among them, a recorded class by its rounds) and what a sensor
+     * read of each day's cost to the heart.
      */
     private fun check(
         sessions: List<LiftSession>,
         workouts: List<IntervalWorkout>,
-        grappling: List<Long>,
+        sportDays: List<SportDay>,
     ): ReadinessCheck {
         val now = clock.nowMillis()
+        val grappling = sportDays.filter { it.grappling }.map { it.epochDay }
         val lifted = sessions.flatMap { it.sets } + workouts.snatchSets.sets
-        val grip = gripLoad(lifted, grappling, timestamps.dayNumber(now), timestamps::dayNumber)
-        return readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber)
+        val grip = gripLoad(
+            lifted,
+            grappling,
+            timestamps.dayNumber(now),
+            timestamps::dayNumber,
+            sportDays.matSeconds,
+        )
+        val heart = heartLoads(workouts, sportDays, timestamps::dayNumber) + sessions.heartLoads(
+            intervals.maxHeartRate.value,
+            intervals.restingHeartRate.value,
+            timestamps::dayNumber,
+        )
+        return readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber, heart)
     }
 
     /**

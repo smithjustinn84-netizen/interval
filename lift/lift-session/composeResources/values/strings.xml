@@ -5,6 +5,9 @@
     <string name="session_since_last">Since last set</string>
     <string name="session_rest">Rest</string>
     <string name="session_rest_skip">Skip</string>
+    <string name="session_rest_heart_down">%1$d bpm · easing</string>
+    <string name="session_rest_heart_ready">%1$d bpm · ready</string>
+    <string name="session_rest_heart_high">%1$d bpm · high</string>
     <string name="session_rest_less_cd">Rest 15 seconds less</string>
     <string name="session_rest_more_cd">Rest 15 seconds more</string>
     <string name="session_log">Log set</string>
@@ -53,6 +56,7 @@
     <string name="session_easier_title">Easier today</string>
     <string name="session_easier_hard">Your last session felt very hard, and it was a day and a half ago at most</string>
     <string name="session_easier_conditioning">A conditioning workout felt very hard, and it was two days ago at most</string>
+    <string name="session_easier_heart">Your heart worked a good deal harder than a usual day, today or yesterday</string>
     <string name="session_easier_mat">BJJ today or yesterday, and your grip has done more than usual this week</string>
     <string name="session_easier_grip">Your grip has done a lot more this week than in the weeks before</string>
     <string name="session_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>

@@ -72,6 +72,8 @@ data class SettingsExport(
     val sessionMinutes: Int? = null,
     /** User-configured maximum heart rate for training zones; null before schema 15. */
     val maxHeartRate: Int? = null,
+    /** The resting heart rate the zones' reserve is counted from; null for none set, and in a file before it. */
+    val restingHeartRate: Int? = null,
 )
 
 @Serializable

@@ -3,13 +3,17 @@ package dev.justinsmith.interval.history
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.data.HistoryStore
+import dev.justinsmith.interval.data.SettingsStore
+import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.ClassRound
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
+import dev.justinsmith.interval.platform.heartLoad
 import dev.justinsmith.interval.timer.formatClock
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -28,14 +32,6 @@ data class RoundLine(
     val dropSeconds: Int,
 )
 
-/** The heart rate over a class, drawn: each reading's height from the lowest to the highest, and the rounds' spans. */
-data class HeartLine(
-    /** 0 to 1 a reading, null where the sensor read none. */
-    val heights: List<Float?>,
-    /** Each round's start and end, as shares of the class's length. */
-    val rounds: List<ClosedFloatingPointRange<Float>>,
-)
-
 /** A class recorded on a sensor, as its page shows it. */
 data class RecordedClass(
     val sport: Sport,
@@ -44,8 +40,15 @@ data class RecordedClass(
     val length: String,
     val averageBpm: Int?,
     val peakBpm: Int?,
-    val line: HeartLine,
+    /** Its heart rate, a sample every five seconds, 0 where the sensor read none. */
+    val samples: List<Int>,
+    /** Each round's start and end as shares of the class's length, shaded behind the line. */
+    val marks: List<ClosedFloatingPointRange<Float>>,
     val rounds: List<RoundLine>,
+    /** The max heart rate its zones are worked out from: the one set in Settings, or the default. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
+    /** What the class cost the heart, minutes in each zone weighed by the zone; null with nothing read. */
+    val heartLoad: Int? = null,
 )
 
 /** [recorded] is null once the class is gone, deleted here or cleared with the log: the page leaves. */
@@ -55,24 +58,36 @@ data class ClassDetailUiState(val recorded: RecordedClass? = null)
 class ClassDetailViewModel(
     private val startedAtEpochMillis: Long,
     private val historyStore: HistoryStore,
+    private val settingsStore: SettingsStore,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
 ) : ViewModel() {
     // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
     val state: StateFlow<ClassDetailUiState> =
-        combine(historyStore.classes, clock.days(timestamps, dayCheckMillis)) { classes, _ -> buildState(classes) }
-            .stateIn(viewModelScope, SharingStarted.Eagerly, buildState(historyStore.classes.value))
+        combine(historyStore.classes, settingsStore.appSettings, clock.days(timestamps, dayCheckMillis)) {
+                classes,
+                app,
+                _,
+            ->
+            buildState(classes, app.body)
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            buildState(historyStore.classes.value, settingsStore.appSettings.value.body),
+        )
 
     /** Removes the recording; the day it was logged on stays. */
     fun delete() {
         historyStore.removeClass(startedAtEpochMillis)
     }
 
-    private fun buildState(classes: List<SportClass>): ClassDetailUiState {
+    private fun buildState(classes: List<SportClass>, body: BodySettings): ClassDetailUiState {
         val recorded = classes.firstOrNull { it.startedAtEpochMillis == startedAtEpochMillis }
             ?: return ClassDetailUiState()
         val today = timestamps.dayNumber(clock.nowMillis())
+        val samples = recorded.samples.map { it.bpm }
+        val maxBpm = body.maxHeartRate ?: DEFAULT_MAX_BPM
         return ClassDetailUiState(
             RecordedClass(
                 sport = recorded.sport,
@@ -81,7 +96,10 @@ class ClassDetailViewModel(
                 length = formatClock(recorded.seconds),
                 averageBpm = recorded.averageBpm,
                 peakBpm = recorded.peakBpm,
-                line = recorded.heartLine(),
+                samples = samples,
+                marks = recorded.roundMarks(),
+                maxHeartRate = maxBpm,
+                heartLoad = heartLoad(samples, maxBpm, restingBpm = body.restingHeartRate).takeIf { it > 0 },
                 rounds = recorded.rounds.mapIndexed { index, round -> round.line(index + 1) },
             ),
         )
@@ -100,22 +118,8 @@ private fun ClassRound.line(number: Int) = RoundLine(
     dropSeconds = if (drop60 != null) LONG_DROP_SECONDS else SHORT_DROP_SECONDS,
 )
 
-/** The class's heart rate as a line to draw, flat in the middle when it never varied. */
-internal fun SportClass.heartLine(): HeartLine {
-    val read = samples.filter { it.read }.map { it.bpm }
-    val low = read.minOrNull() ?: 0
-    val span = ((read.maxOrNull() ?: 0) - low).takeIf { it > 0 }
+/** Each round's start and end as shares of the class's length. */
+internal fun SportClass.roundMarks(): List<ClosedFloatingPointRange<Float>> {
     val length = seconds.coerceAtLeast(1).toFloat()
-    return HeartLine(
-        heights = samples.map { sample ->
-            when {
-                !sample.read -> null
-                span == null -> FLAT
-                else -> (sample.bpm - low).toFloat() / span
-            }
-        },
-        rounds = rounds.map { it.startSecond / length..it.endSecond / length },
-    )
+    return rounds.map { it.startSecond / length..it.endSecond / length }
 }
-
-private const val FLAT = 0.5f

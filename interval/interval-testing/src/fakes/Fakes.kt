@@ -431,6 +431,7 @@ class RecordingClassSensor(
 ) : ClassSensor {
     private val _status = MutableStateFlow(initial)
     override val status: MutableStateFlow<SensorStatus> get() = _status
+    override val battery = MutableStateFlow<Int?>(null)
     var holding: CompletableDeferred<Unit>? = null
     var pairings = 0
     var starts = 0

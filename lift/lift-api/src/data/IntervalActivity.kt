@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.lift.domain.HeartLoad
 import dev.justinsmith.lift.domain.IntervalSetGroup
 import dev.justinsmith.lift.domain.IntervalSnatches
 import dev.justinsmith.lift.domain.PerceivedEffort
@@ -11,11 +12,30 @@ import kotlinx.coroutines.flow.StateFlow
  * A day a sport was logged on, [epochDay] (see `CalendarDate`): [grappling] for BJJ, whose gripping in the gi
  * counts against the grip as Lift's coaching weighs it.
  */
-data class SportDay(val epochDay: Long, val grappling: Boolean)
+data class SportDay(
+    val epochDay: Long,
+    val grappling: Boolean,
+    /** For a day whose class a sensor recorded: the seconds its rounds came to, and what it cost the heart. */
+    val matSeconds: Int? = null,
+    val heartLoad: Int? = null,
+)
+
+/** The grappling days a sensor recorded the class on, each with the seconds its rounds came to: [gripLoad]'s. */
+val List<SportDay>.matSeconds: Map<Long, Int>
+    get() = filter { it.grappling }.mapNotNull { day -> day.matSeconds?.let { day.epochDay to it } }.toMap()
+
+/**
+ * What the interval side's training cost the heart, a day each: the [workouts] a sensor read, each on the day
+ * [dayOf] its finish falls on, and the [sportDays]' recorded classes. Readiness reads them beside Lift's own.
+ */
+fun heartLoads(workouts: List<IntervalWorkout>, sportDays: List<SportDay>, dayOf: (Long) -> Long): List<HeartLoad> =
+    workouts.mapNotNull { workout -> workout.heartLoad?.let { HeartLoad(dayOf(workout.finishedAtEpochMillis), it) } } +
+        sportDays.mapNotNull { day -> day.heartLoad?.let { HeartLoad(day.epochDay, it) } }
 
 /**
  * One of the app's interval workouts, as Lift counts it in the week, its [snatches] as the lifter counted them,
- * null for a workout of none or one not counted, and its [effort] as said on its summary, null until said.
+ * null for a workout of none or one not counted, its [effort] as said on its summary, null until said, and its
+ * [heartLoad].
  */
 data class IntervalWorkout(
     val uid: String,
@@ -23,6 +43,8 @@ data class IntervalWorkout(
     val elapsedSeconds: Int,
     val snatches: IntervalSnatches? = null,
     val effort: PerceivedEffort? = null,
+    /** What it cost the heart as a sensor read it, minutes in each zone weighed by the zone; null with none read. */
+    val heartLoad: Int? = null,
 )
 
 /** The sets of snatches these workouts' counts come to, a group a workout counted: [intervalSets]. */
@@ -49,6 +71,9 @@ interface IntervalActivity {
     val bodyWeightKg: StateFlow<Double?>
     val voice: StateFlow<Boolean>
     val maxHeartRate: StateFlow<Int?>
+
+    /** The resting heart rate set there, which with the max gives the reserve the zones are cut from; null for none. */
+    val restingHeartRate: StateFlow<Int?>
     val heartRateAlerts: StateFlow<Boolean>
 
     /** The calories a session of [elapsedSeconds] is estimated to have burned, or null without a body weight. */

@@ -3,9 +3,7 @@ package dev.justinsmith.interval.history
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -16,19 +14,10 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawWithCache
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.class_detail_chart_cd
 import dev.justinsmith.interval.history.resources.class_detail_close_cd
 import dev.justinsmith.interval.history.resources.class_detail_delete_menu
 import dev.justinsmith.interval.history.resources.class_detail_delete_text
@@ -52,11 +41,11 @@ import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
+import dev.justinsmith.interval.ui.HeartRateChart
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
-import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
@@ -64,6 +53,7 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.ZoneBreakdown
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -181,7 +171,12 @@ private fun ClassFigures(recorded: RecordedClass) {
             color = palette.textDim,
         )
         Text(recorded.length, style = IntervalTheme.type.display, color = palette.text)
-        HeartChart(recorded.line, Modifier.padding(vertical = Spacing.space8))
+        HeartRateChart(
+            recorded.samples,
+            Modifier.padding(vertical = Spacing.space8),
+            maxBpm = recorded.maxHeartRate,
+            marks = recorded.marks,
+        )
         val average = recorded.averageBpm
         val peak = recorded.peakBpm
         if (average != null && peak != null) {
@@ -197,49 +192,9 @@ private fun ClassFigures(recorded: RecordedClass) {
                 )
             }
         }
+        HeartInsights(recovery = null, load = recorded.heartLoad)
+        ZoneBreakdown(recorded.samples, Modifier.padding(top = Spacing.space8), maxBpm = recorded.maxHeartRate)
     }
-}
-
-/**
- * The heart rate over the class as a line, broken where the sensor read nothing, with each round a band of the
- * accent's tint behind it. One node, read by its description: the figures are the rows under it.
- */
-@Composable
-internal fun HeartChart(line: HeartLine, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val description = stringResource(Res.string.class_detail_chart_cd)
-    Spacer(
-        modifier
-            .fillMaxWidth()
-            .height(IntervalSizes.heartChart)
-            .semantics { contentDescription = description }
-            .drawWithCache {
-                val width = IntervalSizes.heartChartStroke.toPx()
-                val stroke = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round)
-                val step = if (line.heights.size > 1) size.width / (line.heights.size - 1) else 0f
-                val path = Path()
-                var drawing = false
-                line.heights.forEachIndexed { index, height ->
-                    if (height == null) {
-                        drawing = false
-                    } else {
-                        val y = width / 2 + (size.height - width) * (1 - height)
-                        if (drawing) path.lineTo(index * step, y) else path.moveTo(index * step, y)
-                        drawing = true
-                    }
-                }
-                onDrawBehind {
-                    line.rounds.forEach { round ->
-                        drawRect(
-                            palette.accentTint,
-                            topLeft = Offset(round.start * size.width, 0f),
-                            size = Size((round.endInclusive - round.start) * size.width, size.height),
-                        )
-                    }
-                    drawPath(path, palette.accent, style = stroke)
-                }
-            },
-    )
 }
 
 /** A row a round, or a line saying none was found. */
@@ -291,14 +246,9 @@ private fun ClassRounds(rounds: List<RoundLine>) {
 @PreviewFormFactors
 @Composable
 private fun ClassDetailScreenPreview() {
-    val heights = List(PREVIEW_SAMPLES) { index ->
+    val samples = List(PREVIEW_SAMPLES) { index ->
         val inRound = index in PREVIEW_ROUND_ONE || index in PREVIEW_ROUND_TWO
-        if (inRound) {
-            PREVIEW_HIGH - index % PREVIEW_WAVE * PREVIEW_RIPPLE
-        } else {
-            PREVIEW_LOW +
-                index % PREVIEW_WAVE * PREVIEW_RIPPLE
-        }
+        (if (inRound) PREVIEW_HIGH else PREVIEW_LOW) + index % PREVIEW_WAVE * PREVIEW_RIPPLE
     }
     val recorded = RecordedClass(
         sport = Sport.Bjj,
@@ -307,12 +257,10 @@ private fun ClassDetailScreenPreview() {
         length = "1:02:10",
         averageBpm = 138,
         peakBpm = 181,
-        line = HeartLine(
-            heights,
-            listOf(PREVIEW_ROUND_ONE, PREVIEW_ROUND_TWO).map {
-                it.first.toFloat() / PREVIEW_SAMPLES..it.last.toFloat() / PREVIEW_SAMPLES
-            },
-        ),
+        samples = samples,
+        marks = listOf(PREVIEW_ROUND_ONE, PREVIEW_ROUND_TWO).map {
+            it.first.toFloat() / PREVIEW_SAMPLES..it.last.toFloat() / PREVIEW_SAMPLES
+        },
         rounds = listOf(
             RoundLine(1, "5:05", averageBpm = 164, peakBpm = 178, drop = 24, dropSeconds = 60),
             RoundLine(2, "4:55", averageBpm = 169, peakBpm = 181, drop = 11, dropSeconds = 30),
@@ -325,6 +273,6 @@ private const val PREVIEW_SAMPLES = 120
 private val PREVIEW_ROUND_ONE = 40..65
 private val PREVIEW_ROUND_TWO = 75..100
 private const val PREVIEW_WAVE = 5
-private const val PREVIEW_RIPPLE = 0.03f
-private const val PREVIEW_HIGH = 0.95f
-private const val PREVIEW_LOW = 0.15f
+private const val PREVIEW_RIPPLE = 3
+private const val PREVIEW_HIGH = 162
+private const val PREVIEW_LOW = 108

@@ -5,6 +5,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.FlowStep
@@ -143,6 +144,16 @@ data class WorkoutUiState(
     val maxHeartRate: Int = DEFAULT_MAX_BPM,
     /** 5-second BPM samples recorded live during this workout, for the summary chart. */
     val heartRateSamples: List<Int>? = null,
+    /** The samples so far while it runs, for the trace under the ring; empty before the first. */
+    val liveSamples: List<Int> = emptyList(),
+    /** Each work interval so far as a share of [liveSamples]' length, shaded behind the trace. */
+    val liveMarks: List<ClosedFloatingPointRange<Float>> = emptyList(),
+    /** Whether the heart rate under the ring is drawn as its trace so far rather than the zones' scale. */
+    val heartTrace: Boolean = false,
+    /** How far the heart came down in the rests, for the summary; null with none long enough or no samples. */
+    val recovery: Recovery? = null,
+    /** What it cost the heart, minutes in each zone weighed by the zone; null with no samples. */
+    val heartLoad: Int? = null,
     /** "About how many snatches a set?" on the summary, for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
     /** The snatches counted, with the day's others, ask for the hands to be looked after: see `wantsHandCare`. */

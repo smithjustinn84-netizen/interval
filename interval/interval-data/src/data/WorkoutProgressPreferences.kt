@@ -81,6 +81,8 @@ private class StoredProgress(
     /** Since 0.6 too: whether the first block is a time cap, and the rounds done in the caps so far. */
     val capped: Boolean = false,
     val capRounds: List<StoredCapRound> = emptyList(),
+    /** Since 0.7: the heart rate so far, a sample every five seconds from the start; none without a sensor. */
+    val heartRateSamples: List<Int> = emptyList(),
 ) {
     fun toDomain(): WorkoutProgress? {
         val phase = Phase.entries.firstOrNull { it.name == phase } ?: return null
@@ -125,6 +127,7 @@ private class StoredProgress(
             note = note,
             snatches = SnatchCount.of(snatchesPerSet, snatchBellKg),
             capRounds = capRounds.mapNotNull { it.toDomain() },
+            heartRateSamples = heartRateSamples,
         )
     }
 }
@@ -174,4 +177,5 @@ private fun WorkoutProgress.stored() = StoredProgress(
     blockRestSeconds = state.config.blockRestSeconds,
     capped = state.config.capped,
     capRounds = capRounds.map { it.stored() },
+    heartRateSamples = heartRateSamples,
 )

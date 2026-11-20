@@ -28,6 +28,14 @@ class SensorSettingsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the sensor's battery is on its row once it has said`() {
+        sensor.status.value = SensorStatus.Paired(SENSOR_NAME)
+        sensor.battery.value = 64
+
+        assertEquals(SensorSettingsUiState(SensorStatus.Paired(SENSOR_NAME), battery = 64), viewModel.state.value)
+    }
+
+    @Test
     fun `a pairing that finds none says so once and is no longer looking`() = runTest {
         sensor.nearby = null
 

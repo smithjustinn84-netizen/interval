@@ -63,6 +63,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
                 PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_H10_EXERCISE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP,
+                PolarBleSdkFeature.FEATURE_BATTERY_INFO,
             ),
         ).also { api ->
             api.setApiCallback(object : PolarBleApiCallback() {
@@ -73,6 +74,14 @@ internal class PolarClassSensor(private val context: Context, private val clock:
                 override fun deviceDisconnected(polarDeviceInfo: PolarDeviceInfo, info: PolarBleDisconnectInfo) {
                     ready.update { it - polarDeviceInfo.deviceId }
                     stream.dropped()
+                }
+
+                // Said by the sensor each time it connects, and as it changes while it stays connected.
+                override fun batteryLevelReceived(identifier: String, level: Int) {
+                    if (identifier == paired.sensor?.id) {
+                        paired.battery = level
+                        _battery.value = paired.battery
+                    }
                 }
 
                 override fun disInformationReceived(identifier: String, disInfo: DisInfo) = Unit
@@ -88,6 +97,9 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     private val _status = MutableStateFlow(stored())
     override val status: StateFlow<SensorStatus> = _status.asStateFlow()
+
+    private val _battery = MutableStateFlow(paired.battery)
+    override val battery: StateFlow<Int?> = _battery.asStateFlow()
 
     /** Live from the paired sensor, unless Bluetooth isn't allowed or the sensor is recording a class. */
     private val stream = PolarHeartStream(
@@ -124,12 +136,14 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             api.searchForDevice().first { found -> SENSOR_NAMES.any { it in found.name } }
         } ?: return@attempt SensorFailure.NotFound
         paired.pair(found.deviceId, found.name)
+        _battery.value = null
         _status.value = stored()
         null
     }
 
     override suspend fun forget() = working.withLock {
         paired.clear()
+        _battery.value = null
         _status.value = stored()
         stream.stopAll()
     }
@@ -249,11 +263,22 @@ private class PairedSensor(private val preferences: SharedPreferences) {
         get() = preferences.getLong(KEY_SINCE, 0L).takeIf { it > 0L }
         set(value) = preferences.edit { if (value == null) remove(KEY_SINCE) else putLong(KEY_SINCE, value) }
 
-    /** Takes the sensor [id] as the app's: whatever the last one recorded is no longer waited on. */
+    /** The sensor's battery as it last said, a percentage; null until it has. */
+    var battery: Int?
+        get() = preferences.getInt(KEY_BATTERY, NO_BATTERY).takeIf { it in BATTERY_RANGE }
+        set(value) = preferences.edit {
+            if (value == null) remove(KEY_BATTERY) else putInt(KEY_BATTERY, value.coerceIn(BATTERY_RANGE))
+        }
+
+    /**
+     * Takes the sensor [id] as the app's: whatever the last one recorded is no longer waited on, and its battery
+     * was another sensor's.
+     */
     fun pair(id: String, name: String) = preferences.edit {
         putString(KEY_ID, id)
         putString(KEY_NAME, name)
         remove(KEY_SINCE)
+        remove(KEY_BATTERY)
     }
 
     fun clear() = preferences.edit { clear() }
@@ -262,5 +287,8 @@ private class PairedSensor(private val preferences: SharedPreferences) {
         const val KEY_ID = "id"
         const val KEY_NAME = "name"
         const val KEY_SINCE = "since"
+        const val KEY_BATTERY = "battery"
+        const val NO_BATTERY = -1
+        val BATTERY_RANGE = 0..100
     }
 }

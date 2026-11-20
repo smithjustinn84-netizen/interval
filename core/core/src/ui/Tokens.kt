@@ -119,6 +119,9 @@ object Sizes {
     val zoneScaleReadout = 40.dp
     val zoneScaleBounds = 16.dp
 
+    /** The heart rate so far drawn live on a card, shorter than a finished workout's chart. */
+    val heartTrace = 56.dp
+
     /** The small glyph inside a chip, such as the streak's flame. */
     val chipIcon = 16.dp
 

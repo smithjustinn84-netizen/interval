@@ -89,6 +89,7 @@ private fun AppSettings.export(cues: CueSettings) = SettingsExport(
     cues = CuesExport(cues.sound, cues.voice, cues.halfway, cues.vibrate, cues.heartRateAlerts),
     sessionMinutes = sessionMinutes,
     maxHeartRate = body.maxHeartRate,
+    restingHeartRate = body.restingHeartRate,
 )
 
 private fun IntervalConfig.export() = ConfigExport(

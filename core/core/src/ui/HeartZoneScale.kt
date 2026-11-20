@@ -71,7 +71,8 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
     val reading = (state as? LiveHeartRateState.Reading)?.takeIf { it.contact }
     var lastBpm by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(reading?.bpm) { reading?.let { lastBpm = it.bpm } }
-    val zone = reading?.let { heartRateZone(it.bpm, maxBpm) }
+    val resting = LocalRestingHeartRate.current
+    val zone = reading?.let { heartRateZone(it.bpm, maxBpm, resting) }
 
     Column(
         modifier.widthIn(max = Sizes.zoneScale).fillMaxWidth(),
@@ -84,12 +85,17 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
                 StatusRow(connecting = state == LiveHeartRateState.Connecting, lastBpm = lastBpm)
             }
         }
-        ZoneBars(zone, fraction = reading?.let { zoneScaleFraction(it.bpm, maxBpm) } ?: 0f, maxBpm = maxBpm)
+        ZoneBars(
+            zone,
+            fraction = reading?.let { zoneScaleFraction(it.bpm, maxBpm, resting) } ?: 0f,
+            maxBpm = maxBpm,
+            restingBpm = resting,
+        )
     }
 }
 
 @Composable
-private fun ReadingRow(bpm: Int, zone: HeartRateZone) {
+internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
     val colors = IntervalTheme.workout
     val zoneColor by animateColorAsState(
         colors.heartZones.of(zone),
@@ -148,7 +154,7 @@ private fun ReadingRow(bpm: Int, zone: HeartRateZone) {
 
 /** Why there is no reading, and the last there was once the signal is lost. */
 @Composable
-private fun StatusRow(connecting: Boolean, lastBpm: Int?) {
+internal fun StatusRow(connecting: Boolean, lastBpm: Int?) {
     val dim = IntervalTheme.workout.onGroundDim
     Row(
         Modifier.fillMaxWidth(),
@@ -179,7 +185,7 @@ private fun StatusRow(connecting: Boolean, lastBpm: Int?) {
  * under the lit bar's ends the heart rates the zone starts at and gives way at. Unlit and bare without a zone.
  */
 @Composable
-private fun ZoneBars(zone: HeartRateZone?, fraction: Float, maxBpm: Int) {
+private fun ZoneBars(zone: HeartRateZone?, fraction: Float, maxBpm: Int, restingBpm: Int?) {
     val colors = IntervalTheme.workout
     val fills = HeartRateZone.entries.map { each ->
         animateColorAsState(
@@ -191,10 +197,13 @@ private fun ZoneBars(zone: HeartRateZone?, fraction: Float, maxBpm: Int) {
     val at by animateFloatAsState(fraction, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "zoneMarker")
     val measurer = rememberTextMeasurer()
     val boundStyle = IntervalTheme.type.caption.copy(color = colors.onGroundDim)
-    val bounds = remember(zone, maxBpm, measurer, boundStyle) {
+    val bounds = remember(zone, maxBpm, restingBpm, measurer, boundStyle) {
         zone?.let { lit ->
             val above = HeartRateZone.entries.getOrNull(lit.ordinal + 1)
-            listOf(lit.ordinal to zoneFloor(lit, maxBpm), lit.ordinal + 1 to above?.let { zoneFloor(it, maxBpm) })
+            listOf(
+                lit.ordinal to zoneFloor(lit, maxBpm, restingBpm),
+                lit.ordinal + 1 to above?.let { zoneFloor(it, maxBpm, restingBpm) },
+            )
                 .mapNotNull { (edge, bpm) -> bpm?.let { edge to measurer.measure("$it", boundStyle) } }
         }.orEmpty()
     }

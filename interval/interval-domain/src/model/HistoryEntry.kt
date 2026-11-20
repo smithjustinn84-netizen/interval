@@ -73,7 +73,35 @@ data class HistoryEntry(
         }
     }
 
+    /**
+     * Each rest of its course as the seconds from [startedAt] it ran over, from a work interval's end to the next
+     * one's start: where its heart-rate samples are read for how far the heart came down. Only for a workout run
+     * straight through, start to finish with no pause, skip or added time, since nothing else says where its rests
+     * fell; null for any other.
+     */
+    fun rests(): List<IntRange>? {
+        val started = startedAtEpochMillis ?: return null
+        val wallSeconds = (finishedAtEpochMillis - started) / MILLIS_PER_SECOND
+        val straight = !endedEarly && !loggedByHand && elapsedSeconds == config.totalSeconds &&
+            wallSeconds - elapsedSeconds in -STRAIGHT_SLACK_SECONDS..STRAIGHT_SLACK_SECONDS
+        if (!straight) return null
+        val rests = mutableListOf<IntRange>()
+        var at = 0
+        var restFrom: Int? = null
+        for (interval in Course.of(config)) {
+            if (interval.phase == Phase.Work) {
+                restFrom?.let { from -> if (at > from) rests += from until at }
+                restFrom = at + interval.seconds
+            }
+            at += interval.seconds
+        }
+        return rests
+    }
+
     companion object {
+        /** How far a run's time on the wall may stand from its time on the clock and still be one run straight. */
+        private const val STRAIGHT_SLACK_SECONDS = 5
+
         /**
          * A workout of [config] done away from the app, or without the Timer, logged after the fact as finished at
          * [finishedAtEpochMillis]: run in full, so its time is the config's whole course, its work estimated from its

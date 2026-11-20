@@ -5,8 +5,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlin.math.roundToInt
 
 /**
- * The five heart-rate training zones as a share of the user's max heart rate:
- * [Zone1] (<60%), [Zone2] (60–70%), [Zone3] (70–80%), [Zone4] (80–90%), and [Zone5] (≥90%).
+ * The five heart-rate training zones: [Zone1] (<60%), [Zone2] (60–70%), [Zone3] (70–80%), [Zone4] (80–90%), and
+ * [Zone5] (≥90%). The share is of the user's max heart rate, or, once a resting heart rate is set, of the reserve
+ * between the two counted up from rest (Karvonen's): the same shares, each cut-off higher, so an easy heart rate
+ * between sets is no longer read as aerobic work.
  */
 enum class HeartRateZone {
     Zone1,
@@ -76,13 +78,43 @@ const val DEFAULT_MAX_BPM = 190
 /** Accepted range for a user-configured maximum heart rate. */
 val MAX_BPM_RANGE: IntRange = 120..230
 
+/** Accepted range for a user-configured resting heart rate. */
+val RESTING_BPM_RANGE: IntRange = 30..100
+
 /** Seconds covered by each persisted heart-rate sample bucket. */
 const val HR_SAMPLE_SECONDS = 5
 
-/** Classifies [bpm] into one of the five [HeartRateZone]s for [maxBpm]. */
-fun heartRateZone(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM): HeartRateZone {
+/**
+ * How far [bpm] is up the range the zones are cut from, 0 to 1 and beyond: its share of [maxBpm], or with a
+ * [restingBpm] its share of the reserve between rest and max.
+ */
+private fun zoneShare(bpm: Int, maxBpm: Int, restingBpm: Int?): Float {
     val max = maxBpm.coerceIn(MAX_BPM_RANGE).toFloat()
-    val ratio = bpm / max
+    // A resting rate that leaves no reserve under the max is no use: the max alone, then.
+    val rest = restingBpm?.coerceIn(RESTING_BPM_RANGE)?.toFloat()?.takeIf { it < max - MIN_RESERVE_BPM }
+    return if (rest == null) bpm / max else (bpm - rest) / (max - rest)
+}
+
+/** The heart rate at [share] of the range the zones are cut from: [zoneShare] the other way. */
+fun zoneCutoff(share: Float, maxBpm: Int = DEFAULT_MAX_BPM, restingBpm: Int? = null): Float {
+    val max = maxBpm.coerceIn(MAX_BPM_RANGE).toFloat()
+    val rest = restingBpm?.coerceIn(RESTING_BPM_RANGE)?.toFloat()?.takeIf { it < max - MIN_RESERVE_BPM }
+    return if (rest == null) share * max else rest + share * (max - rest)
+}
+
+/** The share of the range at which [zone] starts: 0 for [HeartRateZone.Zone1]. */
+val HeartRateZone.startShare: Float
+    get() = when (this) {
+        HeartRateZone.Zone1 -> 0f
+        HeartRateZone.Zone2 -> ZONE2_THRESHOLD
+        HeartRateZone.Zone3 -> ZONE3_THRESHOLD
+        HeartRateZone.Zone4 -> ZONE4_THRESHOLD
+        HeartRateZone.Zone5 -> ZONE5_THRESHOLD
+    }
+
+/** Classifies [bpm] into one of the five [HeartRateZone]s for [maxBpm], by the reserve over [restingBpm] if set. */
+fun heartRateZone(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM, restingBpm: Int? = null): HeartRateZone {
+    val ratio = zoneShare(bpm, maxBpm, restingBpm)
     return when {
         ratio < ZONE2_THRESHOLD -> HeartRateZone.Zone1
         ratio < ZONE3_THRESHOLD -> HeartRateZone.Zone2
@@ -100,15 +132,19 @@ val LiveHeartRateState.inUse: Boolean
  * The lowest heart rate in [zone] for [maxBpm], as [heartRateZone] sorts them, so one beat fewer is the zone
  * below; null for [HeartRateZone.Zone1], which has no floor.
  */
-fun zoneFloor(zone: HeartRateZone, maxBpm: Int = DEFAULT_MAX_BPM): Int? =
-    if (zone == HeartRateZone.Zone1) null else (1..MAX_BPM_RANGE.last).first { heartRateZone(it, maxBpm) >= zone }
+fun zoneFloor(zone: HeartRateZone, maxBpm: Int = DEFAULT_MAX_BPM, restingBpm: Int? = null): Int? =
+    if (zone == HeartRateZone.Zone1) {
+        null
+    } else {
+        (1..MAX_BPM_RANGE.last).first { heartRateZone(it, maxBpm, restingBpm) >= zone }
+    }
 
 /**
- * Where [bpm] sits along a scale of the five zones drawn a fifth each: 0 at half of [maxBpm], where the
- * scale's first zone opens, 1 at the max, and no further either way.
+ * Where [bpm] sits along a scale of the five zones drawn a fifth each: 0 at half of the range the zones are cut
+ * from, where the scale's first zone opens, 1 at the max, and no further either way.
  */
-fun zoneScaleFraction(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM): Float {
-    val ratio = bpm / maxBpm.coerceIn(MAX_BPM_RANGE).toFloat()
+fun zoneScaleFraction(bpm: Int, maxBpm: Int = DEFAULT_MAX_BPM, restingBpm: Int? = null): Float {
+    val ratio = zoneShare(bpm, maxBpm, restingBpm)
     return ((ratio - ZONE_SCALE_FLOOR) / (1f - ZONE_SCALE_FLOOR)).coerceIn(0f, 1f)
 }
 
@@ -117,11 +153,12 @@ fun zoneSeconds(
     samples: List<Int>,
     maxBpm: Int = DEFAULT_MAX_BPM,
     sampleSeconds: Int = HR_SAMPLE_SECONDS,
+    restingBpm: Int? = null,
 ): Map<HeartRateZone, Int> {
     val counts = HeartRateZone.entries.associateWith { 0 }.toMutableMap()
     for (bpm in samples) {
         if (bpm in HeartRate.BPM_RANGE) {
-            val zone = heartRateZone(bpm, maxBpm)
+            val zone = heartRateZone(bpm, maxBpm, restingBpm)
             counts[zone] = (counts[zone] ?: 0) + sampleSeconds
         }
     }
@@ -146,6 +183,7 @@ class ZoneTracker(
     private val maxBpm: Int = DEFAULT_MAX_BPM,
     private val sustainMillis: Long = DEFAULT_SUSTAIN_MILLIS,
     private val cooldownMillis: Long = DEFAULT_COOLDOWN_MILLIS,
+    private val restingBpm: Int? = null,
 ) {
     private var currentBand: Band? = null
     private var pendingBand: Band? = null
@@ -164,7 +202,7 @@ class ZoneTracker(
     /** Records [bpm] at [nowMillis] and returns a [ZoneTransition] if a debounced cue should fire. */
     fun record(bpm: Int, nowMillis: Long): ZoneTransition? {
         if (bpm !in HeartRate.BPM_RANGE) return null
-        val zone = heartRateZone(bpm, maxBpm)
+        val zone = heartRateZone(bpm, maxBpm, restingBpm)
         val band = when {
             zone.isHigh -> Band.High
             zone.isRecovery -> Band.Recovery
@@ -230,6 +268,28 @@ class HeartRateSampler(private val sampleSeconds: Int = HR_SAMPLE_SECONDS) {
         peak = 0
     }
 
+    /**
+     * Starts afresh with its first bucket at [originMillis], the moment what it samples began, so a sample's
+     * place says when it was: one every [sampleSeconds] from there, 0 until the sensor first read. [kept] are
+     * the samples already taken from that moment, as [samples] gave them before a process was killed: each
+     * stands as its bucket's one reading, so the average and peak are theirs.
+     */
+    fun restore(originMillis: Long, kept: List<Int> = emptyList()) {
+        reset()
+        startedAt = originMillis
+        kept.forEachIndexed { index, bpm ->
+            if (bpm in HeartRate.BPM_RANGE) {
+                buckets[index] = mutableListOf(bpm)
+                count++
+                sum += bpm
+                if (bpm > peak) peak = bpm
+            }
+        }
+    }
+
+    /** How many samples [samples] would give now, without making them. */
+    val size: Int get() = (buckets.keys.maxOrNull() ?: -1) + 1
+
     /** Records [bpm] at [nowMillis]; readings outside [HeartRate.BPM_RANGE] are ignored. */
     fun add(bpm: Int, nowMillis: Long) {
         if (bpm !in HeartRate.BPM_RANGE) return
@@ -264,6 +324,9 @@ class HeartRateSampler(private val sampleSeconds: Int = HR_SAMPLE_SECONDS) {
 }
 
 private const val ZONE_SCALE_FLOOR = 0.5f
+
+/** The least a resting heart rate must stand under the max for the reserve between them to cut zones from. */
+private const val MIN_RESERVE_BPM = 20
 private const val ZONE2_THRESHOLD = 0.6f
 private const val ZONE3_THRESHOLD = 0.7f
 private const val ZONE4_THRESHOLD = 0.8f

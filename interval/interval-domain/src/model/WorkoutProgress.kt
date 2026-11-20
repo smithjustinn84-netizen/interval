@@ -42,6 +42,11 @@ data class WorkoutProgress(
     val snatches: SnatchCount? = null,
     /** The rounds done in its time caps so far, each kept as it is done. */
     val capRounds: List<CapRound> = emptyList(),
+    /**
+     * Its heart rate so far as a sensor read it live: a sample every five seconds from [startedAtEpochMillis], 0
+     * where none was read. Empty with no sensor.
+     */
+    val heartRateSamples: List<Int> = emptyList(),
 )
 
 /**

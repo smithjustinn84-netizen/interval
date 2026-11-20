@@ -116,4 +116,53 @@ class LiveHeartRateTest {
         assertEquals(HeartRate(averageBpm = 148, peakBpm = 180), sampler.summary())
         assertEquals(listOf(125, 0, 170), sampler.samples())
     }
+
+    @Test
+    fun `with a resting heart rate the zones are cut from the reserve over it`() {
+        // Max 190 over a rest of 50 is a reserve of 140: zone 2 from 134 and zone 5 from 176.
+        assertEquals(HeartRateZone.Zone1, heartRateZone(133, maxBpm = 190, restingBpm = 50))
+        assertEquals(HeartRateZone.Zone2, heartRateZone(134, maxBpm = 190, restingBpm = 50))
+        assertEquals(HeartRateZone.Zone5, heartRateZone(176, maxBpm = 190, restingBpm = 50))
+        // By the max alone 133 is zone 3 already.
+        assertEquals(HeartRateZone.Zone3, heartRateZone(133, maxBpm = 190))
+    }
+
+    @Test
+    fun `a zone's floor and the scale follow the reserve`() {
+        assertEquals(134, zoneFloor(HeartRateZone.Zone2, maxBpm = 190, restingBpm = 50))
+        assertEquals(114, zoneFloor(HeartRateZone.Zone2, maxBpm = 190))
+        // Half the reserve up from rest is where the scale opens.
+        assertEquals(0f, zoneScaleFraction(120, maxBpm = 190, restingBpm = 50))
+        assertEquals(1f, zoneScaleFraction(190, maxBpm = 190, restingBpm = 50))
+    }
+
+    @Test
+    fun `a resting heart rate that leaves no reserve is left out`() {
+        assertEquals(heartRateZone(110, maxBpm = 120), heartRateZone(110, maxBpm = 120, restingBpm = 100))
+    }
+
+    @Test
+    fun `time in zone and the tracker go by the reserve too`() {
+        val samples = List(12) { 130 }
+
+        assertEquals(60, zoneSeconds(samples, maxBpm = 190, restingBpm = 50)[HeartRateZone.Zone1])
+        assertEquals(60, zoneSeconds(samples, maxBpm = 190)[HeartRateZone.Zone2])
+        // 160 is zone 4 by the max and zone 3 over a rest of 50: no rise into high effort to cue.
+        val tracker = ZoneTracker(maxBpm = 190, restingBpm = 50)
+        assertNull(tracker.record(110, 0L))
+        assertNull(tracker.record(160, 1_000L))
+        assertNull(tracker.record(160, 7_000L))
+    }
+
+    @Test
+    fun `a sampler taken up again keeps what it had from the same start`() {
+        val sampler = HeartRateSampler(sampleSeconds = 5)
+        sampler.restore(originMillis = 100_000L, kept = listOf(0, 120, 150))
+
+        assertEquals(3, sampler.size)
+        sampler.add(160, 116_000L)
+
+        assertEquals(listOf(0, 120, 150, 160), sampler.samples())
+        assertEquals(HeartRate(averageBpm = 143, peakBpm = 160), sampler.summary())
+    }
 }

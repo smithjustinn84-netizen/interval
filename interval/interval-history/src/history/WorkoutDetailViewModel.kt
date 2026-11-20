@@ -22,9 +22,14 @@ import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.MAX_BPM_RANGE
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
+import dev.justinsmith.interval.platform.heartLoad
+import dev.justinsmith.interval.platform.peakAbove
+import dev.justinsmith.interval.platform.recovery
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.defaultPresetName
@@ -63,6 +68,12 @@ data class FinishedWorkout(
     val heartRateSamples: List<Int>? = null,
     /** User's maximum heart rate for training zones. */
     val maxHeartRate: Int = DEFAULT_MAX_BPM,
+    /** How far the heart came down in its rests, from the samples; null with none long enough or no samples. */
+    val recovery: Recovery? = null,
+    /** What it cost the heart, minutes in each zone weighed by the zone; null with no samples. */
+    val heartLoad: Int? = null,
+    /** Its highest heart rate when that is over [maxHeartRate], to offer as the max; null otherwise. */
+    val peakAboveMax: Int? = null,
     /** "About how many snatches a set?", for a workout of kettlebell snatches; null for any other. */
     val snatches: SnatchAsk? = null,
     /** Its time caps, each with the rounds done in it; empty for a workout with none counted. */
@@ -145,6 +156,11 @@ class WorkoutDetailViewModel(
         }
     }
 
+    /** Takes [bpm], the workout's own peak, as the max heart rate the zones go by: the nudge's one tap. */
+    fun useMaxHeartRate(bpm: Int) {
+        settingsStore.updateAppSettings { it.copy(body = it.body.copy(maxHeartRate = bpm.coerceIn(MAX_BPM_RANGE))) }
+    }
+
     /** About how many snatches a set it held and the bell, set here after its summary; null takes the count away. */
     fun countSnatches(count: SnatchCount?) {
         historyStore.countSnatchesOf(id, count)
@@ -178,6 +194,8 @@ class WorkoutDetailViewModel(
         val workout = history.firstOrNull { it.id == id }?.let { entry ->
             val day = timestamps.dayNumber(entry.finishedAtEpochMillis)
             val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
+            val maxBpm = app.body.maxHeartRate ?: DEFAULT_MAX_BPM
+            val samples = entry.heartRateSamples
             FinishedWorkout(
                 id = id,
                 presetName = names.of(entry.config),
@@ -193,7 +211,12 @@ class WorkoutDetailViewModel(
                 note = entry.note,
                 heartRate = entry.averageBpm?.let { average -> entry.peakBpm?.let { HeartRate(average, it) } },
                 heartRateSamples = entry.heartRateSamples,
-                maxHeartRate = app.body.maxHeartRate ?: DEFAULT_MAX_BPM,
+                maxHeartRate = maxBpm,
+                recovery = samples?.let { entry.rests()?.let { rests -> recovery(samples, rests) } },
+                heartLoad = samples
+                    ?.let { heartLoad(it, maxBpm, restingBpm = app.body.restingHeartRate) }
+                    ?.takeIf { it > 0 },
+                peakAboveMax = samples?.let { peakAbove(it, maxBpm) },
                 snatches = if (names.asksSnatches(entry.config)) SnatchAsk.of(entry.snatches, history, bells) else null,
                 caps = entry.capRounds?.scores(entry.config).orEmpty(),
             )

@@ -106,4 +106,21 @@ class GripTest {
         assertEquals(1_440.0, grip.acute)
         assertEquals(1_440.0, grip.ballistic)
     }
+
+    @Test
+    fun `a recorded class weighs on the grip by the time its rounds came to`() {
+        // Five rounds of five minutes is the usual class; half that is half, and a long open mat stops at double.
+        assertEquals(GRAPPLING_GRIP_LOAD, grapplingGripLoad(null))
+        assertEquals(GRAPPLING_GRIP_LOAD, grapplingGripLoad(USUAL_MAT_SECONDS))
+        assertEquals(GRAPPLING_GRIP_LOAD / 2, grapplingGripLoad(USUAL_MAT_SECONDS / 2))
+        assertEquals(GRAPPLING_GRIP_LOAD / 2, grapplingGripLoad(0))
+        assertEquals(GRAPPLING_GRIP_LOAD * 2, grapplingGripLoad(USUAL_MAT_SECONDS * 5))
+    }
+
+    @Test
+    fun `the week's load takes a recorded day by its rounds and any other as a usual class`() {
+        val grip = gripLoad(emptyList(), grappling = listOf(26, 27), today = 27, dayOf, mapOf(27L to 3_000))
+
+        assertEquals(GRAPPLING_GRIP_LOAD + GRAPPLING_GRIP_LOAD * 2, grip.acute)
+    }
 }

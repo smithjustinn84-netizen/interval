@@ -379,6 +379,7 @@ private fun SettingsExport.toDomain(): AppSettings {
             unit,
             enumNamed<Effort>(effort),
             maxHeartRate = maxHeartRate?.coerceIn(dev.justinsmith.interval.platform.MAX_BPM_RANGE),
+            restingHeartRate = restingHeartRate?.coerceIn(dev.justinsmith.interval.platform.RESTING_BPM_RANGE),
         ),
         weeklyGoal = weeklyGoal,
         reminderMinuteOfDay = reminderMinuteOfDay,

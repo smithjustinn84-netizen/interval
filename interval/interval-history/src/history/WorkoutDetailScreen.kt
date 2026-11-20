@@ -56,6 +56,7 @@ import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.plan.AddToPlanSheet
 import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
@@ -132,6 +133,7 @@ fun WorkoutDetailRoute(
         },
         onPlanWeekly = viewModel::planWeekly,
         onPlanOnce = viewModel::planOnce,
+        onUseMax = viewModel::useMaxHeartRate,
         modifier = modifier,
         inPane = inPane,
         onShare = sharer::shareText,
@@ -157,6 +159,7 @@ fun WorkoutDetailScreen(
     inPane: Boolean = false,
     onShare: (String) -> Unit = {},
     onCountSnatches: (SnatchCount?) -> Unit = {},
+    onUseMax: (Int) -> Unit = {},
 ) {
     val workout = state.workout ?: return
     var menu by rememberSaveable { mutableStateOf(false) }
@@ -197,7 +200,7 @@ fun WorkoutDetailScreen(
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-            DetailFigures(workout)
+            DetailFigures(workout, onUseMax)
             workout.snatches?.let { ask -> SummaryCard { SnatchQuestion(ask, onCountSnatches) } }
             AccentButton(stringResource(Res.string.detail_repeat), onRepeat, Modifier.fillMaxWidth())
             SecondaryButton(stringResource(Res.string.detail_plan_again), { planning = true }, Modifier.fillMaxWidth())
@@ -231,7 +234,7 @@ fun WorkoutDetailScreen(
 
 /** When it was, its shape, its total with any badge, its timeline and its figures. */
 @Composable
-private fun DetailFigures(workout: FinishedWorkout) {
+private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
     val palette = IntervalTheme.palette
     Column(Modifier.padding(horizontal = Spacing.space4)) {
         Text(
@@ -283,6 +286,10 @@ private fun DetailFigures(workout: FinishedWorkout) {
             }
             if (!samples.isNullOrEmpty()) {
                 ZoneBreakdown(samples, Modifier.padding(top = Spacing.space8), maxBpm = workout.maxHeartRate)
+            }
+            HeartInsights(workout.recovery, workout.heartLoad, Modifier.padding(top = Spacing.space8))
+            workout.peakAboveMax?.let { peak ->
+                MaxNudge(peak, workout.maxHeartRate, onUse = { onUseMax(peak) }, Modifier.padding(top = Spacing.space8))
             }
         }
     }
@@ -380,6 +387,47 @@ private fun WorkoutDetailScreenPreview() {
         note = "Legs heavy from Tuesday, held the pace to the end.",
         heartRate = HeartRate(averageBpm = 148, peakBpm = 174),
     )
+    WorkoutDetailPreview(workout)
+}
+
+@PreviewFormFactors
+@Composable
+private fun WorkoutDetailScreenHeartPreview() {
+    val hiit = builtInPresets[1]
+    val samples = List(PREVIEW_HEART_SAMPLES) { index ->
+        val inWork = index % PREVIEW_ROUND_SAMPLES < PREVIEW_WORK_SAMPLES
+        PREVIEW_HEART_BASE + index / 2 + if (inWork) PREVIEW_WORK_RISE else 0
+    }
+    val fading = Recovery(listOf(34, 31, 26, 19), seconds = 60)
+    WorkoutDetailPreview(
+        FinishedWorkout(
+            id = 4,
+            presetName = hiit.name,
+            config = hiit.config,
+            day = HistoryDay.On("Wednesday, Oct 14"),
+            time = "7:05 AM",
+            total = "9:40",
+            work = "5:00",
+            calories = 84,
+            endedEarly = false,
+            planned = true,
+            heartRate = HeartRate(averageBpm = 158, peakBpm = 194),
+            heartRateSamples = samples,
+            recovery = fading,
+            heartLoad = 41,
+            peakAboveMax = 194,
+        ),
+    )
+}
+
+private const val PREVIEW_HEART_SAMPLES = 116
+private const val PREVIEW_ROUND_SAMPLES = 15
+private const val PREVIEW_WORK_SAMPLES = 8
+private const val PREVIEW_HEART_BASE = 112
+private const val PREVIEW_WORK_RISE = 24
+
+@Composable
+private fun WorkoutDetailPreview(workout: FinishedWorkout) {
     val state = WorkoutDetailUiState(
         workout,
         days = (0 until 14).map { DayChoice(PREVIEW_TODAY + it, weekdayOf(PREVIEW_TODAY + it), 15 + it) },

@@ -17,6 +17,27 @@ private const val HOLD_SECONDS_PER_REP = 10.0
  */
 const val GRAPPLING_GRIP_LOAD = 300.0
 
+/**
+ * The time rolling a class of [GRAPPLING_GRIP_LOAD] is taken to hold: five rounds of five minutes. A class a
+ * sensor recorded is weighed by its own rounds against this.
+ */
+const val USUAL_MAT_SECONDS = 1_500
+
+/** The least and the most of [GRAPPLING_GRIP_LOAD] a recorded class weighs, however little or much was rolled. */
+private const val MAT_LOAD_LEAST = 0.5
+private const val MAT_LOAD_MOST = 2.0
+
+/**
+ * A grappling day's load on the grip: [GRAPPLING_GRIP_LOAD], or for a class a sensor recorded that by the time
+ * its rounds came to ([matSeconds]) against [USUAL_MAT_SECONDS], so a night of drilling weighs half a day and a
+ * long open mat up to two.
+ */
+fun grapplingGripLoad(matSeconds: Int?): Double = if (matSeconds == null) {
+    GRAPPLING_GRIP_LOAD
+} else {
+    GRAPPLING_GRIP_LOAD * (matSeconds.toDouble() / USUAL_MAT_SECONDS).coerceIn(MAT_LOAD_LEAST, MAT_LOAD_MOST)
+}
+
 /** The days in the week of load weighed against the weeks before it. */
 const val GRIP_ACUTE_DAYS = 7
 
@@ -100,9 +121,16 @@ data class GripLoad(
 
 /**
  * The grip's load up to [today] from [sets] (each on the day [dayOf] its time falls on) and the [grappling] days, an
- * epoch day each, every one [GRAPPLING_GRIP_LOAD].
+ * epoch day each, every one [GRAPPLING_GRIP_LOAD] but those in [matSeconds], the days a sensor recorded the class
+ * on, each weighed by the seconds its rounds came to ([grapplingGripLoad]).
  */
-fun gripLoad(sets: List<SetLog>, grappling: List<Long>, today: Long, dayOf: (Long) -> Long): GripLoad {
+fun gripLoad(
+    sets: List<SetLog>,
+    grappling: List<Long>,
+    today: Long,
+    dayOf: (Long) -> Long,
+    matSeconds: Map<Long, Int> = emptyMap(),
+): GripLoad {
     val week = (today - GRIP_ACUTE_DAYS + 1)..today
     val month = (today - GRIP_CHRONIC_DAYS + 1)..today
     val lifted = sets.map { dayOf(it.loggedAtEpochMillis) to it }.filter { (day, _) -> day in month }
@@ -113,11 +141,12 @@ fun gripLoad(sets: List<SetLog>, grappling: List<Long>, today: Long, dayOf: (Lon
     // Each week's load, by how many weeks back from today its day falls: 0 this week.
     val byWeek = DoubleArray(GRIP_WEEKS)
     lifted.forEach { (day, set) -> byWeek[((today - day) / GRIP_ACUTE_DAYS).toInt()] += set.gripLoad }
-    mat.forEach { day -> byWeek[((today - day) / GRIP_ACUTE_DAYS).toInt()] += GRAPPLING_GRIP_LOAD }
+    fun matLoad(day: Long) = grapplingGripLoad(matSeconds[day])
+    mat.forEach { day -> byWeek[((today - day) / GRIP_ACUTE_DAYS).toInt()] += matLoad(day) }
     val weeks = byWeek.reversed().takeIf { load -> load.any { it > 0 } }.orEmpty()
     return GripLoad(
-        acute = ballistic + grind + mat.count { it in week } * GRAPPLING_GRIP_LOAD,
-        chronic = lifted.sumOf { it.second.gripLoad } + mat.size * GRAPPLING_GRIP_LOAD,
+        acute = ballistic + grind + mat.filter { it in week }.sumOf(::matLoad),
+        chronic = lifted.sumOf { it.second.gripLoad } + mat.sumOf(::matLoad),
         ballistic = ballistic,
         grind = grind,
         trainingDays = (lifted.map { it.first } + mat).distinct().size,

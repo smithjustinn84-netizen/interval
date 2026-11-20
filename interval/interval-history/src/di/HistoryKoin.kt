@@ -28,5 +28,5 @@ val historyModule: Module = module {
     viewModel { (id: Long) ->
         WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
-    viewModel { (startedAt: Long) -> ClassDetailViewModel(startedAt, get(), get(), get()) }
+    viewModel { (startedAt: Long) -> ClassDetailViewModel(startedAt, get(), get(), get(), get()) }
 }

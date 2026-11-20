@@ -12,6 +12,7 @@ import dev.justinsmith.interval.today.resources.home_coach_done
 import dev.justinsmith.interval.today.resources.home_coach_done_goal
 import dev.justinsmith.interval.today.resources.home_coach_grip
 import dev.justinsmith.interval.today.resources.home_coach_hard
+import dev.justinsmith.interval.today.resources.home_coach_heart
 import dev.justinsmith.interval.today.resources.home_coach_mat
 import dev.justinsmith.interval.today.resources.home_coach_rest
 import dev.justinsmith.interval.today.resources.home_coach_sport
@@ -100,6 +101,7 @@ private fun coachText(note: CoachNote): String = when (note) {
         when (note.reason) {
             ReadinessReason.HardSession -> Res.string.home_coach_hard
             ReadinessReason.HardConditioning -> Res.string.home_coach_conditioning
+            ReadinessReason.HeartLoad -> Res.string.home_coach_heart
             ReadinessReason.Mat -> Res.string.home_coach_mat
             ReadinessReason.Grip -> Res.string.home_coach_grip
         },

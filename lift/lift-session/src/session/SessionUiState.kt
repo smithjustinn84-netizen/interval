@@ -2,6 +2,7 @@ package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
@@ -113,18 +114,59 @@ data class SessionClocks(
     val liveHeartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
     /** The max heart rate its zone is worked out from: the one set in Settings, or the default. */
     val maxHeartRate: Int = DEFAULT_MAX_BPM,
-)
+    /** The session's heart rate so far, a sample every five seconds, for the card's line; empty before the first. */
+    val liveSamples: List<Int> = emptyList(),
+    /** The resting heart rate set in Settings, which with the max gives the zones' reserve; null for none. */
+    val restingHeartRate: Int? = null,
+) {
+    /** How the heart stands for the next set, while a rest counts down with a heart rate read; null otherwise. */
+    val restHeart: RestHeart?
+        get() = if (rest == null) null else restHeart(liveHeartRate, maxHeartRate, restingHeartRate)
+}
+
+/** The heart rate during a rest, and what it says of the next set. */
+data class RestHeart(val bpm: Int, val standing: Standing) {
+    enum class Standing {
+        /** Still in the middle zone: on its way down. */
+        ComingDown,
+
+        /** Back in an easy zone: recovered enough to lift again. */
+        Ready,
+
+        /** Still in a hard zone: longer would do more for the next set than starting it now. */
+        StillHigh,
+    }
+}
+
+/** What [state] says of a rest for a heart zoned by [maxBpm] and [restingBpm]; null with no heart read. */
+internal fun restHeart(state: LiveHeartRateState, maxBpm: Int, restingBpm: Int? = null): RestHeart? {
+    val reading = (state as? LiveHeartRateState.Reading)?.takeIf { it.contact } ?: return null
+    val zone = heartRateZone(reading.bpm, maxBpm, restingBpm)
+    val standing = when {
+        zone.isRecovery -> RestHeart.Standing.Ready
+        zone.isHigh -> RestHeart.Standing.StillHigh
+        else -> RestHeart.Standing.ComingDown
+    }
+    return RestHeart(reading.bpm, standing)
+}
 
 /**
- * The [session]'s clocks [now], its [timing]'s, and the live [heartRate], zoned by [maxHeartRate], null for none
- * set.
+ * The heart as the session's clocks show it: the live [reading], the [maxHeartRate] and [restingHeartRate] set
+ * (null for none) and the [samples] so far.
  */
+internal class HeartNow(
+    val reading: LiveHeartRateState = LiveHeartRateState.Unavailable,
+    val maxHeartRate: Int? = null,
+    val samples: List<Int> = emptyList(),
+    val restingHeartRate: Int? = null,
+)
+
+/** The [session]'s clocks [now], its [timing]'s, and the [heart] as it stands. */
 internal fun clocksAt(
     session: LiftSession?,
     now: Long,
     timing: TimerState,
-    heartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
-    maxHeartRate: Int? = null,
+    heart: HeartNow = HeartNow(),
 ) = SessionClocks(
     elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
     sinceLast = session?.sets?.lastOrNull()?.let {
@@ -134,8 +176,10 @@ internal fun clocksAt(
     emomState = timing.emomState,
     holdState = timing.holdState,
     densityState = timing.densityState,
-    liveHeartRate = heartRate,
-    maxHeartRate = maxHeartRate ?: DEFAULT_MAX_BPM,
+    liveHeartRate = heart.reading,
+    maxHeartRate = heart.maxHeartRate ?: DEFAULT_MAX_BPM,
+    liveSamples = heart.samples,
+    restingHeartRate = heart.restingHeartRate,
 )
 
 private const val MILLIS_PER_SECOND = 1_000L

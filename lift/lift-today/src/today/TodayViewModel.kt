@@ -14,6 +14,8 @@ import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.data.efforts
+import dev.justinsmith.lift.data.heartLoads
+import dev.justinsmith.lift.data.matSeconds
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.BALANCE_DAYS
 import dev.justinsmith.lift.domain.Block
@@ -110,7 +112,7 @@ class TodayViewModel(
     private val programStore: ProgramStore,
     private val gearStore: GearStore,
     setStore: SetStore,
-    intervals: IntervalActivity,
+    private val intervals: IntervalActivity,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -217,10 +219,16 @@ class TodayViewModel(
         val grappling = sportDays.filter { it.grappling }.map { it.epochDay }
         // 15:15's snatches load the grip as Lift's own sets do.
         val lifted = sessions.flatMap { it.sets } + workouts.snatchSets.sets
-        val grip = gripLoad(lifted, grappling, today, timestamps::dayNumber)
+        val grip = gripLoad(lifted, grappling, today, timestamps::dayNumber, sportDays.matSeconds)
+        // What a sensor read of each day, the interval side's and Lift's own.
+        val heart = heartLoads(workouts, sportDays, timestamps::dayNumber) + sessions.heartLoads(
+            intervals.maxHeartRate.value,
+            intervals.restingHeartRate.value,
+            timestamps::dayNumber,
+        )
         return TodayUiState(
             grip = grip.takeIf { it.chronic > 0 },
-            readiness = readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber),
+            readiness = readiness(sessions, grappling, workouts.efforts, grip, now, timestamps::dayNumber, heart),
             last = last,
             lastWhen = last?.finishedAtEpochMillis?.let { at ->
                 if (timestamps.dayNumber(at) == today) timestamps.time(at) else timestamps.date(at)

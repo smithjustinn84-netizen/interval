@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.Constraints
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
@@ -56,6 +57,7 @@ import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -85,7 +87,9 @@ import dev.justinsmith.interval.workout.resources.summary_week_count
 import dev.justinsmith.interval.workout.resources.summary_week_of_goal
 import dev.justinsmith.interval.workout.resources.workout_done
 import dev.justinsmith.interval.workout.resources.workout_ended
+import dev.justinsmith.interval.workout.resources.workout_heart_load
 import dev.justinsmith.interval.workout.resources.workout_heart_rate
+import dev.justinsmith.interval.workout.resources.workout_heart_recovery
 import dev.justinsmith.interval.workout.resources.workout_repeat
 import dev.justinsmith.interval.workout.resources.workout_save_preset
 import dev.justinsmith.interval.workout.resources.workout_saved
@@ -344,7 +348,7 @@ private fun SummaryDetails(
                 }
             }
         }
-        HeartRateLine(state.heartRate, state.heartRateSamples, state.maxHeartRate)
+        HeartRateLine(state.heartRate, state.heartRateSamples, state.maxHeartRate, state.recovery, state.heartLoad)
         AnimatedVisibility(entrance, enter = risingEnter(Motion.STAGGER_MILLIS * SAVED_STEP)) {
             Row(
                 Modifier.padding(top = Spacing.space20),
@@ -396,7 +400,13 @@ private fun SummaryDetails(
  * it arrives after the rest. One line, not a row of tiles, so "How was it?" still fits above the actions on a phone.
  */
 @Composable
-private fun ColumnScope.HeartRateLine(heartRate: HeartRate?, samples: List<Int>?, maxBpm: Int) {
+private fun ColumnScope.HeartRateLine(
+    heartRate: HeartRate?,
+    samples: List<Int>?,
+    maxBpm: Int,
+    recovery: Recovery?,
+    load: Int?,
+) {
     AnimatedVisibility(heartRate != null, enter = risingEnter()) {
         val shown = heartRate ?: return@AnimatedVisibility
         Column(
@@ -413,6 +423,17 @@ private fun ColumnScope.HeartRateLine(heartRate: HeartRate?, samples: List<Int>?
             if (!samples.isNullOrEmpty()) {
                 HeartRateChart(samples, maxBpm = maxBpm, onWorkoutGround = true)
                 ZoneBreakdown(samples, maxBpm = maxBpm, onWorkoutGround = true)
+            }
+            val read = listOfNotNull(
+                recovery?.let { stringResource(Res.string.workout_heart_recovery, it.average, it.seconds) },
+                load?.let { stringResource(Res.string.workout_heart_load, it) },
+            )
+            if (read.isNotEmpty()) {
+                JoinedText(
+                    read.joinToString(JOINED),
+                    style = IntervalTheme.type.meta,
+                    color = IntervalTheme.workout.onGroundDim,
+                )
             }
         }
     }
@@ -616,3 +637,6 @@ internal fun shapeText(state: WorkoutUiState): String = stringResource(
     presetNameOrCustom(state.presetName),
     workoutDescription(state.config),
 )
+
+/** How the heart rate's two readings are joined on one line, as `common_joined` joins. */
+private const val JOINED = " · "

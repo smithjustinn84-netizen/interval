@@ -100,7 +100,7 @@ private fun StatusPill(text: String, onWorkoutGround: Boolean, modifier: Modifie
 
 @Composable
 private fun ReadingPill(bpm: Int, maxBpm: Int, onWorkoutGround: Boolean, modifier: Modifier = Modifier) {
-    val zone = heartRateZone(bpm, maxBpm)
+    val zone = heartRateZone(bpm, maxBpm, LocalRestingHeartRate.current)
     val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
     val zoneColor by animateColorAsState(
         zones.of(zone),
@@ -143,7 +143,7 @@ private fun ReadingPill(bpm: Int, maxBpm: Int, onWorkoutGround: Boolean, modifie
 }
 
 @Composable
-private fun ZoneTag(zone: HeartRateZone, color: Color, onWorkoutGround: Boolean) {
+internal fun ZoneTag(zone: HeartRateZone, color: Color, onWorkoutGround: Boolean) {
     val onFill = if (onWorkoutGround) IntervalTheme.workout.onFill(color) else Color.White
     Text(
         stringResource(Res.string.heart_rate_zone_short, zone.number),

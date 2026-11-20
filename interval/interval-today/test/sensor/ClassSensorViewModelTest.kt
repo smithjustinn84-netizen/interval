@@ -12,6 +12,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.model.ClassSample
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
@@ -29,7 +30,34 @@ class ClassSensorViewModelTest : MainDispatcherTest() {
     private val repository = storage.repository()
     private val sensor = RecordingClassSensor(SensorStatus.Paired(SENSOR_NAME), now = { started })
 
-    private val viewModel by lazy { ClassSensorViewModel(sensor, repository.history, FixedTimestampFormatter) }
+    private var now = started
+    private val viewModel by lazy {
+        ClassSensorViewModel(sensor, repository.history, FixedTimestampFormatter, repository.plans, { now })
+    }
+
+    @Test
+    fun `a paired sensor low on battery says so on its card`() {
+        sensor.battery.value = 14
+        assertEquals(SensorCard.Ready(SENSOR_NAME, lowBattery = 14), viewModel.state.value.card)
+
+        sensor.battery.value = 82
+        assertEquals(SensorCard.Ready(SENSOR_NAME), viewModel.state.value.card)
+    }
+
+    @Test
+    fun `a class synced a day late is logged as the sport planned on its day`() = runTest {
+        repository.plans.planOnce(PlanWorkout.SportDay(Sport.Climbing), TODAY)
+        sensor.status.value = SensorStatus.Recording(SENSOR_NAME, started)
+        sensor.recorded = sparringRecording(rounds = 2, startedAtEpochMillis = started)
+        // Synced the day after, from a day whose sport is BJJ.
+        now = noonOf(TODAY + 1)
+
+        viewModel.sync(Sport.Bjj)
+
+        assertEquals(ClassSensorEvent.Synced(started), viewModel.events.first())
+        assertEquals(Sport.Climbing, repository.history.classes.value.single().sport)
+        assertEquals(TODAY, repository.history.classes.value.single().epochDay)
+    }
 
     @Test
     fun `with no sensor paired there is no card`() {

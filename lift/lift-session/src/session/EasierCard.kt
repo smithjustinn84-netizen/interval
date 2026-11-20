@@ -15,6 +15,7 @@ import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.session_easier_conditioning
 import dev.justinsmith.lift.session.resources.session_easier_grip
 import dev.justinsmith.lift.session.resources.session_easier_hard
+import dev.justinsmith.lift.session.resources.session_easier_heart
 import dev.justinsmith.lift.session.resources.session_easier_lighter_day
 import dev.justinsmith.lift.session.resources.session_easier_mat
 import dev.justinsmith.lift.session.resources.session_easier_title
@@ -39,6 +40,7 @@ internal fun EasierCard(offer: EasierOffer, onUse: () -> Unit, modifier: Modifie
             val why = when (offer.reason) {
                 ReadinessReason.HardSession -> Res.string.session_easier_hard
                 ReadinessReason.HardConditioning -> Res.string.session_easier_conditioning
+                ReadinessReason.HeartLoad -> Res.string.session_easier_heart
                 ReadinessReason.Mat -> Res.string.session_easier_mat
                 ReadinessReason.Grip -> Res.string.session_easier_grip
             }

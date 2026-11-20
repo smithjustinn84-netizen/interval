@@ -15,6 +15,7 @@ import dev.justinsmith.interval.today.resources.notice_sensor_failed
 import dev.justinsmith.interval.today.resources.notice_sensor_no_access
 import dev.justinsmith.interval.today.resources.notice_sensor_not_found
 import dev.justinsmith.interval.today.resources.notice_sensor_nothing
+import dev.justinsmith.interval.today.resources.sensor_battery_low
 import dev.justinsmith.interval.today.resources.sensor_ready_text
 import dev.justinsmith.interval.today.resources.sensor_ready_title
 import dev.justinsmith.interval.today.resources.sensor_record
@@ -64,6 +65,13 @@ fun ClassSensorCard(
                 modifier = Modifier.semantics { heading() },
             )
             Text(text, style = IntervalTheme.type.meta, color = palette.textDim)
+            (card as? SensorCard.Ready)?.lowBattery?.let { battery ->
+                Text(
+                    stringResource(Res.string.sensor_battery_low, battery),
+                    style = IntervalTheme.type.meta,
+                    color = palette.text,
+                )
+            }
             when (card) {
                 is SensorCard.Ready -> SecondaryButton(
                     if (busy) working else stringResource(Res.string.sensor_record),
@@ -98,6 +106,12 @@ private fun ClassSensorCardPreview() {
     IntervalTheme {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             ClassSensorCard(SensorCard.Ready("Polar Sense 1A2B3C4D"), busy = false, onRecord = {}, onSync = {})
+            ClassSensorCard(
+                SensorCard.Ready("Polar H10 1A2B3C4D", lowBattery = 14),
+                busy = false,
+                onRecord = {},
+                onSync = {},
+            )
             ClassSensorCard(SensorCard.Recording("6:02 PM"), busy = false, onRecord = {}, onSync = {})
             ClassSensorCard(SensorCard.Recording("6:02 PM"), busy = true, onRecord = {}, onSync = {})
         }

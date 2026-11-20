@@ -1,8 +1,12 @@
 package dev.justinsmith.interval.data
 
+import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.SportClass
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.heartLoad
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.matching
@@ -28,20 +32,27 @@ class RepositoryIntervalActivity(
     private val presetStore: PresetStore,
     scope: CoroutineScope,
 ) : IntervalActivity {
-    override val workouts: StateFlow<List<IntervalWorkout>> = combine(historyStore.history, presetStore.presets) {
-            history,
-            presets,
-        ->
-        history.map { it.asIntervalWorkout(presets) }
-    }.stateIn(
-        scope,
-        SharingStarted.Eagerly,
-        historyStore.history.value.map { it.asIntervalWorkout(presetStore.presets.value) },
-    )
+    override val workouts: StateFlow<List<IntervalWorkout>> =
+        combine(historyStore.history, presetStore.presets, settingsStore.appSettings) { history, presets, app ->
+            history.map { it.asIntervalWorkout(presets, app.body) }
+        }.stateIn(
+            scope,
+            SharingStarted.Eagerly,
+            historyStore.history.value.map {
+                it.asIntervalWorkout(presetStore.presets.value, settingsStore.appSettings.value.body)
+            },
+        )
 
-    override val sportDays: StateFlow<List<SportDay>> = historyStore.sportDays
-        .map { days -> days.map { it.asSportDay() } }
-        .stateIn(scope, SharingStarted.Eagerly, historyStore.sportDays.value.map { it.asSportDay() })
+    override val sportDays: StateFlow<List<SportDay>> =
+        combine(historyStore.sportDays, historyStore.classes, settingsStore.appSettings) { days, classes, app ->
+            days.map { it.asSportDay(classes, app.body) }
+        }.stateIn(
+            scope,
+            SharingStarted.Eagerly,
+            historyStore.sportDays.value.map {
+                it.asSportDay(historyStore.classes.value, settingsStore.appSettings.value.body)
+            },
+        )
 
     override val weeklyGoal: StateFlow<Int?> = settingsStore.appSettings
         .map { it.weeklyGoal }
@@ -59,6 +70,10 @@ class RepositoryIntervalActivity(
         .map { it.body.maxHeartRate }
         .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.maxHeartRate)
 
+    override val restingHeartRate: StateFlow<Int?> = settingsStore.appSettings
+        .map { it.body.restingHeartRate }
+        .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.restingHeartRate)
+
     override val heartRateAlerts: StateFlow<Boolean> = settingsStore.cueSettings
         .map { it.heartRateAlerts && it.sound }
         .stateIn(
@@ -72,14 +87,32 @@ class RepositoryIntervalActivity(
         settingsStore.appSettings.value.body.calories(elapsedSeconds, 0, Activity.Kettlebell)
 }
 
-private fun LoggedSport.asSportDay() = SportDay(epochDay, grappling = sport == Sport.Bjj)
+/**
+ * The day as Lift reads it, with what a sensor recorded of its classes of the sport: the seconds their rounds came
+ * to and what they cost the heart, by the zones [body] sets.
+ */
+private fun LoggedSport.asSportDay(classes: List<SportClass>, body: BodySettings): SportDay {
+    val recorded = classes.filter { it.epochDay == epochDay && it.sport == sport }
+    val load = recorded.sumOf { each ->
+        heartLoad(each.samples.map { it.bpm }, body.maxHeartRate ?: DEFAULT_MAX_BPM, restingBpm = body.restingHeartRate)
+    }
+    return SportDay(
+        epochDay,
+        grappling = sport == Sport.Bjj,
+        matSeconds = recorded.takeIf { it.isNotEmpty() }?.sumOf { each -> each.rounds.sumOf { it.seconds } },
+        heartLoad = load.takeIf { it > 0 },
+    )
+}
 
 // Every stored workout has an id; one without is never in the history flow, but it still needs a key.
-private fun HistoryEntry.asIntervalWorkout(presets: List<Preset>) = IntervalWorkout(
+private fun HistoryEntry.asIntervalWorkout(presets: List<Preset>, body: BodySettings) = IntervalWorkout(
     id?.toString().orEmpty(),
     finishedAtEpochMillis,
     elapsedSeconds,
     snatches?.let { IntervalSnatches(it.perSet, it.bellKg, workEnds(), presets.matching(config)?.name) },
     // The two sides' scales are one, 1 to 5, each kept by its level.
     effort?.let { felt -> PerceivedEffort.entries.first { it.level == felt.level } },
+    heartRateSamples
+        ?.let { heartLoad(it, body.maxHeartRate ?: DEFAULT_MAX_BPM, restingBpm = body.restingHeartRate) }
+        ?.takeIf { it > 0 },
 )

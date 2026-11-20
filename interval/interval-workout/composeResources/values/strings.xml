@@ -114,6 +114,10 @@
     <string name="workout_stat_rounds">Rounds</string>
     <string name="workout_stat_calories">kcal</string>
     <string name="workout_heart_rate">Heart rate %1$d avg · %2$d peak</string>
+    <string name="workout_heart_recovery">Down %1$d in %2$d s after work</string>
+    <string name="workout_heart_load">Heart load %1$d</string>
+    <string name="workout_heart_show_trace">Show the heart rate so far</string>
+    <string name="workout_heart_show_scale">Show the zones</string>
     <string name="workout_stat_rounds_value">%1$d/%2$d</string>
     <string name="workout_saved">Saved to your log</string>
     <string name="summary_how_was_it">How was it?</string>

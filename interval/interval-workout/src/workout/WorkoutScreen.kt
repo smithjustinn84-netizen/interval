@@ -61,7 +61,6 @@ import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
-import dev.justinsmith.interval.ui.HeartZoneScale
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -106,6 +105,8 @@ internal class WorkoutActions(
     /** A round of the time cap is done, and the last one taken back. */
     val onFinishRound: () -> Unit = {},
     val onUndoRound: () -> Unit = {},
+    /** Turns the heart rate under the ring between the zones' scale and its trace so far. */
+    val onToggleHeart: () -> Unit = {},
 )
 
 /**
@@ -137,6 +138,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
         onAddTime = viewModel::addTime,
         onFinishRound = viewModel::roundDone,
         onUndoRound = viewModel::undoRound,
+        onToggleHeart = viewModel::toggleHeartTrace,
         onRestart = viewModel::restart,
         onEndEarly = viewModel::endEarly,
         onSavePreset = viewModel::saveAsPreset,
@@ -185,6 +187,7 @@ fun WorkoutScreen(
     reflection: SummaryReflection = SummaryReflection(),
     onFinishRound: () -> Unit = {},
     onUndoRound: () -> Unit = {},
+    onToggleHeart: () -> Unit = {},
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
     // A flow's move read on its page while the workout runs on.
@@ -217,6 +220,7 @@ fun WorkoutScreen(
         onOpenMove = { readingMove = true },
         onFinishRound = onFinishRound,
         onUndoRound = onUndoRound,
+        onToggleHeart = onToggleHeart,
     )
     BoxWithConstraints(
         modifier
@@ -370,11 +374,7 @@ private fun PortraitWorkout(
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 RingReadout(state, progress, accent, diameter, Modifier.laneRing(anchor))
                 TapHint(state, Modifier.padding(top = Spacing.space12))
-                HeartZoneScale(
-                    state.liveHeartRate,
-                    Modifier.padding(top = Spacing.space12),
-                    maxBpm = state.maxHeartRate,
-                )
+                WorkoutHeart(state, actions.onToggleHeart, Modifier.padding(top = Spacing.space12))
             }
         }
         val cap = state.cap
@@ -446,6 +446,7 @@ private fun LandscapeWorkout(
                 Modifier.fillMaxWidth(),
                 ringModifier = Modifier.laneRing(anchor),
                 onOpenMove = actions.onOpenMove,
+                onToggleHeart = actions.onToggleHeart,
             )
         }
         Column(
@@ -513,7 +514,7 @@ private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {
 }
 
 @Composable
-private fun WorkoutPreview(state: WorkoutUiState, progress: Float = 0f) {
+internal fun WorkoutPreview(state: WorkoutUiState, progress: Float = 0f) {
     IntervalTheme {
         WorkoutScreen(
             state = state,
@@ -530,7 +531,7 @@ private fun WorkoutPreview(state: WorkoutUiState, progress: Float = 0f) {
     }
 }
 
-private val previewWork = WorkoutEngine.tick(
+internal val previewWork = WorkoutEngine.tick(
     WorkoutEngine.advance(WorkoutEngine.start(IntervalConfig()).state).state,
     PREVIEW_INTO_WORK_MILLIS,
 ).state

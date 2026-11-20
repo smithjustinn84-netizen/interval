@@ -52,16 +52,28 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   switch from Settings, the stream is held by its users (a workout's and a session's, neither ending the other's),
   a strap that reads no heart shows as no signal, and a dropped connection is tried again (`PolarHeartStream`, a
   wait of 5 s growing to 30). The reconnecting and the contact flag have met no sensor. *Brings it in:* the H10.
-- **Live heart rate, still left.** A workout restored after its process was killed starts its samples again
-  (`sampler.reset()`; the samples would need saving with the workout's progress). A class synced a day late is
-  logged as today's sport (`plan.classSport`), on the right day. Lift's zone change has no haptic, as the
-  workout's has under Vibrate.
+- **The heart rate read, on a real strap** (2026-11-19). The trace under the ring, Lift's heart card and its
+  rest's "ready", recovery and heart load on the summary and in the Log, the zones by heart-rate reserve, the
+  sensor's battery, and heart load in readiness are all built against fakes. None has met a sensor: the battery
+  (`FEATURE_BATTERY_INFO`, `batteryLevelReceived`, whether an H10 and a Verity Sense both say it on connecting),
+  the trace over a real workout, and whether "ready" at zone 2 comes at a sensible moment between heavy sets.
+  The constants are first readings to tune on real weeks: `heavyHeartDay`'s half again a usual day and its floor
+  of 60, `Recovery`'s fading at three quarters, `USUAL_MAT_SECONDS`. *Brings it in:* a sensor in hand, then a few
+  weeks of its days.
+- **Live heart rate, still left.** A Lift session's samples are held by its page's ViewModel, so a process killed
+  under it loses them (the workout's are saved with its progress; a session's would go on its `timer` row or a
+  column of its own). A workout recorded before 2026-11-19 keeps samples that start at the sensor's first
+  reading rather than its own start, so its recovery in the Log may be read a few seconds off. Recovery is read
+  for Lift nowhere but live in the rest. Lift's zone change has no haptic, as the workout's has under Vibrate.
+  No acceptance spec drives a workout or a session with a sensor: the fakes can (`FakeLiveHeartRate`).
 - **Round tags and trends.** A partner's level, how the round went and the position it stuck in, a tap or two a
   round on the class's page, then the rounds over weeks by tag. Needs the rounds stored once tagged (today they
   are found afresh from the samples at each read, so a retuned detector would move the tags' rounds).
 - **Composure: heart rate against movement.** Each sample keeps how much the arm moved, so a round can be read as
   a scramble, a grind or easy work without a second sync. Wants real classes first, to see what the armband's
   accelerometer tells apart.
+- **A resting heart rate taken by the strap.** Settings takes the number typed; an H10 worn for a minute on
+  waking could read it, and offer it as the weight sheet offers Health Connect's weight.
 - **A morning reading into readiness.** Two minutes seated against a week's baseline, as a fourth reason beside
   `ReadinessReason`'s three (`readiness(...)` takes its inputs as parameters; `CoachLine` words each reason). An
   optical armband's beat-to-beat intervals are only good at rest and still; a chest strap's are the ones to trust.

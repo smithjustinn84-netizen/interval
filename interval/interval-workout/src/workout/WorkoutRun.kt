@@ -11,8 +11,12 @@ import dev.justinsmith.interval.model.bestRounds
 import dev.justinsmith.interval.model.roundsIn
 import dev.justinsmith.interval.model.scores
 import dev.justinsmith.interval.model.withoutLastIn
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.HR_SAMPLE_SECONDS
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.WorkoutStatus
+import dev.justinsmith.interval.platform.heartLoad
+import dev.justinsmith.interval.platform.recovery
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
@@ -66,6 +70,11 @@ data class WorkoutRun(
     val heartRate: HeartRate? = null,
     /** 5-second BPM samples recorded live by the paired sensor during this run. */
     val heartRateSamples: List<Int>? = null,
+    /**
+     * The samples so far while it runs, one every five seconds from [startedAt] (0 where none was read), for the
+     * trace under the ring and for a process killed under it to come back to; empty with no sensor.
+     */
+    val liveSamples: List<Int> = emptyList(),
     /** Read once at start, like the configuration: a setting changed mid-workout applies next time. */
     val keepScreenOn: Boolean = false,
     val body: BodySettings = BodySettings(),
@@ -135,7 +144,38 @@ data class WorkoutRun(
         note = note,
         snatches = snatches,
         capRounds = capRounds,
+        heartRateSamples = liveSamples,
     )
+
+    /**
+     * Each work interval so far as a share of [liveSamples]' length, for the trace to shade: the stretches of work
+     * closed, and the one under way up to the last sample.
+     */
+    val liveMarks: List<ClosedFloatingPointRange<Float>>
+        get() {
+            val length = liveSamples.size * HR_SAMPLE_SECONDS * MILLIS_PER_SECOND
+            if (length <= 0) return emptyList()
+            fun share(epochMillis: Long) = ((epochMillis - startedAt).toFloat() / length).coerceIn(0f, 1f)
+            val closed = spans.filter { it.phase == Phase.Work }
+                .map { share(it.startEpochMillis)..share(it.endEpochMillis) }
+            val open = if (openPhase == Phase.Work && !over) listOf(share(openSince)..1f) else emptyList()
+            return (closed + open).filter { it.endInclusive > it.start }
+        }
+
+    /**
+     * Each rest of its course as the seconds from [startedAt] it ran over, first to last: from a stretch of work's
+     * end to the next one's start, a pause between them part of it. The last work's has none: nothing shows it
+     * was rested through.
+     */
+    val rests: List<IntRange>
+        get() = spans.zipWithNext().mapNotNull { (work, next) ->
+            if (work.phase != Phase.Work || next.phase == Phase.Work) return@mapNotNull null
+            val resumed = spans.firstOrNull { it.phase == Phase.Work && it.startEpochMillis >= next.startEpochMillis }
+                ?: return@mapNotNull null
+            val from = ((next.startEpochMillis - startedAt) / MILLIS_PER_SECOND).toInt()
+            val to = ((resumed.startEpochMillis - startedAt) / MILLIS_PER_SECOND).toInt()
+            (from until to).takeIf { !it.isEmpty() }
+        }
 
     /** The rounds done in the time cap it is in; null outside one. */
     val roundsInCap: Int? get() = if (engine.shape.capped) capRounds.roundsIn(engine.block) else null
@@ -208,8 +248,17 @@ data class WorkoutRun(
         ).copy(
             heartRate = heartRate,
             heartRateSamples = heartRateSamples,
-            maxHeartRate = body.maxHeartRate ?: dev.justinsmith.interval.platform.DEFAULT_MAX_BPM,
+            maxHeartRate = maxHeartRate,
+            liveSamples = liveSamples,
+            liveMarks = liveMarks,
+            recovery = heartRateSamples?.let { recovery(it, rests) },
+            heartLoad = heartRateSamples
+                ?.let { heartLoad(it, maxHeartRate, restingBpm = body.restingHeartRate) }
+                ?.takeIf { it > 0 },
         ).withCaps(bests)
+
+    /** The max heart rate its zones go by: the one set, or the default. */
+    val maxHeartRate: Int get() = body.maxHeartRate ?: DEFAULT_MAX_BPM
 
     /**
      * The most rounds done in each capped block (0-based) of a workout of this shape in [history], its own entry left
@@ -267,6 +316,7 @@ data class WorkoutRun(
                 note = saved.note,
                 snatches = saved.snatches,
                 capRounds = saved.capRounds,
+                liveSamples = saved.heartRateSamples,
                 keepScreenOn = keepScreenOn,
                 body = body,
             )

@@ -96,7 +96,8 @@ import org.jetbrains.compose.resources.stringResource
 /**
  * An EMOM, in the workout's look: the phase colour on the band, the ring (the minute going by),
  * the phase word and Set done. Count-in amber, work red until the set is done, then rest green until the
- * next minute. A haptic marks each change; the beeps come from the view model.
+ * next minute. A haptic marks each change; the beeps come from the view model. [heart] is the live heart rate,
+ * at the end of the top row while a sensor is in use.
  */
 @Composable
 fun EmomScreen(
@@ -106,6 +107,7 @@ fun EmomScreen(
     onStop: () -> Unit,
     modifier: Modifier = Modifier,
     progress: () -> Float = { state.minuteProgress },
+    heart: @Composable () -> Unit = {},
 ) {
     val colors = IntervalTheme.workout
     val phaseColor = when (state.phase) {
@@ -148,9 +150,9 @@ fun EmomScreen(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeEmom(run, state, color, progress, sideWidth, onFinishSet, requestStop)
+            LandscapeEmom(run, state, color, progress, sideWidth, onFinishSet, requestStop, heart)
         } else {
-            PortraitEmom(run, state, color, progress, onFinishSet, requestStop, roomy)
+            PortraitEmom(run, state, color, progress, onFinishSet, requestStop, roomy, heart)
         }
     }
     if (confirmingStop && state.phase != EmomPhase.Done) {
@@ -207,6 +209,7 @@ private fun PortraitEmom(
     onFinishSet: () -> Unit,
     onStop: () -> Unit,
     roomy: Boolean,
+    heart: @Composable () -> Unit,
 ) {
     Column(
         Modifier.widthIn(
@@ -221,6 +224,7 @@ private fun PortraitEmom(
         ) {
             StopPill(onStop)
             MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+            heart()
         }
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
@@ -262,6 +266,7 @@ private fun LandscapeEmom(
     sideWidth: Dp,
     onFinishSet: () -> Unit,
     onStop: () -> Unit,
+    heart: @Composable () -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -300,6 +305,7 @@ private fun LandscapeEmom(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     StopPill(onStop)
                     MinuteText(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+                    heart()
                 }
                 Spacer(Modifier.weight(1f))
                 PhaseWord(state, color)

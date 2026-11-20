@@ -19,6 +19,7 @@ import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.ConfirmDialog
+import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.fadeThrough
 import dev.justinsmith.lift.data.ExerciseFilterStore
@@ -118,6 +119,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 onFinishSet = timers::emomSetDone,
                 onStop = timers::stopEmom,
                 progress = remember(clocks) { heldShare { clocks.value.emomState?.minuteProgress } },
+                heart = { TimerHeart(readClocks) },
             )
 
             is SessionPage.Density -> DensityScreen(
@@ -126,6 +128,7 @@ fun SessionRoute(onExit: () -> Unit) {
                 onFinishRound = timers::densityRoundDone,
                 onStop = timers::stopDensity,
                 progress = remember(clocks) { heldShare { clocks.value.densityState?.progress } },
+                heart = { TimerHeart(readClocks) },
             )
 
             SessionPage.Logging -> SessionScreen(state, readClocks, actions)
@@ -237,4 +240,11 @@ internal fun LeaveDialog(running: StringResource?, hasSets: Boolean, onLeave: ()
         onConfirm = onLeave,
         onDismiss = onDismiss,
     )
+}
+
+/** The live heart rate on a timer's page, the session's own being under it: the badge, on the workout's ground. */
+@Composable
+private fun TimerHeart(clocks: () -> SessionClocks) {
+    val now = clocks()
+    HeartBeatBadge(now.liveHeartRate, maxBpm = now.maxHeartRate)
 }

@@ -644,6 +644,34 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   key, by the moment it started) in the Log: `ClassDetailScreen`, the heart rate drawn with a band a round
   (`HeartChart`) and a row a round. In the Log a sport's row with a class says its rounds and opens the page
   (`sportLines`, `ClassRow`); deleting the recording leaves the day logged.
+- **The heart rate, read**: what a sensor's samples say is worked out, never stored. A workout's and a session's
+  are five-second averages from the moment it began (`HeartRateSampler.restore(origin, kept)`: a sample's place
+  says when it was, 0 until the sensor first read), kept on the run as they come (`WorkoutRun.liveSamples`, saved
+  in `WorkoutProgress.heartRateSamples` at each change of course, so a restored workout goes on from them;
+  `SessionClocks.liveSamples` for Lift, which a killed process loses). The zones are a share of the max heart
+  rate, or once `BodySettings.restingHeartRate` is set of the reserve between it and the max (`heartRateZone(bpm,
+  maxBpm, restingBpm)`, `zoneCutoff`, core-platform's `LiveHeartRate.kt`): the maths takes the resting rate as a
+  parameter, and everything drawn reads it from `LocalRestingHeartRate` (core, provided once in `AppContent`),
+  beside the `maxBpm` it is handed. `HeartInsights.kt` (core-platform, pure) holds the rest: `recovery(samples,
+  rests)`, the drop over the minute (or half minute) after each work, with `Recovery.trend` (holding, or fading
+  when the last rest brought it down markedly less than the first); `heartLoad`, minutes in each zone times the
+  zone's number; `peakAbove`, a peak over the set max, which the Log page offers as the new max
+  (`WorkoutDetailViewModel.useMaxHeartRate`). The rests come from the run's own course on the summary
+  (`WorkoutRun.rests`, a pause between two works part of the rest) and from `HistoryEntry.rests()` in the Log, which
+  answers only for a workout run straight through (no pause, skip, added time or early end), since nothing else
+  says where a stored one's rests fell. Mid-workout the zone scale under the ring turns to the trace so far at a
+  tap (`WorkoutHeart`, `LiveHeartTrace`, work intervals shaded by `WorkoutRun.liveMarks`); Lift shows the heart on
+  a card under its tiles (`HeartCard`), a badge on the EMOM and density pages, and the rest band says how it
+  stands (`RestHeart`: high, easing, ready at zone 2 or under, which advises and never moves the clock). A class's
+  page draws the same `HeartRateChart` (its `marks` the rounds) and `ZoneBreakdown`. Lift's readiness takes what
+  each day cost the heart (`HeartLoad`, `heavyHeartDay`: today or yesterday half again a usual training day's of
+  the four weeks before, `ReadinessReason.HeartLoad`, after what was said of a day): the interval side's through
+  `IntervalWorkout.heartLoad` and `SportDay.heartLoad` (`heartLoads`, lift-api; the app's adapter works them
+  out), Lift's own by `List<LiftSession>.heartLoads` (lift-data, which has core-platform; lift-domain has
+  nothing). A recorded class weighs on the grip by the time its rounds came to (`SportDay.matSeconds`,
+  `grapplingGripLoad`: half to twice the flat 300). The sensor's battery is `ClassSensor.battery`, heard as the
+  sensor connects and kept between (`FEATURE_BATTERY_INFO`), on Settings' row and, under
+  `LOW_SENSOR_BATTERY`, on Today's card.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

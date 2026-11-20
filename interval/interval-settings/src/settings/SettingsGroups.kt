@@ -14,6 +14,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.LOW_SENSOR_BATTERY
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.settings.resources.Res
@@ -60,7 +61,13 @@ import dev.justinsmith.interval.settings.resources.settings_plan
 import dev.justinsmith.interval.settings.resources.settings_plan_open
 import dev.justinsmith.interval.settings.resources.settings_reminder
 import dev.justinsmith.interval.settings.resources.settings_reminder_hint
+import dev.justinsmith.interval.settings.resources.settings_resting_hr
+import dev.justinsmith.interval.settings.resources.settings_resting_hr_edit
+import dev.justinsmith.interval.settings.resources.settings_resting_hr_hint
+import dev.justinsmith.interval.settings.resources.settings_resting_hr_unset
 import dev.justinsmith.interval.settings.resources.settings_sensor
+import dev.justinsmith.interval.settings.resources.settings_sensor_battery
+import dev.justinsmith.interval.settings.resources.settings_sensor_battery_low
 import dev.justinsmith.interval.settings.resources.settings_sensor_forget
 import dev.justinsmith.interval.settings.resources.settings_sensor_looking
 import dev.justinsmith.interval.settings.resources.settings_sensor_pair
@@ -121,6 +128,8 @@ class SensorRow(
     val looking: Boolean = false,
     val onPair: () -> Unit = {},
     val onForget: () -> Unit = {},
+    /** The sensor's battery as last heard, a percentage; null until it has said. */
+    val battery: Int? = null,
 )
 
 /**
@@ -136,6 +145,7 @@ internal fun settingsGroups(
     onToggleKeepScreenOn: () -> Unit,
     onEditWeight: () -> Unit,
     onEditMaxHeartRate: () -> Unit,
+    onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
     onExport: () -> Unit,
@@ -166,7 +176,7 @@ internal fun settingsGroups(
     },
     SettingsGroup("calories") {
         GroupLabel(stringResource(Res.string.settings_calories))
-        CaloriesCard(state, onEditWeight, onEditMaxHeartRate, onSetEffort)
+        CaloriesCard(state, onEditWeight, onEditMaxHeartRate, onEditRestingHeartRate, onSetEffort)
     },
     // After the calories its weight feeds, and only where the platform has a store.
     SettingsGroup("health") {
@@ -271,7 +281,11 @@ private fun SensorRowContent(sensor: SensorRow, modifier: Modifier = Modifier) {
     when (val status = sensor.status) {
         is SensorStatus.Paired -> LinkRow(
             status.name,
-            stringResource(Res.string.settings_sensor_paired_hint),
+            when (val battery = sensor.battery) {
+                null -> stringResource(Res.string.settings_sensor_paired_hint)
+                in 0 until LOW_SENSOR_BATTERY -> stringResource(Res.string.settings_sensor_battery_low, battery)
+                else -> stringResource(Res.string.settings_sensor_battery, battery)
+            },
             onClick = sensor.onForget,
             modifier = modifier,
             onClickLabel = stringResource(Res.string.settings_sensor_forget),
@@ -449,6 +463,7 @@ private fun CaloriesCard(
     state: SettingsUiState,
     onEditWeight: () -> Unit,
     onEditMaxHeartRate: () -> Unit,
+    onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -480,6 +495,20 @@ private fun CaloriesCard(
             },
             onClick = onEditMaxHeartRate,
             onClickLabel = stringResource(Res.string.settings_max_hr_edit),
+        )
+        RowDivider()
+        val resting = state.body.restingHeartRate
+        ValueRow(
+            stringResource(Res.string.settings_resting_hr),
+            stringResource(Res.string.settings_resting_hr_hint),
+            value = if (resting == null) {
+                stringResource(Res.string.settings_resting_hr_unset)
+            } else {
+                stringResource(Res.string.settings_max_hr_value, resting)
+            },
+            onClick = onEditRestingHeartRate,
+            onClickLabel = stringResource(Res.string.settings_resting_hr_edit),
+            dim = resting == null,
         )
         RowDivider()
         ChoiceRow(
@@ -521,6 +550,8 @@ private fun SensorGroupPreview() {
                 SensorRow(SensorStatus.Unpaired),
                 SensorRow(SensorStatus.Unpaired, looking = true),
                 SensorRow(SensorStatus.Paired("Polar Sense 1A2B3C4D")),
+                SensorRow(SensorStatus.Paired("Polar H10 1A2B3C4D"), battery = 82),
+                SensorRow(SensorStatus.Paired("Polar H10 1A2B3C4D"), battery = 14),
                 SensorRow(SensorStatus.Recording("Polar H10 1A2B3C4D", sinceEpochMillis = 0)),
             ).forEach { sensor -> ListCard { SensorRowContent(sensor) } }
         }

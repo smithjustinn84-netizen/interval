@@ -12,6 +12,7 @@ import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.matSeconds
 import dev.justinsmith.lift.data.snatchSets
 import dev.justinsmith.lift.domain.ABC_MINUTES
 import dev.justinsmith.lift.domain.BuiltInExercise
@@ -115,12 +116,9 @@ class FinishSession(
         val lifted = sessionStore.sessions.value.flatMap { it.sets }
         val today = timestamps.dayNumber(done.finishedAtEpochMillis ?: clock.nowMillis())
         // The weeks before this one: the session is not yet among the finished.
-        val grip = gripLoad(
-            lifted + alongside.sets,
-            intervals.sportDays.value.filter { it.grappling }.map { it.epochDay },
-            today,
-            timestamps::dayNumber,
-        )
+        val mat = intervals.sportDays.value.filter { it.grappling }
+        val grip =
+            gripLoad(lifted + alongside.sets, mat.map { it.epochDay }, today, timestamps::dayNumber, mat.matSeconds)
         current.value = Finished(
             done,
             newRecords(lifted, done),

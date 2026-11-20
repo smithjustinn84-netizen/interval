@@ -84,7 +84,16 @@ class SessionViewModel(
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val sampler = HeartRateSampler()
-    private var zoneTracker = ZoneTracker(maxBpm = intervals.maxHeartRate.value ?: DEFAULT_MAX_BPM)
+
+    /** The session's heart rate so far, a sample every five seconds from its start, for the card's line. */
+    private val liveSamples = MutableStateFlow<List<Int>>(emptyList())
+    private var zoneTracker = zoneTracker()
+
+    /** A tracker of the zones as Settings has them now: by the max, and by the resting rate when one is set. */
+    private fun zoneTracker() = ZoneTracker(
+        maxBpm = intervals.maxHeartRate.value ?: DEFAULT_MAX_BPM,
+        restingBpm = intervals.restingHeartRate.value,
+    )
 
     /**
      * The sets of the sessions finished before this one, as they are stored, not as when it opened: flattened off the
@@ -198,7 +207,18 @@ class SessionViewModel(
 
     /** The clocks, read at each tick of the session's own and of its timers, plus live heart rate. */
     val clocks: StateFlow<SessionClocks> =
-        combine(sessionStore.active, ticks, timers.state, liveHeartRate.reading, intervals.maxHeartRate, ::clocksAt)
+        combine(
+            sessionStore.active,
+            ticks,
+            timers.state,
+            combine(
+                liveHeartRate.reading,
+                intervals.maxHeartRate,
+                liveSamples,
+                intervals.restingHeartRate,
+                ::HeartNow,
+            ),
+        ) { session, now, timing, heart -> clocksAt(session, now, timing, heart) }
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionClocks())
 
@@ -253,13 +273,21 @@ class SessionViewModel(
         // The heart rate is held live only while there is a session to read it for: the stream is the workout's
         // too, and a page come back with no session behind it asks for none.
         viewModelScope.launch {
-            sessionStore.active.map { it != null }.distinctUntilChanged().collect { active ->
-                if (active) liveHeartRate.start(this@SessionViewModel) else liveHeartRate.stop(this@SessionViewModel)
+            sessionStore.active.map { it?.startedAtEpochMillis }.distinctUntilChanged().collect { startedAt ->
+                if (startedAt == null) {
+                    liveHeartRate.stop(this@SessionViewModel)
+                } else {
+                    // Sampled from the session's own start, so a sample's place says when in it it was.
+                    sampler.restore(startedAt)
+                    liveSamples.value = emptyList()
+                    liveHeartRate.start(this@SessionViewModel)
+                }
             }
         }
-        // The zones follow the max heart rate set in Settings, as the interval workout's do.
+        // The zones follow the max and resting heart rates set in Settings, as the interval workout's do.
         viewModelScope.launch {
-            intervals.maxHeartRate.drop(1).collect { zoneTracker = ZoneTracker(maxBpm = it ?: DEFAULT_MAX_BPM) }
+            combine(intervals.maxHeartRate, intervals.restingHeartRate, ::Pair).drop(1)
+                .collect { zoneTracker = zoneTracker() }
         }
         viewModelScope.launch { liveHeartRate.reading.collect(::onHeartRate) }
     }
@@ -269,6 +297,8 @@ class SessionViewModel(
         if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return
         val now = clock.nowMillis()
         sampler.add(reading.bpm, now)
+        // The card's line takes a sample as each begins: every five seconds, not every reading.
+        if (sampler.size != liveSamples.value.size) liveSamples.value = sampler.samples()
         val tone = when (zoneTracker.record(reading.bpm, now)) {
             ZoneTransition.EnteredHigh -> ToneSynth.zoneUp
             ZoneTransition.EnteredRecovery -> ToneSynth.zoneDown

@@ -25,6 +25,7 @@ import androidx.compose.runtime.structuralEqualityPolicy
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.ui.AccentButton
+import dev.justinsmith.interval.ui.HeartCard
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -124,7 +125,8 @@ internal fun SessionLayout(parts: SessionParts, modifier: Modifier = Modifier) {
 
 /**
  * The session's time and weight moved, and from the first set on how long since the last: in one row when
- * [wide]. The rest counts down at the foot ([SessionFoot]), so the tiles keep one shape as it comes and goes.
+ * [wide]; under them the live heart rate on its card ([HeartCard]) while a sensor is in use. The rest counts
+ * down at the foot ([SessionFoot]), so the tiles keep one shape as it comes and goes.
  */
 @Composable
 internal fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, wide: Boolean) {
@@ -146,20 +148,22 @@ internal fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, wi
             StatTile(stringResource(Res.string.session_since_last), since, modifier)
         }
     }
-    if (wide) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            time(Modifier.weight(1f))
-            weight(Modifier.weight(1f))
-            third?.invoke(Modifier.weight(1f))
-        }
-    } else {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        if (wide) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                time(Modifier.weight(1f))
+                weight(Modifier.weight(1f))
+                third?.invoke(Modifier.weight(1f))
+            }
+        } else {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 time(Modifier.weight(1f))
                 weight(Modifier.weight(1f))
             }
             third?.invoke(Modifier.fillMaxWidth())
         }
+        // The heart, while a sensor is in use: the number, its zone and the session so far.
+        HeartCard(now.liveHeartRate, now.liveSamples, maxBpm = now.maxHeartRate)
     }
 }
 
@@ -184,7 +188,8 @@ internal fun SessionFoot(
             actions.onStepRest,
             actions.onSkipRest,
             progress = remember(clocks) { heldShare { clocks().rest?.progress } },
-            Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
+            modifier = Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
+            heart = clocks().restHeart,
         )
         state.partRoundOf?.let { round ->
             PartRound(

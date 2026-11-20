@@ -74,6 +74,7 @@
     <string name="home_day_done">done</string>
     <string name="home_coach_hard">The last session felt very hard. Take today a notch easier.</string>
     <string name="home_coach_conditioning">A workout in the last two days felt very hard. Take today a notch easier.</string>
+    <string name="home_coach_heart">The heart worked a good deal harder than a usual day, today or yesterday. Take today a notch easier.</string>
     <string name="home_coach_mat">The mat, and a grip that has done more than usual this week. Take today a notch easier.</string>
     <string name="home_coach_grip">The grip has done a lot more this week than in the weeks before. Take today a notch easier.</string>
     <string name="home_coach_sport_flow">Today is for %1$s. Loosen up first.</string>
@@ -105,6 +106,7 @@
 
     <string name="sensor_ready_title">Record the class</string>
     <string name="sensor_ready_text">%1$s records on its own, so the phone can stay in the bag.</string>
+    <string name="sensor_battery_low">Its battery was at %1$d% when last heard from. Charge it, or it may not last the class.</string>
     <string name="sensor_record">Record class</string>
     <string name="sensor_recording_title">Recording since %1$s</string>
     <string name="sensor_recording_text">Sync it when the class is over, with the sensor close.</string>

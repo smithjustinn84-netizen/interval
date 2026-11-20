@@ -15,6 +15,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IconAction
@@ -354,6 +355,29 @@ private fun SessionScreenPreview() {
         draftLastTime = previewSets.last(),
     )
     val clocks = SessionClocks(elapsed = "14:32", sinceLast = "0:38", rest = RestState(90, 52, 0.42f))
+    IntervalTheme {
+        SessionScreen(state, { clocks }, SessionActions())
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun SessionScreenHeartPreview() {
+    val state = SessionUiState(
+        session = LiftSession("s", startedAtEpochMillis = 0, finishedAtEpochMillis = null, "Swings", previewSets),
+        ownsBells = true,
+        bells = listOf(16.0, 24.0),
+        draft = SetDraft(exercise = BuiltInExercise.GobletSquat, bellKg = 16.0),
+        free = true,
+        draftLastTime = previewSets.last(),
+    )
+    val clocks = SessionClocks(
+        elapsed = "14:32",
+        sinceLast = "0:38",
+        rest = RestState(90, 52, 0.42f),
+        liveHeartRate = LiveHeartRateState.Reading(bpm = 138),
+        liveSamples = listOf(88, 96, 121, 148, 156, 139, 118, 104, 126, 151, 159, 142, 121, 108, 129, 154, 161, 138),
+    )
     IntervalTheme {
         SessionScreen(state, { clocks }, SessionActions())
     }

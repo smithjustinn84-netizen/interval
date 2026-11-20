@@ -117,6 +117,65 @@ class WorkoutSessionHeartRateTest : MainDispatcherTest(StandardTestDispatcher())
     }
 
     @Test
+    fun `the samples so far are on the run as each begins`() = runTest {
+        val session = newSession()
+        session.open(1L)
+        runCurrent()
+
+        liveHr.emitBpm(120)
+        runCurrent()
+        now += 5_000L
+        liveHr.emitBpm(150)
+        runCurrent()
+
+        assertEquals(listOf(120, 150), session.state.value?.liveSamples)
+        // Ten seconds of work from the start: the whole of the trace so far is work.
+        assertEquals(listOf(0f..1f), session.state.value?.liveMarks)
+    }
+
+    @Test
+    fun `a sensor that reads late leaves the time before it empty`() = runTest {
+        val session = newSession()
+        session.open(1L)
+        runCurrent()
+
+        now += 7_000L
+        liveHr.emitBpm(140)
+        runCurrent()
+
+        assertEquals(listOf(0, 140), session.state.value?.liveSamples)
+    }
+
+    @Test
+    fun `a workout picked up after its process was killed keeps its samples`() = runTest {
+        val first = newSession()
+        first.open(1L)
+        runCurrent()
+        liveHr.emitBpm(120)
+        runCurrent()
+        now += 5_000L
+        liveHr.emitBpm(150)
+        runCurrent()
+        // A pause is a change of course, which saves it.
+        first.togglePause()
+        runCurrent()
+
+        val second = newSession()
+        second.open(1L)
+        runCurrent()
+        assertEquals(listOf(120, 150), second.state.value?.liveSamples)
+
+        second.togglePause()
+        now += 5_000L
+        liveHr.emitBpm(160)
+        runCurrent()
+        second.skip()
+        runCurrent()
+
+        assertEquals(listOf(120, 150, 160), second.state.value?.heartRateSamples)
+    }
+
+    @Test
     fun `sustained zone transitions play zone beep and heartbeat haptic when enabled`() = runTest {
         repository.settings.updateAppSettings { it.copy(body = it.body.copy(maxHeartRate = 200)) }
         val session = newSession()

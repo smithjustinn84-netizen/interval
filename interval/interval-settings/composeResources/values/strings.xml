@@ -129,6 +129,8 @@
     <string name="settings_sensor_looking">Looking for it…</string>
     <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day. Tap to forget it</string>
     <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>
+    <string name="settings_sensor_battery">Battery %1$d%. Tap to forget it</string>
+    <string name="settings_sensor_battery_low">Battery low, %1$d%: charge it before a class. Tap to forget it</string>
     <string name="settings_sensor_forget">Forget</string>
     <string name="settings_sensor_forget_title">Forget the sensor?</string>
     <string name="settings_sensor_forget_text">A class is still on it. Once the sensor is forgotten, that class can’t be synced.</string>
@@ -148,4 +150,12 @@
     <string name="settings_max_hr_less_cd">Lower max heart rate</string>
     <string name="settings_max_hr_more_cd">Higher max heart rate</string>
     <string name="settings_max_hr_reset">Use default (190 bpm)</string>
+    <string name="settings_resting_hr">Resting heart rate</string>
+    <string name="settings_resting_hr_hint">With it the zones fit the range your heart works in</string>
+    <string name="settings_resting_hr_unset">Not set</string>
+    <string name="settings_resting_hr_edit">Edit resting heart rate</string>
+    <string name="settings_resting_hr_less_cd">Lower resting heart rate</string>
+    <string name="settings_resting_hr_more_cd">Higher resting heart rate</string>
+    <string name="settings_resting_hr_how">Take it lying still just after waking, a minute counted or the strap read, on a morning after a rest day.</string>
+    <string name="settings_resting_hr_reset">Leave it unset</string>
 </resources>

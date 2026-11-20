@@ -11,7 +11,6 @@ import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.BackgroundWorkout
 import dev.justinsmith.interval.platform.Beep
 import dev.justinsmith.interval.platform.CuePlayer
-import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HeartRateSampler
@@ -122,7 +121,7 @@ class WorkoutSession(
         val restored = run ?: return
         if (!restored.over) {
             hold(keep = true)
-            startHeartRate(settings.body.maxHeartRate ?: DEFAULT_MAX_BPM)
+            startHeartRate(restored)
             if (restored.running) ticker.start(tick)
             checkpoint()
         }
@@ -296,7 +295,7 @@ class WorkoutSession(
                 body = body,
             )
         hold(keep = true)
-        startHeartRate(body.maxHeartRate ?: DEFAULT_MAX_BPM)
+        run?.let { startHeartRate(it) }
         play(start.cues, start.state)
         ticker.start(tick)
         checkpoint()
@@ -322,9 +321,13 @@ class WorkoutSession(
         if (next.turnedFrom(before.engine)) checkpoint()
     }
 
-    private fun startHeartRate(maxBpm: Int) {
-        sampler.reset()
-        zoneTracker = ZoneTracker(maxBpm = maxBpm)
+    /**
+     * Samples [of]'s heart rate from its own start, taking up the samples it has (a workout restored after its
+     * process was killed), so each sample's place says when in the workout it was.
+     */
+    private fun startHeartRate(of: WorkoutRun) {
+        sampler.restore(of.startedAt, of.liveSamples)
+        zoneTracker = ZoneTracker(maxBpm = of.maxHeartRate, restingBpm = of.body.restingHeartRate)
         heartRateJob?.cancel()
         liveHeartRate.start(this)
         heartRateJob = heartRateScope.launch { liveHeartRate.reading.collect { onHeartRate(it) } }
@@ -336,6 +339,8 @@ class WorkoutSession(
         if (state !is LiveHeartRateState.Reading || !current.running || current.over) return
         val now = clock.nowMillis()
         sampler.add(state.bpm, now)
+        // The trace takes a sample as each begins: every five seconds, not every reading.
+        if (sampler.size != current.liveSamples.size) run = current.copy(liveSamples = sampler.samples())
         val cues = settingsStore.cueSettings.value
         if (!cues.heartRateAlerts) return
         val beep = when (zoneTracker.record(state.bpm, now)) {

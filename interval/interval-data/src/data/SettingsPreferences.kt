@@ -11,6 +11,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.MAX_BPM_RANGE
+import dev.justinsmith.interval.platform.RESTING_BPM_RANGE
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -50,6 +51,7 @@ private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
 private val BODY_EFFORT = stringPreferencesKey("body_effort")
 private val BODY_MAX_HR = intPreferencesKey("body_max_hr")
+private val BODY_RESTING_HR = intPreferencesKey("body_resting_hr")
 
 // A missing weight reads as the default, so calories turned off are stored as such.
 private val CALORIES_OFF = booleanPreferencesKey("calories_off")
@@ -147,6 +149,7 @@ private fun Preferences.toBodySettings(): BodySettings {
         unit = WeightUnit.entries.firstOrNull { it.name == this[BODY_UNIT] } ?: defaults.unit,
         effort = Effort.entries.firstOrNull { it.name == this[BODY_EFFORT] } ?: defaults.effort,
         maxHeartRate = this[BODY_MAX_HR]?.coerceIn(MAX_BPM_RANGE),
+        restingHeartRate = this[BODY_RESTING_HR]?.coerceIn(RESTING_BPM_RANGE),
     )
 }
 
@@ -163,4 +166,6 @@ private fun MutablePreferences.write(body: BodySettings) {
     this[BODY_EFFORT] = body.effort.name
     val maxHr = body.maxHeartRate
     if (maxHr == null) remove(BODY_MAX_HR) else this[BODY_MAX_HR] = maxHr
+    val restingHr = body.restingHeartRate
+    if (restingHr == null) remove(BODY_RESTING_HR) else this[BODY_RESTING_HR] = restingHr
 }

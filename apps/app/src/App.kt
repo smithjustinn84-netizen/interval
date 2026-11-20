@@ -74,6 +74,7 @@ import dev.justinsmith.interval.splash.WithIntro
 import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.NavigationArea
 import dev.justinsmith.interval.ui.NavigationAreaBar
 import dev.justinsmith.interval.ui.NavigationItems
@@ -211,7 +212,11 @@ internal fun AppContent(
             // The intro is dark in either theme while it covers the app.
             SystemBarIcons(lightIcons = dark || introPlaying)
             WatchForIdle {
-                CompositionLocalProvider(LocalNotices provides notices) { AppShell(backStack, notices) }
+                CompositionLocalProvider(
+                    LocalNotices provides notices,
+                    // Every heart-rate zone drawn goes by the reserve over this, once one is set.
+                    LocalRestingHeartRate provides settings.body.restingHeartRate,
+                ) { AppShell(backStack, notices) }
             }
         }
     }

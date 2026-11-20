@@ -31,6 +31,11 @@ data class BodySettings(
     val effort: Effort = Effort.Hard,
     /** User's maximum heart rate for training zones (120..230); null uses the 190 bpm default. */
     val maxHeartRate: Int? = null,
+    /**
+     * The heart rate at rest (30..100), as taken lying still on waking; with it the zones go by the reserve
+     * between it and the max rather than by a share of the max alone. Null is not set.
+     */
+    val restingHeartRate: Int? = null,
 ) {
     /**
      * The calories of [workSeconds] of [activity] at [effort] and [otherSeconds] recovering, or null

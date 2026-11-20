@@ -758,6 +758,27 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `the session's heart rate so far is on its clocks and the rest reads it`() {
+        viewModel().use {
+            heartRisesTo(130)
+
+            assertTrue(clocks.value.liveSamples.isNotEmpty())
+            assertTrue(clocks.value.liveSamples.all { it == 0 || it in RESTING_BPM..131 })
+            // No rest counting down: nothing is said of one.
+            assertEquals(null, clocks.value.restHeart)
+        }
+    }
+
+    @Test
+    fun `a rest says ready once the heart is back in an easy zone`() {
+        assertEquals(RestHeart.Standing.Ready, restHeart(LiveHeartRateState.Reading(110), 190)?.standing)
+        assertEquals(RestHeart.Standing.ComingDown, restHeart(LiveHeartRateState.Reading(140), 190)?.standing)
+        assertEquals(RestHeart.Standing.StillHigh, restHeart(LiveHeartRateState.Reading(160), 190)?.standing)
+        assertEquals(null, restHeart(LiveHeartRateState.Reading(0, contact = false), 190))
+        assertEquals(null, restHeart(LiveHeartRateState.Disconnected, 190))
+    }
+
+    @Test
     fun `the heart rate is held live only while there is a session and never taken from another user`() {
         // A page come back with no session behind it asks for none.
         opened().use { assertFalse(live.started) }

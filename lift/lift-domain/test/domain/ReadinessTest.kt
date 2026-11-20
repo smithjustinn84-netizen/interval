@@ -85,4 +85,48 @@ class ReadinessTest {
         assertEquals(Readiness.Normal, check(listOf(session(8 * DAY_MILLIS))).readiness)
         assertEquals(Readiness.Normal, check().readiness)
     }
+
+    /** A usual training day's heart load on each of four days before the last two, then [recent] on [recentDay]. */
+    private fun loads(recent: Int, recentDay: Long = 9, usual: Int = 60) =
+        listOf(2L, 4L, 6L, 7L).map { HeartLoad(it, usual) } + HeartLoad(recentDay, recent)
+
+    @Test
+    fun `a day the heart worked half again a usual day taxes the next`() {
+        assertEquals(
+            ReadinessCheck(Readiness.Taxed, ReadinessReason.HeartLoad),
+            readiness(emptyList(), emptyList(), emptyList(), GripLoad(), now, dayOf, loads(recent = 100)),
+        )
+        // Today's own counts as yesterday's does.
+        assertEquals(true, heavyHeartDay(loads(recent = 100, recentDay = 10), today = 10))
+    }
+
+    @Test
+    fun `a usual day on the heart taxes nothing and neither does one two days gone`() {
+        assertEquals(false, heavyHeartDay(loads(recent = 70), today = 10))
+        assertEquals(false, heavyHeartDay(loads(recent = 200, recentDay = 8), today = 10))
+    }
+
+    @Test
+    fun `a heavy day is not called before a sensor has read three days to go by`() {
+        val few = listOf(HeartLoad(6, 60), HeartLoad(7, 60), HeartLoad(9, 200))
+
+        assertEquals(false, heavyHeartDay(few, today = 10))
+    }
+
+    @Test
+    fun `a light day is never heavy however little the days before held`() {
+        assertEquals(false, heavyHeartDay(loads(recent = 50, usual = 10), today = 10))
+    }
+
+    @Test
+    fun `a day's loads add up and a very hard session said so comes first`() {
+        val twice = loads(recent = 50) + HeartLoad(9, 50)
+        assertEquals(true, heavyHeartDay(twice, today = 10))
+
+        val said = listOf(session(now - 30 * HOUR_MILLIS, PerceivedEffort.VeryHard))
+        assertEquals(
+            ReadinessReason.HardSession,
+            readiness(said, emptyList(), emptyList(), GripLoad(), now, dayOf, loads(recent = 100)).reason,
+        )
+    }
 }

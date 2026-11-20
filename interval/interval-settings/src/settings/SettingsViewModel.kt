@@ -17,6 +17,7 @@ import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.MAX_BPM_RANGE
+import dev.justinsmith.interval.platform.RESTING_BPM_RANGE
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
@@ -195,6 +196,11 @@ class SettingsViewModel(
     /** Sets the user's max heart rate for training zones, or null to return to the 190 bpm default. */
     fun setMaxHeartRate(bpm: Int?) {
         updateBody { it.copy(maxHeartRate = bpm?.coerceIn(MAX_BPM_RANGE)) }
+    }
+
+    /** Sets the heart rate at rest the zones' reserve is measured from, or null to leave it unset. */
+    fun setRestingHeartRate(bpm: Int?) {
+        updateBody { it.copy(restingHeartRate = bpm?.coerceIn(RESTING_BPM_RANGE)) }
     }
 
     /**
