@@ -224,6 +224,8 @@ data class HistoryUiState(
     val month: MonthView = MonthView("", emptyList(), current = true),
     /** Workouts a week over the last twelve, for All time. */
     val weeks: List<WeekCount> = emptyList(),
+    /** Day-by-day pillar breakdown over the last twelve weeks, for All time. */
+    val heatmap: List<HeatmapDay> = emptyList(),
     val mostDone: List<ShapeRow> = emptyList(),
     val upNext: List<UpNextItem> = emptyList(),
     val hasPlans: Boolean = false,

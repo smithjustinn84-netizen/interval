@@ -3,6 +3,7 @@ package dev.justinsmith.lift.session
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +19,8 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.fadeThroughContent
+import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.density_cap
@@ -30,6 +33,7 @@ import dev.justinsmith.lift.session.resources.next_skip
 import dev.justinsmith.lift.session.resources.next_title
 import dev.justinsmith.lift.session.resources.notice_block_skipped
 import dev.justinsmith.lift.session.resources.session_undo
+import dev.justinsmith.lift.ui.BarbellDiagram
 import dev.justinsmith.lift.ui.countLine
 import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
@@ -147,9 +151,12 @@ private fun NextSetCard(
  * "× 10 · Left". With no load to change, the mat or a band not yet known, only how much.
  */
 @Composable
-private fun NextLoad(next: UpNext, state: SessionUiState, actions: SessionActions) {
+private fun ColumnScope.NextLoad(next: UpNext, state: SessionUiState, actions: SessionActions) {
     val set = next.set
     LoadStep(next.load, state, actions.onStepLoad)
+    (next.load as? Load.Bar)?.let { barLoad ->
+        BarbellDiagram(barLoad.kg, state.bar ?: DEFAULT_BAR_KG, Modifier.padding(vertical = Spacing.space4))
+    }
     Text(
         countLine(if (set.held) 0 else set.reps, set.side, set.reps.takeIf { set.held }),
         style = IntervalTheme.type.value,

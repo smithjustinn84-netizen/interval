@@ -154,6 +154,7 @@ private fun BarChoices(kg: Double?, bar: Double?, lastTime: Boolean, onKg: (Doub
         onStep = { step -> onKg((kg + step * BAR_KG_STEP).coerceIn(lightest, MAX_BAR_KG)) },
         note = platesLine(kg, bar),
     )
+    BarbellDiagram(kg, bar ?: DEFAULT_BAR_KG)
 }
 
 /**

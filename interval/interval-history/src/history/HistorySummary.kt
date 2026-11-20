@@ -447,6 +447,8 @@ internal fun AllTimeSummary(
     goal: Int?,
     weeks: List<WeekCount>,
     modifier: Modifier = Modifier,
+    heatmap: List<HeatmapDay> = emptyList(),
+    onDay: (Long) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     SummaryCard(modifier) {
@@ -482,6 +484,9 @@ internal fun AllTimeSummary(
             }
         }
         WeekBars(goal, weeks)
+        if (heatmap.isNotEmpty()) {
+            TrainingHeatmap(heatmap, onDay)
+        }
     }
 }
 

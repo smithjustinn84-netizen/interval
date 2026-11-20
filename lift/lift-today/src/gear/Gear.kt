@@ -71,6 +71,7 @@ import dev.justinsmith.lift.today.resources.bells_title
 import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.ui.Choice
 import dev.justinsmith.lift.ui.ChoiceRow
+import dev.justinsmith.lift.ui.KettlebellRack
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.bandColourName
 import dev.justinsmith.lift.ui.bandName
@@ -173,6 +174,9 @@ private fun BellsSection(owned: Set<Double>, onToggle: (Double) -> Unit, modifie
                 Modifier.padding(Spacing.space16),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),
             ) {
+                if (owned.isNotEmpty()) {
+                    KettlebellRack(owned, Modifier.padding(bottom = Spacing.space8))
+                }
                 standardBells.chunked(BELL_COLUMNS).forEach { row ->
                     Row(
                         Modifier.fillMaxWidth(),

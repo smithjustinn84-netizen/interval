@@ -36,8 +36,8 @@ object IntervalSizes {
     /** The smaller value pill on a Settings row. */
     val valuePillSmall = 40.dp
 
-    /** The hero card's workout timeline, and the gap between its segments. */
-    val timeline = 12.dp
+    /** The hero card's stepped workout intensity waveform, and the gap between its segments. */
+    val timeline = 28.dp
     val timelineGap = 2.dp
 
     /** The tallest bar of the History tab's week chart. */

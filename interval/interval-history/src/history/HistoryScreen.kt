@@ -535,7 +535,14 @@ private fun SummaryFor(state: HistoryUiState, actions: HistoryActions, modifier:
                 { actions.onOpenDay(it) },
             )
 
-            TrainingRange.AllTime -> AllTimeSummary(state.summary, state.streak, state.goal, state.weeks)
+            TrainingRange.AllTime -> AllTimeSummary(
+                state.summary,
+                state.streak,
+                state.goal,
+                state.weeks,
+                heatmap = state.heatmap,
+                onDay = { actions.onOpenDay(it) },
+            )
         }
     }
 }

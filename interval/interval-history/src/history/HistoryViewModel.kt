@@ -313,6 +313,7 @@ class HistoryViewModel(
                 current = monthOf == monthStartOf(today),
             ),
             weeks = log.weeklyCounts(WEEKS_SHOWN),
+            heatmap = heatmapDays(log, today, WEEKS_SHOWN, timestamps::dateOfDay),
             mostDone = log.mostDone(MOST_DONE_SHOWN).map { tally ->
                 ShapeRow(names.of(tally.config), tally.config, tally.count, tally.seconds)
             },
@@ -462,6 +463,7 @@ private fun HistoryUiState.keepingListsOf(before: HistoryUiState) = copy(
     week = week.keptFrom(before.week),
     month = month.keptFrom(before.month),
     weeks = weeks.keptFrom(before.weeks),
+    heatmap = heatmap.keptFrom(before.heatmap),
     mostDone = mostDone.keptFrom(before.mostDone),
     upNext = upNext.keptFrom(before.upNext),
 )

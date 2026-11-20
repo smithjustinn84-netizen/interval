@@ -2,12 +2,12 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -20,30 +20,36 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
+import dev.justinsmith.interval.timer.Block
 import dev.justinsmith.interval.timer.Course
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 
 /**
- * Round-by-round marks (the workout's dots, a timeline's segments) stop being readable past a
- * dozen rounds; beyond that the text carries the count and a timeline shows only the shares.
+ * Round-by-round marks (the workout's dots) stop being readable past a dozen rounds; beyond that the text carries
+ * the count.
  */
 const val MAX_ROUND_MARKS = 12
 
+/** Individual round peaks drawn on a waveform before falling back to block-level summary bars. */
+private const val MAX_WAVEFORM_ROUNDS = 40
+
 /**
- * The workout's shape as a bar in one hue: get ready in the surface variant, then each round's work
- * in the accent and its rest in a pale wash of it, each as wide as it is long; a warm-up and a cool-down
- * either side of the rounds are washes too, in rest's. Work and rest differ
- * in lightness, not hue; phase colours stay on the workout screen and the field stripes. Past
- * [MAX_ROUND_MARKS] rounds the bar shows only the work and rest shares, block by block. Decorative: the text
- * beside it says the same thing.
+ * The workout's intensity profile as a stepped waveform: work intervals rise to full height in the accent, warm-up
+ * and cool-down sit at mid-height in a medium wash, rests sit low in [IntervalPalette.timelineRest], and get-ready
+ * leads in subtly in [IntervalPalette.surfaceVariant]. Each bar's width is proportional to its duration. Decorative:
+ * the text beside it says the same thing.
  */
 @Composable
 fun Timeline(
@@ -54,35 +60,71 @@ fun Timeline(
     showPrep: Boolean = true,
 ) {
     val palette = IntervalTheme.palette
-    val work = palette.accent
-    val rest = palette.timelineRest
-    fun colorOf(phase: Phase) = when (phase) {
-        Phase.Prep -> palette.surfaceVariant
-        Phase.Work -> work
-        else -> rest
-    }
     val segments = remember(config, showPrep) { timelineSegments(config, showPrep) }
-    Row(
+    val workColor = palette.accent
+    val bookendColor = palette.accent.copy(alpha = BOOKEND_ALPHA)
+    val restColor = palette.timelineRest
+    val prepColor = palette.surfaceVariant
+    Canvas(
         modifier
             .fillMaxWidth()
             .height(height)
-            .clip(Corners.full)
             .clearAndSetSemantics {},
-        horizontalArrangement = Arrangement.spacedBy(gap),
     ) {
-        segments.forEach { (phase, seconds) ->
-            Box(Modifier.weight(seconds.toFloat()).fillMaxHeight().background(colorOf(phase)))
-        }
+        drawWaveform(segments, gap.toPx(), workColor, bookendColor, restColor, prepColor)
     }
 }
 
-private fun timelineSegments(config: IntervalConfig, showPrep: Boolean): List<Pair<Phase, Int>> {
+private fun DrawScope.drawWaveform(
+    segments: List<Pair<Phase, Int>>,
+    gapPx: Float,
+    workColor: Color,
+    bookendColor: Color,
+    restColor: Color,
+    prepColor: Color,
+) {
+    val totalSeconds = segments.sumOf { it.second }
+    if (segments.isEmpty() || totalSeconds <= 0) return
+    val count = segments.size
+    // Shrink gap smoothly when many rounds are packed into a narrow card so bars never vanish.
+    val maxGap = if (count > 1) (size.width * MAX_GAP_SHARE / (count - 1)).coerceAtMost(gapPx) else 0f
+    val availableWidth = (size.width - maxGap * (count - 1)).coerceAtLeast(1f)
+
+    var x = 0f
+    for (i in segments.indices) {
+        val (phase, seconds) = segments[i]
+        val w = (availableWidth * (seconds.toFloat() / totalSeconds)).coerceAtLeast(MIN_BAR_PX)
+        val h = size.height * phaseHeight(phase)
+        val color = when (phase) {
+            Phase.Prep -> prepColor
+            Phase.Work -> workColor
+            Phase.WarmUp, Phase.CoolDown -> bookendColor
+            Phase.Rest, Phase.SetRest, Phase.Done -> restColor
+        }
+        val radius = CornerRadius(minOf(w / 2f, h / 2f, MAX_CORNER_PX))
+        drawRoundRect(
+            color = color,
+            topLeft = Offset(x, size.height - h),
+            size = Size(w, h),
+            cornerRadius = radius,
+        )
+        x += w + maxGap
+    }
+}
+
+private fun phaseHeight(phase: Phase): Float = when (phase) {
+    Phase.Work -> WORK_HEIGHT
+    Phase.WarmUp, Phase.CoolDown -> BOOKEND_HEIGHT
+    Phase.Rest, Phase.SetRest, Phase.Done -> REST_HEIGHT
+    Phase.Prep -> PREP_HEIGHT
+}
+
+internal fun timelineSegments(config: IntervalConfig, showPrep: Boolean): List<Pair<Phase, Int>> {
     val course = Course.of(config).filter { showPrep || it.phase != Phase.Prep }
-    if (config.blocks.sumOf { it.rounds } <= MAX_ROUND_MARKS) {
+    if (config.blocks.sumOf { it.rounds } <= MAX_WAVEFORM_ROUNDS) {
         return course.map { it.phase to it.seconds }
     }
-    // Only the shares: what comes before the rounds, each block's work and rest, the rest between the blocks,
-    // then the cool-down.
+    // Past MAX_WAVEFORM_ROUNDS, fold each block into its work and rest shares so the silhouette stays legible.
     fun total(phase: Phase, block: Int) = course.filter { it.phase == phase && it.block == block }.sumOf { it.seconds }
     return buildList {
         course.takeWhile { it.phase != Phase.Work }.forEach { add(it.phase to it.seconds) }
@@ -139,8 +181,41 @@ fun ValuePill(
     }
 }
 
-/** A [Timeline] at a list card's size: thin, and without the get-ready segment, which is the user's own. */
+/** A [Timeline] at a list card's size: compact, and without the get-ready segment, which is the user's own. */
 @Composable
 fun MiniTimeline(config: IntervalConfig, modifier: Modifier = Modifier) {
     Timeline(config, modifier = modifier, height = Sizes.timelineMini, gap = Sizes.timelineMiniGap, showPrep = false)
+}
+
+private const val WORK_HEIGHT = 1.0f
+private const val BOOKEND_HEIGHT = 0.56f
+private const val REST_HEIGHT = 0.28f
+private const val PREP_HEIGHT = 0.18f
+private const val BOOKEND_ALPHA = 0.45f
+private const val MAX_GAP_SHARE = 0.30f
+private const val MIN_BAR_PX = 1.5f
+private const val MAX_CORNER_PX = 4f
+
+@PreviewFormFactors
+@Composable
+private fun TimelineWaveformPreview() {
+    val tabata = IntervalConfig(workSeconds = 20, restSeconds = 10, rounds = 8)
+    val mvo2 = IntervalConfig(workSeconds = 15, restSeconds = 15, rounds = 20)
+    val sequence = IntervalConfig(
+        workSeconds = 30,
+        restSeconds = 15,
+        rounds = 4,
+        then = listOf(Block(workSeconds = 45, restSeconds = 15, rounds = 3)),
+        blockRestSeconds = 60,
+        warmUpSeconds = 120,
+        coolDownSeconds = 120,
+    )
+    IntervalTheme {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+            Timeline(tabata)
+            MiniTimeline(tabata)
+            Timeline(mvo2, showPrep = false)
+            Timeline(sequence)
+        }
+    }
 }

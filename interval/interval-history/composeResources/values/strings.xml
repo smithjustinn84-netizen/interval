@@ -63,6 +63,9 @@
     <string name="history_since">Since %1$s</string>
     <string name="history_best_streak">Best streak</string>
     <string name="history_last_12_weeks">Last 12 weeks</string>
+    <string name="history_heatmap_title">Activity · 12 weeks</string>
+    <string name="history_heatmap_cd">%1$d active days over the last %2$d weeks</string>
+    <string name="history_heatmap_day_cd">Open %1$s</string>
     <string name="history_goal_line">Goal %1$d a week</string>
     <string name="history_weeks_cd">Workouts a week over the last 12 weeks: %1$s</string>
     <string name="history_most_done">Most done</string>

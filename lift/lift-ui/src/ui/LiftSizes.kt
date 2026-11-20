@@ -23,6 +23,10 @@ object LiftSizes {
     val bodyMap = 168.dp
     val bodyMapCompact = 148.dp
 
+    /** The symmetric barbell plate diagram and kettlebell rack silhouette. */
+    val barbellDiagram = 56.dp
+    val kettlebellRack = 72.dp
+
     /** The marker on a demo's timeline, the gap between its stretches, and the bar beside a cue it lights. */
     val demoMarkerWidth = 4.dp
     val demoMarkerHeight = 16.dp
