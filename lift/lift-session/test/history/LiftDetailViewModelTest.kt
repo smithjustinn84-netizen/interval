@@ -9,6 +9,7 @@ import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -28,6 +29,7 @@ class LiftDetailViewModelTest {
     private val storage = FakeLiftStorage()
     private val repository = storage.repository()
     private val health = RecordingHealthStore(HealthStatus.Connected)
+    private val intervals = FakeIntervalActivity()
 
     @BeforeTest
     fun setMainDispatcher() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -41,6 +43,7 @@ class LiftDetailViewModelTest {
         repository.programs,
         FixedTimestampFormatter,
         health,
+        intervals,
     )
 
     @Test

@@ -182,7 +182,13 @@ private fun SummaryBody(
     reflection: SummaryReflection,
 ) {
     Arrival(entrance, STATS_STEP) {
-        SessionStats(finished.session, finished.records, highlight = true, countUp = true)
+        SessionStats(
+            finished.session,
+            finished.records,
+            highlight = true,
+            countUp = true,
+            maxBpm = finished.maxHeartRate,
+        )
     }
     Arrival(entrance, BESTS_STEP) { BestsCard(finished) }
     Arrival(entrance, CHANGES_STEP) { AfterStats(finished, choices, onKeep) }

@@ -25,8 +25,12 @@ On iOS, refusing on Apple Health's sheet sends you to the Health app to change i
 
 With a Polar sensor paired, a workout shows your heart rate as a scale of the five zones under the ring: the
 beats a minute, the zone by name and number, a marker where in it you are, and the heart rates the zone changes
-at. Each change of zone is called with a tone. If the signal is lost, the scale stays in place unlit with the
-last reading.
+at. A Lift session shows it as a badge in its title bar, and its summary draws the session's heart rate and the
+time in each zone. The zones are worked out from the max heart rate set in Settings, the same on both.
+
+A move into high effort or back down to recovery is called with a tone, while **Heart-rate alerts** and **Sound**
+are both on in Settings. If the signal is lost, or the strap comes off, the reading says "No signal" (the scale
+stays in place unlit with the last reading) and the sensor is tried again until it is back.
 
 ## A class on a sensor (Android 12+)
 

@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.formatClock
@@ -72,6 +73,8 @@ data class Finished(
     val densities: List<DensityDone> = emptyList(),
     /** For a test's session, what the attempt came to against the last at its load; null for any other. */
     val test: TestResult? = null,
+    /** The max heart rate its zones are worked out from: the one set in Settings, or the default. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
 )
 
 /**
@@ -108,14 +111,20 @@ data class SessionClocks(
     val densityState: DensityState? = null,
     /** Live heart-rate reading from the paired sensor while the session is active. */
     val liveHeartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
+    /** The max heart rate its zone is worked out from: the one set in Settings, or the default. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
 )
 
-/** The [session]'s clocks [now], its [timing]'s, and the live [heartRate]. */
+/**
+ * The [session]'s clocks [now], its [timing]'s, and the live [heartRate], zoned by [maxHeartRate], null for none
+ * set.
+ */
 internal fun clocksAt(
     session: LiftSession?,
     now: Long,
     timing: TimerState,
     heartRate: LiveHeartRateState = LiveHeartRateState.Unavailable,
+    maxHeartRate: Int? = null,
 ) = SessionClocks(
     elapsed = formatClock(session?.elapsedSeconds(now) ?: 0),
     sinceLast = session?.sets?.lastOrNull()?.let {
@@ -126,6 +135,7 @@ internal fun clocksAt(
     holdState = timing.holdState,
     densityState = timing.densityState,
     liveHeartRate = heartRate,
+    maxHeartRate = maxHeartRate ?: DEFAULT_MAX_BPM,
 )
 
 private const val MILLIS_PER_SECOND = 1_000L

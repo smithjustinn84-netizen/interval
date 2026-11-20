@@ -3,6 +3,7 @@ package dev.justinsmith.lift.session
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRateSampler
 import dev.justinsmith.interval.platform.LiveHeartRate
 import dev.justinsmith.interval.platform.LiveHeartRateState
@@ -45,6 +46,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
@@ -72,7 +74,7 @@ class SessionViewModel(
     val summary: FinishSession,
     val easierDay: EasierDay,
     private val timers: SessionTimers,
-    intervals: IntervalActivity,
+    private val intervals: IntervalActivity,
     timestamps: TimestampFormatter,
     private val clock: WallClock,
     private val savedState: SavedStateHandle = SavedStateHandle(),
@@ -82,7 +84,7 @@ class SessionViewModel(
     computation: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     private val sampler = HeartRateSampler()
-    private val zoneTracker = ZoneTracker()
+    private var zoneTracker = ZoneTracker(maxBpm = intervals.maxHeartRate.value ?: DEFAULT_MAX_BPM)
 
     /**
      * The sets of the sessions finished before this one, as they are stored, not as when it opened: flattened off the
@@ -154,8 +156,16 @@ class SessionViewModel(
 
     // On the main thread, so a tap on the sheet shows at once: what scans the history is worked out apart, above.
     val state: StateFlow<SessionUiState> =
-        combine(inputs.map(Inputs::state), detail, rested, easierDay.offer) { state, page, rested, easier ->
-            state.copy(detail = page, asksToShowNotifications = rested, easier = easier)
+        combine(inputs.map(Inputs::state), detail, rested, easierDay.offer, intervals.maxHeartRate) {
+                state,
+                page,
+                rested,
+                easier,
+                max,
+            ->
+            // The summary's zones follow the max heart rate set in Settings, as the session's own do.
+            val finished = state.finished?.copy(maxHeartRate = max ?: DEFAULT_MAX_BPM)
+            state.copy(detail = page, asksToShowNotifications = rested, easier = easier, finished = finished)
         }.stateIn(viewModelScope, SharingStarted.Eagerly, inputsNow.state())
 
     /**
@@ -188,7 +198,7 @@ class SessionViewModel(
 
     /** The clocks, read at each tick of the session's own and of its timers, plus live heart rate. */
     val clocks: StateFlow<SessionClocks> =
-        combine(sessionStore.active, ticks, timers.state, liveHeartRate.reading, ::clocksAt)
+        combine(sessionStore.active, ticks, timers.state, liveHeartRate.reading, intervals.maxHeartRate, ::clocksAt)
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.Eagerly, SessionClocks())
 
@@ -240,24 +250,35 @@ class SessionViewModel(
         viewModelScope.launch {
             exerciseStore.customExercises.collect(draft::exercisesChanged)
         }
-        // Stream live heart rate from the paired sensor while the session is active.
-        liveHeartRate.start()
+        // The heart rate is held live only while there is a session to read it for: the stream is the workout's
+        // too, and a page come back with no session behind it asks for none.
         viewModelScope.launch {
-            liveHeartRate.reading.collect { reading ->
-                if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return@collect
-                val now = clock.nowMillis()
-                sampler.add(reading.bpm, now)
-                when (zoneTracker.record(reading.bpm, now)) {
-                    ZoneTransition.EnteredHigh -> tones.play(ToneSynth.zoneUp)
-                    ZoneTransition.EnteredRecovery -> tones.play(ToneSynth.zoneDown)
-                    null -> Unit
-                }
+            sessionStore.active.map { it != null }.distinctUntilChanged().collect { active ->
+                if (active) liveHeartRate.start(this@SessionViewModel) else liveHeartRate.stop(this@SessionViewModel)
             }
         }
+        // The zones follow the max heart rate set in Settings, as the interval workout's do.
+        viewModelScope.launch {
+            intervals.maxHeartRate.drop(1).collect { zoneTracker = ZoneTracker(maxBpm = it ?: DEFAULT_MAX_BPM) }
+        }
+        viewModelScope.launch { liveHeartRate.reading.collect(::onHeartRate) }
+    }
+
+    /** Keeps a reading taken in the session, and chimes a change of zone while the alerts are on. */
+    private fun onHeartRate(reading: LiveHeartRateState) {
+        if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return
+        val now = clock.nowMillis()
+        sampler.add(reading.bpm, now)
+        val tone = when (zoneTracker.record(reading.bpm, now)) {
+            ZoneTransition.EnteredHigh -> ToneSynth.zoneUp
+            ZoneTransition.EnteredRecovery -> ToneSynth.zoneDown
+            null -> return
+        }
+        if (intervals.heartRateAlerts.value) tones.play(tone)
     }
 
     override fun onCleared() {
-        liveHeartRate.stop()
+        liveHeartRate.stop(this)
         super.onCleared()
     }
 
@@ -379,7 +400,7 @@ class SessionViewModel(
     /** Leaves the session for later: its timers stop, its sets stay. */
     fun leave() {
         timers.stopAll()
-        liveHeartRate.stop()
+        liveHeartRate.stop(this)
     }
 
     /**
@@ -396,13 +417,13 @@ class SessionViewModel(
      */
     fun finish(title: String, healthTitle: String? = null): Boolean {
         timers.stopAll()
-        liveHeartRate.stop()
+        liveHeartRate.stop(this)
         return summary.finish(title, healthTitle, sampler.summary(), sampler.samples().takeIf { it.isNotEmpty() })
     }
 
     fun discard() {
         timers.stopAll()
-        liveHeartRate.stop()
+        liveHeartRate.stop(this)
         sessionStore.discardSession()
     }
 

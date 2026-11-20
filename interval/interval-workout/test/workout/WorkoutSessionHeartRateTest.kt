@@ -73,6 +73,21 @@ class WorkoutSessionHeartRateTest : MainDispatcherTest(StandardTestDispatcher())
     }
 
     @Test
+    fun `a workout that ends lets the stream go for itself alone`() = runTest {
+        // Lift's session holds the same stream.
+        liveHr.start("lift")
+        val session = newSession()
+        session.open(1L)
+        runCurrent()
+        assertEquals(2, liveHr.users.size)
+
+        session.skip()
+        runCurrent()
+
+        assertEquals(setOf<Any>("lift"), liveHr.users)
+    }
+
+    @Test
     fun `streaming starts with workout records 5s samples to history and stops on finish`() = runTest {
         val session = newSession()
         session.open(1L)

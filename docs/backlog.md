@@ -48,14 +48,14 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   start or a sync and starts it again after, and takes a forget under the same lock. None of it has met a sensor:
   pair, Record and Sync on a Verity Sense, and Record tapped while a workout streams the heart rate.
   *Brings it in:* the sensor in hand.
-- **Live heart rate, left by that review.** Lift's session ignores the user's max heart rate (`ZoneTracker()` at
-  the default 190) and plays the zone tones whatever the alerts and sound switches say, where the workout honours
-  all three (it would need the max heart rate and the cue switches on `lift-api`'s `IntervalActivity`). The one
-  stream has no count of who uses it: Lift starts it as its page opens, session or none, and any of its four
-  stops would end a workout's. A workout restored after its process was killed starts its samples again
-  (`sampler.reset()`). A reading out of range (0 with no contact) leaves the last one on screen, and
-  `Disconnected` never tries again. A class synced a day late is logged as today's sport (`plan.classSport`),
-  on the right day.
+- **Live heart rate on a real strap** (2026-11-19). Lift's session now takes the max heart rate and the alerts
+  switch from Settings, the stream is held by its users (a workout's and a session's, neither ending the other's),
+  a strap that reads no heart shows as no signal, and a dropped connection is tried again (`PolarHeartStream`, a
+  wait of 5 s growing to 30). The reconnecting and the contact flag have met no sensor. *Brings it in:* the H10.
+- **Live heart rate, still left.** A workout restored after its process was killed starts its samples again
+  (`sampler.reset()`; the samples would need saving with the workout's progress). A class synced a day late is
+  logged as today's sport (`plan.classSport`), on the right day. Lift's zone change has no haptic, as the
+  workout's has under Vibrate.
 - **Round tags and trends.** A partner's level, how the round went and the position it stuck in, a tap or two a
   round on the class's page, then the rounds over weeks by tag. Needs the rounds stored once tagged (today they
   are found afresh from the samples at each read, so a retuned detector would move the tags' rounds).

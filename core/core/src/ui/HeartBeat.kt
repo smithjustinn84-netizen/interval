@@ -68,12 +68,16 @@ fun HeartBeatBadge(
             modifier = modifier,
         )
 
-        is LiveHeartRateState.Reading -> ReadingPill(
-            bpm = state.bpm,
-            maxBpm = maxBpm,
-            onWorkoutGround = onWorkoutGround,
-            modifier = modifier,
-        )
+        // Connected with no heart to read (a strap off the chest) is no signal, never a number.
+        is LiveHeartRateState.Reading -> if (state.contact) {
+            ReadingPill(bpm = state.bpm, maxBpm = maxBpm, onWorkoutGround = onWorkoutGround, modifier = modifier)
+        } else {
+            StatusPill(
+                text = stringResource(Res.string.heart_rate_disconnected),
+                onWorkoutGround = onWorkoutGround,
+                modifier = modifier,
+            )
+        }
     }
 }
 
@@ -202,6 +206,7 @@ private fun HeartBeatBadgePreview() {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             HeartBeatBadge(LiveHeartRateState.Reading(bpm = 158))
             HeartBeatBadge(LiveHeartRateState.Connecting)
+            HeartBeatBadge(LiveHeartRateState.Reading(bpm = 0, contact = false))
         }
     }
 }

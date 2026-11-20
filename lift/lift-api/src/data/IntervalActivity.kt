@@ -37,8 +37,10 @@ val List<IntervalWorkout>.efforts: List<WorkoutEffort>
  * sport logged ([sportDays], which count in the week as a workout does, each saying whether it was grappling), the
  * weekly goal, set on the Plan page, null for none, the body weight set in Settings ([bodyWeightKg], null for
  * none), whether the voice is on ([voice], the switch in Settings that speaks the interval side's cues and Lift's
- * coaching alike), and the calorie estimate the app makes for a session from the body weight. The app binds it over
- * its own repository.
+ * coaching alike), the max heart rate set there, which the zones are worked out from ([maxHeartRate], null for
+ * none set), whether a change of zone is to be chimed ([heartRateAlerts]: the alerts switch and Sound both on, as
+ * the interval workout requires), and the calorie estimate the app makes for a session from the body weight. The
+ * app binds it over its own repository.
  */
 interface IntervalActivity {
     val workouts: StateFlow<List<IntervalWorkout>>
@@ -46,6 +48,8 @@ interface IntervalActivity {
     val weeklyGoal: StateFlow<Int?>
     val bodyWeightKg: StateFlow<Double?>
     val voice: StateFlow<Boolean>
+    val maxHeartRate: StateFlow<Int?>
+    val heartRateAlerts: StateFlow<Boolean>
 
     /** The calories a session of [elapsedSeconds] is estimated to have burned, or null without a body weight. */
     fun sessionCalories(elapsedSeconds: Int): Int?

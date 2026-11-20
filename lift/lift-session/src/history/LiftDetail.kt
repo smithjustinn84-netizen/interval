@@ -146,7 +146,7 @@ fun LiftDetailScreen(
             When(state, gutter.padding(bottom = Spacing.space16))
         }
         // A cell of its own, so on a wide window the numbers keep a column's width and the lifts sit beside them.
-        item(key = "numbers") { SessionStats(session, state.records, gutter.padding(bottom = Spacing.space16)) }
+        item(key = "numbers") { Numbers(session, state, gutter.padding(bottom = Spacing.space16)) }
         if (session.effort != null || session.note != null) {
             item(key = "how") { HowItWent(session, gutter.padding(bottom = Spacing.space16)) }
         }
@@ -191,6 +191,12 @@ fun LiftDetailScreen(
 private fun DetailMenuItems(onShare: () -> Unit, onDelete: () -> Unit) {
     IntervalMenuItem(stringResource(Res.string.history_share), onClick = onShare)
     IntervalMenuItem(stringResource(Res.string.history_delete), onClick = onDelete, destructive = true)
+}
+
+/** The session's numbers, its heart rate's zones by the max heart rate set in Settings. */
+@Composable
+private fun Numbers(session: LiftSession, state: LiftDetailUiState, modifier: Modifier = Modifier) {
+    SessionStats(session, state.records, modifier, maxBpm = state.maxHeartRate)
 }
 
 /** How hard it felt and the note on it, as said on its summary. */

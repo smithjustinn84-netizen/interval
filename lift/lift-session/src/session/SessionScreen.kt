@@ -157,7 +157,7 @@ fun SessionScreen(
                     IconAction(IntervalIcons.Close, stringResource(Res.string.session_discard), { discarding = true })
                 },
                 actions = {
-                    HeartBeatBadge(clocks().liveHeartRate, onWorkoutGround = false)
+                    HeartBeatBadge(clocks().liveHeartRate, maxBpm = clocks().maxHeartRate, onWorkoutGround = false)
                     IconAction(IntervalIcons.Add, stringResource(Res.string.session_add_cd), openSheet)
                 },
             )

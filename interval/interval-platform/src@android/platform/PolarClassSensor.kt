@@ -131,7 +131,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     override suspend fun forget() = working.withLock {
         paired.clear()
         _status.value = stored()
-        stream.stop()
+        stream.stopAll()
     }
 
     override suspend fun startRecording(): SensorFailure? = attempt {
@@ -160,9 +160,9 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         }
     }
 
-    override fun start() = stream.start()
+    override fun start(user: Any) = stream.start(user)
 
-    override fun stop() = stream.stop()
+    override fun stop(user: Any) = stream.stop(user)
 
     /** [work] with the sensor connected and ready for [feature], or that it never came; let go after, either way. */
     private suspend fun connected(

@@ -268,6 +268,8 @@ class FakeIntervalActivity : IntervalActivity {
     override val weeklyGoal = MutableStateFlow<Int?>(null)
     override val bodyWeightKg = MutableStateFlow<Double?>(null)
     override val voice = MutableStateFlow(true)
+    override val maxHeartRate = MutableStateFlow<Int?>(null)
+    override val heartRateAlerts = MutableStateFlow(true)
 
     /** The estimate the app would make, or null as with no body weight set; a test sets it. */
     var caloriesPerSecond: Double? = null

@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.HeartRateChart
@@ -36,6 +37,7 @@ import kotlin.math.roundToInt
  * A finished session's numbers: its time and reps, the weight moved, its heart rate once read from the health
  * store, then the [records] it set, if any, each tagged when [highlight]. The summary shows them as a session
  * ends, counting the three up from nothing as they arrive ([countUp]); its page in History shows them at once.
+ * The heart rate's zones are worked out from [maxBpm].
  */
 @Composable
 fun SessionStats(
@@ -44,6 +46,7 @@ fun SessionStats(
     modifier: Modifier = Modifier,
     highlight: Boolean = false,
     countUp: Boolean = false,
+    maxBpm: Int = DEFAULT_MAX_BPM,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -79,8 +82,8 @@ fun SessionStats(
                         Modifier.padding(Spacing.space16),
                         verticalArrangement = Arrangement.spacedBy(Spacing.space12),
                     ) {
-                        HeartRateChart(samples)
-                        ZoneBreakdown(samples)
+                        HeartRateChart(samples, maxBpm = maxBpm)
+                        ZoneBreakdown(samples, maxBpm = maxBpm)
                     }
                 }
             }

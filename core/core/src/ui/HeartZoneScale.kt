@@ -67,7 +67,8 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, maxBpm: Int = DEFAULT_MAX_BPM) {
     if (!state.inUse) return
-    val reading = state as? LiveHeartRateState.Reading
+    // Connected with no heart to read is no signal, the last reading beside it.
+    val reading = (state as? LiveHeartRateState.Reading)?.takeIf { it.contact }
     var lastBpm by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(reading?.bpm) { reading?.let { lastBpm = it.bpm } }
     val zone = reading?.let { heartRateZone(it.bpm, maxBpm) }

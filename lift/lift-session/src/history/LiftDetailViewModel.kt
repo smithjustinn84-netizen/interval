@@ -2,8 +2,10 @@ package dev.justinsmith.lift.history
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.domain.LiftSession
@@ -25,6 +27,8 @@ data class LiftDetailUiState(
     val time: String = "",
     /** The records it set, against every session finished before it. */
     val records: List<PersonalRecord> = emptyList(),
+    /** The max heart rate its zones are worked out from: the one set in Settings, or the default. */
+    val maxHeartRate: Int = DEFAULT_MAX_BPM,
     /** The program it was a day of, while that program is still there. */
     val program: Program? = null,
 )
@@ -36,13 +40,15 @@ class LiftDetailViewModel(
     private val programStore: ProgramStore,
     private val timestamps: TimestampFormatter,
     private val health: HealthStore,
+    private val intervals: IntervalActivity,
 ) : ViewModel() {
-    val state: StateFlow<LiftDetailUiState> = combine(sessionStore.sessions, programStore.customPrograms, ::build)
-        .stateIn(
-            viewModelScope,
-            SharingStarted.Eagerly,
-            build(sessionStore.sessions.value, programStore.customPrograms.value),
-        )
+    val state: StateFlow<LiftDetailUiState> =
+        combine(sessionStore.sessions, programStore.customPrograms, intervals.maxHeartRate, ::build)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.Eagerly,
+                build(sessionStore.sessions.value, programStore.customPrograms.value, intervals.maxHeartRate.value),
+            )
 
     /**
      * Reads the session's heart rate from the health store as the page comes into view, unless it has one, and keeps
@@ -65,7 +71,7 @@ class LiftDetailViewModel(
         sessionStore.restoreSession(uid)
     }
 
-    private fun build(sessions: List<LiftSession>, custom: List<Program>): LiftDetailUiState {
+    private fun build(sessions: List<LiftSession>, custom: List<Program>, maxHeartRate: Int?): LiftDetailUiState {
         val session = sessions.firstOrNull { it.uid == uid } ?: return LiftDetailUiState()
         val at = session.finishedAtEpochMillis ?: session.startedAtEpochMillis
         // Newest first, so the ones finished before it are those after it in the list.
@@ -75,6 +81,7 @@ class LiftDetailViewModel(
             date = timestamps.date(at),
             time = timestamps.time(at),
             records = newRecords(before, session),
+            maxHeartRate = maxHeartRate ?: DEFAULT_MAX_BPM,
             program = session.program?.let { key -> (shippedPrograms + custom).firstOrNull { it.key == key } },
         )
     }

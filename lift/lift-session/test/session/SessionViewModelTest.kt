@@ -5,13 +5,19 @@ package dev.justinsmith.lift.session
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.fakes.FakeLiveHeartRate
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.platform.HealthMove
 import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthWorkoutKind
+import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.Tone
+import dev.justinsmith.interval.platform.TonePlayer
+import dev.justinsmith.interval.platform.ToneSynth
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.platform.ZoneTracker
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.LiftRepository
@@ -60,6 +66,7 @@ import kotlin.test.assertTrue
 import kotlin.time.TestTimeSource
 
 /** The sheet's draft, which the Next set card composes: what a lift picked starts from, and how it steps. */
+@Suppress("detekt.LargeClass") // One fixture for everything the session's page asks of its ViewModel.
 class SessionViewModelTest {
     private val storage = FakeLiftStorage()
     private var now = 100_000L
@@ -116,6 +123,17 @@ class SessionViewModelTest {
 
     /** Where the health store's second write waits for the summary's words: the process's, not the screen's. */
     private val healthScope = TestScope()
+    private val live = FakeLiveHeartRate(LiveHeartRateState.Idle)
+    private val tones = RecordingTones()
+
+    /** The heart at rest, then at [bpm] for long enough to count as a change of zone if it is one. */
+    private fun heartRisesTo(bpm: Int) {
+        live.emitBpm(RESTING_BPM)
+        now += 1_000L
+        live.emitBpm(bpm)
+        now += ZoneTracker.DEFAULT_SUSTAIN_MILLIS
+        live.emitBpm(bpm + 1)
+    }
 
     /** The session's page as the app opens it: over a session started first, as the Lift tab's button does. */
     private fun viewModel(savedState: SavedStateHandle = SavedStateHandle()): SessionViewModel {
@@ -156,6 +174,8 @@ class SessionViewModelTest {
         FixedTimestampFormatter,
         { now },
         savedState,
+        liveHeartRate = live,
+        tones = tones,
         computation = main,
     )
 
@@ -705,5 +725,58 @@ class SessionViewModelTest {
         repository.sessions.startSession(null)
         viewModel().use { assertFalse(finish("Nothing")) }
         assertTrue(health.workouts.isEmpty())
+    }
+
+    @Test
+    fun `a heart rate that is easy against the default max chimes nothing`() {
+        viewModel().use { heartRisesTo(130) }
+        assertEquals(emptyList(), tones.played)
+    }
+
+    @Test
+    fun `a rise into high effort chimes by the max heart rate set in settings`() {
+        // 130 is hard against a max of 150.
+        intervals.maxHeartRate.value = 150
+        viewModel().use {
+            heartRisesTo(130)
+            assertEquals(150, clocks.value.maxHeartRate)
+        }
+        assertEquals(listOf(ToneSynth.zoneUp), tones.played)
+    }
+
+    @Test
+    fun `a change of zone is silent with the alerts off and its readings are kept all the same`() {
+        intervals.heartRateAlerts.value = false
+        viewModel().use {
+            heartRisesTo(175)
+            logSet()
+            assertTrue(finish("Swings"))
+        }
+
+        assertEquals(emptyList(), tones.played)
+        assertEquals(176, repository.sessions.sessions.value.first().peakBpm)
+    }
+
+    @Test
+    fun `the heart rate is held live only while there is a session and never taken from another user`() {
+        // A page come back with no session behind it asks for none.
+        opened().use { assertFalse(live.started) }
+
+        live.start("workout")
+        viewModel().use {
+            assertEquals(2, live.users.size)
+            discard()
+            assertEquals(setOf<Any>("workout"), live.users)
+        }
+    }
+}
+
+private const val RESTING_BPM = 100
+
+private class RecordingTones : TonePlayer {
+    val played = mutableListOf<Tone>()
+
+    override fun play(tone: Tone) {
+        played += tone
     }
 }

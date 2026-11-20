@@ -326,7 +326,7 @@ class WorkoutSession(
         sampler.reset()
         zoneTracker = ZoneTracker(maxBpm = maxBpm)
         heartRateJob?.cancel()
-        liveHeartRate.start()
+        liveHeartRate.start(this)
         heartRateJob = heartRateScope.launch { liveHeartRate.reading.collect { onHeartRate(it) } }
     }
 
@@ -350,7 +350,7 @@ class WorkoutSession(
     private fun stopHeartRate() {
         heartRateJob?.cancel()
         heartRateJob = null
-        liveHeartRate.stop()
+        liveHeartRate.stop(this)
     }
 
     private fun WorkoutRun.withRecordedHeartRate(): WorkoutRun {

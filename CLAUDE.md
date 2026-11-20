@@ -198,7 +198,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
                      saying whether it was grappling, each workout's snatches as counted (`IntervalSnatches`, read as
                      sets by `snatchSets`), each workout's effort as said on its summary (read by readiness through
-                     `efforts`), and the body weight; `app` binds it),
+                     `efforts`), the body weight, and the max heart rate and whether a change of zone is
+                     chimed, which the session's live heart rate goes by; `app` binds it),
                      `LiftActivity` (what the interval side reads of Lift, the bells owned among it;
                      `SessionRepository` is it), `LiftReadiness` (why today is a taxed day by Lift's reading,
                      whether the program's day ahead can be eased, and easing the session just started; Today

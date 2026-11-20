@@ -55,6 +55,18 @@ class RepositoryIntervalActivity(
         .map { it.voice }
         .stateIn(scope, SharingStarted.Eagerly, settingsStore.cueSettings.value.voice)
 
+    override val maxHeartRate: StateFlow<Int?> = settingsStore.appSettings
+        .map { it.body.maxHeartRate }
+        .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.maxHeartRate)
+
+    override val heartRateAlerts: StateFlow<Boolean> = settingsStore.cueSettings
+        .map { it.heartRateAlerts && it.sound }
+        .stateIn(
+            scope,
+            SharingStarted.Eagerly,
+            settingsStore.cueSettings.value.let { it.heartRateAlerts && it.sound },
+        )
+
     /** As History counts a session's calories: all of it as kettlebell work, its rests being short. */
     override fun sessionCalories(elapsedSeconds: Int): Int? =
         settingsStore.appSettings.value.body.calories(elapsedSeconds, 0, Activity.Kettlebell)

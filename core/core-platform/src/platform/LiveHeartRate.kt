@@ -32,35 +32,42 @@ sealed interface LiveHeartRateState {
     /** Connecting to the paired sensor for live readings. */
     data object Connecting : LiveHeartRateState
 
-    /** A live heart-rate reading from the sensor, in beats a minute. */
+    /**
+     * A live heart-rate reading from the sensor, in beats a minute. Without [contact] the sensor is connected and
+     * reads no heart (a strap off the chest): [bpm] is then 0 and nothing to show or keep.
+     */
     data class Reading(val bpm: Int, val contact: Boolean = true) : LiveHeartRateState
 
-    /** Connection dropped mid-workout; waiting to reconnect. */
+    /** The connection dropped, or never came; the sensor is being tried again. */
     data object Disconnected : LiveHeartRateState
 }
 
 /**
- * Streams live heart-rate readings from the user's paired sensor during an active workout or Lift session.
+ * Streams live heart-rate readings from the user's paired sensor during an active workout or Lift session. The
+ * one stream is shared: it runs while anyone holds it, each user starting and stopping it for itself.
  * Both sides consume this contract from `core-platform`; Android's `PolarClassSensor` implements it beside
  * offline class recording, while iOS and desktop bind [NoLiveHeartRate].
  */
 interface LiveHeartRate {
     val reading: StateFlow<LiveHeartRateState>
 
-    /** Begins streaming from the paired sensor; no-op when unavailable, unpaired, or already streaming. */
-    fun start()
+    /**
+     * [user] wants the heart rate live: streaming begins from the paired sensor, unless it already runs for
+     * another. No-op when unavailable or unpaired, or when [user] holds it already.
+     */
+    fun start(user: Any)
 
-    /** Stops streaming and releases the live connection. */
-    fun stop()
+    /** [user] is done with it; the stream stops and its connection is let go once no one holds it. */
+    fun stop(user: Any)
 }
 
 /** No live heart-rate sensor on this platform. */
 object NoLiveHeartRate : LiveHeartRate {
     override val reading: StateFlow<LiveHeartRateState> = MutableStateFlow(LiveHeartRateState.Unavailable)
 
-    override fun start() = Unit
+    override fun start(user: Any) = Unit
 
-    override fun stop() = Unit
+    override fun stop(user: Any) = Unit
 }
 
 /** Default maximum heart rate used for zones when the user hasn't set their own. */
