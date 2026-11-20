@@ -100,6 +100,7 @@ nav:
   - Developers:
       - developers/index.md
       - Architecture: architecture.md
+      - "ADR-0001: KMP app choices": adr/0001-kmp-app-choices.md
       - Testing: testing.md
       - Kettlebell coaching: kettlebell-coaching.md
       - Releasing: release.md
