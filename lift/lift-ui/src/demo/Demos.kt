@@ -6,9 +6,9 @@ import dev.justinsmith.lift.domain.Exercise
 
 /**
  * The demo drawn for this exercise: every built-in has one, and one of the user's own has the demo of the
- * built-in it names as its [CustomExercise.figure], if it names one. A lift whose first cue is taken once before the reps (a grip, a
- * stance, an anchor, lying down) is set up with it first; one whose first cue is part of every rep (a swing's hike,
- * a clean's zip) loops from the start.
+ * built-in it names as its [CustomExercise.figure], if it names one. A lift whose first cue is taken once before
+ * the reps (a grip, a stance, an anchor, lying down) is set up with it first; one whose first cue is part of every
+ * rep (a swing's hike, a clean's zip) loops from the start.
  */
 val Exercise.demo: ExerciseDemo?
     get() = builtInDemos[(this as? CustomExercise)?.figure ?: this]
