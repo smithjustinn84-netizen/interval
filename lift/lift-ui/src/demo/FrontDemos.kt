@@ -195,9 +195,9 @@ val BandLateralWalkDemo: ExerciseDemo = run {
         farUpperArm = -10f,
         farForearm = 140f,
     )
-    val steppingOut = squat.copy(shin = 8f, thigh = -58f)
+    val steppingOut = squat.copy(shin = 18f, thigh = -66f)
     val wide = squat.copy(shin = -10f, thigh = -48f, farShin = 10f, farThigh = 48f)
-    val steppingIn = squat.copy(shin = -2f, thigh = -28f, farShin = -6f, farThigh = 50f)
+    val steppingIn = squat.copy(shin = -2f, thigh = -28f, farShin = -18f, farThigh = 62f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = squat),

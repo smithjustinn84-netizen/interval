@@ -125,7 +125,7 @@ val ShoulderCirclesDemo: ExerciseDemo = run {
 }
 
 /** The head, the shoulders and the arms out in front, close: the hands' drills. */
-private val armsCloseUp = Rect(left = 175f, top = 45f, right = 335f, bottom = 165f)
+private val armsCloseUp = Rect(left = 170f, top = 45f, right = 340f, bottom = 180f)
 
 /**
  * Wrist circles: the elbows at the sides and the forearms level, the loose fists circled at the wrists one way then
@@ -134,9 +134,9 @@ private val armsCloseUp = Rect(left = 175f, top = 45f, right = 335f, bottom = 16
 val WristCirclesDemo: ExerciseDemo = run {
     fun fists(wrist: Float) =
         Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 90f, wrist = wrist, palm = LOOSE_FIST)
-    val top = fists(55f)
+    val top = fists(70f)
     val forward = fists(0f)
-    val bottom = fists(-55f)
+    val bottom = fists(-70f)
     val back = fists(0f)
     ExerciseDemo(
         keyframes = listOf(
@@ -177,16 +177,16 @@ val BacksOfTheHandsDemo: ExerciseDemo =
  * back toward the wrist, and easing them off. Seen close, at the arms.
  */
 val FingerPullsDemo: ExerciseDemo = run {
-    val meeting = pulling(wrist = 40f)
-    val pulled = pulling(wrist = 78f)
+    val meeting = pulling(wrist = 25f)
+    val pulled = pulling(wrist = 90f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = meeting),
             Keyframe(at = 0.1f, pose = meeting),
-            Keyframe(at = 0.2f, pose = pulling(wrist = 59f)),
+            Keyframe(at = 0.2f, pose = pulling(wrist = 58f)),
             Keyframe(at = 0.3f, pose = pulled),
             Keyframe(at = 0.5f, pose = pulled),
-            Keyframe(at = 0.6f, pose = pulling(wrist = 59f)),
+            Keyframe(at = 0.6f, pose = pulling(wrist = 58f)),
             Keyframe(at = 0.7f, pose = meeting),
             Keyframe(at = 1f, pose = meeting),
         ),
@@ -212,7 +212,7 @@ val ForearmStretchDemo: ExerciseDemo = held(
 )
 
 /** A hand half closed, as a loose fist circling is. */
-private const val LOOSE_FIST = 0.7f
+private const val LOOSE_FIST = 0.85f
 
 /**
  * Standing with the near arm out in front, its hand open at [wrist], and the far hand holding it across its

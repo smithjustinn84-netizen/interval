@@ -243,8 +243,8 @@ sealed interface BandEnd {
  * A demo that [follows] its figure draws, at each moment, only as much of its view's height as the figure then
  * needs ([ceilingAt]): one that lies down and stands up (the get-up) is seen close while it lies and stands back as
  * it rises, rather than lying small under the room its standing needs. [framed] turns it on where that room changes
- * a lot over the rep and the hips come down to the floor in it: a swing or a snatch, standing throughout, keeps a
- * still frame, which a quick rep would otherwise have breathe in and out.
+ * a lot over the rep and the shoulders come down to the floor in it: a lift on its feet, a deep squat's too (a
+ * thruster, a barbell snatch's catch), keeps a still frame, which a quick rep would otherwise have breathe in and out.
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
@@ -346,7 +346,7 @@ class ExerciseDemo(
             keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root,
             Rect(view.left, top, view.right, view.bottom), props, anchor, setUp, facing,
             follows = tops.max() - tops.min() > FOLLOW_RANGE && (0 until FRAME_STEPS).any { step ->
-                figureAt(step / FRAME_STEPS.toFloat()).hips.y > Rig.FLOOR - FOLLOW_LOW_HIPS
+                figureAt(step / FRAME_STEPS.toFloat()).neck.y > Rig.FLOOR - FOLLOW_LOW_SHOULDERS
             },
         )
     }
@@ -360,15 +360,30 @@ class ExerciseDemo(
 
     /**
      * The ceiling of what a demo that [follows] its figure draws at each of [FRAME_STEPS] moments of the rep: over
-     * the highest it reaches a little either side of that moment, so it eases ahead of a rise and lags a fall.
+     * the highest it reaches a little either side of that moment, so it eases ahead of a rise and lags a fall. And
+     * never moving faster than [FOLLOW_SPEED]: where the figure rises quicker, the frame starts to open before it,
+     * and where it sinks quicker, the frame closes in after it, so the figure is always in it and the picture never
+     * lurches. A quick rep may never close in all the way.
      */
     private val ceilings: FloatArray? by lazy {
         if (!follows) return@lazy null
         val tops = FloatArray(FRAME_STEPS) { step -> topAt(step / FRAME_STEPS.toFloat()) }
-        FloatArray(FRAME_STEPS) { step ->
+        val ceilings = FloatArray(FRAME_STEPS) { step ->
             val highest = (-FOLLOW_STEPS..FOLLOW_STEPS).minOf { tops[(step + it).mod(FRAME_STEPS)] }
             (highest - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom - CLOSE_UP_MARGIN)
         }
+        // Only ever raising a ceiling, which leaves more room, keeps the figure in: round the loop each way until
+        // no step closes in or opens out by more than the speed allows.
+        val most = FOLLOW_SPEED * secondsPerRep / FRAME_STEPS
+        repeat(FOLLOW_PASSES) {
+            for (step in 0 until FRAME_STEPS) {
+                ceilings[step] = minOf(ceilings[step], ceilings[(step - 1).mod(FRAME_STEPS)] + most)
+            }
+            for (step in FRAME_STEPS - 1 downTo 0) {
+                ceilings[step] = minOf(ceilings[step], ceilings[(step + 1).mod(FRAME_STEPS)] + most)
+            }
+        }
+        ceilings
     }
 
     /**
@@ -549,8 +564,15 @@ class ExerciseDemo(
          * frame's moments either side of one its ceiling looks over.
          */
         private const val FOLLOW_RANGE = 150f
-        private const val FOLLOW_LOW_HIPS = 70f
+        private const val FOLLOW_LOW_SHOULDERS = 130f
         private const val FOLLOW_STEPS = 4
+
+        /**
+         * How fast a following frame's ceiling may move, in [Rig] units a second (a standing figure's room in about
+         * three seconds), and how many times round the rep that is evened out.
+         */
+        private const val FOLLOW_SPEED = 110f
+        private const val FOLLOW_PASSES = 3
 
         /** The room a close-up leaves round the joints: a plate's, the widest thing in a hand, and a little air. */
         private const val CLOSE_UP_MARGIN = 44f

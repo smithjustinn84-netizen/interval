@@ -108,7 +108,19 @@ class ExerciseDemoTest {
         val getUp = assertNotNull(BuiltInExercise.GetUp.demo).framed()
         assertTrue(getUp.follows, "The get-up keeps a still frame")
         assertTrue(getUp.ceilingAt(0f) > getUp.ceilingAt(getUp.still + 0.25f) + 100f, "It doesn't close in lying")
-        listOf(TwoHandSwingDemo, SnatchDemo, PressDemo).forEach { assertFalse(it.framed().follows) }
+        listOf(TwoHandSwingDemo, SnatchDemo, PressDemo, ThrusterDemo, BarbellSnatchDemo).forEach {
+            assertFalse(it.framed().follows)
+        }
+        // Its frame never lurches: at 60 frames a second the room it shows changes a little at a time.
+        following.forEach { demo ->
+            (0 until 600).forEach { frame ->
+                val at = frame / 600f
+                val next = demo.after(at, 1f / 60)
+                val room = demo.view.bottom - demo.ceilingAt(at)
+                val change = kotlin.math.abs(demo.view.bottom - demo.ceilingAt(next) - room) / room
+                assertTrue(change < 0.02f, "The frame lurches by $change at $at")
+            }
+        }
         following.forEach { demo ->
             (0..100).forEach { step ->
                 val at = step / 100f
