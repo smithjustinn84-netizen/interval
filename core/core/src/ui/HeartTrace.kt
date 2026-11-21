@@ -3,6 +3,7 @@ package dev.justinsmith.interval.ui
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -91,6 +92,7 @@ fun HeartCard(
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(palette.surface)
+            .border(Sizes.hairline, palette.line, Corners.radius18)
             .padding(Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {

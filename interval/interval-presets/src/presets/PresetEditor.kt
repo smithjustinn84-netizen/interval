@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.presets
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -295,6 +296,7 @@ private fun EditorBlocks(
                     .fillMaxWidth()
                     .clip(Corners.radius18)
                     .background(IntervalTheme.palette.surfaceVariant)
+                    .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18)
                     // Each block's rows read after its number, so "Edit work" says which block's.
                     .semantics { isTraversalGroup = true },
             ) {
@@ -379,7 +381,13 @@ private fun EditorWorkoutCard(
     hands: Boolean? = null,
     onHands: (Boolean) -> Unit = {},
 ) {
-    Column(modifier.fillMaxWidth().clip(Corners.radius18).background(IntervalTheme.palette.surfaceVariant)) {
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(Corners.radius18)
+            .background(IntervalTheme.palette.surfaceVariant)
+            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18),
+    ) {
         val fields = listOfNotNull(ConfigField.BlockRest.takeIf { config.isSequence }) + ConfigField.bookends
         fields.forEachIndexed { index, field ->
             if (index > 0) RowDivider()

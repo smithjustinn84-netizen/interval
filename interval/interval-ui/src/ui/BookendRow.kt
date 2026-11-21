@@ -2,6 +2,7 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -71,6 +72,7 @@ private fun BookendChip(
                 onClick = onClick,
                 onClickLabel = stringResource(field.editRes),
             )
+            .border(Sizes.hairline, palette.line, Corners.radius12)
             .padding(horizontal = Spacing.space12, vertical = Spacing.space8),
         verticalArrangement = Arrangement.Center,
     ) {

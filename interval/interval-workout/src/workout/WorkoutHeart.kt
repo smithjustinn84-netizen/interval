@@ -1,16 +1,27 @@
 package dev.justinsmith.interval.workout
 
+import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.inUse
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.HeartZoneScale
+import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LiveHeartTrace
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.workout_heart_show_scale
 import dev.justinsmith.interval.workout.resources.workout_heart_show_trace
@@ -25,15 +36,23 @@ import org.jetbrains.compose.resources.stringResource
 @Composable
 internal fun WorkoutHeart(state: WorkoutUiState, onToggle: () -> Unit, modifier: Modifier = Modifier) {
     if (!state.liveHeartRate.inUse) return
-    val turning = modifier.clickable(
-        interactionSource = remember { MutableInteractionSource() },
-        indication = null,
-        onClickLabel = stringResource(
-            if (state.heartTrace) Res.string.workout_heart_show_scale else Res.string.workout_heart_show_trace,
-        ),
-        role = Role.Button,
-        onClick = onToggle,
-    )
+    val workout = IntervalTheme.workout
+    val turning = modifier
+        .widthIn(max = Sizes.zoneScale)
+        .fillMaxWidth()
+        .clip(Corners.radius18)
+        .background(workout.control)
+        .border(Sizes.hairline, workout.upcoming, Corners.radius18)
+        .clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = LocalIndication.current,
+            onClickLabel = stringResource(
+                if (state.heartTrace) Res.string.workout_heart_show_scale else Res.string.workout_heart_show_trace,
+            ),
+            role = Role.Button,
+            onClick = onToggle,
+        )
+        .padding(horizontal = Spacing.space16, vertical = Spacing.space12)
     if (state.heartTrace) {
         LiveHeartTrace(
             state.liveHeartRate,

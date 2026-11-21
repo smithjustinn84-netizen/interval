@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -107,7 +108,12 @@ internal fun TimerTitleBar(
             exit = fadeOut(tween(Motion.STATE_MILLIS)) + scaleOut(tween(Motion.STATE_MILLIS)) +
                 shrinkHorizontally(tween(Motion.STATE_MILLIS)),
         ) {
-            IconAction(IntervalIcons.Add, stringResource(Res.string.timer_save_as_preset_cd), onSave)
+            IconAction(
+                IntervalIcons.Add,
+                stringResource(Res.string.timer_save_as_preset_cd),
+                onClick = onSave,
+                bordered = true,
+            )
         }
         SettingsAction(onOpenSettings)
     }
@@ -181,6 +187,7 @@ private fun ActivityPill(activity: Activity, onClick: () -> Unit, modifier: Modi
         modifier
             .heightIn(min = Sizes.pillHeight)
             .surfaceButton(interaction, Corners.full, palette.surfaceVariant, onClick)
+            .border(Sizes.hairline, palette.line, Corners.full)
             .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(start = Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
@@ -261,6 +268,7 @@ internal fun ColumnScope.SequenceRows(
                 onClick = onEditBlocks,
                 onClickLabel = stringResource(Res.string.timer_edit_blocks),
             )
+            .border(Sizes.hairline, palette.line, Corners.radius18)
             .then(height)
             .padding(Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -337,6 +345,7 @@ private fun StepperRow(
                 onClick = onEdit,
                 onClickLabel = stringResource(field.editRes),
             )
+            .border(Sizes.hairline, palette.line, Corners.radius18)
             .phaseStripe(stripe)
             .padding(start = IntervalSizes.stripe + Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,

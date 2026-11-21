@@ -18,6 +18,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -130,6 +131,7 @@ internal fun PrimaryButton(
         modifier,
         background = fill,
         haptic = if (state.running) HapticFeedbackType.ToggleOff else HapticFeedbackType.ToggleOn,
+        shape = Corners.full,
     ) {
         AnimatedContent(state.running, transitionSpec = { fadeThroughContent() }, label = "pauseResume") { running ->
             Text(
@@ -151,12 +153,14 @@ internal fun BigButton(
     style: TextStyle = IntervalTheme.type.control,
     description: String? = null,
     haptic: HapticFeedbackType? = null,
+    shape: Shape = Corners.radius18,
 ) {
     BigButton(
         onClick,
         modifier.then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier),
         background,
         haptic,
+        shape,
     ) {
         Text(text, style = style, color = content)
     }
@@ -169,18 +173,19 @@ internal fun BigButton(
     modifier: Modifier = Modifier,
     background: Color = IntervalTheme.workout.control,
     haptic: HapticFeedbackType? = null,
+    shape: Shape = Corners.radius18,
     content: @Composable () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val workout = IntervalTheme.workout
     val outline = if (background == workout.control) {
-        Modifier.border(Sizes.hairline, workout.upcoming, Corners.radius18)
+        Modifier.border(Sizes.hairline, workout.upcoming, shape)
     } else {
         Modifier
     }
     Box(
         modifier
-            .surfaceButton(interaction, Corners.radius18, background, onClick, haptic = haptic)
+            .surfaceButton(interaction, shape, background, onClick, haptic = haptic)
             .then(outline)
             .padding(horizontal = Spacing.space12, vertical = Spacing.space8),
         contentAlignment = Alignment.Center,
@@ -202,8 +207,8 @@ private fun PillButton(
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, workout.control, onClick, haptic = haptic)
-            .border(Sizes.hairline, workout.upcoming, Corners.radius12)
+            .surfaceButton(interaction, Corners.full, workout.control, onClick, haptic = haptic)
+            .border(Sizes.hairline, workout.upcoming, Corners.full)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,

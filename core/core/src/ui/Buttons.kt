@@ -89,6 +89,7 @@ fun RepeatButton(
                 if (!repeated) step()
                 repeated = false
             })
+            .border(Sizes.hairline, palette.line, Corners.radius12)
             .semantics { contentDescription = description },
         contentAlignment = Alignment.Center,
     ) {

@@ -109,7 +109,7 @@ internal fun RoundDoneButton(
             .heightIn(min = IntervalSizes.roundDone)
             .surfaceButton(
                 interaction,
-                Corners.radius18,
+                Corners.full,
                 if (live) fill else fill.copy(alpha = Opacity.DISABLED),
                 onFinishRound,
                 enabled = live,

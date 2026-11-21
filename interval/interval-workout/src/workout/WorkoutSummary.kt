@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -247,6 +248,7 @@ private fun SummaryActions(
                 background = IntervalTheme.palette.fillOf(IntervalTheme.workout.done),
                 content = IntervalTheme.palette.onFill(IntervalTheme.palette.fillOf(IntervalTheme.workout.done)),
                 style = IntervalTheme.type.value,
+                shape = Corners.full,
             )
         }
     }
@@ -626,6 +628,7 @@ private fun Stat(value: String, label: String, modifier: Modifier = Modifier) {
             .semantics(mergeDescendants = true) {}
             .clip(Corners.radius18)
             .background(IntervalTheme.workout.control)
+            .border(Sizes.hairline, IntervalTheme.workout.upcoming, Corners.radius18)
             .padding(start = Spacing.space8, end = Spacing.space8, top = Spacing.space16, bottom = Spacing.space12),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

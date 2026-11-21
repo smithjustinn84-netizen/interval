@@ -144,7 +144,7 @@ internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
                 style = IntervalTheme.type.control,
                 color = colors.onFill(zoneColor),
                 modifier = Modifier
-                    .clip(Corners.radius12)
+                    .clip(Corners.full)
                     .background(zoneColor)
                     .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
             )
