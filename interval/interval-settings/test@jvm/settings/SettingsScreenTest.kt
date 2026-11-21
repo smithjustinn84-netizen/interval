@@ -33,6 +33,7 @@ import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.scrollToText
@@ -140,12 +141,16 @@ class SettingsScreenTest {
     fun `with two sensors nearby a sheet asks which and hands on the one tapped`() = runUiTest {
         val choices = listOf(NearbySensor("1", "Polar Sense 1A2B3C4D"), NearbySensor("2", "Polar H10 5E6F7A8B"))
         setThemedContent { Screen(sensor = SensorStatus.Unpaired, choices = choices) }
+        // A tap while the sheet still rises reaches nothing, so let it settle open first: on a slow machine the
+        // tap otherwise came during the rise, was lost, and the choice never came.
+        mainClock.advanceTimeBy(Motion.ENTER_MILLIS.toLong())
 
         onNodeWithText("Which sensor?").assertExists()
         onNodeWithText("Polar H10 5E6F7A8B").assertExists()
         onNodeWithText("Polar Sense 1A2B3C4D").performClick()
 
-        waitUntil { calls.isNotEmpty() }
+        // The choice is heard once the sheet is away, which the test's clock runs to.
+        waitForIdle()
         assertEquals(listOf<Any>("choose Polar Sense 1A2B3C4D"), calls)
     }
 
