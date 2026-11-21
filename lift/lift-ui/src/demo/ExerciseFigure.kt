@@ -194,7 +194,7 @@ fun ExerciseFigure(
                 pen.trailCount = demo.trailInto(t, pen.trail)
                 pen.breath = demo.breathAt(t)
                 pen.pulse = demo.pulseAt(t)
-                drawFigure(demo, demo.figureAt(t), pen, colors.at(demo, t), colors)
+                drawFigure(demo, demo.figureAt(t), pen, colors.at(demo, t), colors, t)
             }
         },
     )

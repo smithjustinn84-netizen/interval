@@ -239,6 +239,12 @@ sealed interface BandEnd {
  * A [crop] draws only that much of the view, larger: a close-up on the hands for a drill done with the wrists. The
  * view is still the room the whole figure keeps to; a cropped demo is already as close as it goes, so it is its own
  * [framed] and [closeUp], and the figure gives no celebration out of sight.
+ *
+ * A demo that [follows] its figure draws, at each moment, only as much of its view's height as the figure then
+ * needs ([ceilingAt]): one that lies down and stands up (the get-up) is seen close while it lies and stands back as
+ * it rises, rather than lying small under the room its standing needs. [framed] turns it on where that room changes
+ * a lot over the rep and the hips come down to the floor in it: a swing or a snatch, standing throughout, keeps a
+ * still frame, which a quick rep would otherwise have breathe in and out.
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
@@ -255,6 +261,7 @@ class ExerciseDemo(
     val setUp: SetUp? = null,
     val facing: Facing = Facing.Side,
     val crop: Rect? = null,
+    val follows: Boolean = false,
 ) {
     init {
         require(crop == null || view.intersect(crop) == crop) { "The crop reaches past the view" }
@@ -292,6 +299,7 @@ class ExerciseDemo(
             keyframes, rep, hold, secondsPerRep, still, bellLag, trail, root, view, props, anchor, SetUp(cue, seconds),
             facing,
             crop,
+            follows,
         )
     }
 
@@ -332,17 +340,47 @@ class ExerciseDemo(
      */
     fun framed(): ExerciseDemo {
         if (props.isNotEmpty() || crop != null) return this
-        var highest = Float.MAX_VALUE
-        for (step in 0 until FRAME_STEPS) {
-            val figure = figureAt(step / FRAME_STEPS.toFloat())
-            val drawn = if (hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
-            highest = minOf(highest, drawn.minOf { it.y })
-        }
-        val top = (highest - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom)
+        val tops = FloatArray(FRAME_STEPS) { step -> topAt(step / FRAME_STEPS.toFloat()) }
+        val top = (tops.min() - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom)
         return ExerciseDemo(
             keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root,
             Rect(view.left, top, view.right, view.bottom), props, anchor, setUp, facing,
+            follows = tops.max() - tops.min() > FOLLOW_RANGE && (0 until FRAME_STEPS).any { step ->
+                figureAt(step / FRAME_STEPS.toFloat()).hips.y > Rig.FLOOR - FOLLOW_LOW_HIPS
+            },
         )
+    }
+
+    /** The highest the figure reaches [progress] through the rep: its joints', and a bell's but the far one alone. */
+    private fun topAt(progress: Float): Float {
+        val figure = figureAt(progress)
+        val drawn = if (hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+        return drawn.minOf { it.y }
+    }
+
+    /**
+     * The ceiling of what a demo that [follows] its figure draws at each of [FRAME_STEPS] moments of the rep: over
+     * the highest it reaches a little either side of that moment, so it eases ahead of a rise and lags a fall.
+     */
+    private val ceilings: FloatArray? by lazy {
+        if (!follows) return@lazy null
+        val tops = FloatArray(FRAME_STEPS) { step -> topAt(step / FRAME_STEPS.toFloat()) }
+        FloatArray(FRAME_STEPS) { step ->
+            val highest = (-FOLLOW_STEPS..FOLLOW_STEPS).minOf { tops[(step + it).mod(FRAME_STEPS)] }
+            (highest - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom - CLOSE_UP_MARGIN)
+        }
+    }
+
+    /**
+     * The top of what is drawn [progress] through the demo: the view's, unless it [follows] its figure, when it is
+     * just over the figure then (while setting up, as at the rep's start).
+     */
+    fun ceilingAt(progress: Float): Float {
+        val table = ceilings ?: return view.top
+        val at = looped(progress.coerceAtLeast(0f)) * FRAME_STEPS
+        val step = at.toInt().coerceIn(0, FRAME_STEPS - 1)
+        val next = (step + 1) % FRAME_STEPS
+        return table[step] + (table[next] - table[step]) * (at - step)
     }
 
     private val times = FloatArray(keyframes.size) { keyframes[it].at }
@@ -493,6 +531,14 @@ class ExerciseDemo(
         /** How many moments of the rep a mat is measured over, and a frame. */
         private const val MAT_STEPS = 24
         private const val FRAME_STEPS = 48
+
+        /**
+         * How far the figure's highest must change over a rep for its frame to follow it, and how many of the
+         * frame's moments either side of one its ceiling looks over.
+         */
+        private const val FOLLOW_RANGE = 150f
+        private const val FOLLOW_LOW_HIPS = 70f
+        private const val FOLLOW_STEPS = 4
 
         /** The room a close-up leaves round the joints: a plate's, the widest thing in a hand, and a little air. */
         private const val CLOSE_UP_MARGIN = 44f
@@ -660,7 +706,7 @@ object Rig {
     const val BENCH_TOP = 8f
     const val BENCH_LEG = 5f
     const val WALL = 6f
-    const val RAIL = 8f
+    const val RAIL = 11f
 
     /** A band, and the post it is tied to. */
     const val BAND = 4f

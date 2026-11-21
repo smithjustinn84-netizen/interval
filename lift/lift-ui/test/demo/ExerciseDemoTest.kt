@@ -103,6 +103,23 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a frame follows a figure that lies down and stands up and keeps all of it in sight`() {
+        val following = demos.map { it.framed() }.filter { it.follows }
+        val getUp = assertNotNull(BuiltInExercise.GetUp.demo).framed()
+        assertTrue(getUp.follows, "The get-up keeps a still frame")
+        assertTrue(getUp.ceilingAt(0f) > getUp.ceilingAt(getUp.still + 0.25f) + 100f, "It doesn't close in lying")
+        listOf(TwoHandSwingDemo, SnatchDemo, PressDemo).forEach { assertFalse(it.framed().follows) }
+        following.forEach { demo ->
+            (0..100).forEach { step ->
+                val at = step / 100f
+                val figure = demo.figureAt(at)
+                val drawn = if (demo.hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
+                drawn.forEach { assertTrue(it.y >= demo.ceilingAt(at), "$it is over the frame at $at") }
+            }
+        }
+    }
+
+    @Test
     fun `the breath loops with the rep and runs on from the set-up`() {
         demos.forEach { demo ->
             assertEquals(demo.breathAt(0f), demo.breathAt(1f), 0.001f)

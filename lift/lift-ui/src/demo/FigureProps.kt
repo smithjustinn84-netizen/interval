@@ -124,6 +124,18 @@ private fun DrawScope.drawWall(wall: Wall, color: Color) {
     drawLine(color, Offset(wall.x, Rig.FLOOR), Offset(wall.x, top), Rig.WALL, StrokeCap.Round)
 }
 
+/**
+ * What holds a bar up, behind the figure: from a bar overhead a bracket up to the ceiling ([top]), from a low one
+ * an upright down to the floor with a base, as a rack's is. Without it a bar seen end on is a dot in the fists.
+ */
+internal fun DrawScope.drawRailStand(rail: Rail, color: Color, top: Float) {
+    val overhead = rail.at.y < Rig.FLOOR / 2
+    val end = if (overhead) Offset(rail.at.x, top) else Offset(rail.at.x, Rig.FLOOR)
+    drawLine(color.copy(alpha = RAIL_STAND_ALPHA), rail.at, end, Rig.POST, StrokeCap.Round)
+    val across = Offset(POST_BASE_HALF, 0f)
+    drawLine(color.copy(alpha = RAIL_STAND_ALPHA), end - across, end + across, POST_BASE_STROKE, StrokeCap.Round)
+}
+
 /** A pull-up or dip bar seen end on: outer steel ring and bright center core. */
 private fun DrawScope.drawRail(rail: Rail, color: Color) {
     drawCircle(color.copy(alpha = RAIL_FILL_ALPHA), Rig.RAIL, rail.at)
@@ -158,7 +170,8 @@ private const val BENCH_HIGHLIGHT_STROKE = 2f
 private const val WALL_BACKING_WIDTH = 14f
 private const val WALL_BACKING_ALPHA = 0.18f
 
-private const val RAIL_FILL_ALPHA = 0.3f
+private const val RAIL_FILL_ALPHA = 0.55f
+private const val RAIL_STAND_ALPHA = 0.7f
 private const val RAIL_RIM_STROKE = 2.6f
 private const val RAIL_CORE_RADIUS = 2.4f
 private const val RAIL_CORE_ALPHA = 0.55f

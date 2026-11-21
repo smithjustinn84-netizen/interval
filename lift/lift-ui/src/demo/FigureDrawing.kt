@@ -22,22 +22,29 @@ internal fun DrawScope.drawFigure(
     pen: FigurePen,
     bell: Color,
     colors: FigureColors,
+    progress: Float = 0f,
 ) {
-    // A close-up fits its crop, and is clipped to it, so nothing past it is drawn over what is round the figure.
+    // A close-up fits its crop, and is clipped to it, so nothing past it is drawn over what is round the figure. One
+    // that follows its figure draws from just over it down, which moves; worked out in floats, as it is every frame.
     val view = demo.crop ?: demo.view
-    val scale = minOf(size.width / view.width, size.height / view.height)
-    val left = (size.width - view.width * scale) / 2
-    val top = (size.height - view.height * scale) / 2
+    val ceiling = if (demo.crop == null) demo.ceilingAt(progress) else view.top
+    val width = view.width
+    val height = view.bottom - ceiling
+    val scale = minOf(size.width / width, size.height / height)
+    val left = (size.width - width * scale) / 2
+    val top = (size.height - height * scale) / 2
     withTransform({
         translate(left, top)
         scale(scale, scale, pivot = Offset.Zero)
-        translate(-view.left, -view.top)
+        translate(-view.left, -ceiling)
         if (demo.crop != null) clipRect(view.left, view.top, view.right, view.bottom)
     }) {
         drawFloor(demo, figure, pen, bell, colors)
         // Indexed loops, here and below: a for-each would make an iterator every frame.
         val props = demo.propsBehind
         for (i in props.indices) drawProp(props[i], colors.farLeg)
+        val stands = demo.rails
+        for (i in stands.indices) drawRailStand(stands[i], colors.farLeg, view.top)
         // A band tied behind the figure runs behind it; any other is held in front.
         drawBands(demo.bands, figure, bell, behind = true)
         drawGlow(demo.hold, figure, pen.pulse, bell)

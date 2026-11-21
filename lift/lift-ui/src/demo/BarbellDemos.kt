@@ -194,7 +194,8 @@ val BarbellCleanAndJerkDemo: ExerciseDemo = barLift(
  */
 val BarbellBenchPressDemo: ExerciseDemo = run {
     val lying = Pose(shin = -10f, thigh = -90f, torso = -90f, upperArm = 180f, forearm = 180f)
-    val chest = lying.copy(upperArm = 60f, forearm = 160f)
+    // The bar comes down to the lower chest, the forearms upright under it, well clear of the face.
+    val chest = lying.copy(upperArm = 64f, forearm = 180f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = lying),
