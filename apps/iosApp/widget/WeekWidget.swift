@@ -1,7 +1,7 @@
 import SwiftUI
 import WidgetKit
 
-// The Home Screen widget, Android's `WeekWidget` on iOS: the week's ring (this week's workouts of both kinds over
+// The Home Screen widget, Android's `WeekWidget` on iOS: the week's ring (this week's days trained, both kinds, over
 // the goal set on Plan, or the count alone with no goal), its words and the streak, with Workout and Lift, which
 // open the app as its quick actions do (`interval://shortcut/<id>`, handled by `SceneDelegate`, so a workout
 // already running is kept). Swift alone: the extension can't link the app's Kotlin, so the app writes each
@@ -180,8 +180,8 @@ extension WeekSnapshot {
     var streakWords: Text? { streak > 0 ? Text("\(streak)-week streak") : nil }
 
     var spoken: Text {
-        goal.map { Text("\(count) of \($0) workouts this week") }
-            ?? Text("^[\(count) workout](inflect: true) this week")
+        goal.map { Text("\(count) of \($0) days trained this week") }
+            ?? Text("^[\(count) day](inflect: true) trained this week")
     }
 }
 
@@ -279,7 +279,7 @@ struct LockCard: View {
             LockRing(week: week).frame(width: 50, height: 50) // smaller than the circular size, so the words fit
             VStack(alignment: .leading, spacing: 0) {
                 Text("This week").font(.headline).widgetAccentable()
-                (week.goal == nil ? Text("^[\(week.count) workout](inflect: true)") : week.caption)
+                (week.goal == nil ? Text("^[\(week.count) day](inflect: true) trained") : week.caption)
                     .font(.subheadline)
                 if let streak = week.streakWords { streak.font(.subheadline).foregroundStyle(.secondary) }
             }
@@ -339,7 +339,7 @@ struct WeekWidget: Widget {
             WeekWidgetView(week: entry.week)
         }
         .configurationDisplayName("This week")
-        .description("This week's workouts against your goal")
+        .description("This week's days trained against your goal")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }

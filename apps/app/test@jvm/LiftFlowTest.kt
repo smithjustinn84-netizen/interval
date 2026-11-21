@@ -44,7 +44,7 @@ class LiftFlowTest {
         waitUntil(timeoutMillis = STATE_TIMEOUT_MILLIS) { onAllNodes(row).fetchSemanticsNodes().isNotEmpty() }
         onNode(hasText("Strength", substring = true) and hasText("at 90000", substring = true)).assertExists()
         // History's week counts it too.
-        onNodeWithText("1 workout").assertExists()
+        onNodeWithText("1 day trained").assertExists()
     }
 
     @Test

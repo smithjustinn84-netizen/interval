@@ -36,7 +36,7 @@ class SportDaysAcceptanceTest {
         seeStepAfter("BJJ class")
         logClassFromToday()
         seeSportOnTheWeek("Today, done, BJJ logged")
-        seeThisWeekOnToday("1 workout")
+        seeThisWeekOnToday("1 day trained")
         seeDoneForToday()
         seeNothingMoreDue()
         sportDaysLogged(1)

@@ -297,7 +297,7 @@ class HistoryViewModel(
                 plannedDue = stats.plannedDue,
                 since = stats.firstDay?.let(timestamps::dateOfDay),
             ),
-            weekCount = week.sumOf { it.count },
+            weekCount = week.count { it.count > 0 },
             weekLifts = week.sumOf { it.liftWorkouts.size },
             weekSports = week.sumOf { it.sports.size },
             weekMobility = week.sumOf { it.mobility },

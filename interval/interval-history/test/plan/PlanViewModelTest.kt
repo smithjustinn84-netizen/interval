@@ -95,9 +95,9 @@ class PlanViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the goal stops at fourteen`() {
+    fun `the goal stops at every day of the week`() {
         repeat(20) { viewModel.stepGoal(1) }
-        assertEquals(14, viewModel.state.value.goal)
+        assertEquals(7, viewModel.state.value.goal)
     }
 
     @Test

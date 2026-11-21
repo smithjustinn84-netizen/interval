@@ -121,7 +121,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
             ),
             swings,
         )
-        assertEquals(2, state.weekCount)
+        // Two workouts, one day trained: the week counts days, the summary workouts.
+        assertEquals(1, state.weekCount)
         assertEquals(2, state.summary.count)
     }
 
@@ -141,7 +142,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
         at(TODAY)
 
         val state = viewModel.state.value
-        assertEquals(2, state.weekCount)
+        // Two workouts on the Monday are one day trained.
+        assertEquals(1, state.weekCount)
         assertEquals(300, state.summary.totalSeconds)
         assertEquals((1..7).toList(), state.week.map { it.weekday })
         assertEquals(listOf(true, false, false, false, false, false, false), state.week.map { it.seconds > 0 })
@@ -505,8 +507,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
         val state = viewModel.state.value
         assertEquals(listOf(flow.name, "Tabata"), state.sections.single().items.map { it.presetName })
-        assertEquals(2 to 1, state.weekCount to state.weekMobility)
-        assertEquals(WeekGoal(count = 2, mobility = 1), state.weekGoal)
+        // Both today: one day trained, one workout of it mobility.
+        assertEquals(1 to 1, state.weekCount to state.weekMobility)
+        assertEquals(WeekGoal(count = 1, mobility = 1), state.weekGoal)
         assertEquals(flow.name, state.mostDone.first { it.config.sameShape(flow.config) }.name)
     }
 
@@ -530,7 +533,8 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(listOf(TODAY, MONDAY), state.sections.map { it.dayNumber })
         assertEquals(listOf(listOf(Sport.Climbing), listOf(Sport.Bjj)), state.sections.map { it.sports })
         assertEquals(listOf(1, 0), state.sections.map { it.items.size })
-        assertEquals(3, state.weekCount)
+        // The Monday and today: two days trained, two sports logged.
+        assertEquals(2, state.weekCount)
         assertEquals(2, state.weekSports)
         val sheet = requireNotNull(state.daySheet)
         assertEquals(listOf(Sport.Bjj), sheet.sports)

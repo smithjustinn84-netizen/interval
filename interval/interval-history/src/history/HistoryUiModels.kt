@@ -124,8 +124,8 @@ sealed interface UpNextItem {
 }
 
 /**
- * This week against the weekly goal: its workouts, [lifts] of them Lift's, [sports] of them sport days logged and
- * [mobility] of them mobility; [goal] is null until set.
+ * This week against the weekly goal: the days trained on ([count], each day once however many workouts it held),
+ * and of its workouts [lifts] Lift's, [sports] sport days logged and [mobility] mobility; [goal] is null until set.
  */
 data class WeekGoal(
     val count: Int = 0,

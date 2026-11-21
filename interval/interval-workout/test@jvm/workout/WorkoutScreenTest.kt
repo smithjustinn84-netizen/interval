@@ -325,7 +325,7 @@ class WorkoutScreenTest {
         mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.CONTENT_MILLIS + Motion.EXIT_MILLIS.toLong())
         onNodeWithText("2-week streak").assertExists()
         state = done.toUiState(running = false, week = WeekStanding(3, goal = null, streak = 0))
-        onNodeWithText("3 workouts this week").assertExists()
+        onNodeWithText("3 days trained this week").assertExists()
     }
 
     @Test

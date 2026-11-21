@@ -372,8 +372,10 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   is described by plain models in `interval/interval-domain/src/model/` (`AppSettings`, `HistoryEntry`, `PlannedWorkout`,
   `LiftWorkout`, `LoggedWorkout`, `LoggedSport`); Room entities and DataStore keys stay in `data/`, behind its mappers.
   `HistoryStore` keeps the sport days logged beside the workouts (`logSport`, one of a sport a day, on the day itself
-  rather than a moment): each counts as a workout in the week wherever one is counted (`TrainingLog`, the summaries'
-  `weekStanding`, the widget's `WeekStandingSource`, Lift through `IntervalActivity.sportDays`). A workout of
+  rather than a moment): each makes its day a day trained wherever the week is counted (`TrainingLog`, the summaries'
+  `weekStanding`, the widget's `WeekStandingSource`, Lift through `IntervalActivity.sportDays`). The week, its goal
+  (`AppSettings.weeklyGoal`, 1 to 7) and the streak count days trained, each day once however many workouts it held
+  (a flow before a class and the class are one day); the splits by kind (lifts, mobility, sports) count workouts. A workout of
   kettlebell intervals that switches hands (`asksSnatches`: 15:15 MVO2, or one of the user's with the switch on) is
   asked on its summary, or later on its page in the Log, about how many snatches a set and the bell
   (`HistoryStore.countSnatches`, `SnatchCount`); Lift reads each counted one as a set of snatches a work interval

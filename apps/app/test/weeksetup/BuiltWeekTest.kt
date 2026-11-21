@@ -182,6 +182,18 @@ class BuiltWeekTest {
         assertEquals(6, week.goal)
     }
 
+    @Test
+    fun `the goal is the days trained and two plans on one day count it once`() {
+        val interval = PlanWorkout.Interval("Tabata", IntervalConfig())
+        // A run and intervals on the Saturday: one day of the week.
+        val planned = listOf(weekly(1, interval, SAT), weekly(2, PlanWorkout.SportDay(Sport.Running), SAT))
+        val week = build(WeekAnswers(Sport.Bjj, setOf(MON, WED), bell, minutes = 15), planned)
+        assertEquals(setOf(MON, WED, SAT) + week.liftDays, week.days)
+        assertEquals(week.days.size, week.goal)
+    }
+
+    private val BuiltWeek.days get() = sportDays + liftDays + setOf(SAT) + setOfNotNull(conditioningDay)
+
     private val pair = setOf(24.0)
 
     private fun intervals(id: Long, weekday: Int) = weekly(id, snatchIntervals.asPlan(), weekday)

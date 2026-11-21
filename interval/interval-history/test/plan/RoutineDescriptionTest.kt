@@ -95,7 +95,7 @@ class RoutineDescriptionTest {
         assertEquals(4, read("tabata mon wed, 4 a week")!!.goal)
         assertEquals(3, read("3 times per week")!!.goal)
         assertEquals(5, read("5x/week")!!.goal)
-        assertEquals(14, read("20 workouts a week")!!.goal)
+        assertEquals(7, read("20 workouts a week")!!.goal)
         assertEquals(emptyList(), read("4 days a week")!!.plans)
     }
 

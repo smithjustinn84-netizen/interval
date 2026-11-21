@@ -28,7 +28,7 @@
     <string name="history_yesterday">Yesterday</string>
     <string name="history_tomorrow">Tomorrow</string>
     <string name="history_goal_ring">%1$d/%2$d</string>
-    <string name="history_goal_cd">%1$d of %2$d workouts this week</string>
+    <string name="history_goal_cd">%1$d of %2$d days trained this week</string>
     <string name="history_goal_met">Goal met</string>
     <plurals name="history_goal_to_go">
         <item quantity="one">%1$d to go</item>
@@ -67,7 +67,7 @@
     <string name="history_heatmap_cd">%1$d active days over the last %2$d weeks</string>
     <string name="history_heatmap_day_cd">Open %1$s</string>
     <string name="history_goal_line">Goal %1$d a week</string>
-    <string name="history_weeks_cd">Workouts a week over the last 12 weeks: %1$s</string>
+    <string name="history_weeks_cd">Days trained a week over the last 12 weeks: %1$s</string>
     <string name="history_most_done">Most done</string>
     <string name="history_times">×%1$d</string>
     <string name="history_hours_minutes">%1$dh %2$dm</string>
@@ -91,8 +91,8 @@
     <string name="history_add_workout">Add workout</string>
     <string name="history_day_nothing">Nothing done or planned.</string>
     <plurals name="history_week_count">
-        <item quantity="one">%1$d workout</item>
-        <item quantity="other">%1$d workouts</item>
+        <item quantity="one">%1$d day trained</item>
+        <item quantity="other">%1$d days trained</item>
     </plurals>
     <plurals name="history_week_lifts">
         <item quantity="one">%1$d lift</item>
@@ -114,7 +114,7 @@
     <string name="history_lift_any">Any session on Lift</string>
     <string name="plan_title">Plan</string>
     <string name="plan_goal">Weekly goal</string>
-    <string name="plan_goal_text">Workouts a week: lifts, intervals, mobility and sport days</string>
+    <string name="plan_goal_text">Days a week you train: a lift, intervals, mobility or a sport</string>
     <string name="plan_goal_off">Off</string>
     <string name="plan_goal_less_cd">Lower the goal</string>
     <string name="plan_goal_more_cd">Raise the goal</string>

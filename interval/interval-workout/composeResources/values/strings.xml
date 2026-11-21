@@ -131,8 +131,8 @@
     <string name="effort_all_out">All out</string>
     <string name="summary_week_of_goal">%1$d of %2$d this week</string>
     <plurals name="summary_week_count">
-        <item quantity="one">%1$d workout this week</item>
-        <item quantity="other">%1$d workouts this week</item>
+        <item quantity="one">%1$d day trained this week</item>
+        <item quantity="other">%1$d days trained this week</item>
     </plurals>
     <string name="workout_repeat">Repeat</string>
     <string name="workout_share">Share</string>

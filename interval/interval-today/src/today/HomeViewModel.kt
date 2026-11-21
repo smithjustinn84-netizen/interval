@@ -312,7 +312,7 @@ class HomeViewModel(
                 if (cell.today && open && cell.state == DayState.Done) cell.copy(state = DayState.Planned) else cell
             },
             weekGoal = WeekGoal(
-                count = week.sumOf { it.count },
+                count = week.count { it.count > 0 },
                 lifts = week.sumOf { it.liftWorkouts.size },
                 goal = goal,
                 streak = goal?.let(log::streak),

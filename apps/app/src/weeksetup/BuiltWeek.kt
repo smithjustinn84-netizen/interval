@@ -94,7 +94,8 @@ fun buildWeek(
         grappler && liftDays.size == 2 && sportDays.size <= MOST_SPORT_DAYS_FOR_INTERVALS &&
             taken.size + liftDays.size < MOST_TRAINING_DAYS
     }?.furthestFrom(liftDays)
-    val total = standing.size + sportDays.size + liftDays.size + listOfNotNull(conditioningDay).size
+    // Days trained, as the goal counts them: two plans on one weekday are one day.
+    val total = taken.size + liftDays.size + listOfNotNull(conditioningDay).size
     return BuiltWeek(
         sport = sport,
         sportDays = sportDays,

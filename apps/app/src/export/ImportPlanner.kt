@@ -368,7 +368,7 @@ private fun PlannedExport.toDomain(presets: List<Preset>): PlannedWorkout {
 private fun SettingsExport.toDomain(): AppSettings {
     val unit = enumNamed<WeightUnit>(weightUnit)
     weightKg?.let { require(it in unit.toKg(unit.range.first)..unit.toKg(unit.range.last)) { "weight" } }
-    weeklyGoal?.let { require(it in AppSettings.WEEKLY_GOAL_RANGE) { "goal" } }
+    weeklyGoal?.let { require(it >= AppSettings.WEEKLY_GOAL_RANGE.first) { "goal" } }
     reminderMinuteOfDay?.let { require(it in AppSettings.REMINDER_RANGE) { "reminder" } }
     sessionMinutes?.let { require(it in AppSettings.SESSION_MINUTES) { "session" } }
     return AppSettings(
@@ -381,7 +381,8 @@ private fun SettingsExport.toDomain(): AppSettings {
             maxHeartRate = maxHeartRate?.coerceIn(dev.justinsmith.interval.platform.MAX_BPM_RANGE),
             restingHeartRate = restingHeartRate?.coerceIn(dev.justinsmith.interval.platform.RESTING_BPM_RANGE),
         ),
-        weeklyGoal = weeklyGoal,
+        // A goal from before it counted days may be past a week's: as many days as a week has.
+        weeklyGoal = weeklyGoal?.coerceAtMost(AppSettings.WEEKLY_GOAL_RANGE.last),
         reminderMinuteOfDay = reminderMinuteOfDay,
         sessionMinutes = sessionMinutes,
     )

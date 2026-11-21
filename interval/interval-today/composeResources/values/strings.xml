@@ -10,8 +10,8 @@
     <string name="history_start">Start</string>
     <string name="home_not_today">Not today</string>
     <plurals name="history_week_count">
-        <item quantity="one">%1$d workout</item>
-        <item quantity="other">%1$d workouts</item>
+        <item quantity="one">%1$d day trained</item>
+        <item quantity="other">%1$d days trained</item>
     </plurals>
     <string name="history_lift_session">Lift session</string>
     <string name="history_lift_any">Any session on Lift</string>

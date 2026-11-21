@@ -121,8 +121,8 @@ class WorkoutViewModelTest : MainDispatcherTest(StandardTestDispatcher()) {
 
     @Test
     fun `a sport day logged this week counts in the week the summary shows`() = runTest(dispatcher) {
-        // The clock stands on day 0: the class today counts beside the workout, last week's does not.
-        repository.history.logSport(Sport.Bjj, epochDay = 0)
+        // The clock stands on day 0, a Thursday: yesterday's class is a day trained beside today's, last week's is not.
+        repository.history.logSport(Sport.Bjj, epochDay = -1)
         repository.history.logSport(Sport.Bjj, epochDay = -7)
         val viewModel = workoutViewModel(workoutSession())
         repeat(3) { viewModel.skip() }

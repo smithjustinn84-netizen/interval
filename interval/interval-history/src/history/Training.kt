@@ -246,7 +246,7 @@ class TrainingLog(
         )
     }
 
-    /** Workouts a week over the last [weeks] weeks, oldest first, this week last. */
+    /** Days trained a week over the last [weeks] weeks, oldest first, this week last. */
     fun weeklyCounts(weeks: Int): List<WeekCount> {
         val current = weekStartOf(today)
         return (weeks - 1 downTo 0).map { back ->
@@ -255,7 +255,7 @@ class TrainingLog(
         }
     }
 
-    /** The streak against a goal of [goal] workouts a week. */
+    /** The streak against a goal of [goal] days trained a week. */
     fun streak(goal: Int): Streak {
         val first = firstWorkoutDay ?: return Streak(0, 0)
         val current = weekStartOf(today)
@@ -293,8 +293,9 @@ class TrainingLog(
 
     private fun days(from: Long, count: Int): List<TrainingDay> = (0 until count).map { day(from + it) }
 
-    private fun countInWeek(weekStart: Long): Int = (weekStart until weekStart + DAYS_PER_WEEK).sumOf {
-        (byDay[it]?.size ?: 0) + (liftsByDay[it]?.size ?: 0) + (sportsByDay[it]?.size ?: 0)
+    /** The days of the week starting [weekStart] trained on: a workout, a session or a sport, each day once. */
+    private fun countInWeek(weekStart: Long): Int = (weekStart until weekStart + DAYS_PER_WEEK).count {
+        !byDay[it].isNullOrEmpty() || !liftsByDay[it].isNullOrEmpty() || !sportsByDay[it].isNullOrEmpty()
     }
 
     // The first day anything happened: a workout, or a plan made or falling due.

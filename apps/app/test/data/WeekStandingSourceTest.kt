@@ -98,10 +98,15 @@ class WeekStandingSourceTest {
         runCurrent()
         assertEquals(WeekStanding(count = 0, goal = 2, streak = 1), source.standing.value)
 
+        // Two workouts today are one day trained; a session yesterday makes the second.
         repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
         repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
         runCurrent()
-        assertEquals(WeekStanding(count = 2, goal = 2, streak = 2), source.standing.value)
+        assertEquals(1, source.standing.value?.count)
+        lift.finished("b2", "Swings", noonOf(TODAY - 1), noonOf(TODAY - 1) + 600_000, 24.0 to 10)
+        runCurrent()
+        assertEquals(2, source.standing.value?.count)
+        assertEquals(2, source.standing.value?.streak)
     }
 
     @Test

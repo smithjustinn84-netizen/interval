@@ -324,6 +324,16 @@ class AppDataImporterTest {
     }
 
     @Test
+    fun `a goal of workouts past a week's days comes in as every day`() = runTest {
+        val target = Phone(now)
+        val file = stocked().file()
+        val content = file.content.replace("\"weeklyGoal\": 3", "\"weeklyGoal\": 10")
+        assertTrue(content != file.content)
+        target.importer.import(ShareableFile("x.json", "application/json", content), withSettings = true)
+        assertEquals(7, target.intervals.settings.appSettings.value.weeklyGoal)
+    }
+
+    @Test
     fun `settings brought in never bring set up back`() = runTest {
         val target = Phone(now)
         target.intervals.settings.updateAppSettings { it.copy(setupOffered = true) }

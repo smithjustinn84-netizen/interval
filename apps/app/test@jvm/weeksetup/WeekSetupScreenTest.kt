@@ -105,7 +105,7 @@ class WeekSetupScreenTest {
 
         onNode(hasText("BJJ") and hasText("Mon, Wed, Fri")).assertExists()
         onNode(hasText("Your first 100 swings") and hasText("about 15 min · Tue, Thu, Sat")).assertExists()
-        onNodeWithText("Goal: 6 workouts a week").assertExists()
+        onNodeWithText("Goal: 6 days a week").assertExists()
     }
 
     @Test
@@ -116,7 +116,7 @@ class WeekSetupScreenTest {
         onNode(
             hasText("Your first 100 swings") and hasText("You follow it already · No day free for it"),
         ).assertExists()
-        onNodeWithText("Goal: 1 workout a week").assertExists()
+        onNodeWithText("Goal: 1 day a week").assertExists()
     }
 
     @Test
@@ -153,7 +153,7 @@ class WeekSetupScreenTest {
         setThemedContent { WeekSetupScreen(bjj, WeekSetupActions()) }
 
         onNodeWithText("What else do you train?").assertExists()
-        onNodeWithText("Goal: 6 workouts a week").assertExists()
+        onNodeWithText("Goal: 6 days a week").assertExists()
         onNode(hasText("Build my week") and hasClickAction()).assertIsEnabled()
     }
 }

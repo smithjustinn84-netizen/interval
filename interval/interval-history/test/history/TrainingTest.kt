@@ -202,6 +202,14 @@ class TrainingTest {
     }
 
     @Test
+    fun `a week is counted by days trained and two workouts on a day are one`() {
+        val counts = log(listOf(workout(monday), workout(monday), workout(monday - 7))).weeklyCounts(2)
+        assertEquals(listOf(1, 1), counts.map { it.count })
+        // Two workouts on one day last week fall short of a goal of two.
+        assertEquals(Streak(0, 0), log(listOf(workout(monday - 7), workout(monday - 7))).streak(goal = 2))
+    }
+
+    @Test
     fun `this week joins the streak once it meets the goal`() {
         val lastTwoWeeks = listOf(workout(monday - 7), workout(monday - 6), workout(monday - 14), workout(monday - 13))
         assertEquals(Streak(current = 2, best = 2), log(lastTwoWeeks).streak(goal = 2))
@@ -370,7 +378,8 @@ class TrainingTest {
         assertEquals(2, log.day(monday).count)
         assertEquals(3, log.stats(TrainingRange.Week, BodySettings()).count)
         assertEquals(240, log.stats(TrainingRange.Week, BodySettings()).seconds)
-        assertEquals(listOf(1, 3), log.weeklyCounts(2).map { it.count })
+        // Days trained: last week's Monday, then this Monday (two sports, one day) and today.
+        assertEquals(listOf(1, 2), log.weeklyCounts(2).map { it.count })
         assertEquals(Streak(current = 2, best = 2), log.streak(goal = 1))
         assertEquals(monday - 7, log.stats(TrainingRange.AllTime, BodySettings()).firstDay)
     }

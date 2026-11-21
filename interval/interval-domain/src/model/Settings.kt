@@ -56,7 +56,7 @@ data class AppSettings(
     val theme: ThemeMode = ThemeMode.Dark,
     val keepScreenOn: Boolean = true,
     val body: BodySettings = BodySettings(),
-    /** Workouts a week the user aims for, within [WEEKLY_GOAL_RANGE]; null until they set one. */
+    /** Days a week the user aims to train, within [WEEKLY_GOAL_RANGE]; null until they set one. */
     val weeklyGoal: Int? = null,
     /**
      * When a reminder goes out on each day with a workout still to do, in minutes after local midnight,
@@ -80,7 +80,7 @@ data class AppSettings(
     val firstWeek: Boolean = false,
 ) {
     companion object {
-        val WEEKLY_GOAL_RANGE = 1..14
+        val WEEKLY_GOAL_RANGE = 1..7
 
         /** The session lengths Set up offers, in minutes. */
         val SESSION_MINUTES = listOf(10, 15, 20, 30)

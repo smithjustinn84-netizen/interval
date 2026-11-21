@@ -104,8 +104,8 @@ class FinishSessionTest {
     @Test
     fun `a sport day logged this week counts in the week the summary shows`() = runTest {
         logged()
-        // The clock stands on day 0: the class today counts, last week's does not.
-        intervals.sportDays.value = listOf(SportDay(0L, grappling = true), SportDay(-7L, grappling = false))
+        // The clock stands on day 0, a Thursday: yesterday's class is a day trained this week, last week's is not.
+        intervals.sportDays.value = listOf(SportDay(-1L, grappling = true), SportDay(-7L, grappling = false))
         val finishing = finishing(backgroundScope)
 
         assertTrue(finishing.finish("Squats"))

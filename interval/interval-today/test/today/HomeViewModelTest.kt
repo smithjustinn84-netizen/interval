@@ -167,10 +167,12 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `the week counts both sides against the goal`() {
+    fun `the week counts the days trained on both sides against the goal`() {
         repository.settings.updateAppSettings { it.copy(weeklyGoal = 3) }
+        // Two workouts today, one day; a session yesterday, another.
         repository.history.recordWorkout(tabata, tabata.totalSeconds)
-        val finished = TODAY * DAY_MILLIS + DAY_MILLIS / 4
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        val finished = (TODAY - 1) * DAY_MILLIS + DAY_MILLIS / 4
         lift.finished("b1", "Swings and get-ups", finished - 1_570_000, finished, 24.0 to 10)
 
         val state = viewModel.state.value
@@ -187,7 +189,8 @@ class HomeViewModelTest : MainDispatcherTest() {
         repository.history.logSport(Sport.Bjj, TODAY)
 
         val state = viewModel.state.value
-        assertEquals(2, state.weekGoal.count)
+        // A workout and a class, both today: one day trained.
+        assertEquals(1, state.weekGoal.count)
         assertEquals(1, state.weekGoal.sports)
         val today = state.week.single { it.today }
         assertEquals(Sport.Bjj, today.sport)

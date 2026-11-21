@@ -291,7 +291,7 @@ class HistoryScreenTest {
     fun `with a goal the ring and streak show and without one it can be set`() = runUiTest {
         var state by mutableStateOf(oneWorkout.copy(weekCount = 3, goal = 4, streak = Streak(5, 7)))
         setThemedContent { HistoryScreen(state, actions) }
-        onNodeWithContentDescription("3 of 4 workouts this week").assertExists()
+        onNodeWithContentDescription("3 of 4 days trained this week").assertExists()
         onNodeWithText("1 to go").assertExists()
         onNodeWithText("5-week streak").assertExists()
 
@@ -299,10 +299,10 @@ class HistoryScreenTest {
         onNodeWithText("Goal met").assertExists()
         // The ring closes on the goal, ignites and pops; the figure still reads.
         mainClock.advanceTimeBy(Motion.ENTER_MILLIS + Motion.CONTENT_MILLIS.toLong())
-        onNodeWithContentDescription("4 of 4 workouts this week").assertExists()
+        onNodeWithContentDescription("4 of 4 days trained this week").assertExists()
 
         state = oneWorkout
-        onNodeWithText("1 workout").assertExists()
+        onNodeWithText("1 day trained").assertExists()
         onNodeWithText("Set a weekly goal").performClick()
         assertEquals(listOf("plan"), events)
     }

@@ -60,7 +60,7 @@ fun IntervalAcceptanceDriver.seeYourWeek(name: String, detail: String) = see(
     hasText(name) and hasText(detail, substring = true),
 )
 
-fun IntervalAcceptanceDriver.seeGoalToBe(goal: Int) = see("Goal: $goal workouts a week")
+fun IntervalAcceptanceDriver.seeGoalToBe(goal: Int) = see("Goal: $goal days a week")
 
 /** Build my week, which lands on Today and says so. */
 fun IntervalAcceptanceDriver.buildMyWeek() {

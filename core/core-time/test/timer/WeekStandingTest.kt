@@ -12,6 +12,26 @@ class WeekStandingTest {
     private val twoWeeksAgo = lastWeek - DAYS_PER_WEEK
 
     @Test
+    fun `the count is this week's days trained and two workouts on a day count once`() {
+        val standing = weekStanding(listOf(monday, monday, monday + 2), today = monday + 2, goal = null)
+        assertEquals(2, standing.count)
+    }
+
+    @Test
+    fun `a second workout on the day the goal was met is not the moment it was`() {
+        val standing = weekStanding(listOf(monday, monday + 1, monday + 1), today = monday + 1, goal = 2)
+        assertTrue(standing.goalMet)
+        assertFalse(standing.justMet)
+    }
+
+    @Test
+    fun `a streak's weeks are counted by days trained`() {
+        // Last week three workouts on one day: one day, short of a goal of two.
+        val days = listOf(lastWeek, lastWeek, lastWeek, monday, monday + 1)
+        assertEquals(1, weekStanding(days, today = monday + 1, goal = 2).streak)
+    }
+
+    @Test
     fun `the count is this week's workouts alone`() {
         val standing = weekStanding(listOf(monday, monday + 2, lastWeek + 3), today = monday + 2, goal = null)
         assertEquals(2, standing.count)

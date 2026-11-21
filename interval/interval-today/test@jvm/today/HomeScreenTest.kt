@@ -96,7 +96,7 @@ class HomeScreenTest {
         var state by mutableStateOf(empty.copy(weekGoal = WeekGoal(count = 2)))
         setThemedContent { HomeScreen(state, HomeActions(onPlan = { opened++ })) }
 
-        onNodeWithText("2 workouts").assertIsDisplayed()
+        onNodeWithText("2 days trained").assertIsDisplayed()
         onNodeWithText("Set a weekly goal").performClick()
         assertEquals(1, opened)
 
