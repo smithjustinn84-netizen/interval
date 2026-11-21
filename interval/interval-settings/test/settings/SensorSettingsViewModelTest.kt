@@ -5,6 +5,7 @@ package dev.justinsmith.interval.settings
 import dev.justinsmith.interval.fakes.MainDispatcherTest
 import dev.justinsmith.interval.fakes.RecordingClassSensor
 import dev.justinsmith.interval.fakes.SENSOR_NAME
+import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
 import kotlinx.coroutines.CompletableDeferred
@@ -13,6 +14,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+
+private const val STRAP_NAME = "Polar H10 5E6F7A8B"
 
 class SensorSettingsViewModelTest : MainDispatcherTest() {
     private val sensor = RecordingClassSensor(SensorStatus.Unpaired)
@@ -33,6 +36,35 @@ class SensorSettingsViewModelTest : MainDispatcherTest() {
         sensor.battery.value = 64
 
         assertEquals(SensorSettingsUiState(SensorStatus.Paired(SENSOR_NAME), battery = 64), viewModel.state.value)
+    }
+
+    @Test
+    fun `with two sensors nearby it asks which and takes the one picked`() {
+        sensor.alsoNearby = STRAP_NAME
+
+        viewModel.pair()
+
+        val choices = listOf(NearbySensor(SENSOR_NAME, SENSOR_NAME), NearbySensor(STRAP_NAME, STRAP_NAME))
+        assertEquals(
+            SensorSettingsUiState(SensorStatus.Unpaired, looking = true, choices = choices),
+            viewModel.state.value,
+        )
+
+        viewModel.choose(choices.first())
+
+        assertEquals(SensorSettingsUiState(SensorStatus.Paired(SENSOR_NAME)), viewModel.state.value)
+    }
+
+    @Test
+    fun `picking none of the sensors nearby pairs none and says nothing failed`() {
+        sensor.alsoNearby = STRAP_NAME
+        viewModel.pair()
+
+        viewModel.choose(null)
+
+        assertEquals(SensorSettingsUiState(SensorStatus.Unpaired), viewModel.state.value)
+        viewModel.pair()
+        assertEquals(2, viewModel.state.value.choices.size)
     }
 
     @Test

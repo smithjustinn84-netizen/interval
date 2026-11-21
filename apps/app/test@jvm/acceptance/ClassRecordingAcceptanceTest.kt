@@ -37,6 +37,14 @@ class ClassRecordingAcceptanceTest {
     }
 
     @Test
+    fun `with an armband and a strap both nearby pairing asks which`() = acceptanceScenario {
+        haveSensorToPair()
+        haveStrapNearbyToo()
+        openSettings()
+        pairArmbandAmongTwo()
+    }
+
+    @Test
     fun `a sensor out of reach says so and the class stays on it to sync later`() = acceptanceScenario {
         haveSensorToPair()
         openSettings()

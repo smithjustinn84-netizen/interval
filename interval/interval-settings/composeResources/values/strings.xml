@@ -131,6 +131,8 @@
     <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>
     <string name="settings_sensor_battery">Battery %1$d%. Tap to forget it</string>
     <string name="settings_sensor_battery_low">Battery low, %1$d%: charge it before a class. Tap to forget it</string>
+    <string name="settings_sensor_choose_title">Which sensor?</string>
+    <string name="settings_sensor_choose_note">More than one is close by, the nearest first. The id is printed on the sensor.</string>
     <string name="settings_sensor_forget">Forget</string>
     <string name="settings_sensor_forget_title">Forget the sensor?</string>
     <string name="settings_sensor_forget_text">A class is still on it. Once the sensor is forgotten, that class can’t be synced.</string>

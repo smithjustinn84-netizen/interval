@@ -27,6 +27,7 @@ import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStatus
+import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.WeightUnit
@@ -55,6 +56,7 @@ class SettingsScreenTest {
         state: SettingsUiState = defaults,
         inPane: Boolean = false,
         sensor: SensorStatus = SensorStatus.Unavailable,
+        choices: List<NearbySensor> = emptyList(),
     ) {
         SettingsScreen(
             state = state,
@@ -78,7 +80,13 @@ class SettingsScreenTest {
             onConnectHealth = { calls += "connect health" },
             onDisconnectHealth = { calls += "disconnect health" },
             onInstallHealth = { calls += "install health" },
-            sensor = SensorRow(sensor, onPair = { calls += "pair" }, onForget = { calls += "forget" }),
+            sensor = SensorRow(
+                sensor,
+                onPair = { calls += "pair" },
+                onForget = { calls += "forget" },
+                choices = choices,
+                onChoose = { calls += "choose ${it?.name}" },
+            ),
         )
     }
 
@@ -121,6 +129,19 @@ class SettingsScreenTest {
         sensor = SensorStatus.Paired("Polar Sense 1A2B3C4D")
         onNode(hasText("Polar Sense 1A2B3C4D")).performClick()
         assertEquals(listOf<Any>("pair", "forget"), calls)
+    }
+
+    @Test
+    fun `with two sensors nearby a sheet asks which and hands on the one tapped`() = runUiTest {
+        val choices = listOf(NearbySensor("1", "Polar Sense 1A2B3C4D"), NearbySensor("2", "Polar H10 5E6F7A8B"))
+        setThemedContent { Screen(sensor = SensorStatus.Unpaired, choices = choices) }
+
+        onNodeWithText("Which sensor?").assertExists()
+        onNodeWithText("Polar H10 5E6F7A8B").assertExists()
+        onNodeWithText("Polar Sense 1A2B3C4D").performClick()
+
+        waitUntil { calls.isNotEmpty() }
+        assertEquals(listOf<Any>("choose Polar Sense 1A2B3C4D"), calls)
     }
 
     @Test

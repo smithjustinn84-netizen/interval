@@ -27,6 +27,24 @@ fun IntervalAcceptanceDriver.pairSensor() {
     waitFor("the sensor paired") { sensor.status.value == SensorStatus.Paired(SENSOR_NAME) }
 }
 
+/** A chest strap is in reach beside the armband, as with both in the bag. */
+fun IntervalAcceptanceDriver.haveStrapNearbyToo() {
+    sensor.alsoNearby = STRAP_NAME
+}
+
+/** In Settings, with two in reach: asked which, picks the armband, which then stands by its name. */
+fun IntervalAcceptanceDriver.pairArmbandAmongTwo() {
+    scrollTo("Pair a sensor")
+    tap("Pair a sensor")
+    see("Which sensor?")
+    see(STRAP_NAME)
+    tap(SENSOR_NAME)
+    waitFor("the armband paired") { sensor.status.value == SensorStatus.Paired(SENSOR_NAME) }
+    seeNo("Which sensor?")
+}
+
+private const val STRAP_NAME = "Polar H10 5E6F7A8B"
+
 fun IntervalAcceptanceDriver.seeNoSensorInSettings() = seeNo("Heart-rate sensor")
 
 /** Today, on a class's day, offers to record it. */

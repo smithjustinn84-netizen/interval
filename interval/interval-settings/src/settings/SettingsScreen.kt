@@ -2,10 +2,12 @@ package dev.justinsmith.interval.settings
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -19,6 +21,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.HealthStore
+import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.rememberBluetoothAccess
@@ -34,6 +37,8 @@ import dev.justinsmith.interval.settings.resources.settings_clear_log_confirm
 import dev.justinsmith.interval.settings.resources.settings_clear_log_text
 import dev.justinsmith.interval.settings.resources.settings_clear_log_title
 import dev.justinsmith.interval.settings.resources.settings_close_cd
+import dev.justinsmith.interval.settings.resources.settings_sensor_choose_note
+import dev.justinsmith.interval.settings.resources.settings_sensor_choose_title
 import dev.justinsmith.interval.settings.resources.settings_sensor_forget
 import dev.justinsmith.interval.settings.resources.settings_sensor_forget_text
 import dev.justinsmith.interval.settings.resources.settings_sensor_forget_title
@@ -45,9 +50,13 @@ import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LinkRow
+import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -117,6 +126,8 @@ fun SettingsRoute(
                 }
             },
             onForget = sensors::forget,
+            choices = sensor.choices,
+            onChoose = sensors::choose,
         ),
         importStep = importing,
         imports = ImportActions(
@@ -219,6 +230,7 @@ fun SettingsScreen(
     ImportProgress(importStep, imports)
     if (clearingLog) ClearLogDialog(onClearLog) { clearingLog = false }
     if (forgettingSensor) ForgetSensorDialog(sensor.onForget) { forgettingSensor = false }
+    if (sensor.choices.isNotEmpty()) SensorChoiceSheet(sensor.choices, sensor.onChoose)
     if (editingWeight) {
         WeightSheet(
             state.weight,
@@ -250,6 +262,8 @@ private fun SensorRow.askingFirst(ask: () -> Unit) = SensorRow(
     onPair,
     onForget = { if (status is SensorStatus.Recording) ask() else onForget() },
     battery = battery,
+    choices = choices,
+    onChoose = onChoose,
 )
 
 /** Asks before the log is cleared: it can't be undone. */
@@ -284,6 +298,39 @@ private fun ForgetSensorDialog(onForget: () -> Unit, onDismiss: () -> Unit) {
         onDismiss = onDismiss,
         destructive = true,
     )
+}
+
+/**
+ * Asks which of the [sensors] found nearby is meant, the nearest first, each by the name it advertises (its
+ * model and the id printed on it). [onChoose] hears the one tapped once the sheet is away, or null when it was
+ * closed with none.
+ */
+@Composable
+private fun SensorChoiceSheet(sensors: List<NearbySensor>, onChoose: (NearbySensor?) -> Unit) {
+    val palette = IntervalTheme.palette
+    var picked by remember { mutableStateOf<NearbySensor?>(null) }
+    val title = stringResource(Res.string.settings_sensor_choose_title)
+    IntervalSheet(title = title, onDismiss = { onChoose(picked) }) { hide ->
+        Text(title, style = IntervalTheme.type.value, color = palette.text)
+        Text(
+            stringResource(Res.string.settings_sensor_choose_note),
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
+        ListCard {
+            sensors.forEachIndexed { index, sensor ->
+                if (index > 0) RowDivider()
+                LinkRow(
+                    sensor.name,
+                    subtitle = null,
+                    onClick = {
+                        picked = sensor
+                        hide()
+                    },
+                )
+            }
+        }
+    }
 }
 
 /** The import under way: its review sheet, then a notice of what came in, or that it couldn't finish. */

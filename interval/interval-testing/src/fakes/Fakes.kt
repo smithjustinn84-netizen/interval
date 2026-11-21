@@ -27,6 +27,7 @@ import dev.justinsmith.interval.platform.ClassSensor
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.Haptic
 import dev.justinsmith.interval.platform.IdGenerator
+import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.PlanReminder
 import dev.justinsmith.interval.platform.PlanReminders
 import dev.justinsmith.interval.platform.SensorFailure
@@ -425,6 +426,8 @@ class RecordingBackgroundWorkout : BackgroundWorkout {
 class RecordingClassSensor(
     initial: SensorStatus = SensorStatus.Unavailable,
     var nearby: String? = SENSOR_NAME,
+    /** Another sensor in reach beside [nearby], which makes pairing ask which is meant. */
+    var alsoNearby: String? = null,
     var recorded: ClassRecording? = null,
     var failing: SensorFailure? = null,
     private val now: () -> Long = { 0L },
@@ -442,14 +445,19 @@ class RecordingClassSensor(
         else -> null
     }
 
-    override suspend fun pair(): SensorFailure? {
+    override suspend fun pair(choose: suspend (List<NearbySensor>) -> NearbySensor?): SensorFailure? {
         pairings++
         holding?.await()
-        val found = nearby
+        val found = listOfNotNull(nearby, alsoNearby).map { NearbySensor(id = it, name = it) }
         return when {
             failing != null -> failing
-            found == null -> SensorFailure.NotFound
-            else -> null.also { _status.value = SensorStatus.Paired(found) }
+
+            found.isEmpty() -> SensorFailure.NotFound
+
+            else -> null.also {
+                val picked = if (found.size == 1) found.single() else choose(found)
+                if (picked != null) _status.value = SensorStatus.Paired(picked.name)
+            }
         }
     }
 

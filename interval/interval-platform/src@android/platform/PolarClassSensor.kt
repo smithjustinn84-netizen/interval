@@ -19,11 +19,15 @@ import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarHealthThermometerData
 import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.storage.catchingFailures
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
@@ -131,14 +135,38 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     /** The H10 says so in its name; anything else pairing takes is a Verity Sense. */
     private fun recorderOf(sensor: PairedSensor.Sensor): PolarRecorder = if (H10_NAME in sensor.name) h10 else verity
 
-    override suspend fun pair(): SensorFailure? = attempt {
-        val found = withTimeoutOrNull(SCAN_MILLIS) {
-            api.searchForDevice().first { found -> SENSOR_NAMES.any { it in found.name } }
-        } ?: return@attempt SensorFailure.NotFound
-        paired.pair(found.deviceId, found.name)
+    override suspend fun pair(choose: suspend (List<NearbySensor>) -> NearbySensor?): SensorFailure? = attempt {
+        val nearby = nearby()
+        val picked = when (nearby.size) {
+            0 -> return@attempt SensorFailure.NotFound
+
+            1 -> nearby.single()
+
+            // An armband and a strap both in reach: the first to be heard is whichever advertised first, not
+            // the one meant.
+            else -> choose(nearby) ?: return@attempt null
+        }
+        paired.pair(picked.id, picked.name)
         _battery.value = null
         _status.value = stored()
         null
+    }
+
+    /**
+     * Every sensor heard nearby, the nearest first: the scan goes on a few seconds past the first one, since
+     * another may be in reach beside it. Empty when none was heard in time.
+     */
+    private suspend fun nearby(): List<NearbySensor> = coroutineScope {
+        val heard = MutableStateFlow(emptyMap<String, PolarDeviceInfo>())
+        val scan = launch {
+            api.searchForDevice()
+                .filter { found -> SENSOR_NAMES.any { it in found.name } }
+                // A sensor is heard again at each advertisement: its latest signal is the one kept.
+                .collect { found -> heard.update { it + (found.deviceId to found) } }
+        }
+        if (withTimeoutOrNull(SCAN_MILLIS) { heard.first { it.isNotEmpty() } } != null) delay(SETTLE_MILLIS)
+        scan.cancel()
+        heard.value.values.sortedByDescending { it.rssi }.map { NearbySensor(it.deviceId, it.name) }
     }
 
     override suspend fun forget() = working.withLock {
@@ -239,6 +267,9 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         private const val H10_NAME = "H10"
         private val SENSOR_NAMES = listOf("Sense", H10_NAME)
         private const val SCAN_MILLIS = 20_000L
+
+        /** How long the scan goes on once it has heard a sensor, for another beside it to be heard too. */
+        private const val SETTLE_MILLIS = 4_000L
         private const val CONNECT_MILLIS = 30_000L
     }
 }

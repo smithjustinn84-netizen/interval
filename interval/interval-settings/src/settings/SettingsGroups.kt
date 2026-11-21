@@ -15,6 +15,7 @@ import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.LOW_SENSOR_BATTERY
+import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorStatus
 import dev.justinsmith.interval.platform.healthStoreName
 import dev.justinsmith.interval.settings.resources.Res
@@ -130,6 +131,9 @@ class SensorRow(
     val onForget: () -> Unit = {},
     /** The sensor's battery as last heard, a percentage; null until it has said. */
     val battery: Int? = null,
+    /** The sensors found nearby when there was more than one, for [onChoose] to take one of, or none with null. */
+    val choices: List<NearbySensor> = emptyList(),
+    val onChoose: (NearbySensor?) -> Unit = {},
 )
 
 /**

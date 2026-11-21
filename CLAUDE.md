@@ -624,7 +624,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync(keep)`, each reaching the sensor for as
   long as it takes and letting it go. A sync hands the recording to `keep` and clears the sensor only once that
   returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
-  or H10, one paired at a time and told apart by its name, through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`, the live stream giving
+  or H10, one paired at a time and told apart by its name, with both in reach the one picked on Settings' "Which sensor?" sheet (`pair(choose)`, the scan going on a few seconds past the first heard), through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`, the live stream giving
   way to a recording's start or its sync: the Verity's offline
   recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart
   rate a second alone, so its rounds go by the heart rate, started when Record is tapped; which sensor is the app's, and since when it records, in preferences of its own; unavailable below

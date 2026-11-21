@@ -18,6 +18,9 @@ sealed interface SensorStatus {
     data class Recording(val name: String, val sinceEpochMillis: Long) : SensorStatus
 }
 
+/** A sensor heard nearby, by the [name] it goes by; its [id] is the platform's own for it. */
+data class NearbySensor(val id: String, val name: String)
+
 /** Under this share of its battery a sensor is said to want charging: a class is an hour and a half. */
 const val LOW_SENSOR_BATTERY = 20
 
@@ -51,8 +54,12 @@ interface ClassSensor {
      */
     val battery: StateFlow<Int?>
 
-    /** Takes the sensor found nearby as the app's own; null once it is. */
-    suspend fun pair(): SensorFailure?
+    /**
+     * Takes the sensor found nearby as the app's own; null once it is. With more than one in reach it is the one
+     * [choose] picks of them, the nearest first: the app can't tell which is meant. A null from [choose] takes
+     * none, which is no failure either.
+     */
+    suspend fun pair(choose: suspend (List<NearbySensor>) -> NearbySensor?): SensorFailure?
 
     /** Lets the paired sensor go. A recording on it stays there, the app's no longer. */
     suspend fun forget()
@@ -74,7 +81,8 @@ object NoClassSensor : ClassSensor {
     override val status: StateFlow<SensorStatus> = MutableStateFlow(SensorStatus.Unavailable)
     override val battery: StateFlow<Int?> = MutableStateFlow(null)
 
-    override suspend fun pair(): SensorFailure = SensorFailure.NotFound
+    override suspend fun pair(choose: suspend (List<NearbySensor>) -> NearbySensor?): SensorFailure =
+        SensorFailure.NotFound
 
     override suspend fun forget() = Unit
 
