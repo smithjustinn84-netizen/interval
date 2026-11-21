@@ -25,7 +25,7 @@ class CelebrationTest {
     )
 
     @Test
-    fun `a lift on its feet raises what it holds or bows and one lying hanging or on its hands gives nothing`() {
+    fun `a lift on its feet raises its load or bows and one lying or hanging or seen from the front gives none`() {
         val none = demos.filterValues { it.celebration == null }.keys
         val lying = setOf(
             BuiltInExercise.GetUp,
@@ -89,7 +89,14 @@ class CelebrationTest {
             BuiltInExercise.Pigeon,
             BuiltInExercise.LyingTwist,
         )
-        assertEquals(lying + onTheHands + seated + onTheMat + stretching + floorDrills, none)
+        // The gestures are drawn from the side, so a lift seen from the front gives none yet.
+        val fromTheFront = setOf(
+            BuiltInExercise.Halo,
+            BuiltInExercise.Windmill,
+            BuiltInExercise.BandPullApart,
+            BuiltInExercise.BandLateralWalk,
+        )
+        assertEquals(lying + onTheHands + seated + onTheMat + stretching + floorDrills + fromTheFront, none)
         demos.forEach { (exercise, demo) ->
             val celebration = demo.celebration ?: return@forEach
             val expected = if (demo.hold == Hold.Free) Celebration.Bow else Celebration.RaisedBell

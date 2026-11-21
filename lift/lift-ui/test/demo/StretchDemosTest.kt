@@ -55,12 +55,10 @@ class StretchDemosTest {
     }
 
     @Test
-    fun `thread the needle and child's pose rest the head on the mat and the cobra lifts it`() {
-        listOf(ThreadTheNeedleDemo, ChildsPoseDemo).forEach { demo ->
-            val figure = demo.figureAt(0f)
-            assertTrue(figure.head.y + Rig.HEAD > Rig.FLOOR - 3f, "The head floats at ${figure.head}")
-            assertTrue(figure.knee.y + Rig.LEG / 2 > Rig.FLOOR - 3f, "The knees float at ${figure.knee}")
-        }
+    fun `child's pose rests the head on the mat and the cobra lifts it`() {
+        val figure = ChildsPoseDemo.figureAt(0f)
+        assertTrue(figure.head.y + Rig.HEAD > Rig.FLOOR - 3f, "The head floats at ${figure.head}")
+        assertTrue(figure.knee.y + Rig.LEG / 2 > Rig.FLOOR - 3f, "The knees float at ${figure.knee}")
         val hands = frames(CobraDemo).map { it.hand }
         assertTrue(hands.all { (it - hands.first()).getDistance() < 1f }, "The cobra's hands slide")
         assertTrue(CobraDemo.figureAt(0f).head.y < Rig.FLOOR - 80f, "The cobra's chest stays down")
@@ -104,8 +102,21 @@ class StretchDemosTest {
     fun `the hip switch swings the knees over to the other side`() {
         val right = HipSwitchDemo.figureAt(0f)
         val left = HipSwitchDemo.figureAt(0.5f)
-        assertTrue(right.knee.x > right.hip.x && left.knee.x < left.hip.x, "The near knee never changes side")
-        assertTrue(right.farKnee.x < right.hip.x && left.farKnee.x > left.hip.x, "The far knee never changes side")
+        // Seen from the front, both knees drop to the one side and then to the other.
+        assertTrue(right.knee.x > right.hip.x && left.knee.x < left.farHip.x, "The near knee never changes side")
+        assertTrue(right.farKnee.x > right.hip.x && left.farKnee.x < left.farHip.x, "The far knee never changes side")
+        val over = HipSwitchDemo.figureAt(0.3f)
+        assertTrue(over.knee.y < over.hip.y - 30f && over.farKnee.y < over.hip.y - 30f, "The knees never lift over")
+    }
+
+    @Test
+    fun `seen from above thread the needle reaches under the chest and the twist drops a knee across`() {
+        val threaded = ThreadTheNeedleDemo.figureAt(0f)
+        assertTrue(threaded.behind, "The arm goes over the back")
+        assertTrue(threaded.hand.y > threaded.farShoulder.y + 20f, "The hand stops under the chest at ${threaded.hand}")
+        val twisted = LyingTwistDemo.figureAt(0f)
+        assertTrue(twisted.knee.y > twisted.farHip.y + 30f, "The knee stays on its own side at ${twisted.knee}")
+        assertTrue(twisted.hand.y < twisted.shoulder.y - 80f && twisted.farHand.y > twisted.farShoulder.y + 80f)
     }
 
     @Test

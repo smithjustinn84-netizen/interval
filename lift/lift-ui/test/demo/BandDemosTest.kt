@@ -39,9 +39,24 @@ class BandDemosTest {
     @Test
     fun `the pull apart spreads the hands out to the sides`() {
         val apart = BandPullApartDemo.figureAt(BandPullApartDemo.still)
-        assertTrue((apart.hand - apart.shoulder).getDistance() < 20f, "The hands stay out in front at ${apart.hand}")
+        assertTrue(apart.hand.x - apart.farHand.x > 200f, "The hands stay in front of the chest at ${apart.hand}")
         val start = BandPullApartDemo.figureAt(0f)
+        assertTrue(start.hand.x - start.farHand.x < 90f, "The hands start wide at ${start.hand}")
         assertTrue(abs(start.hand.y - start.shoulder.y) < 5f, "The arms start away from shoulder height")
+    }
+
+    @Test
+    fun `the lateral walk lifts each foot in turn against the band`() {
+        val steps = frames(BandLateralWalkDemo)
+        assertTrue(steps.any { it.ankle.y < Rig.FLOOR - 5f }, "The near foot never leaves the floor")
+        assertTrue(steps.any { it.farAnkle.y < Rig.FLOOR - 5f }, "The far foot never leaves the floor")
+        val band = BandLateralWalkDemo.props.filterIsInstance<Band>().single()
+        assertTrue(
+            steps.maxOf {
+                length(band, it)
+            } > steps.minOf { length(band, it) } + 15f,
+            "The band never stretches",
+        )
     }
 
     private fun length(band: Band, figure: Figure) = (figure.place(band.from) - figure.place(band.to)).getDistance()

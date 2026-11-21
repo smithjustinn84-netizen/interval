@@ -10,7 +10,6 @@ class MatDemosTest {
         listOf(
             HundredDemo,
             RollUpDemo,
-            SingleLegCirclesDemo,
             RollingLikeABallDemo,
             SingleLegStretchDemo,
             DoubleLegStretchDemo,

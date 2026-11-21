@@ -3,6 +3,7 @@ package dev.justinsmith.lift.ui.demo
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 /** What each bell lift's figure must show, beyond what every demo keeps to. */
@@ -147,19 +148,28 @@ class BellDemosTest {
     }
 
     @Test
-    fun `the windmill hinges under a bell held straight up`() {
+    fun `the windmill bends to the side under a bell held straight up`() {
         val down = WindmillDemo.figureAt(WindmillDemo.still)
+        assertTrue(down.front, "The windmill is seen from the side, where its bend doesn't show")
         assertTrue(down.hand.y < down.shoulder.y - 90f, "The bell arm leans at ${down.hand}")
         assertTrue(abs(down.hand.x - down.shoulder.x) < 10f, "The bell arm leans at ${down.hand}")
+        assertTrue(down.neck.x < down.hips.x - 60f, "The trunk stays over the hips at ${down.neck}")
         assertTrue(down.farHand.y > down.hip.y, "The free hand never reaches down")
+        assertEquals(WindmillDemo.figureAt(0f).farAnkle, down.farAnkle, "The far foot moved")
     }
 
     @Test
-    fun `the halo circles the bell in front of the face and behind the head`() {
+    fun `the halo circles the bell past each ear and behind the head`() {
         val places = (0..40).map { HaloDemo.figureAt(it / 40f) }
-        assertTrue(places.any { it.bell.x > it.head.x + Rig.HEAD }, "The bell never passes in front of the face")
-        assertTrue(places.any { it.bell.x < it.head.x }, "The bell never goes behind the head")
-        places.forEach { assertTrue(it.bell.y < it.shoulder.y, "The bell drops to ${it.bell}, under the shoulders") }
+        assertTrue(places.any { it.bell.x > it.head.x + Rig.HEAD }, "The bell never passes the near ear")
+        assertTrue(places.any { it.bell.x < it.head.x - Rig.HEAD }, "The bell never passes the far ear")
+        assertFalse(places.first().behind, "The bell starts behind the head")
+        assertTrue(places[20].behind, "The bell never goes behind the head")
+        places.forEach { place ->
+            val grip = (place.hand + place.farHand) / 2f
+            assertTrue((place.hand - place.farHand).getDistance() < 24f, "The hands part at ${place.hand}")
+            assertTrue((grip - place.head).getDistance() < 80f, "The bell swings wide of the head at $grip")
+        }
     }
 
     @Test

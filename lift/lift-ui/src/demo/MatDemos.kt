@@ -76,27 +76,6 @@ val RollUpDemo: ExerciseDemo = run {
     )
 }
 
-/**
- * Single-leg circles: on the back, one leg up at the ceiling circling, the other long on the mat. Seen from the
- * side a circle is the leg swinging toward the head and away.
- */
-val SingleLegCirclesDemo: ExerciseDemo = run {
-    fun circling(leg: Float) = back(torso = FLAT, legs = DOWN, arms = 88f).near(leg)
-    mat(
-        listOf(
-            0f to circling(UP),
-            0.25f to circling(200f),
-            0.5f to circling(UP),
-            0.75f to circling(160f),
-            1f to circling(UP),
-        ),
-        phases(0.5f to 1, 1f to 2),
-        seconds = 3f,
-        still = 0.25f,
-        view = tallMatView,
-    )
-}
-
 /** Rolling like a ball: balanced behind the sit bones, knees hugged in, rolled back to the shoulder blades and up. */
 val RollingLikeABallDemo: ExerciseDemo = run {
     val ball = tuck(torso = -15f, arms = 50f, hands = 65f)

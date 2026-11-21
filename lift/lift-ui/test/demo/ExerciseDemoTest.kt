@@ -1,10 +1,12 @@
 package dev.justinsmith.lift.ui.demo
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.lift.domain.BuiltInExercise
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertSame
@@ -63,6 +65,19 @@ class ExerciseDemoTest {
     fun `a figure with nothing in its hands has a mat under all of its rep and one with a weight has none`() {
         demos.forEach { demo ->
             val mat = demo.mat
+            if (demo.facing == Facing.Above) {
+                // Seen from above the mat is under the whole figure, not a line along the floor.
+                assertNull(mat)
+                val under = assertNotNull(demo.matFromAbove)
+                (0..20).forEach { step ->
+                    val figure = demo.figureAt(step / 20f)
+                    listOf(figure.hips, figure.neck, figure.knee, figure.farKnee).forEach {
+                        assertTrue(under.contains(it), "It lies at $it, off the mat $under")
+                    }
+                }
+                return@forEach
+            }
+            assertNull(demo.matFromAbove, "A mat from above under a figure seen from the side")
             if (demo.hold != Hold.Free || demo.props.any { it is Band }) {
                 assertNull(mat, "A mat under a figure that holds something")
                 return@forEach
@@ -211,6 +226,8 @@ class ExerciseDemoTest {
                 demo.props.filterIsInstance<Band>().flatMap { listOf(it.from, it.to) }.forEach { end ->
                     assertTrue(demo.view.contains(figure.place(end)), "$at: the band's $end is outside the view")
                 }
+                // Seen from above there is no floor to stand on or go through, only the view to stay in.
+                if (demo.facing == Facing.Above) return@forEach
                 drawn.forEach { joint -> assertTrue(joint.y <= Rig.FLOOR + 0.5f, "$at: $joint is through the floor") }
                 val weight = when (demo.hold) {
                     Hold.Bar -> Rig.PLATE
@@ -228,6 +245,55 @@ class ExerciseDemoTest {
                 if (demo.root == Root.Ankle) assertEquals(demo.anchor, figure.ankle)
             }
         }
+    }
+
+    @Test
+    fun `a figure seen from the front has a hip and a shoulder each side and its shoulders square to its spine`() {
+        val stance =
+            Pose(shin = -10f, thigh = -10f, torso = 0f, upperArm = 0f, forearm = 0f, farShin = 10f, farThigh = 10f)
+        val tall = stance.figure(facing = Facing.Front)
+        assertTrue(tall.front)
+        assertEquals(2 * Rig.HIP_HALF, tall.hip.x - tall.farHip.x, 0.01f)
+        assertEquals(2 * Rig.SHOULDER_HALF, tall.shoulder.x - tall.farShoulder.x, 0.01f)
+        assertEquals(tall.shoulder.y, tall.farShoulder.y, 0.01f)
+        assertEquals(tall.hips.x, tall.head.x, 0.01f)
+        assertEquals(Rig.FLOOR, tall.farAnkle.y, 0.01f)
+        assertTrue(tall.farAnkle.x < tall.farHip.x && tall.ankle.x > tall.hip.x, "The feet aren't apart")
+        val bent = stance.copy(torso = -90f).figure(facing = Facing.Front)
+        assertEquals(bent.shoulder.x, bent.farShoulder.x, 0.01f)
+        assertTrue(bent.shoulder.y < bent.farShoulder.y, "The near shoulder isn't uppermost")
+    }
+
+    @Test
+    fun `a figure seen from the front lies down when turned and shows less of a leg that points at the eye`() {
+        val pose = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f)
+        val lying = pose.copy(turn = -90f).figure(root = Root.Hips, facing = Facing.Front)
+        assertTrue(lying.head.x < lying.hips.x - 100f && lying.ankle.x > lying.hips.x + 100f, "It isn't lying")
+        assertEquals(lying.hip.x, lying.farHip.x, 0.01f)
+        assertTrue(lying.hip.y < lying.farHip.y, "The near side isn't uppermost")
+        assertTrue(lying.farShoulder.y + Build.SHOULDERS <= Rig.FLOOR + 0.01f, "It lies through the floor")
+        val standing = pose.figure(facing = Facing.Front)
+        val short = pose.copy(legs = 0.5f, farLegs = 1f, trunk = 0.5f).figure(facing = Facing.Front)
+        assertEquals((standing.hip - standing.ankle).getDistance() / 2, (short.hip - short.ankle).getDistance(), 0.01f)
+        val farLeg = (standing.farHip - standing.farAnkle).getDistance()
+        assertEquals(farLeg, (short.farHip - short.farAnkle).getDistance(), 0.01f)
+        assertEquals((standing.neck - standing.hips).getDistance() / 2, (short.neck - short.hips).getDistance(), 0.01f)
+    }
+
+    @Test
+    fun `a figure seen from above lies with its hips or its planted foot where the demo says`() {
+        val pose = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f, turn = -90f)
+        val anchor = Offset(200f, 250f)
+        assertEquals(anchor, pose.figure(Root.Hips, anchor, facing = Facing.Above).hips)
+        assertEquals(anchor, pose.figure(Root.Ankle, anchor, facing = Facing.Above).ankle)
+    }
+
+    @Test
+    fun `hands round behind a figure seen from the front are drawn behind it`() {
+        val pose = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f)
+        assertFalse(pose.figure(facing = Facing.Front).behind)
+        assertTrue(pose.copy(behind = 0.8f).figure(facing = Facing.Front).behind)
+        assertFalse(pose.copy(behind = 0.8f).figure().front)
     }
 
     @Test

@@ -27,6 +27,16 @@ import kotlin.math.sin
  *
  * [reach] is how much of the arms' length shows, both arms': all of it (1) unless they point toward the eye or
  * away, as arms spread out to the sides do, seen from the side.
+ *
+ * Seen from the front ([Facing.Front]) the same joints lean across the picture instead, positive to its right. The
+ * near side is the one drawn on the right, so legs set apart take opposite signs, as arms out to the sides do.
+ * The feet point at the eye, so neither [foot] pitches. [behind] is how far round behind the body the hands are:
+ * over a half, the arms and what they hold are drawn behind the head and trunk. [turn] turns the whole figure
+ * round in the picture, clockwise: -90 lies it down with its head to the left and its near side uppermost. And
+ * as [reach] does for the arms, [legs], [farLegs] and [trunk] are how much of each leg's and the trunk's length
+ * shows, for a thigh that points at the eye or a back folded toward it.
+ *
+ * Seen from above ([Facing.Above]) it is the same figure lying on a mat, looked down on.
  */
 data class Pose(
     val shin: Float,
@@ -43,6 +53,11 @@ data class Pose(
     val farBell: Float = bell,
     val foot: Float = 0f,
     val reach: Float = 1f,
+    val behind: Float = 0f,
+    val turn: Float = 0f,
+    val legs: Float = 1f,
+    val farLegs: Float = legs,
+    val trunk: Float = 1f,
 ) {
     internal fun angles(): FloatArray = floatArrayOf(
         shin,
@@ -59,10 +74,15 @@ data class Pose(
         farBell,
         foot,
         reach,
+        behind,
+        turn,
+        legs,
+        farLegs,
+        trunk,
     )
 
     internal companion object {
-        const val JOINTS = 14
+        const val JOINTS = 19
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
@@ -82,10 +102,21 @@ data class Pose(
                 farBell = angles[11],
                 foot = angles[12],
                 reach = angles[13],
+                behind = angles[14],
+                turn = angles[15],
+                legs = angles[16],
+                farLegs = angles[17],
+                trunk = angles[18],
             )
         }
     }
 }
+
+/**
+ * Where the figure is seen from: [Side], facing right; [Front], facing the eye, for a lift that goes sideways; or
+ * [Above], lying on a mat and looked down on, for one that goes across the floor.
+ */
+enum class Facing { Side, Front, Above }
 
 /**
  * What the hands hold: [BothHands] one bell between them, the far arm hidden behind the near one; [NearHand]
@@ -176,6 +207,11 @@ sealed interface BandEnd {
  * With a [setUp], the demo starts with it before the first rep: a place in the demo from -1 to 0 is setting up
  * (the figure still in the rep's first pose, the set-up's cue lit), from 0 to 1 a rep. No phase of the rep names
  * the set-up's cue, so it is lit only while setting up.
+ *
+ * It is seen from the side unless [facing] says from the front: a lift that goes sideways (a windmill, a halo, a
+ * step to the side) shows nothing of itself side on. A figure seen from the front holds a bell or nothing, not a
+ * bar. One seen from above holds nothing, and lies on a mat drawn under all of it in place of a
+ * floor: its [root] is the near ankle, for feet that stay planted, or else the middle of its hips, at [anchor].
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
@@ -190,8 +226,11 @@ class ExerciseDemo(
     val props: List<Prop> = emptyList(),
     val anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
     val setUp: SetUp? = null,
+    val facing: Facing = Facing.Side,
 ) {
     init {
+        require(facing == Facing.Side || hold != Hold.Bar) { "No bar is drawn from the front" }
+        require(facing != Facing.Above || hold == Hold.Free) { "Nothing is held seen from above" }
         require(keyframes.first().at == 0f && keyframes.last().at == 1f) { "A rep runs from 0 to 1" }
         require(sameStance(keyframes.first().pose, keyframes.last().pose)) { "A rep ends as it starts" }
         require(keyframes.zipWithNext().all { (a, b) -> a.at < b.at }) { "Keyframes out of order" }
@@ -222,6 +261,7 @@ class ExerciseDemo(
         }
         return ExerciseDemo(
             keyframes, rep, hold, secondsPerRep, still, bellLag, trail, root, view, props, anchor, SetUp(cue, seconds),
+            facing,
         )
     }
 
@@ -250,7 +290,7 @@ class ExerciseDemo(
         )
         return ExerciseDemo(
             keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root, around.intersect(view), props, anchor,
-            setUp,
+            setUp, facing,
         )
     }
 
@@ -271,7 +311,7 @@ class ExerciseDemo(
         val top = (highest - CLOSE_UP_MARGIN).coerceIn(view.top, view.bottom)
         return ExerciseDemo(
             keyframes, phases, hold, secondsPerRep, still, bellLag, trail, root,
-            Rect(view.left, top, view.right, view.bottom), props, anchor, setUp,
+            Rect(view.left, top, view.right, view.bottom), props, anchor, setUp, facing,
         )
     }
 
@@ -328,9 +368,14 @@ class ExerciseDemo(
         val pose = poseAt(progress)
         // Setting up, the figure stands still: nothing swings, so no bell lags.
         val before = if (bellLag == 0f || progress < 0f) pose else poseAt(looped(progress - bellLag))
-        val figure = pose.figure(root, anchor, hangs = before.bell, farHangs = before.farBell)
-        return when (hold) {
-            Hold.Bar, Hold.Free -> figure.copy(bell = figure.hand, farBell = figure.farHand)
+        val figure = pose.figure(root, anchor, hangs = before.bell, farHangs = before.farBell, facing = facing)
+        return when {
+            hold == Hold.Bar || hold == Hold.Free -> figure.copy(bell = figure.hand, farBell = figure.farHand)
+
+            // Seen from the front, a bell in both hands hangs from between them.
+            hold == Hold.BothHands && figure.front ->
+                figure.copy(bell = figure.bell + (figure.farHand - figure.hand) / 2f)
+
             else -> figure
         }
     }
@@ -361,7 +406,7 @@ class ExerciseDemo(
      * shows for a figure that has one; so none for those.
      */
     internal val mat: ClosedFloatingPointRange<Float>? by lazy {
-        if (hold != Hold.Free || bands.isNotEmpty()) return@lazy null
+        if (hold != Hold.Free || bands.isNotEmpty() || facing == Facing.Above) return@lazy null
         var from = Float.MAX_VALUE
         var to = -Float.MAX_VALUE
         for (step in 0 until MAT_STEPS) {
@@ -374,6 +419,26 @@ class ExerciseDemo(
         val left = (from - reach).coerceAtLeast(view.left + Rig.MAT)
         val right = (to + reach).coerceAtMost(view.right - Rig.MAT)
         left..right.coerceAtLeast(left)
+    }
+
+    /**
+     * The mat a figure seen from above lies on: under everywhere its rep takes it and a margin round that, as far
+     * as the view goes, and still while it moves. Drawn in the beat's colour, as a mat seen from the side is.
+     */
+    internal val matFromAbove: Rect? by lazy {
+        if (facing != Facing.Above) return@lazy null
+        var left = Float.MAX_VALUE
+        var top = Float.MAX_VALUE
+        var right = -Float.MAX_VALUE
+        var bottom = -Float.MAX_VALUE
+        for (step in 0 until MAT_STEPS) {
+            val joints = figureAt(step / MAT_STEPS.toFloat()).joints
+            left = minOf(left, joints.minOf { it.x })
+            top = minOf(top, joints.minOf { it.y })
+            right = maxOf(right, joints.maxOf { it.x })
+            bottom = maxOf(bottom, joints.maxOf { it.y })
+        }
+        Rect(left, top, right, bottom).inflate(Rig.MAT_MARGIN).intersect(view.deflate(Rig.MAT))
     }
 
     /** The props drawn behind the figure, every one but a bar to hang from, which goes over the fists. */
@@ -404,7 +469,11 @@ class ExerciseDemo(
     }
 }
 
-/** The figure's joints in [Rig] units, for drawing: the near side's, then the far side's. */
+/**
+ * The figure's joints in [Rig] units, for drawing: the near side's, then the far side's. Seen from the side the
+ * two legs come from one [hip] and the arms from one [shoulder]; from the [front] each side has its own, the far
+ * side's [farHip] and [farShoulder], and the arms may be [behind] the body.
+ */
 data class Figure(
     val toe: Offset,
     val heel: Offset,
@@ -423,12 +492,21 @@ data class Figure(
     val farElbow: Offset,
     val farHand: Offset,
     val farBell: Offset,
+    val farHip: Offset = hip,
+    val farShoulder: Offset = shoulder,
+    val front: Boolean = false,
+    val behind: Boolean = false,
 ) {
+    /** The middle of the hips, and of the shoulders: the two ends of the spine, whichever way it is seen. */
+    val hips: Offset get() = (hip + farHip) / 2f
+
+    val neck: Offset get() = (shoulder + farShoulder) / 2f
+
     /** Every place drawn, to check a figure fits its view and stays off the floor. */
     val joints: List<Offset>
         get() = listOf(
             toe, heel, ankle, knee, hip, shoulder, head, elbow, hand, bell,
-            farToe, farHeel, farAnkle, farKnee, farElbow, farHand, farBell,
+            farToe, farHeel, farAnkle, farKnee, farElbow, farHand, farBell, farHip, farShoulder,
         )
 
     internal fun moved(by: Offset) = Figure(
@@ -449,6 +527,10 @@ data class Figure(
         farElbow = farElbow + by,
         farHand = farHand + by,
         farBell = farBell + by,
+        farHip = farHip + by,
+        farShoulder = farShoulder + by,
+        front = front,
+        behind = behind,
     )
 }
 
@@ -478,6 +560,15 @@ object Rig {
     /** The far leg, a step behind the near one, and the far arm, a little behind the near one. */
     const val FAR_LEG_OFFSET = 9f
     const val FAR_ARM_OFFSET = 7f
+
+    /**
+     * Seen from the front: how far each hip and each shoulder is from the spine, and a foot pointing at the eye,
+     * what shows of it to the outside of the ankle and to the inside.
+     */
+    const val HIP_HALF = 12f
+    const val SHOULDER_HALF = 27f
+    const val FRONT_FOOT = 12f
+    const val FRONT_HEEL = 4f
 
     /**
      * How far from what it rests on the middle of each part is: a knee and an elbow (half of [LEG] and [ARM]),
@@ -511,6 +602,11 @@ object Rig {
     const val MAT = 5f
     const val MAT_REACH = 18f
     const val MAT_LENGTH = 130f
+
+    /** Seen from above: how far a mat reaches past the figure all round, its corners and its edge. */
+    const val MAT_MARGIN = 26f
+    const val MAT_CORNER = 14f
+    const val MAT_EDGE = 2f
     const val SHADOW_WIDTH = 140f
     const val SHADOW_HEIGHT = 12f
 
@@ -547,7 +643,13 @@ fun Pose.figure(
     anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
     hangs: Float = bell,
     farHangs: Float = farBell,
+    facing: Facing = Facing.Side,
 ): Figure {
+    if (facing == Facing.Front) return frontFigure(hangs, farHangs).grounded(root, anchor)
+    if (facing == Facing.Above) {
+        val lying = frontFigure(hangs, farHangs)
+        return lying.moved(anchor - if (root == Root.Ankle) lying.ankle else lying.hips)
+    }
     val ankle = Offset(Rig.ANKLE_X, Rig.FLOOR)
     val knee = ankle.up(Rig.SHIN, shin)
     val hip = knee.up(Rig.THIGH, thigh)
@@ -580,12 +682,90 @@ fun Pose.figure(
         farHand = farHand,
         farBell = farHand.down(Rig.BELL_REACH, farHangs),
     )
-    return when (root) {
-        Root.Ankle -> figure.moved(anchor - figure.ankle)
-        Root.Toe -> figure.moved(anchor - figure.toe)
-        Root.Hand -> figure.moved(anchor - figure.hand)
-        Root.Hips -> figure.moved(Offset(anchor.x - hip.x, Rig.FLOOR - figure.lowest()))
+    return figure.grounded(root, anchor)
+}
+
+private fun Figure.grounded(root: Root, anchor: Offset): Figure = when (root) {
+    Root.Ankle -> moved(anchor - ankle)
+    Root.Toe -> moved(anchor - toe)
+    Root.Hand -> moved(anchor - hand)
+    Root.Hips -> moved(Offset(anchor.x - hip.x, Rig.FLOOR - lowest()))
+}
+
+/**
+ * This pose seen from the front: each leg up from its own foot to its own hip, the hips level, the shoulders
+ * square across the spine wherever it leans, the head straight over them, and the feet pointing at the eye.
+ */
+private fun Pose.frontFigure(hangs: Float, farHangs: Float): Figure {
+    val ankle = Offset(Rig.ANKLE_X, Rig.FLOOR)
+    val knee = ankle.up(Rig.SHIN * legs, shin)
+    val hip = knee.up(Rig.THIGH * legs, thigh)
+    val farHip = hip - Offset(2 * Rig.HIP_HALF, 0f)
+    val farKnee = farHip.down(Rig.THIGH * farLegs, -farThigh)
+    val farAnkle = farKnee.down(Rig.SHIN * farLegs, -farShin)
+    val neck = ((hip + farHip) / 2f).up(Rig.TORSO * trunk, torso)
+    val across = Offset(cos(torso.radians()), sin(torso.radians())) * Rig.SHOULDER_HALF
+    val shoulder = neck + across
+    val farShoulder = neck - across
+    val elbow = shoulder.down(Rig.UPPER_ARM * reach, upperArm)
+    val hand = elbow.down(Rig.FOREARM * reach, forearm)
+    val farElbow = farShoulder.down(Rig.UPPER_ARM * reach, farUpperArm)
+    val farHand = farElbow.down(Rig.FOREARM * reach, farForearm)
+    val standing = Figure(
+        toe = ankle + Offset(Rig.FRONT_FOOT, 0f),
+        heel = ankle - Offset(Rig.FRONT_HEEL, 0f),
+        ankle = ankle,
+        knee = knee,
+        hip = hip,
+        shoulder = shoulder,
+        head = neck.up(Rig.NECK, torso),
+        elbow = elbow,
+        hand = hand,
+        bell = hand.down(Rig.BELL_REACH, hangs),
+        farToe = farAnkle - Offset(Rig.FRONT_FOOT, 0f),
+        farHeel = farAnkle + Offset(Rig.FRONT_HEEL, 0f),
+        farAnkle = farAnkle,
+        farKnee = farKnee,
+        farElbow = farElbow,
+        farHand = farHand,
+        farBell = farHand.down(Rig.BELL_REACH, farHangs),
+        farHip = farHip,
+        farShoulder = farShoulder,
+        front = true,
+        behind = behind > BEHIND,
+    )
+    return if (turn == 0f) standing else standing.turned(turn.radians(), about = standing.hips)
+}
+
+/** This figure turned [by] this angle, clockwise in the picture, [about] a place. */
+private fun Figure.turned(by: Float, about: Offset): Figure {
+    val cos = cos(by)
+    val sin = sin(by)
+    fun Offset.turned(): Offset {
+        val from = this - about
+        return about + Offset(from.x * cos - from.y * sin, from.x * sin + from.y * cos)
     }
+    return copy(
+        toe = toe.turned(),
+        heel = heel.turned(),
+        ankle = ankle.turned(),
+        knee = knee.turned(),
+        hip = hip.turned(),
+        shoulder = shoulder.turned(),
+        head = head.turned(),
+        elbow = elbow.turned(),
+        hand = hand.turned(),
+        bell = bell.turned(),
+        farToe = farToe.turned(),
+        farHeel = farHeel.turned(),
+        farAnkle = farAnkle.turned(),
+        farKnee = farKnee.turned(),
+        farElbow = farElbow.turned(),
+        farHand = farHand.turned(),
+        farBell = farBell.turned(),
+        farHip = farHip.turned(),
+        farShoulder = farShoulder.turned(),
+    )
 }
 
 /** Where [end] of a band is on this figure, the far side drawn a step behind as it is. */
@@ -594,8 +774,8 @@ internal fun Figure.place(end: BandEnd): Offset = when (end) {
     BandEnd.FarHand -> farHand
     BandEnd.Foot -> Offset((ankle.x + toe.x) / 2, (ankle.y + toe.y) / 2)
     BandEnd.Knee -> knee
-    BandEnd.FarKnee -> farKnee + Offset(-Rig.FAR_LEG_OFFSET, 0f)
-    BandEnd.Neck -> shoulder
+    BandEnd.FarKnee -> if (front) farKnee else farKnee + Offset(-Rig.FAR_LEG_OFFSET, 0f)
+    BandEnd.Neck -> neck
     is BandEnd.Post -> end.at
 }
 
@@ -610,7 +790,8 @@ internal fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
 private fun Figure.lowest(): Float = maxOf(
     maxOf(toe.y, heel.y, farToe.y, farHeel.y),
     maxOf(knee.y, farKnee.y) + Rig.LEG / 2,
-    maxOf(hip.y + Build.PELVIS, chest().y + Build.CHEST, shoulder.y + Build.SHOULDERS),
+    maxOf(maxOf(hip.y, farHip.y) + Build.PELVIS, chest().y + Build.CHEST),
+    maxOf(shoulder.y, farShoulder.y) + Build.SHOULDERS,
     head.y + Rig.HEAD,
     maxOf(elbow.y, farElbow.y) + Rig.ARM / 2,
     maxOf(hand.y, farHand.y) + Rig.HAND,
@@ -659,6 +840,8 @@ private fun hermite(from: Float, leaving: Float, to: Float, arriving: Float, sha
         (cubed - squared) * arriving
 }
 
+/** Past this, hands that go round behind the body are drawn behind it. */
+private const val BEHIND = 0.5f
 private const val HALF_TURN = 180.0
 internal const val FULL_TURN = 360f
 private const val SAME_ANGLE = 0.01f

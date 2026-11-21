@@ -132,14 +132,19 @@ internal fun DrawScope.drawTrunk(pen: FigurePen, figure: Figure) {
     drawSegment(pen, waist, ribs, Build.WAIST, chest)
     drawSegment(pen, ribs, figure.shoulder, chest, shoulders)
     drawSegment(pen, figure.shoulder, figure.head, Build.NECK, Build.NECK_TOP)
-    val neck = figure.head - figure.shoulder
+    drawHead(pen, figure.shoulder, figure.head)
+}
+
+/** A head longer than it is wide, at [head], in line with the neck up [from] the shoulders. */
+internal fun DrawScope.drawHead(pen: FigurePen, from: Offset, head: Offset) {
+    val neck = head - from
     val lean = atan2(neck.x, -neck.y) * DEGREES
     val across = Build.HEAD_ACROSS + pen.pad
     val along = Build.HEAD_ALONG + pen.pad
-    rotate(lean, figure.head) {
+    rotate(lean, head) {
         drawOval(
             pen.color,
-            topLeft = Offset(figure.head.x - across, figure.head.y - along),
+            topLeft = Offset(head.x - across, head.y - along),
             size = Size(across * 2, along * 2),
             blendMode = pen.blend,
         )
@@ -158,9 +163,26 @@ internal fun DrawScope.drawLeg(pen: FigurePen, figure: Figure, far: Boolean = fa
     val ankle = (if (far) figure.farAnkle else figure.ankle) + behind
     val heel = (if (far) figure.farHeel else figure.heel) + behind
     val toe = (if (far) figure.farToe else figure.toe) + behind
+    drawLegFrom(pen, figure.hip, knee, ankle, heel, toe, scale)
+}
+
+/**
+ * A leg from [hip] by its joints, [scale] of its full thickness. The shoe stands on its sole to the left of the
+ * way from heel to toe, or with [side] -1 to the right, for a foot turned the other way.
+ */
+internal fun DrawScope.drawLegFrom(
+    pen: FigurePen,
+    hip: Offset,
+    knee: Offset,
+    ankle: Offset,
+    heel: Offset,
+    toe: Offset,
+    scale: Float = 1f,
+    side: Float = 1f,
+) {
     val kneeR = Build.KNEE * scale
     val ankleR = Build.ANKLE * scale
-    drawFromPartway(pen, figure.hip, knee, Build.THIGH * scale, kneeR)
+    drawFromPartway(pen, hip, knee, Build.THIGH * scale, kneeR)
 
     val shin = ankle - knee
     val length = shin.getDistance().coerceAtLeast(MIN_LENGTH)
@@ -173,7 +195,7 @@ internal fun DrawScope.drawLeg(pen: FigurePen, figure: Figure, far: Boolean = fa
 
     val sole = toe - heel
     val along = sole / sole.getDistance().coerceAtLeast(MIN_LENGTH)
-    val up = Offset(along.y, -along.x)
+    val up = Offset(along.y, -along.x) * side
     val heelR = Build.HEEL * scale
     val ballR = Build.BALL * scale
     val toeR = Build.TOE * scale
@@ -196,6 +218,10 @@ internal fun DrawScope.drawArm(pen: FigurePen, figure: Figure, far: Boolean = fa
     val shoulder = if (far) figure.shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f) else figure.shoulder
     val elbow = if (far) figure.farElbow else figure.elbow
     val hand = if (far) figure.farHand else figure.hand
+    drawArmFrom(pen, shoulder, elbow, hand, scale)
+}
+
+internal fun DrawScope.drawArmFrom(pen: FigurePen, shoulder: Offset, elbow: Offset, hand: Offset, scale: Float = 1f) {
     val elbowR = Build.ELBOW * scale
     val forearmR = Build.FOREARM * scale
     drawFromPartway(pen, shoulder, elbow, Build.DELTOID * scale, elbowR)
@@ -248,6 +274,12 @@ internal object Build {
     const val SHOULDERS = 12f
     const val NECK = 8f
     const val NECK_TOP = 7f
+
+    /** Seen from the front: across the hips, the waist, the chest and the collar, each half its width. */
+    const val FRONT_HIPS = 22f
+    const val FRONT_WAIST = 18f
+    const val FRONT_CHEST = 25f
+    const val FRONT_COLLAR = 14f
     const val HEAD_ACROSS = 17.5f
     const val HEAD_ALONG = 19.5f
 

@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.ui.demo
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 /** What each floor drill's figure must show, beyond what every demo keeps to. */
@@ -40,7 +41,11 @@ class FloorDemosTest {
     fun `the hip escape straightens the legs away and the bridge lifts the hips`() {
         val bent = HipEscapeDemo.figureAt(0f)
         val escaped = HipEscapeDemo.figureAt(HipEscapeDemo.still)
-        assertTrue(escaped.ankle.x > bent.ankle.x + 25f, "The legs never push away")
+        // Seen from above with the near foot planted: the hips go away from it, and out to the side.
+        assertEquals(bent.ankle, escaped.ankle, "The planted foot slides")
+        val away = (escaped.hips - escaped.ankle).getDistance() - (bent.hips - bent.ankle).getDistance()
+        assertTrue(away > 25f, "The hips only push $away away")
+        assertTrue(escaped.hips.y < bent.hips.y - 30f, "The hips never go out to the side")
         val lying = BridgeAndRollDemo.figureAt(0f)
         val bridged = BridgeAndRollDemo.figureAt(BridgeAndRollDemo.still)
         assertTrue(bridged.hip.y < lying.hip.y - 30f, "The hips stay down")
@@ -74,9 +79,13 @@ class FloorDemosTest {
             val held = demo.figureAt(0f)
             frames(demo).forEach { assertTrue((it.hip - held.hip).getDistance() < 12f, "The hips wander to ${it.hip}") }
         }
+        // The frog is seen from above: its knees wide either side of the hips, its hands ahead of the shoulders.
         val frog = FrogStretchDemo.figureAt(0f)
-        assertTrue(frog.elbow.y > Rig.FLOOR - Rig.ARM, "The frog's elbows are off the mat")
-        assertTrue(frog.knee.y > Rig.FLOOR - Rig.LEG, "The frog's knees are off the mat")
+        assertTrue((frog.knee - frog.farKnee).getDistance() > 120f, "The frog's knees are only ${frog.knee} apart")
+        assertTrue(frog.hand.x < frog.shoulder.x - 30f, "The frog's hands are back at ${frog.hand}")
+        val butterfly = ButterflyDemo.figureAt(0f)
+        assertTrue(butterfly.knee.x - butterfly.farKnee.x > 120f, "The butterfly's knees are in at ${butterfly.knee}")
+        assertTrue((butterfly.ankle - butterfly.farAnkle).getDistance() < 40f, "The feet are apart")
     }
 
     private fun frames(demo: ExerciseDemo) = (0..40).map { demo.figureAt(it / 40f) }

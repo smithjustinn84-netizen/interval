@@ -31,28 +31,6 @@ private val matView = Rect(left = -60f, top = 120f, right = 420f, bottom = 380f)
 /** A little taller, for a kneeling figure's head. */
 private val kneelingView = Rect(left = -10f, top = 100f, right = 410f, bottom = 380f)
 
-/** The 90/90 hip switch: sitting with both knees bent square, the legs swung over to the other side and back. */
-val HipSwitchDemo: ExerciseDemo = run {
-    val right = Pose(
-        shin = 98f,
-        thigh = 270f,
-        torso = -4f,
-        upperArm = 40f,
-        forearm = 60f,
-        farShin = -98f,
-        farThigh = 90f,
-        farFoot = KNEELING_FOOT,
-    )
-    val left = right.copy(shin = -98f, thigh = 90f, farShin = 98f, farThigh = 270f, farFoot = 0f, foot = KNEELING_FOOT)
-    val over = right.copy(shin = -10f, thigh = 200f, torso = -12f, farShin = 10f, farThigh = 160f, farFoot = 0f)
-    mat(
-        listOf(0f to right, 0.12f to right, 0.3f to over, 0.45f to left, 0.62f to left, 0.8f to over, 1f to right),
-        phases(0.12f to 0, 0.62f to 1, 1f to 2),
-        seconds = 6f,
-        still = 0.05f,
-    )
-}
-
 /** The hip flexor lunge: the back knee down, the front foot forward, the hips eased forward under tall ribs. */
 val HipFlexorLungeDemo: ExerciseDemo = run {
     val kneeling = Pose(
@@ -122,25 +100,6 @@ val WorldsGreatestStretchDemo: ExerciseDemo = run {
         anchor = Offset(270f, Rig.FLOOR),
         view = Rect(left = 0f, top = 120f, right = 430f, bottom = 380f),
     )
-}
-
-/**
- * Thread the needle: on all fours, the near arm slid under the chest (back toward the knees, seen from the
- * side), that shoulder and the ear resting on the mat, the far arm long on the floor ahead.
- */
-val ThreadTheNeedleDemo: ExerciseDemo = run {
-    fun threaded(torso: Float, arm: Float) = Pose(
-        shin = KNEELING_SHIN,
-        thigh = 0f,
-        torso = torso,
-        upperArm = -arm,
-        forearm = -arm,
-        farUpperArm = arm,
-        farForearm = arm,
-        farFoot = KNEELING_FOOT,
-        foot = KNEELING_FOOT,
-    )
-    held(threaded(torso = 120f, arm = 77.6f), threaded(torso = 119f, arm = 76.6f))
 }
 
 /** Shoulder circles: standing tall, one arm long, the biggest slow circle forward and then back the other way. */
@@ -374,25 +333,6 @@ val PigeonDemo: ExerciseDemo = run {
         farFoot = KNEELING_FOOT,
     )
     held(folded(torso = 62f, arm = 56.8f), folded(torso = 66f, arm = 61.5f), anchor = Offset(150f, Rig.FLOOR))
-}
-
-/**
- * The lying twist: on the back, one knee drawn up and across the body, the other leg long, the arms out to the
- * sides (pointing at the eye and away, so they look short) and both shoulders down.
- */
-val LyingTwistDemo: ExerciseDemo = run {
-    fun twisted(thigh: Float, shin: Float) = Pose(
-        shin = shin,
-        thigh = thigh,
-        torso = FLAT,
-        upperArm = 180f,
-        forearm = 180f,
-        farShin = DOWN,
-        farThigh = DOWN,
-        farFoot = DOWN_POINTED,
-        reach = 0.2f,
-    )
-    held(twisted(thigh = 120f, shin = 300f), twisted(thigh = 124f, shin = 302f))
 }
 
 /** On all fours over the knees, the hips at [thigh] and the back at [torso], both arms straight at [arm]. */

@@ -162,29 +162,6 @@ val CrossVUpDemo: ExerciseDemo = run {
 }
 
 /**
- * The hip escape: from the back with the knees bent, turned onto the shoulder with the hips pushed away from the
- * feet (the legs long, the hands framing), then the knees brought back in.
- */
-val HipEscapeDemo: ExerciseDemo = run {
-    val bent = bentKnees(torso = -85f).arms(upper = 120f, fore = 150f)
-    val escaped = Pose(
-        shin = -78f,
-        thigh = -104f,
-        torso = -76f,
-        upperArm = 112f,
-        forearm = 112f,
-        farShin = BENT_SHIN,
-        farThigh = BENT_THIGH,
-    )
-    onTheMat(
-        listOf(0f to bent, 0.1f to bent, 0.4f to escaped, 0.6f to escaped, 0.9f to bent, 1f to bent),
-        phases(0.1f to 0, 0.6f to 1, 1f to 2),
-        seconds = 2.4f,
-        still = 0.5f,
-    )
-}
-
-/**
  * The bridge and roll (the upa): from the back with the heels close to the hips, bridged high off the feet, then
  * turned over the shoulder, the near arm reaching across, and back down. It stands on the near foot, as the
  * shoulder bridge does.
@@ -336,46 +313,6 @@ val SitOutDemo: ExerciseDemo = run {
         anchor = Offset(295f, Rig.FLOOR - Rig.HAND),
         view = Rect(left = -10f, top = 100f, right = 410f, bottom = 380f),
     )
-}
-
-/**
- * The butterfly: sitting tall with the soles of the feet together, each knee fallen open to the mat (seen from the
- * side, the leg folded flat with the foot in at the hips), then folded forward over the feet with a long back.
- */
-val ButterflyDemo: ExerciseDemo = run {
-    val tall = Pose(
-        shin = 70.8f,
-        thigh = -105.4f,
-        torso = -3f,
-        upperArm = 25f,
-        forearm = 60f,
-        foot = 10f,
-        farFoot = 10f,
-    )
-    val folded = tall.copy(torso = 28f, upperArm = 60f, forearm = 70f)
-    onTheMat(
-        listOf(0f to tall, 0.1f to tall, 0.4f to folded, 0.6f to folded, 0.9f to tall, 1f to tall),
-        phases(0.1f to 0, 0.6f to 1, 1f to 2),
-        seconds = 5f,
-        still = 0.5f,
-    )
-}
-
-/**
- * The frog: on the forearms with the knees wide, the shins out to the sides in line with them (seen from the side,
- * along the mat), the hips eased back toward the heels and forward again with each breath.
- */
-val FrogStretchDemo: ExerciseDemo = run {
-    fun frog(thigh: Float, torso: Float) = Pose(
-        shin = 90f,
-        thigh = thigh,
-        torso = torso,
-        upperArm = 0f,
-        forearm = 95f,
-        foot = 180f,
-        farFoot = 180f,
-    )
-    held(frog(thigh = -10f, torso = 104.7f), frog(thigh = -16f, torso = 102f))
 }
 
 /** Lying on the back at [torso] with the knees bent and the feet flat on the mat. */

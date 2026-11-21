@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.ui.demo
 
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -61,6 +62,10 @@ internal fun DrawScope.drawFigure(
  */
 private fun DrawScope.drawBody(demo: ExerciseDemo, figure: Figure, pen: FigurePen, bell: Color, colors: FigureColors) {
     val hold = demo.hold
+    if (figure.front) {
+        drawFrontBody(hold, figure, pen, bell, colors.body)
+        return
+    }
     pen.ink(colors.farLeg)
     drawLeg(pen, figure, far = true)
     if (hold == Hold.NearHand || hold == Hold.Pair || hold == Hold.Free) {
@@ -77,11 +82,51 @@ private fun DrawScope.drawBody(demo: ExerciseDemo, figure: Figure, pen: FigurePe
 }
 
 /**
+ * The body seen from the front, back to front: the trunk and head, the legs over the hips they come from, then
+ * the arms and what they hold, unless they are round behind the body, which go first. Both sides are as near as
+ * each other, so both are the body's colour, told apart by the gap round each.
+ */
+private fun DrawScope.drawFrontBody(hold: Hold, figure: Figure, pen: FigurePen, bell: Color, body: Color) {
+    if (figure.behind) drawFrontArms(hold, figure, pen, bell, body)
+    gapped(pen, body) { drawFrontTrunk(pen, figure) }
+    gapped(pen, body) { drawFrontLeg(pen, figure, far = true) }
+    gapped(pen, body) { drawFrontLeg(pen, figure, far = false) }
+    if (!figure.behind) drawFrontArms(hold, figure, pen, bell, body)
+}
+
+/**
+ * Both arms seen from the front, and their bells: one in the near hand, one in each, or one between both hands,
+ * its handle where they meet. A bell that hangs goes under the fists and one resting on a forearm over it, as
+ * from the side; one stood over both hands by its horns goes over them, or the forearms under it would hide it.
+ */
+private fun DrawScope.drawFrontArms(hold: Hold, figure: Figure, pen: FigurePen, bell: Color, body: Color) {
+    val both = hold == Hold.BothHands
+    val grip = if (both) (figure.hand + figure.farHand) / 2f else figure.hand
+    val near = both || hold == Hold.NearHand || hold == Hold.Pair
+    val resting = near && if (both) figure.bell.y < grip.y else rests(figure.elbow, figure.hand, figure.bell)
+    val farResting = hold == Hold.Pair && rests(figure.farElbow, figure.farHand, figure.farBell)
+    if (hold == Hold.Pair && !farResting) gapped(pen, bell) { drawBell(pen, figure.farHand, figure.farBell) }
+    if (near && !resting) gapped(pen, bell) { drawBell(pen, grip, figure.bell) }
+    gapped(pen, body) { drawFrontArm(pen, figure, far = true) }
+    gapped(pen, body) { drawFrontArm(pen, figure, far = false) }
+    if (farResting) gapped(pen, bell) { drawBell(pen, figure.farHand, figure.farBell) }
+    if (resting) gapped(pen, bell) { drawBell(pen, grip, figure.bell) }
+}
+
+/**
  * The floor from one side of the view to the other, fading at its ends; a ground shadow that tracks the figure's
  * footprint and softens as it rises off the floor (hanging, jumping, up on a bench); and, under a figure with
  * nothing in its hands, a mat in the [beat]'s colour, which a bell, a bar or a band would otherwise show.
  */
 private fun DrawScope.drawFloor(demo: ExerciseDemo, figure: Figure, pen: FigurePen, beat: Color, colors: FigureColors) {
+    val under = demo.matFromAbove
+    if (under != null) {
+        // Seen from above there is no floor's edge, only the mat the figure lies on.
+        val corner = CornerRadius(Rig.MAT_CORNER)
+        drawRoundRect(beat.copy(alpha = MAT_FILL_ALPHA), under.topLeft, under.size, corner)
+        drawRoundRect(beat.copy(alpha = MAT_EDGE_ALPHA), under.topLeft, under.size, corner, style = MatEdgeStroke)
+        return
+    }
     drawLine(
         pen.floor,
         Offset(pen.floorFrom, Rig.FLOOR),
@@ -287,12 +332,17 @@ private fun DrawScope.drawPlate(sleeve: Offset, color: Color, axle: Color) {
 
 private val HandleStroke = Stroke(Rig.HANDLE, cap = StrokeCap.Round, join = StrokeJoin.Round)
 private val HandleGapStroke = Stroke(Rig.HANDLE + 2 * Build.GAP, cap = StrokeCap.Round, join = StrokeJoin.Round)
+private val MatEdgeStroke = Stroke(Rig.MAT_EDGE)
 private val PlateRimStroke = Stroke(Rig.PLATE_RIM)
 private val PlateInnerStroke = Stroke(PLATE_INNER_STROKE)
 private val BellDetailStroke = Stroke(BELL_SHADE_STROKE, cap = StrokeCap.Round)
 private val BellHighlightStroke = Stroke(BELL_HIGHLIGHT_STROKE, cap = StrokeCap.Round)
 
 private const val HALF = 0.5f
+
+/** A mat seen from above: its fill and its edge, in the beat's colour. */
+private const val MAT_FILL_ALPHA = 0.16f
+private const val MAT_EDGE_ALPHA = 0.7f
 
 /** Dynamic ground shadow tuning. */
 private const val SHADOW_SPAN_RATIO = 0.9f

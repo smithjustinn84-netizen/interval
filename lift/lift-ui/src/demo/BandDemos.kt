@@ -23,13 +23,6 @@ private val underFoot = listOf(Band(BandEnd.Hand, BandEnd.Foot))
 /** A low, wide box for a lift done sitting or lying on the floor. */
 private val floorView = Rect(left = 20f, top = 150f, right = 390f, bottom = 380f)
 
-/** The band pull-apart: arms straight ahead at shoulder height, the band pulled apart to the chest. */
-val BandPullApartDemo: ExerciseDemo = pull(
-    from = standing.copy(upperArm = 90f, forearm = 90f).bothArms(),
-    to = standing.copy(upperArm = 90f, forearm = 90f, reach = 0.15f).bothArms(),
-    band = Band(BandEnd.Hand, BandEnd.FarHand),
-)
-
 /** The face pull: from a post at face height, the hands pulled to beside the ears, the elbows high and wide. */
 val BandFacePullDemo: ExerciseDemo = pull(
     from = standing.copy(torso = -3f, upperArm = 96f, forearm = 96f).bothArms(),
@@ -156,69 +149,6 @@ val BandGoodMorningDemo: ExerciseDemo = pull(
 
 /** The banded glute bridge: the bridge with a band above the knees, pushed out against. */
 val BandGluteBridgeDemo: ExerciseDemo = bridge(single = false, props = listOf(Band(BandEnd.Knee, BandEnd.FarKnee)))
-
-/**
- * The lateral walk: in a half squat with a band round the knees, stepping sideways. The steps go across the
- * view, so they show as each foot lifting and setting down in turn.
- */
-val BandLateralWalkDemo: ExerciseDemo = run {
-    val squat = Pose(shin = 25f, thigh = -60f, torso = 30f, upperArm = 40f, forearm = 80f)
-    val nearUp = squat.copy(thigh = -75f, farThigh = -60f)
-    val farUp = squat.copy(farThigh = -75f)
-    ExerciseDemo(
-        keyframes = listOf(
-            Keyframe(at = 0f, pose = squat),
-            Keyframe(at = 0.15f, pose = nearUp),
-            Keyframe(at = 0.3f, pose = squat),
-            Keyframe(at = 0.5f, pose = squat),
-            Keyframe(at = 0.65f, pose = farUp),
-            Keyframe(at = 0.8f, pose = squat),
-            Keyframe(at = 1f, pose = squat),
-        ),
-        phases = phases(0.5f to 1, 1f to 2),
-        hold = Hold.Free,
-        secondsPerRep = 1.6f,
-        still = 0.15f,
-        root = Root.Hips,
-        props = listOf(Band(BandEnd.Knee, BandEnd.FarKnee)),
-    )
-}
-
-/**
- * The clamshell: lying on one side with a band round the knees, the top knee opened and closed, the feet
- * together. Seen from the front, so the bent knees point at the eye and the top one opens upward.
- */
-val BandClamshellDemo: ExerciseDemo = run {
-    val closed = Pose(
-        shin = -90f,
-        thigh = -90f,
-        torso = -80f,
-        upperArm = -80f,
-        forearm = -90f,
-        farShin = -83f,
-        farThigh = -97f,
-        farUpperArm = 85f,
-        farForearm = 85f,
-    )
-    val open = closed.copy(farShin = -71f, farThigh = -112f)
-    ExerciseDemo(
-        keyframes = listOf(
-            Keyframe(at = 0f, pose = closed),
-            Keyframe(at = 0.1f, pose = closed),
-            Keyframe(at = 0.42f, pose = open),
-            Keyframe(at = 0.55f, pose = open),
-            Keyframe(at = 1f, pose = closed),
-        ),
-        phases = phases(0.1f to 0, 0.55f to 1, 1f to 2),
-        hold = Hold.Free,
-        secondsPerRep = 2.4f,
-        still = 0.48f,
-        root = Root.Hips,
-        anchor = Offset(185f, Rig.FLOOR),
-        view = Rect(left = -40f, top = 180f, right = 390f, bottom = 380f),
-        props = listOf(Band(BandEnd.Knee, BandEnd.FarKnee)),
-    )
-}
 
 /** This pose with the far arm doing as the near one does. */
 private fun Pose.bothArms() = copy(farUpperArm = upperArm, farForearm = forearm)
