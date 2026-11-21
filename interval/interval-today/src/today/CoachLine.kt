@@ -24,12 +24,16 @@ import dev.justinsmith.interval.today.resources.home_coach_grip
 import dev.justinsmith.interval.today.resources.home_coach_hard
 import dev.justinsmith.interval.today.resources.home_coach_heart
 import dev.justinsmith.interval.today.resources.home_coach_mat
+import dev.justinsmith.interval.today.resources.home_coach_meets_goal
+import dev.justinsmith.interval.today.resources.home_coach_more
 import dev.justinsmith.interval.today.resources.home_coach_rest
 import dev.justinsmith.interval.today.resources.home_coach_sport
 import dev.justinsmith.interval.today.resources.home_coach_sport_flow
+import dev.justinsmith.interval.today.resources.home_coach_steps
 import dev.justinsmith.interval.today.resources.home_coach_the_mat
 import dev.justinsmith.interval.today.resources.home_coach_the_run
 import dev.justinsmith.interval.today.resources.home_coach_the_wall
+import dev.justinsmith.interval.today.resources.home_coach_toward_goal
 import dev.justinsmith.interval.today.resources.home_day_caption
 import dev.justinsmith.interval.today.resources.home_day_class
 import dev.justinsmith.interval.today.resources.home_day_climbing
@@ -47,6 +51,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.lift.domain.ReadinessReason
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -66,15 +71,22 @@ internal fun DayCaption(weekday: Int?, kind: DayKind, modifier: Modifier = Modif
 
 /**
  * The one thing worth saying of the day, as a tinted readiness banner under the week strip: that it is a day to
- * take easier and why, that it is the mat's and to loosen up first, that it is done, that rest is part of the week.
+ * take easier and why, that it is the mat's and to loosen up first, that it is done, that rest is part of the week,
+ * or on a plain training day where today takes the week, or how much it holds.
  */
 @Composable
 internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val warm = note is CoachNote.Taxed || note is CoachNote.ForSport
-    val fill = if (warm) palette.accentTint else palette.tint(palette.restMark)
-    val dot = if (warm) palette.accentFill else palette.restMark
-    val border = (if (warm) palette.accent else palette.restMark).copy(alpha = Opacity.DISABLED)
+    // Warm for a day to take care with, the rest mark for rest and a day done, quiet for a plain training day's word.
+    val (fill, dot, border) = when (note) {
+        is CoachNote.Taxed, is CoachNote.ForSport ->
+            Triple(palette.accentTint, palette.accentFill, palette.accent.copy(alpha = Opacity.DISABLED))
+
+        is CoachNote.TowardGoal, is CoachNote.Steps -> Triple(palette.surfaceVariant, palette.accent, palette.line)
+
+        is CoachNote.DayDone, CoachNote.RestDay ->
+            Triple(palette.tint(palette.restMark), palette.restMark, palette.restMark.copy(alpha = Opacity.DISABLED))
+    }
     Row(
         modifier
             .fillMaxWidth()
@@ -156,4 +168,16 @@ private fun coachText(note: CoachNote): String = when (note) {
         stringResource(if (note.goalMet) Res.string.home_coach_done_goal else Res.string.home_coach_done)
 
     CoachNote.RestDay -> stringResource(Res.string.home_coach_rest)
+
+    is CoachNote.TowardGoal -> if (note.days >= note.goal) {
+        stringResource(Res.string.home_coach_meets_goal)
+    } else {
+        stringResource(Res.string.home_coach_toward_goal, note.days, note.goal)
+    }
+
+    is CoachNote.Steps -> pluralStringResource(
+        if (note.started) Res.plurals.home_coach_more else Res.plurals.home_coach_steps,
+        note.count,
+        note.count,
+    )
 }

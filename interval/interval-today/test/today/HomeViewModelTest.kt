@@ -285,7 +285,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         assertIs<UpNextItem.SportDay>(morning.steps[1])
         assertTrue(morning.spare(morning.steps[2]))
         assertEquals(DayKind.SportDay(Sport.Bjj), morning.kind)
-        assertEquals(CoachNote.ForSport(Sport.Bjj, flowFirst = true), morning.note(taxed = null, goalMet = false))
+        assertEquals(CoachNote.ForSport(Sport.Bjj, flowFirst = true), morning.note(taxed = null))
         assertTrue(morning.done.isEmpty())
 
         repository.history.recordWorkout(flow.flow.config(prepSeconds = 10), elapsedSeconds = 540)
@@ -300,7 +300,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         assertIs<UpNextItem.Lift>(evening.next)
         assertTrue(evening.waiting)
         assertEquals(DayKind.Done, evening.kind)
-        assertEquals(CoachNote.DayDone(goalMet = false), evening.note(taxed = null, goalMet = false))
+        assertEquals(CoachNote.DayDone(goalMet = false), evening.note(taxed = null))
         assertEquals(DoneStep.SportLogged(Sport.Bjj), evening.done.last())
     }
 
@@ -312,7 +312,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         assertTrue(plan.resting)
         assertFalse(plan.waiting)
         assertEquals(DayKind.Rest, plan.kind)
-        assertEquals(CoachNote.RestDay, plan.note(taxed = null, goalMet = false))
+        assertEquals(CoachNote.RestDay, plan.note(taxed = null))
         assertIs<UpNextItem.Planned>(plan.next)
     }
 
@@ -330,7 +330,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         val state = viewModel.state.value
         assertEquals(ReadinessReason.Mat, state.taxed)
         assertTrue(state.easier)
-        assertEquals(CoachNote.Taxed(ReadinessReason.Mat), state.plan.note(state.taxed, goalMet = false))
+        assertEquals(CoachNote.Taxed(ReadinessReason.Mat), state.plan.note(state.taxed))
 
         viewModel.startLift(press, easier = true)
         assertNotNull(bells.sessions.active.value)

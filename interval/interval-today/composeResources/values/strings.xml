@@ -88,6 +88,16 @@
     <string name="home_coach_done">That is the day.</string>
     <string name="home_coach_done_goal">That is the day, and the goal for the week is met.</string>
     <string name="home_coach_rest">Rest is part of the week.</string>
+    <string name="home_coach_toward_goal">Today makes %1$d of %2$d this week.</string>
+    <string name="home_coach_meets_goal">Today meets the week\'s goal.</string>
+    <plurals name="home_coach_steps">
+        <item quantity="one">One thing today.</item>
+        <item quantity="other">%1$d things today, in order.</item>
+    </plurals>
+    <plurals name="home_coach_more">
+        <item quantity="one">One more today.</item>
+        <item quantity="other">%1$d more today.</item>
+    </plurals>
     <!-- The day's card: its steps, what is done, a rest day, and what can wait. -->
     <string name="home_spare">If there is time</string>
     <string name="home_done_today">Done for today</string>

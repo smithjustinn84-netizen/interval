@@ -116,9 +116,10 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
 /**
  * Monday to Sunday as a block a day, as Log's week draws them: filled and checked in its kind's colour once done
  * (the accent for a session on Lift, the work mark for an interval workout, the rest mark for mobility, dim for a
- * sport day alone), outlined in the accent while planned, a dim fill with a slash once missed, and the surface for
- * a rest day; today's is filled in the gold. Each day still ahead (today and after, planned or rest) carries its
- * date, not with large text; a rest day gone by, or with large text, keeps its dot.
+ * sport day alone), a dashed ring in the accent while planned, a dim fill with a slash once missed, and no block at
+ * all for a rest day, so each tells itself by its shape, not its colour alone; today's is filled in the gold. Each
+ * day still ahead (today and after, planned or rest) carries its date, not with large text; a rest day gone by, or
+ * with large text, keeps its dot.
  * Under each is its short name ("Mon"), and its sport's short name ("BJJ", "Climb") where the week has any, kept
  * level across the days. Each day is a button that opens it, read as the strip on Log is:
  * "Today, done, BJJ logged". A day done since Today last drew the week (a workout finished and come back
@@ -197,7 +198,7 @@ private val doneDaysSaver = listSaver<Set<Long>, Long>(save = { it.toList() }, r
 
 /**
  * One day's circle, by its state: today stands out filled, past done days wear a soft tinted circle and check,
- * planned days wear a dashed ring, missed days a dim slash, and rest days a quiet dot. A done day told to [drawOn]
+ * planned days wear a dashed ring, missed days a dim slash, and rest days no circle, a quiet date or dot alone. A done day told to [drawOn]
  * sweeps its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and lands its check on a
  * spring; at once under reduced motion.
  */
@@ -252,7 +253,8 @@ private fun DayDot(
 
         day.state == DayState.Missed -> Modifier.background(palette.surfaceVariant).missedSlash(palette.textDim)
 
-        else -> Modifier.background(palette.surfaceVariant)
+        // A rest day has no block at all, its date or dot alone: each state has a shape of its own, not a colour.
+        else -> Modifier
     }
     Box(
         modifier.size(Sizes.weekDayDot).clip(CircleShape).then(surface),

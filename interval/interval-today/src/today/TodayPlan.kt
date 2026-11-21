@@ -123,6 +123,12 @@ sealed interface CoachNote {
 
     /** A day with nothing planned, in a week that has plans. */
     data object RestDay : CoachNote
+
+    /** A training day not yet started, short of the week's [goal]: today makes it [days] trained. */
+    data class TowardGoal(val days: Int, val goal: Int) : CoachNote
+
+    /** A training day with [count] steps still to do; [started] once something today is done. */
+    data class Steps(val count: Int, val started: Boolean) : CoachNote
 }
 
 /**
@@ -157,13 +163,16 @@ val TodayPlan.kind: DayKind
     }
 
 /**
- * What there is to say of the day, or null with nothing worth a line: that it is one to take easier ([taxed], while
- * something to train leads it), that it is a sport's, that it is done ([goalMet] with the week's goal), or that it
- * is a rest day (only [resting], in a week with something still to come).
+ * What there is to say of the day, or null with nothing to speak of: that it is one to take easier ([taxed], while
+ * something to train leads it), that it is a sport's, that it is done (and whether the week's [goal] is, by the
+ * days [trained] this week), that it is a rest day (only [resting], in a week with something still to come), or on a
+ * plain training day where today takes the week while the goal is short, else how much the day holds. So a day with
+ * anything to it always has its line, and the cards under it keep their place from day to day.
  */
-fun TodayPlan.note(taxed: ReadinessReason?, goalMet: Boolean): CoachNote? {
+fun TodayPlan.note(taxed: ReadinessReason?, trained: Int = 0, goal: Int? = null): CoachNote? {
     val lead = steps.firstOrNull()
     val sport = steps.firstNotNullOfOrNull { (it as? UpNextItem.SportDay)?.sport }
+    val goalMet = goal != null && trained >= goal
     return when {
         taxed != null && lead != null && lead !is UpNextItem.SportDay && lead !is UpNextItem.Flow ->
             CoachNote.Taxed(taxed)
@@ -174,7 +183,12 @@ fun TodayPlan.note(taxed: ReadinessReason?, goalMet: Boolean): CoachNote? {
 
         resting -> CoachNote.RestDay
 
-        else -> null
+        steps.isEmpty() -> null
+
+        // Today counts toward the week once anything of it is done; until then it is the day the week takes.
+        done.isEmpty() && goal != null && !goalMet -> CoachNote.TowardGoal(trained + 1, goal)
+
+        else -> CoachNote.Steps(steps.size, started = done.isNotEmpty())
     }
 }
 

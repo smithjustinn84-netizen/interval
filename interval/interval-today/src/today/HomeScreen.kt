@@ -420,10 +420,9 @@ private fun LazyStaggeredGridScope.dayItems(
 private val HomeUiState.coached: Boolean get() = !loading && (hasPlans || done.isNotEmpty())
 
 /** The one thing worth saying of the day, by the week's goal and Lift's reading; null with nothing to say. */
-private fun HomeUiState.coachNote(plan: TodayPlan): CoachNote? {
-    val goal = weekGoal.goal
-    return if (coached) plan.note(taxed, goalMet = goal != null && weekGoal.count >= goal) else null
-}
+private fun HomeUiState.coachNote(
+    plan: TodayPlan,
+): CoachNote? = if (coached) plan.note(taxed, trained = weekGoal.count, goal = weekGoal.goal) else null
 
 private const val LEAD = "lead"
 private const val PICK = "pick:"

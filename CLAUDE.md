@@ -421,8 +421,10 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   leaves out), then the sport. Today lays that out as a coach would (`today/TodayPlan.kt`, pure: `todayPlan` of the
   agenda and what is done today, `DoneStep`s from the log's day): over the title the day and its kind (`DayCaption`,
   `TabGrid`'s `eyebrow`), under it the one thing worth saying of it (`CoachLine`, from `TodayPlan.note`: a taxed day
-  and why, a sport's day, done, a rest day; nothing on a plain training day), the week as a block a day
-  (`WeekDots`, today's ticked only once its steps are done), then the day in order on one card (`today/DayCard.kt`, a row a step with a hairline between: what is
+  and why, a sport's day, done, a rest day; on a plain training day where today takes the week while the goal is
+  short, else how much the day holds, so the cards under it never move up a line), the week as a block a day
+  (`WeekDots`, today's ticked only once its steps are done; each state its own shape: a check, a dashed ring, a
+  slash, and a rest day no block at all), then the day in order on one card (`today/DayCard.kt`, a row a step with a hairline between: what is
   done ticked, the first step numbered "01" over the tab's one raised Start, which says how long it runs, or Log it,
   the steps after it behind quiet buttons of one width, the program's day stood back behind a class under "If there
   is time"). The day goes by a colour, its kind's tone (`DayKind.tone`, pure: the accent for strength, a sport's day

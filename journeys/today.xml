@@ -29,7 +29,7 @@
     <action>Tap "Edit plan", remove "Lift session" from today's weekday row in "Routine" (its "Remove" button), then tap "Back"</action>
     <action>Tap the "Train" tab, which opens on "Strength", tap "Follow a program", scroll to "15-minute kettlebell plan", tap it and tap "Follow this program"</action>
     <action>Tap the "Today" tab</action>
-    <action>Verify that Today shows "Up next · Strength" with "15-minute kettlebell plan", a line starting "Day 1 of 18 · week 1", and a "Start day 1" button ending "~15 min"</action>
+    <action>Verify that Today shows the coach's line "One thing today." and "Up next · Strength" with "15-minute kettlebell plan", a line starting "Day 1 of 18 · week 1", and a "Start day 1" button ending "~15 min"</action>
     <action>Tap "Not today" under it and verify a notice "15-minute kettlebell plan moved to tomorrow", a line ending "rest day" over "Rest is part of the week." and "Nothing due until tomorrow"; tap the notice's "Undo" and verify "Start day 1" is back</action>
     <action>Tap the "15-minute kettlebell plan" title and verify that a sheet opens with "Strength · about 15 min", the day's lifts each with its sets, "Start day 1" and "Plan for later"; tap outside it to close it</action>
     <action>Verify that the picks are folded to a row "Something else" over "Pick by time" and the length picked; tap it, then tap "15 min" under "Or pick by time" and verify that "15-minute kettlebell plan" leads the picks with "Strength · Day 1 of 18 · week 1" and "15 min"; tap "10 min" and verify that it is gone</action>
