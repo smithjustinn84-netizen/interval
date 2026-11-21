@@ -85,7 +85,7 @@ class HomeFlowScreenTest {
         sport = Sport.Running
         waitForIdle()
         onNodeWithText("Before your run").assertIsDisplayed()
-        onNodeWithText("Mobility · 6 moves · no bell").assertIsDisplayed()
+        onNodeWithText("Mobility · 6 moves · before lifting").assertIsDisplayed()
         sport = Sport.Custom("Judo")
         waitForIdle()
         onNodeWithText("Before Judo").assertIsDisplayed()

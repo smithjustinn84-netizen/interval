@@ -43,7 +43,7 @@ class MobilityScreenTest {
         onNodeWithText("Pillars").assertExists()
         onNodeWithText("Before training").assertExists()
         onNodeWithText("After, or on a day off").assertExists()
-        onNode(hasText("Hips and shoulders") and hasText("6 moves · no bell") and hasText("8:00")).assertExists()
+        onNode(hasText("Hips and shoulders") and hasText("6 moves · before lifting") and hasText("8:00")).assertExists()
         onNode(hasText("Core on the mat") and hasText("10 moves · Pilates") and hasText("11:00")).assertExists()
         onNode(hasText("Full reset") and hasText("10 moves") and hasText("25:00")).assertExists()
         onNodeWithContentDescription("Settings").performClick()

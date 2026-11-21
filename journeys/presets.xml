@@ -10,10 +10,12 @@
     <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, and verify that the Timer is shown, its total labelled "Custom · Total"</action>
     <action>Tap "All presets" beside "Start workout"</action>
     <action>Verify that Train is shown on "Conditioning", with "New preset" and "Settings" in the title bar and a "Timer" row at the top reading "30s on · 15s off · ×8" with "5:55" at its end</action>
-    <action>Verify that a "Save as preset" row ("Keep what is on the Timer under a name") sits under the Timer row in the same card</action>
+    <action>Verify that no "Save as preset" row is shown: the Timer's own settings, as a new install has them, are nothing to keep</action>
+    <action>Tap the "Timer" row, tap "Work", pick "1:00" under "Quick picks", tap "Done", then "All presets"</action>
+    <action>Verify that the Timer row reads "1m on · 15s off · ×8" and that a "Save as preset" row ("Keep what is on the Timer under a name") sits under it in the same card</action>
     <action>Verify that no "Yours" group is shown, and that the built-ins are grouped by what they are for, each group shortest first: "Anywhere" ("Tabata" with "20s on · 10s off · ×8" and "4:00", then "HIIT 30/30", "Long efforts" and "20-minute cap"), "With a bell" ("Swings on the minute", "15:15 MVO2") and "For the mat and the wall" ("Hangboard", "Mat rounds"), each with its shape and its length and no calorie figure</action>
     <action>Tap the "Save as preset" row</action>
-    <action>Verify that a sheet titled "Save as preset" is shown with "Cancel", a "Name" field whose placeholder is "30/15 ×8" and a "0 / 24" count</action>
+    <action>Verify that a sheet titled "Save as preset" is shown with "Cancel", a "Name" field whose placeholder is "1m/15 ×8" and a "0 / 24" count</action>
     <action>Type "Tabata" into the "Name" field</action>
     <action>Verify that "Saves as Tabata 2" is shown under the field</action>
     <action>Clear the "Name" field and type "Journey"</action>
@@ -41,7 +43,7 @@
     <action>Tap the "Rounds" row, tap "12" in the sheet, then tap "Done"</action>
     <action>Verify that the "Rounds" row shows "×12"</action>
     <action>Tap "Save" at the bottom of the sheet</action>
-    <action>Verify that the "Journey" row reads "30s on · 15s off · ×12" and is still captioned "On the Timer"</action>
+    <action>Verify that the "Journey" row reads "1m on · 15s off · ×12" and is still captioned "On the Timer"</action>
     <action>Verify that no "Save as preset" row is shown under the Timer row</action>
     <action>Tap the "Journey" row</action>
     <action>Tap "Delete"</action>
@@ -49,9 +51,9 @@
     <action>Tap "Cancel"</action>
     <action>Verify that the "Journey" sheet is still shown with "Edit" and "Delete"</action>
     <action>Tap "Delete", then "Delete" in the dialog</action>
-    <action>Verify that "Journey" is no longer shown, there is no "Yours" group, the Timer row reads "30s on · 15s off · ×12" and the "Save as preset" row is back under it</action>
+    <action>Verify that "Journey" is no longer shown, there is no "Yours" group, the Timer row reads "1m on · 15s off · ×12" and the "Save as preset" row is back under it</action>
     <action>Tap "New preset" in the title bar</action>
-    <action>Verify that a sheet titled "New preset" is shown with a "Name" field whose placeholder is "30/15 ×12", then tap "Cancel"</action>
+    <action>Verify that a sheet titled "New preset" is shown with a "Name" field whose placeholder is "1m/15 ×12", then tap "Cancel"</action>
     <action>Tap "Timer" at the top of the presets</action>
     <action>Verify that the Timer is shown, its total labelled "Custom · Total", and the title bar shows a "Save as preset" button</action>
   </actions>

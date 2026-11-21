@@ -68,9 +68,9 @@ fun MobilityRoute(page: MobilityPage, actions: MobilityActions, modifier: Modifi
 
 /**
  * The flows in two groups, by when each is for, the user's own after the shipped ones: a row is its name, its moves
- * and what it takes ("6 moves · no bell"), and how long it runs. Tapping one opens its [FlowSheet], which lists its
- * moves and starts it, and leads to a copy of a shipped one or the editor of one's own. The title bar's + leads to a
- * new one, as Strength's and Conditioning's do.
+ * and when or where it is for ("6 moves · before lifting"), and how long it runs. Tapping one opens its
+ * [FlowSheet], which lists its moves and starts it, and leads to a copy of a shipped one or the editor of one's own.
+ * The title bar's + leads to a new one, as Strength's and Conditioning's do.
  */
 @Composable
 fun MobilityScreen(

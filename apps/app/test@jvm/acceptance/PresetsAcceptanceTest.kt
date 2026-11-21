@@ -11,9 +11,15 @@ class PresetsAcceptanceTest {
     fun `a preset saved from the timer is started edited and deleted`() = acceptanceScenario {
         openTimer()
         seeTimerTotalFor("Custom")
+        // The Timer's own settings, as a new install has them, are nothing to keep yet.
         openAllPresets()
         seeTimerRow("30s on · 15s off · ×8")
-        seeTimerUnsaved("30s on · 15s off · ×8")
+        seeNo("Save as preset")
+        openTimerFromPresets()
+        setWorkTime("1:00")
+        openAllPresets()
+        seeTimerRow("1m on · 15s off · ×8")
+        seeTimerUnsaved("1m on · 15s off · ×8")
         seeNoPresetsOfYours()
 
         startSavingTimerSettings()
@@ -48,7 +54,7 @@ class PresetsAcceptanceTest {
 
         openPreset("Journey")
         editPresetRounds(12)
-        seePresetReading("Journey", "30s on · 15s off · ×12")
+        seePresetReading("Journey", "1m on · 15s off · ×12")
         seePresetOnTimer("Journey")
         seeTimerSaved()
 
@@ -59,10 +65,10 @@ class PresetsAcceptanceTest {
         askToDeletePreset("Journey")
         confirmDelete()
         seeNoPresetsOfYours()
-        seeTimerUnsaved("30s on · 15s off · ×12")
+        seeTimerUnsaved("1m on · 15s off · ×12")
         savedPresets()
 
-        openNewPreset(placeholder = "30/15 ×12")
+        openNewPreset(placeholder = "1m/15 ×12")
         cancelSheet()
         openTimerFromPresets()
         seeTimerTotalFor("Custom")

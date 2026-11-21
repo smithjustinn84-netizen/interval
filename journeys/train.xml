@@ -1,14 +1,14 @@
 <journey name="Train">
   <description>
     Train holds what there is to train, by pillar: Strength (in groups: the program followed, programs beside
-    the mat and the wall, what there is on your own, and lately; Start session pinned under them), Conditioning (the presets) and Mobility
+    the mat and the wall, what there is on your own, and lately; with no program, Start session in the first card, under the way to one), Conditioning (the presets) and Mobility
     (the flows). The picker under the title moves between them, the bar's Train item reopens the one last shown,
     and Back from any returns to Today. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
   </description>
   <actions>
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab</action>
-    <action>Verify that the page is titled "Train", the picker under the title has "Strength" chosen beside "Conditioning" and "Mobility", and "Start session" is pinned at the bottom</action>
+    <action>Verify that the page is titled "Train", the picker under the title has "Strength" chosen beside "Conditioning" and "Mobility", and "Start session" sits in the first card under "Follow a program", with nothing pinned at the bottom</action>
     <action>Verify that Strength's groups read "Following" (with "Follow a program"), "Programs" (with "All programs" alone: nothing on the mat or the wall is logged or planned, so no program for it is offered), "On your own" (with "Free session" and "Tests"), "Exercises and equipment" (with "Exercises" and "Your equipment") and "Lately"</action>
     <action>Tap "All programs" and verify that Programs opens; tap "Back"</action>
     <action>Tap "Conditioning"</action>

@@ -11,7 +11,8 @@ val builtInFlows: List<Flow> = listOf(
         key = HIPS_KEY,
         name = "Hips and shoulders",
         use = FlowUse.Before,
-        note = "no bell",
+        // Each flow's note says when or where it is for; none needs a bell, so none says so.
+        note = "before lifting",
         moves = listOf(
             hipSwitch(seconds = 60),
             hipFlexorLunge(seconds = 40),
@@ -95,7 +96,7 @@ val builtInFlows: List<Flow> = listOf(
         key = FALLS_KEY,
         name = "Core for falls",
         use = FlowUse.Before,
-        note = "no bell",
+        note = "on the mat",
         moves = listOf(
             Move(
                 "Spinal rock",

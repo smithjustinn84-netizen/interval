@@ -25,7 +25,7 @@
     <string name="flow_use_after">After, or on a day off</string>
     <string name="flow_note">Note</string>
     <string name="flow_note_label">A note on it</string>
-    <string name="flow_note_placeholder">no bell, on the mat</string>
+    <string name="flow_note_placeholder">after a long run</string>
     <string name="flow_moves">Moves</string>
     <string name="flow_no_moves">No moves yet: add the first.</string>
     <string name="flow_add_move">Add a move</string>

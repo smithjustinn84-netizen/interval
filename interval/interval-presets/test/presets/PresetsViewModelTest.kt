@@ -70,6 +70,14 @@ class PresetsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the timer's own settings ask for no saving until they are changed`() {
+        // A new install's Timer: nothing of the user's to keep, and nothing a preset would replace.
+        assertFalse(viewModel.state.value.canSaveCurrent)
+        repository.settings.updateConfig { it.copy(workSeconds = 42) }
+        assertTrue(viewModel.state.value.canSaveCurrent)
+    }
+
+    @Test
     fun `totals include the user's get-ready countdown`() {
         repository.settings.updateConfig { IntervalConfig(prepSeconds = 0) }
         // Tabata without its 10s countdown: 8 × 20s work and 7 × 10s rest.

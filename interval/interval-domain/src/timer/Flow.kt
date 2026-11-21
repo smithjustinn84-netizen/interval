@@ -41,8 +41,8 @@ enum class FlowSide { Left, Right }
  * A mobility session followed along: [moves] one after another, each for its time, with a few seconds to change
  * sides and to get into the next. It runs on the workout screen as the sequence [config] is, a block a move and a
  * round a side, and a finished one is known again by that shape ([matching]). [key] names it on a route; [name]
- * and [note] ("no bell") are its words, data like a built-in preset's. One the user built carries the [id] it is
- * stored under, and a key made of it ([ownFlowKey]); the shipped ones have none.
+ * and [note] ("before the wall") are its words, data like a built-in preset's. One the user built carries the [id]
+ * it is stored under, and a key made of it ([ownFlowKey]); the shipped ones have none.
  */
 data class Flow(
     val key: String,

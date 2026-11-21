@@ -2,7 +2,7 @@ package dev.justinsmith.interval.timer
 
 /**
  * A flow as the user lays it out, before it is saved: its [name], when it is for ([use]), an optional [note]
- * ("no bell"), and its [moves], none to begin with. [id] is the stored flow it edits; null for a new one.
+ * ("before the wall"), and its [moves], none to begin with. [id] is the stored flow it edits; null for a new one.
  */
 data class FlowDraft(
     val name: String = "",

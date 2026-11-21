@@ -12,6 +12,7 @@ import dev.justinsmith.interval.timer.PresetPurpose
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.purpose
+import dev.justinsmith.interval.timer.sameShape
 import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,7 +38,10 @@ data class PresetsUiState(
     /** The user's own presets, shortest first, as [builtIn] are: the totals read as a scale down the list. */
     val custom: List<PresetRowItem>,
     val builtIn: List<PresetRowItem>,
-    /** False when the current settings already match a preset, so saving would duplicate it. */
+    /**
+     * False when the current settings already match a preset, so saving would duplicate it, or are the Timer's own
+     * out of the box, which are nothing to keep.
+     */
     val canSaveCurrent: Boolean,
     /** The settings on the Timer: shown to save when they match no preset, and the shape a new preset starts from. */
     val current: IntervalConfig,
@@ -97,7 +101,8 @@ class PresetsViewModel(private val presetStore: PresetStore, private val setting
         fun asRun(preset: Preset) = config.withPreset(preset)
         fun totalOf(preset: Preset) = asRun(preset).totalSeconds
         val onTimer = presets.matching(config)
-        val canSaveCurrent = onTimer == null
+        // The Timer's own settings, as a new install has them, are nothing to keep: saved, or lost to a preset.
+        val canSaveCurrent = onTimer == null && !config.sameShape(IntervalConfig())
         val rows = presets.sortedBy { totalOf(it) }.map { preset ->
             PresetRowItem(
                 preset = preset,

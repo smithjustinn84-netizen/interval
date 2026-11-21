@@ -23,7 +23,10 @@ import org.jetbrains.compose.resources.stringResource
 
 // Strength's groups of what there is apart from the program: on one's own, and what is looked up or set.
 
-/** What there is to do on one's own: a session, while none is under way, and the tests. */
+/**
+ * What there is to do on one's own: a session, while none is under way and a program is followed (with none, the
+ * Following card starts one), and the tests.
+ */
 @Composable
 internal fun OwnCard(
     state: TodayUiState,
@@ -32,7 +35,7 @@ internal fun OwnCard(
     modifier: Modifier = Modifier,
 ) {
     ListCard(modifier) {
-        if (!state.inProgress) {
+        if (!state.inProgress && state.following != null) {
             LinkRow(
                 stringResource(Res.string.today_free_session),
                 stringResource(Res.string.today_free_session_hint),

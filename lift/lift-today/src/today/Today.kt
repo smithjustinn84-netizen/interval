@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -161,9 +160,8 @@ fun TodayRoute(
  * Train's Strength pillar, Lift's side, in groups: the program followed (where it stands, about how long its day
  * takes, how far through it is), programs beside the mat and the wall with the way to all of them, then what there
  * is on one's own (a free session, the tests), then what is looked up or set (the exercises, the equipment) and,
- * lately, the last session and the balance.
- * Start (or Resume) stays pinned under them, as Start workout does. The week is Today's to show. [header] sits under
- * the title: the app's picker of Train's pillars.
+ * lately, the last session and the balance. With no program, Start (or Resume) is the Following card's, under the
+ * way to one. The week is Today's to show. [header] sits under the title: the app's picker of Train's pillars.
  */
 @Composable
 fun TodayScreen(
@@ -194,12 +192,6 @@ fun TodayScreen(
                 bordered = true,
             )
             SettingsAction(onOpenSettings)
-        },
-        // A program followed starts from its card; with none, Start stays pinned under the groups.
-        bottomBar = if (state.following == null) {
-            { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) }
-        } else {
-            null
         },
         header = header,
     ) {
@@ -359,12 +351,15 @@ private fun ProgramCard(
 ) {
     val following = state.following
     if (following == null) {
+        // With none followed, the card is the way to one and, under it, Start (or Resume) for a session of one's own:
+        // the first thing on the page, as a program's day is, and nothing pinned to its foot, as on the other pillars.
         ListCard(modifier) {
             LinkRow(
                 stringResource(Res.string.program_follow_cta),
                 stringResource(Res.string.program_follow_hint),
                 onClick = onChooseProgram,
             )
+            StartRow(state, onStartSession)
         }
         return
     }

@@ -36,8 +36,8 @@ class LiftFlowTest {
         onNodeWithText("Finish").performClick()
         waitForText("New records")
         onAllNodesWithText("Done").onLast().performClick()
-        // Back on Train with no session in progress: the last session's card is below the fold on a phone.
-        waitForText("Free session")
+        // Back on Train with no session in progress: the first card's Start, the last session's card below the fold.
+        waitForText("Start session")
 
         tab("Log").performClick()
         val row = hasText("Two-hand swing") and hasClickAction()

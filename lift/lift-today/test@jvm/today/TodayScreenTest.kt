@@ -49,7 +49,11 @@ class TodayScreenTest {
             })
         }
         onNodeWithText("No sessions yet").performScrollTo().assertExists()
-        onNodeWithText("Follow a program").performScrollTo().performClick()
+        // The free session is the first card's, under Follow a program, not pinned to the foot and not again under
+        // On your own.
+        onNodeWithText("Free session").assertDoesNotExist()
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Follow a program"))
+        onNodeWithText("Follow a program").performClick()
         assertEquals(true, choosing)
         onNodeWithText("Start session").performClick()
         assertEquals(listOf<ProgramKey?>(null), started)
