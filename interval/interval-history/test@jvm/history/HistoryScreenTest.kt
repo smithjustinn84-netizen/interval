@@ -75,7 +75,7 @@ private val oneWorkout = HistoryUiState(
             listOf(HistoryItem("Tabata", tabata.config, false, "7:42 PM", "4:00", id = 7)),
         ),
     ),
-    summary = RangeSummary(1, "4:00", 240, null, 0, 0),
+    summary = RangeSummary(1, 240, null, 0, 0),
     weekCount = 1,
     week = restWeek,
 )
@@ -206,7 +206,7 @@ class HistoryScreenTest {
     @Test
     fun `a week with nothing done yet shows no time and the month keys only what it draws`() = runUiTest {
         var state by mutableStateOf(
-            oneWorkout.copy(sections = emptyList(), summary = RangeSummary(0, "0:00", 0, null, 0, 0), hasPlans = true),
+            oneWorkout.copy(sections = emptyList(), summary = RangeSummary(0, 0, null, 0, 0), hasPlans = true),
         )
         setThemedContent { HistoryScreen(state, actions) }
         onNodeWithText("Time").assertDoesNotExist()
@@ -214,8 +214,10 @@ class HistoryScreenTest {
 
         state = oneWorkout
         onNodeWithText("Time").assertExists()
-        // The week's time under its caption, and the workout's own on its row.
-        onAllNodesWithText("4:00").assertCountEquals(2)
+        // The week's time under its caption as a duration, which a clock would read as a time of day; the
+        // workout's own on its row stays its clock.
+        onNodeWithText("4 min").assertExists()
+        onAllNodesWithText("4:00").assertCountEquals(1)
 
         state = oneWorkout.copy(range = TrainingRange.Month)
         onNodeWithText("Done", useUnmergedTree = true).assertExists()

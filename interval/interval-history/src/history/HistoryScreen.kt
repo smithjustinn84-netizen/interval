@@ -675,7 +675,6 @@ private fun HistoryScreenPreview() {
                 ),
                 summary = RangeSummary(
                     count = 3,
-                    time = "16:35",
                     totalSeconds = 995,
                     calories = 149,
                     plannedDone = 2,

@@ -95,6 +95,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -635,6 +636,10 @@ private fun PickRow(pick: QuickPick, onLook: () -> Unit, modifier: Modifier = Mo
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
             )
+            // An interval preset's shape at a glance; a flow's moves are its words, so it has none.
+            if (!pick.mobility) {
+                MiniTimeline(pick.preset.config, Modifier.padding(top = Spacing.space8), work = palette.workMark)
+            }
         }
         Text(formatClock(pick.totalSeconds), style = IntervalTheme.type.value, color = palette.text)
         Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.chipIcon))

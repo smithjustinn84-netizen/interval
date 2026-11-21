@@ -56,6 +56,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
@@ -297,8 +298,9 @@ private fun PresetGroup(
 }
 
 /**
- * One preset: a stripe in Conditioning's colour, its name over its shape, and its total at the end of the
- * row, which is the button. The one on the Timer says so over its name and takes the accent.
+ * One preset: a stripe in Conditioning's colour, its name over its shape in words and drawn in the stripe's colour,
+ * and its total at the end of the row, which is the button. The one on the Timer says so over its name and takes
+ * the accent.
  */
 @Composable
 private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -342,6 +344,12 @@ private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifi
                 color = palette.textDim,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+            // Its shape at a glance, so Tabata and 15:15 differ before their words are read.
+            MiniTimeline(
+                item.preset.config,
+                Modifier.padding(top = Spacing.space8),
+                work = if (item.selected) palette.accent else palette.workMark,
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = if (item.selected) palette.accent else palette.text)

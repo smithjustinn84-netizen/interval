@@ -41,6 +41,7 @@ import dev.justinsmith.interval.history.upNextName
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.restDayFlow
 import dev.justinsmith.interval.today.resources.Res
@@ -79,6 +80,7 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
@@ -293,6 +295,7 @@ private fun LeadStep(
             Text(upNextCaption(item), style = IntervalTheme.type.caption, color = palette.textDim)
             Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
             JoinedText(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)
+            StepShape(item, tone, Modifier.padding(top = Spacing.space4))
         }
         if (offered) {
             ListCard(Modifier.padding(top = Spacing.space8), fill = palette.surfaceVariant) {
@@ -393,6 +396,7 @@ private fun LaterStep(item: UpNextItem, number: Int?, last: Boolean, spare: Bool
 
                 is UpNextItem.Flow -> workoutDescription(item.flow.config)
             },
+            shape = item.shape,
         ) {
             // One width, so the buttons down the card end level and start level.
             val pill = Modifier.widthIn(min = IntervalSizes.stepButton)
@@ -476,8 +480,8 @@ private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean) {
 }
 
 /**
- * A quiet row: an optional [caption] over a [name] and a line of [detail], which open a look where [onClick] is
- * given, and the row's own [button] at its end.
+ * A quiet row: an optional [caption] over a [name], a line of [detail] and an interval workout's [shape], which
+ * open a look where [onClick] is given, and the row's own [button] at its end.
  */
 @Composable
 private fun QuietRow(
@@ -487,6 +491,7 @@ private fun QuietRow(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     onClickLabel: String? = null,
+    shape: IntervalConfig? = null,
     button: @Composable () -> Unit,
 ) {
     val palette = IntervalTheme.palette
@@ -509,6 +514,7 @@ private fun QuietRow(
             caption?.let { Text(it, style = IntervalTheme.type.caption, color = palette.textDim) }
             Text(name, style = IntervalTheme.type.label, color = palette.text)
             JoinedText(detail, style = IntervalTheme.type.meta, color = palette.textDim)
+            shape?.let { MiniTimeline(it, Modifier.padding(top = Spacing.space8), work = palette.workMark) }
         }
         button()
     }

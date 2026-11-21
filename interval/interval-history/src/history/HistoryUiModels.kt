@@ -6,7 +6,6 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.MoveSheet
 import dev.justinsmith.interval.plan.PlanChoice
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.interval.timer.Flow as MobilityFlow
 
@@ -137,10 +136,9 @@ data class WeekGoal(
     val mobility: Int = 0,
 )
 
-/** The summary's figures for its range. [time] is a clock, "16:35"; [totalSeconds] is for longer ones. */
+/** The summary's figures for its range: how many, and [totalSeconds] of time in all, which the screen words. */
 data class RangeSummary(
     val count: Int,
-    val time: String,
     val totalSeconds: Int,
     val calories: Int?,
     val plannedDone: Int,
@@ -202,7 +200,7 @@ data class DaySheet(
 data class HistoryUiState(
     val sections: List<HistorySection>,
     val range: TrainingRange = TrainingRange.Week,
-    val summary: RangeSummary = RangeSummary(0, formatClock(0), 0, null, 0, 0),
+    val summary: RangeSummary = RangeSummary(0, 0, null, 0, 0),
     /**
      * This week's workouts against the weekly goal, [weekLifts] of them Lift's, [weekSports] sport days logged and
      * [weekMobility] mobility; [goal] is null until set.

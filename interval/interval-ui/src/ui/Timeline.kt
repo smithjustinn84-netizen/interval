@@ -58,11 +58,12 @@ fun Timeline(
     height: Dp = IntervalSizes.timeline,
     gap: Dp = IntervalSizes.timelineGap,
     showPrep: Boolean = true,
+    work: Color = IntervalTheme.palette.accent,
 ) {
     val palette = IntervalTheme.palette
     val segments = remember(config, showPrep) { timelineSegments(config, showPrep) }
-    val workColor = palette.accent
-    val bookendColor = palette.accent.copy(alpha = BOOKEND_ALPHA)
+    val workColor = work
+    val bookendColor = work.copy(alpha = BOOKEND_ALPHA)
     val restColor = palette.timelineRest
     val prepColor = palette.surfaceVariant
     Canvas(
@@ -181,10 +182,20 @@ fun ValuePill(
     }
 }
 
-/** A [Timeline] at a list card's size: compact, and without the get-ready segment, which is the user's own. */
+/**
+ * A [Timeline] at a list card's size: compact, and without the get-ready segment, which is the user's own. A row
+ * marked by its kind passes that mark as [work], so the shape and the stripe beside it are one colour.
+ */
 @Composable
-fun MiniTimeline(config: IntervalConfig, modifier: Modifier = Modifier) {
-    Timeline(config, modifier = modifier, height = Sizes.timelineMini, gap = Sizes.timelineMiniGap, showPrep = false)
+fun MiniTimeline(config: IntervalConfig, modifier: Modifier = Modifier, work: Color = IntervalTheme.palette.accent) {
+    Timeline(
+        config,
+        modifier = modifier,
+        height = Sizes.timelineMini,
+        gap = Sizes.timelineMiniGap,
+        showPrep = false,
+        work = work,
+    )
 }
 
 private const val WORK_HEIGHT = 1.0f

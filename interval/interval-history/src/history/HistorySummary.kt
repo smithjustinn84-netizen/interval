@@ -49,7 +49,6 @@ import dev.justinsmith.interval.history.resources.history_goal_met
 import dev.justinsmith.interval.history.resources.history_goal_ring
 import dev.justinsmith.interval.history.resources.history_goal_set
 import dev.justinsmith.interval.history.resources.history_goal_to_go
-import dev.justinsmith.interval.history.resources.history_hours_minutes
 import dev.justinsmith.interval.history.resources.history_kind_cd
 import dev.justinsmith.interval.history.resources.history_kind_conditioning
 import dev.justinsmith.interval.history.resources.history_kind_mobility
@@ -76,9 +75,6 @@ import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
 import dev.justinsmith.interval.history.resources.history_workouts
-import dev.justinsmith.interval.timer.SECONDS_PER_HOUR
-import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
-import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Bar
 import dev.justinsmith.interval.ui.Bars
@@ -160,7 +156,7 @@ internal fun WeekSummary(
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Stat(
                     stringResource(Res.string.history_time),
-                    summary.time,
+                    timeSpent(summary.totalSeconds),
                     summary.totalSeconds,
                 )
                 summary.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
@@ -422,7 +418,7 @@ internal fun MonthSummary(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
-            Stat(stringResource(Res.string.history_time), summary.time, summary.totalSeconds)
+            Stat(stringResource(Res.string.history_time), timeSpent(summary.totalSeconds), summary.totalSeconds)
             if (summary.plannedDue > 0) {
                 Stat(
                     stringResource(Res.string.history_planned_done),
@@ -464,7 +460,7 @@ internal fun AllTimeSummary(
             Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
             Stat(
                 stringResource(Res.string.history_time),
-                longTotal(summary.totalSeconds),
+                timeSpent(summary.totalSeconds),
                 summary.totalSeconds,
             )
         }
@@ -489,19 +485,6 @@ internal fun AllTimeSummary(
         }
     }
 }
-
-/** A clock under an hour ("48:20"), hours and minutes from one ("9h 48m"). */
-@Composable
-internal fun longTotal(seconds: Int): String =
-    if (seconds < SECONDS_PER_HOUR) {
-        formatClock(seconds)
-    } else {
-        stringResource(
-            Res.string.history_hours_minutes,
-            seconds / SECONDS_PER_HOUR,
-            seconds % SECONDS_PER_HOUR / SECONDS_PER_MINUTE,
-        )
-    }
 
 /** A bar a week, this week outlined as it is still going; a dashed line marks the goal when there is one. */
 @Composable

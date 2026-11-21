@@ -142,7 +142,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
 
         val state = viewModel.state.value
         assertEquals(2, state.weekCount)
-        assertEquals("5:00", state.summary.time)
+        assertEquals(300, state.summary.totalSeconds)
         assertEquals((1..7).toList(), state.week.map { it.weekday })
         assertEquals(listOf(true, false, false, false, false, false, false), state.week.map { it.seconds > 0 })
         assertEquals(listOf(false, false, false, true, false, false, false), state.week.map { it.today })
@@ -298,7 +298,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val september = viewModel.state.value
         assertEquals("9/2026", september.month.title)
         assertEquals(false, september.month.current)
-        assertEquals("1:00", september.summary.time)
+        assertEquals(60, september.summary.totalSeconds)
 
         viewModel.setRange(TrainingRange.AllTime)
         assertEquals(2, viewModel.state.value.summary.count)

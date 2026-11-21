@@ -290,7 +290,6 @@ class HistoryViewModel(
             range = view.range,
             summary = RangeSummary(
                 count = stats.count,
-                time = formatClock(stats.seconds),
                 totalSeconds = stats.seconds,
                 calories = stats.calories,
                 plannedDone = stats.plannedDone,
