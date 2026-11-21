@@ -431,8 +431,9 @@ class HomeScreenTest {
 
         onNodeWithText("Thursday · rest day").assertIsDisplayed()
         onNodeWithText("Rest is part of the week.").assertIsDisplayed()
-        onNode(hasText("Rest day") and isHeading()).assertIsDisplayed()
-        onNodeWithText("Nothing due until tomorrow").assertIsDisplayed()
+        // Said once, over the title: the card names no rest day of its own.
+        onNodeWithText("Rest day").assertDoesNotExist()
+        onNode(hasText("Nothing due until tomorrow") and isHeading()).assertIsDisplayed()
         onNodeWithText("If moving feels good").assertIsDisplayed()
         onNodeWithText("Up next · Tomorrow").assertIsDisplayed()
         onNodeWithText("Start").performClick()

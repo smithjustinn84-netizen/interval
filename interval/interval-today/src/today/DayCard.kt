@@ -66,7 +66,6 @@ import dev.justinsmith.interval.today.resources.home_easier_title
 import dev.justinsmith.interval.today.resources.home_easier_what
 import dev.justinsmith.interval.today.resources.home_not_today
 import dev.justinsmith.interval.today.resources.home_rest_move
-import dev.justinsmith.interval.today.resources.home_rest_title
 import dev.justinsmith.interval.today.resources.home_rest_until
 import dev.justinsmith.interval.today.resources.home_resume_session
 import dev.justinsmith.interval.today.resources.home_spare
@@ -162,30 +161,20 @@ internal fun DoneCard(done: List<DoneStep>, modifier: Modifier = Modifier) {
 }
 
 /**
- * A day with nothing asked of it: it says so, and until when, and offers the one flow worth doing on a day off
- * behind a quiet Start.
+ * A day with nothing asked of it: until when, and the one flow worth doing on a day off behind a quiet Start. That
+ * it is a rest day is said once, over the title ([DayCaption]) and in the coach's line, so the card names none.
  */
 @Composable
 internal fun RestCard(next: UpNextItem, actions: HomeActions, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val flow = restDayFlow
     ListCard(modifier) {
-        Column(
-            Modifier.padding(Spacing.space16),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
-        ) {
-            Text(
-                stringResource(Res.string.home_rest_title),
-                style = IntervalTheme.type.value,
-                color = palette.text,
-                modifier = Modifier.semantics { heading() },
-            )
-            Text(
-                stringResource(Res.string.home_rest_until, shortDay(next.day, next.epochDay, midSentence = true)),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
-        }
+        Text(
+            stringResource(Res.string.home_rest_until, shortDay(next.day, next.epochDay, midSentence = true)),
+            style = IntervalTheme.type.value,
+            color = palette.text,
+            modifier = Modifier.padding(Spacing.space16).semantics { heading() },
+        )
         RowDivider()
         QuietRow(
             caption = stringResource(Res.string.home_rest_move),
@@ -298,19 +287,7 @@ private fun LeadStep(
     val offered = easier && day != null
     var eased by rememberSaveable { mutableStateOf(true) }
     Step(number?.let { StepState.Now(it) }, last, tone = tone, lane = lane) {
-        val look = item.preview()?.let { onLook }
-        val described = stringResource(Res.string.preview_open_cd, upNextTitle(item))
-        val tap = if (look != null) Modifier.clickable(onClickLabel = described, onClick = look) else Modifier
-        Column(Modifier.fillMaxWidth().then(tap), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            // In the day's tone, as its number is: the one caption on the card that says "do this now".
-            val badge = Modifier.clip(Corners.full).background(palette.tint(tone))
-                .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
-            Text(leadCaption(item), style = IntervalTheme.type.caption, color = tone, modifier = badge)
-            Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
-            // A session's about-how-long is on its Start, so its line leads with the day.
-            JoinedText(upNextDetail(item, withLength = false), style = IntervalTheme.type.meta, color = palette.textDim)
-            StepShape(item, tone, Modifier.padding(top = Spacing.space4))
-        }
+        LeadHeading(item, tone, item.preview()?.let { onLook })
         if (offered) {
             ListCard(Modifier.padding(top = Spacing.space8), fill = palette.surfaceVariant) {
                 ToggleRow(
@@ -492,7 +469,8 @@ private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean, lane: Lane? = 
                 Text(name, style = IntervalTheme.type.label, color = palette.text)
                 JoinedText(detail, style = IntervalTheme.type.meta, color = palette.textDim)
             }
-            total?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
+            // Under the label's weight, so a time done never outweighs the name of the step to do now.
+            total?.let { Text(it, style = IntervalTheme.type.label, color = palette.textDim) }
         }
     }
 }

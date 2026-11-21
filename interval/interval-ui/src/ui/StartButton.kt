@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -49,7 +50,8 @@ fun StartButton(
     color: Color = IntervalTheme.palette.accentFill,
 ) {
     val palette = IntervalTheme.palette
-    val shape = Corners.full
+    // Round at its ends, but for large text, where it grows lines tall and a pill would be an oval clipping them.
+    val shape = if (isLargeText()) Corners.radius18 else Corners.full
     val glow = color.copy(alpha = Opacity.START_SHADOW)
     val ink = palette.onFill(color)
     val interaction = remember { MutableInteractionSource() }
@@ -92,10 +94,18 @@ fun StartButton(
                     modifier = Modifier.size(IntervalSizes.playIcon),
                 )
             }
-            if (trailing != null) {
-                Text(label, style = IntervalTheme.type.value, color = ink, modifier = Modifier.weight(1f))
+            if (trailing != null && isLargeText()) {
+                // Too wide to stand beside the label with large text: the length goes under it.
                 playIcon()
-                Text(trailing, style = IntervalTheme.type.value, color = ink)
+                Column(Modifier.weight(1f)) {
+                    Text(label, style = IntervalTheme.type.value, color = ink)
+                    Text(trailing, style = IntervalTheme.type.value, color = ink)
+                }
+            } else if (trailing != null) {
+                // The icon leads, as it does with no length: between the words and the length it read as a dot.
+                playIcon()
+                Text(label, style = IntervalTheme.type.value, color = ink, modifier = Modifier.weight(1f))
+                Text(trailing, style = IntervalTheme.type.value, color = ink, softWrap = false)
             } else {
                 playIcon()
                 Text(label, style = IntervalTheme.type.value, color = ink)

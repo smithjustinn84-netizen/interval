@@ -11,6 +11,7 @@ import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.PresetStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.history.DayCell
+import dev.justinsmith.interval.history.DayState
 import dev.justinsmith.interval.history.Lifting
 import dev.justinsmith.interval.history.PlanMove
 import dev.justinsmith.interval.history.TodayAgenda
@@ -303,8 +304,13 @@ class HomeViewModel(
         val week = log.week()
         val goal = app.weeklyGoal
         val upNext = timestamps.upNext(log, planned, lifting, today)
+        val done = log.day(today).doneSteps(names::of)
+        // Today's block is ticked once the day's steps are, as its card has them: a warm-up done leaves it planned.
+        val open = todayPlan(todayAgenda(upNext), done).steps.isNotEmpty()
         return HomeUiState(
-            week = week.map { timestamps.dayCell(it) }.withProgramDay(upNext),
+            week = week.map { timestamps.dayCell(it) }.withProgramDay(upNext).map { cell ->
+                if (cell.today && open && cell.state == DayState.Done) cell.copy(state = DayState.Planned) else cell
+            },
             weekGoal = WeekGoal(
                 count = week.sumOf { it.count },
                 lifts = week.sumOf { it.liftWorkouts.size },
@@ -315,7 +321,7 @@ class HomeViewModel(
             ),
             upNext = upNext,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
-            done = log.day(today).doneSteps(names::of),
+            done = done,
             firstWeek = if (app.firstWeek) {
                 firstWeek(planned, lifting.programDay != null, history, lifting.sessions.isNotEmpty(), sports)
             } else {

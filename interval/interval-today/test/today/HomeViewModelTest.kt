@@ -135,6 +135,17 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `today is ticked on the week strip only once its steps are done`() {
+        repository.plans.planOnce(tabataPreset.asPlan(), TODAY)
+        // A warm-up first: something done, the plan still to do.
+        repository.history.recordWorkout(hiitPreset.config, hiitPreset.config.totalSeconds)
+        assertEquals(DayState.Planned, viewModel.state.value.week.single { it.today }.state)
+
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        assertEquals(DayState.Done, viewModel.state.value.week.single { it.today }.state)
+    }
+
+    @Test
     fun `the program's day without a plan is planned on the week strip as on the card`() {
         bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
 

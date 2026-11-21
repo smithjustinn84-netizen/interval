@@ -142,7 +142,8 @@ class SportDaysAcceptanceTest {
         seeNoFlowSuggested()
         logClassFromToday()
 
-        seeSportOnTheWeek("Today, done, BJJ logged")
+        // The session planned is still to do, so today is not ticked yet.
+        seeSportOnTheWeek("Today, planned, BJJ logged")
         sportDaysLogged(1)
         seeUpNext("Lift session")
         seeNo("If there is time")

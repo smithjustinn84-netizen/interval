@@ -454,16 +454,20 @@ internal fun upNextTitle(next: UpNextItem): String = when (next) {
 
 /**
  * The line under it: the workout's shape, or about how long the program's day takes, its day and lifts. A
- * workout's length is on its Start ([upNextLength]).
+ * workout's length is on its Start ([upNextLength]). Without [withLifts] a day's lifts are left to its look.
  */
 @Composable
-internal fun upNextDetail(next: UpNextItem, withLength: Boolean = true): String = when (next) {
+internal fun upNextDetail(
+    next: UpNextItem,
+    withLength: Boolean = true,
+    withLifts: Boolean = true,
+): String = when (next) {
     is UpNextItem.Planned -> workoutDescription(next.config)
 
     is UpNextItem.Lift -> next.programDay?.let { day ->
         // How long comes first: it is what Today is asked, unless a Start beside it says so ([withLength]).
         val length = next.minutes?.takeIf { withLength }?.let { estimateLine(it) }
-        joined(listOfNotNull(length, programDayLine(day), programDayLifts(day)))
+        joined(listOfNotNull(length, programDayLine(day), programDayLifts(day).takeIf { withLifts }))
     } ?: stringResource(Res.string.history_lift_any)
 
     is UpNextItem.SportDay -> stringResource(Res.string.sport_counts)

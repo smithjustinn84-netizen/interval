@@ -92,7 +92,6 @@
     <string name="home_done_today">Done for today</string>
     <string name="home_done_logged">Logged</string>
     <string name="home_done_cd">Done</string>
-    <string name="home_rest_title">Rest day</string>
     <string name="home_rest_until">Nothing due until %1$s</string>
     <string name="home_rest_move">If moving feels good</string>
     <string name="home_do_it_today">Do it today</string>

@@ -138,7 +138,7 @@ class TodayAcceptanceTest {
 
         // The app's clock starts on a Thursday.
         seeCoachSays("rest day", "Rest is part of the week.")
-        see("Rest day")
+        seeNo("Rest day")
         see("Nothing due until tomorrow")
         see("Up next · Tomorrow")
         see("BJJ class")
