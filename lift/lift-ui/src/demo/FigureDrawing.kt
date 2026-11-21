@@ -23,7 +23,8 @@ internal fun DrawScope.drawFigure(
     bell: Color,
     colors: FigureColors,
 ) {
-    val view = demo.view
+    // A close-up fits its crop, and is clipped to it, so nothing past it is drawn over what is round the figure.
+    val view = demo.crop ?: demo.view
     val scale = minOf(size.width / view.width, size.height / view.height)
     val left = (size.width - view.width * scale) / 2
     val top = (size.height - view.height * scale) / 2
@@ -31,6 +32,7 @@ internal fun DrawScope.drawFigure(
         translate(left, top)
         scale(scale, scale, pivot = Offset.Zero)
         translate(-view.left, -view.top)
+        if (demo.crop != null) clipRect(view.left, view.top, view.right, view.bottom)
     }) {
         drawFloor(demo, figure, pen, bell, colors)
         // Indexed loops, here and below: a for-each would make an iterator every frame.

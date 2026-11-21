@@ -40,6 +40,10 @@ import kotlin.math.sin
  * (the back bowed out, as a cat's or a curl's), negative arches it (the belly let down, as a cow's). Seen from the
  * front it bows the trunk across the body: positive carries the waist toward the far side, negative the near.
  *
+ * Each hand is a fist unless [palm] (or [farPalm]) opens it, up to a flat hand at 1, its fingers out past the wrist
+ * along the forearm turned by [wrist] (or [farWrist]): from straight down like an arm, so a forearm pointing ahead
+ * (90) with a [wrist] of 90 has the fingers straight up, and of -90 straight down.
+ *
  * Seen from above ([Facing.Above]) it is the same figure lying on a mat, looked down on.
  */
 data class Pose(
@@ -63,6 +67,10 @@ data class Pose(
     val farLegs: Float = legs,
     val trunk: Float = 1f,
     val spine: Float = 0f,
+    val wrist: Float = 0f,
+    val farWrist: Float = wrist,
+    val palm: Float = 0f,
+    val farPalm: Float = palm,
 ) {
     internal fun angles(): FloatArray = floatArrayOf(
         shin,
@@ -85,10 +93,14 @@ data class Pose(
         farLegs,
         trunk,
         spine,
+        wrist,
+        farWrist,
+        palm,
+        farPalm,
     )
 
     internal companion object {
-        const val JOINTS = 20
+        const val JOINTS = 24
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
@@ -114,6 +126,10 @@ data class Pose(
                 farLegs = angles[17],
                 trunk = angles[18],
                 spine = angles[19],
+                wrist = angles[20],
+                farWrist = angles[21],
+                palm = angles[22],
+                farPalm = angles[23],
             )
         }
     }
@@ -219,6 +235,10 @@ sealed interface BandEnd {
  * step to the side) shows nothing of itself side on. A figure seen from the front holds a bell or nothing, not a
  * bar. One seen from above holds nothing, and lies on a mat drawn under all of it in place of a
  * floor: its [root] is the near ankle, for feet that stay planted, or else the middle of its hips, at [anchor].
+ *
+ * A [crop] draws only that much of the view, larger: a close-up on the hands for a drill done with the wrists. The
+ * view is still the room the whole figure keeps to; a cropped demo is already as close as it goes, so it is its own
+ * [framed] and [closeUp], and the figure gives no celebration out of sight.
  */
 class ExerciseDemo(
     val keyframes: List<Keyframe>,
@@ -234,8 +254,10 @@ class ExerciseDemo(
     val anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
     val setUp: SetUp? = null,
     val facing: Facing = Facing.Side,
+    val crop: Rect? = null,
 ) {
     init {
+        require(crop == null || view.intersect(crop) == crop) { "The crop reaches past the view" }
         require(facing == Facing.Side || hold != Hold.Bar) { "No bar is drawn from the front" }
         require(facing != Facing.Above || hold == Hold.Free) { "Nothing is held seen from above" }
         require(keyframes.first().at == 0f && keyframes.last().at == 1f) { "A rep runs from 0 to 1" }
@@ -269,6 +291,7 @@ class ExerciseDemo(
         return ExerciseDemo(
             keyframes, rep, hold, secondsPerRep, still, bellLag, trail, root, view, props, anchor, SetUp(cue, seconds),
             facing,
+            crop,
         )
     }
 
@@ -286,7 +309,7 @@ class ExerciseDemo(
      * stays under it and nothing past the view comes in. One with [props] keeps its view, which holds them too.
      */
     fun closeUp(): ExerciseDemo {
-        if (props.isNotEmpty()) return this
+        if (props.isNotEmpty() || crop != null) return this
         val figure = figureAt(still)
         val drawn = if (hold == Hold.Pair) figure.joints else figure.joints - figure.farBell
         val around = Rect(
@@ -308,7 +331,7 @@ class ExerciseDemo(
      * together keep the view they share; one with [props] keeps its view, which holds them too.
      */
     fun framed(): ExerciseDemo {
-        if (props.isNotEmpty()) return this
+        if (props.isNotEmpty() || crop != null) return this
         var highest = Float.MAX_VALUE
         for (step in 0 until FRAME_STEPS) {
             val figure = figureAt(step / FRAME_STEPS.toFloat())
@@ -504,6 +527,8 @@ data class Figure(
     val front: Boolean = false,
     val behind: Boolean = false,
     val spine: Float = 0f,
+    val fingers: Offset = hand,
+    val farFingers: Offset = farHand,
 ) {
     /** The middle of the hips, and of the shoulders: the two ends of the spine, whichever way it is seen. */
     val hips: Offset get() = (hip + farHip) / 2f
@@ -514,7 +539,7 @@ data class Figure(
     val joints: List<Offset>
         get() = listOf(
             toe, heel, ankle, knee, hip, shoulder, head, elbow, hand, bell,
-            farToe, farHeel, farAnkle, farKnee, farElbow, farHand, farBell, farHip, farShoulder,
+            farToe, farHeel, farAnkle, farKnee, farElbow, farHand, farBell, farHip, farShoulder, fingers, farFingers,
         )
 
     internal fun moved(by: Offset) = Figure(
@@ -535,6 +560,8 @@ data class Figure(
         farElbow = farElbow + by,
         farHand = farHand + by,
         farBell = farBell + by,
+        fingers = fingers + by,
+        farFingers = farFingers + by,
         farHip = farHip + by,
         farShoulder = farShoulder + by,
         front = front,
@@ -562,6 +589,9 @@ object Rig {
 
     /** From the hands on the bell's handle to the middle of its body. */
     const val BELL_REACH = 26f
+
+    /** An open hand, from the wrist to the fingertips. */
+    const val PALM = 24f
 
     const val ANKLE_X = 205f
     const val FLOOR = 360f
@@ -691,6 +721,8 @@ fun Pose.figure(
         farHand = farHand,
         farBell = farHand.down(Rig.BELL_REACH, farHangs),
         spine = spine,
+        fingers = hand.down(Rig.PALM * reach * palm, forearm + wrist),
+        farFingers = farHand.down(Rig.PALM * reach * farPalm, farForearm + farWrist),
     )
     return figure.grounded(root, anchor)
 }
@@ -744,6 +776,8 @@ private fun Pose.frontFigure(hangs: Float, farHangs: Float): Figure {
         front = true,
         behind = behind > BEHIND,
         spine = spine,
+        fingers = hand.down(Rig.PALM * reach * palm, forearm + wrist),
+        farFingers = farHand.down(Rig.PALM * reach * farPalm, farForearm + farWrist),
     )
     return if (turn == 0f) standing else standing.turned(turn.radians(), about = standing.hips)
 }
@@ -774,6 +808,8 @@ private fun Figure.turned(by: Float, about: Offset): Figure {
         farElbow = farElbow.turned(),
         farHand = farHand.turned(),
         farBell = farBell.turned(),
+        fingers = fingers.turned(),
+        farFingers = farFingers.turned(),
         farHip = farHip.turned(),
         farShoulder = farShoulder.turned(),
     )
@@ -806,6 +842,7 @@ private fun Figure.lowest(): Float = maxOf(
     head.y + Rig.HEAD,
     maxOf(elbow.y, farElbow.y) + Rig.ARM / 2,
     maxOf(hand.y, farHand.y) + Rig.HAND,
+    maxOf(fingers.y, farFingers.y) + Build.FINGERS,
 )
 
 /** Whether two poses are one stance: each joint the same, give or take whole turns. */

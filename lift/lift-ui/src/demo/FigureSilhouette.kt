@@ -211,24 +211,39 @@ internal fun DrawScope.drawLegFrom(
 
 /**
  * An arm, the near one or the [far] one behind the trunk: the upper arm from the shoulder's cap, the forearm
- * thickest just past the elbow, and a fist. A gap is cut from partway down the upper arm, as a leg's is.
+ * thickest just past the elbow, and a fist or, opened, a hand out to the fingertips. A gap is cut from partway
+ * down the upper arm, as a leg's is.
  */
 internal fun DrawScope.drawArm(pen: FigurePen, figure: Figure, far: Boolean = false) {
     val scale = if (far) Build.FAR else 1f
     val shoulder = if (far) figure.shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f) else figure.shoulder
     val elbow = if (far) figure.farElbow else figure.elbow
     val hand = if (far) figure.farHand else figure.hand
-    drawArmFrom(pen, shoulder, elbow, hand, scale)
+    drawArmFrom(pen, shoulder, elbow, hand, if (far) figure.farFingers else figure.fingers, scale)
 }
 
-internal fun DrawScope.drawArmFrom(pen: FigurePen, shoulder: Offset, elbow: Offset, hand: Offset, scale: Float = 1f) {
+internal fun DrawScope.drawArmFrom(
+    pen: FigurePen,
+    shoulder: Offset,
+    elbow: Offset,
+    hand: Offset,
+    fingers: Offset,
+    scale: Float = 1f,
+) {
     val elbowR = Build.ELBOW * scale
     val forearmR = Build.FOREARM * scale
     drawFromPartway(pen, shoulder, elbow, Build.DELTOID * scale, elbowR)
     val belly = elbow + (hand - elbow) * Build.FOREARM_AT
     drawSegment(pen, elbow, belly, elbowR, forearmR)
     drawSegment(pen, belly, hand, forearmR, Build.WRIST * scale)
-    drawJoint(pen, hand, Build.FIST * scale)
+    if (fingers == hand) {
+        drawJoint(pen, hand, Build.FIST * scale)
+        return
+    }
+    // The hand, broad at the knuckles and narrowing to the fingertips.
+    val knuckles = hand + (fingers - hand) * Build.KNUCKLES_AT
+    drawSegment(pen, hand, knuckles, Build.WRIST * scale, Build.KNUCKLES * scale)
+    drawSegment(pen, knuckles, fingers, Build.KNUCKLES * scale, Build.FINGERS * scale)
 }
 
 /**
@@ -319,6 +334,11 @@ internal object Build {
     const val FOREARM_AT = 0.28f
     const val WRIST = 5.6f
     const val FIST = Rig.HAND
+
+    /** An open hand: how broad at the knuckles, how far along it they are, and the fingertips. */
+    const val KNUCKLES = 6.4f
+    const val KNUCKLES_AT = 0.45f
+    const val FINGERS = 3.4f
 
     /** The far limbs are a little slighter, for depth. */
     const val FAR = 0.92f

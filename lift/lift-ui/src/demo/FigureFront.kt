@@ -40,7 +40,7 @@ internal fun DrawScope.drawFrontLeg(pen: FigurePen, figure: Figure, far: Boolean
 
 /** An arm seen from the front, each from its own shoulder and as near as the other. */
 internal fun DrawScope.drawFrontArm(pen: FigurePen, figure: Figure, far: Boolean) = if (far) {
-    drawArmFrom(pen, figure.farShoulder, figure.farElbow, figure.farHand)
+    drawArmFrom(pen, figure.farShoulder, figure.farElbow, figure.farHand, figure.farFingers)
 } else {
-    drawArmFrom(pen, figure.shoulder, figure.elbow, figure.hand)
+    drawArmFrom(pen, figure.shoulder, figure.elbow, figure.hand, figure.fingers)
 }

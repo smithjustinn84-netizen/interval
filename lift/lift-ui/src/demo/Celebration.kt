@@ -28,11 +28,11 @@ enum class Celebration {
  * hung from a bar or propped on its hands, at no keyframe standing (its hips well above its knee and both knees
  * well off the floor: not lying, seated or kneeling), or lying down at one (the get-up: its view holds it lying,
  * not stood up). A deadlift starts at the floor but stands at its top, so it celebrates: it stands up to do it. A
- * lift seen from the front or from above gives none: the gestures are drawn from the side.
+ * lift seen from the front or from above, or close up, gives none: the gestures are drawn from the side.
  */
 val ExerciseDemo.celebration: Celebration?
     get() {
-        if (root == Root.Hand || facing != Facing.Side) return null
+        if (root == Root.Hand || facing != Facing.Side || crop != null) return null
         val figures = keyframes.map { it.pose.figure(root, anchor) }
         if (figures.none { it.standing } || figures.any { it.lying }) return null
         return if (hold == Hold.Free) Celebration.Bow else Celebration.RaisedBell

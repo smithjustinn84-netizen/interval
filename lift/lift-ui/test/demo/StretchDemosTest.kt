@@ -1,8 +1,12 @@
 package dev.justinsmith.lift.ui.demo
 
+import dev.justinsmith.lift.domain.BuiltInExercise
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
+import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 /** What each stretch's figure must show, beyond what every demo keeps to. */
@@ -36,6 +40,10 @@ class StretchDemosTest {
             val start = demo.figureAt(0f)
             frames(demo).forEach { figure ->
                 assertTrue((figure.hand - start.hand).getDistance() < 0.5f, "The hands slide to ${figure.hand}")
+                assertTrue(
+                    (figure.fingers - start.fingers).getDistance() < 0.5f,
+                    "The fingers lift to ${figure.fingers}",
+                )
                 assertTrue((figure.knee - start.knee).getDistance() < 5f, "The knees slide to ${figure.knee}")
                 assertTrue(figure.knee.y > Rig.FLOOR - 12f, "The knees lift off the mat")
             }
@@ -138,12 +146,46 @@ class StretchDemosTest {
         val circle = ShoulderCirclesDemo
         assertEquals(FULL_TURN, circle.keyframes[2].pose.upperArm - circle.keyframes[0].pose.upperArm)
         assertTrue(frames(circle).any { it.hand.y < it.head.y - Rig.HEAD }, "The arm never goes overhead")
-        val fists = frames(WristCirclesDemo).map { it.hand }
-        assertTrue(fists.maxOf { it.y } - fists.minOf { it.y } in 15f..30f, "The fists hardly move")
+        // The forearms stay level and the fists tip up and down at the wrists.
+        val circling = frames(WristCirclesDemo)
+        assertTrue(circling.all { (it.hand - circling.first().hand).getDistance() < 0.5f }, "The wrists move")
+        val knuckles = circling.map { it.fingers.y }
+        assertTrue(knuckles.maxOf { it } - knuckles.minOf { it } > 10f, "The fists hardly tip")
+        // The other hand holds the open one across its fingers, and they are drawn back toward the body.
+        listOf(FingerPullsDemo, ForearmStretchDemo).forEach { demo ->
+            frames(demo).forEach { figure ->
+                val grip = figure.hand + (figure.fingers - figure.hand) * 0.6f
+                assertTrue((figure.farHand - grip).getDistance() < 4f, "The hand lets go at ${figure.farHand}")
+            }
+        }
         val meeting = FingerPullsDemo.figureAt(0f)
         val pulled = FingerPullsDemo.figureAt(FingerPullsDemo.still)
-        assertTrue((meeting.farHand - meeting.hand).getDistance() < 20f, "The hands never meet")
-        assertTrue(pulled.farHand.x < meeting.farHand.x - 5f, "The fingers are never drawn back")
+        assertTrue(meeting.fingers.y < meeting.hand.y, "The fingers don't point up")
+        assertTrue(pulled.fingers.x < meeting.fingers.x - 5f, "The fingers are never drawn back")
+        val stretched = ForearmStretchDemo.figureAt(0f)
+        assertTrue(stretched.fingers.y > stretched.hand.y + 15f, "The fingers don't point down")
+    }
+
+    @Test
+    fun `the wrist drills are seen close and keep the hands in sight`() {
+        listOf(
+            BuiltInExercise.WristCircles,
+            BuiltInExercise.FingerPulls,
+            BuiltInExercise.ForearmStretch,
+            BuiltInExercise.PalmsDownFingersBack,
+            BuiltInExercise.BacksOfTheHands,
+        ).forEach { exercise ->
+            val demo = assertNotNull(exercise.demo)
+            val crop = assertNotNull(demo.crop, "$exercise is not seen close")
+            assertSame(demo, demo.framed())
+            assertSame(demo, demo.closeUp())
+            assertNull(demo.celebration)
+            (-10..40).map { demo.figureAt(it / 40f) }.forEach { figure ->
+                listOf(figure.hand, figure.farHand, figure.fingers, figure.farFingers).forEach {
+                    assertTrue(crop.contains(it), "$exercise: $it is out of the close-up")
+                }
+            }
+        }
     }
 
     private fun frames(demo: ExerciseDemo) = (0..200).map { demo.figureAt(it / 200f) }

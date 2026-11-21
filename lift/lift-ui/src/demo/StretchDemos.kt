@@ -5,6 +5,9 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import kotlin.math.PI
+import kotlin.math.acos
+import kotlin.math.atan2
 
 // The stretches of the shipped mobility flows. A held one breathes: its rep is a breath between the position and
 // a touch deeper, so a still of it is the position itself. The ones on all fours keep the hands and the knees
@@ -121,14 +124,20 @@ val ShoulderCirclesDemo: ExerciseDemo = run {
     )
 }
 
-/** Wrist circles: the elbows soft and the forearms level, the fists drawing slow circles one way then the other. */
+/** The head, the shoulders and the arms out in front, close: the hands' drills. */
+private val armsCloseUp = Rect(left = 175f, top = 45f, right = 335f, bottom = 165f)
+
+/**
+ * Wrist circles: the elbows at the sides and the forearms level, the loose fists circled at the wrists one way then
+ * the other. Seen close and side on, a circle shows as the hands tipping up, level, down and level again.
+ */
 val WristCirclesDemo: ExerciseDemo = run {
-    fun fists(upperArm: Float, forearm: Float) =
-        Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = upperArm, forearm = forearm)
-    val top = fists(0f, 102f)
-    val forward = fists(12f, 90f)
-    val bottom = fists(0f, 78f)
-    val back = fists(-12f, 90f)
+    fun fists(wrist: Float) =
+        Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 90f, wrist = wrist, palm = LOOSE_FIST)
+    val top = fists(55f)
+    val forward = fists(0f)
+    val bottom = fists(-55f)
+    val back = fists(0f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = top),
@@ -145,28 +154,39 @@ val WristCirclesDemo: ExerciseDemo = run {
         hold = Hold.Free,
         secondsPerRep = 4f,
         still = 0.125f,
+        crop = armsCloseUp,
     )
 }
 
-/** Palms down, fingers back: on all fours with the hands planted, rocked back until the forearms pull, and eased. */
+/**
+ * Palms down, fingers back: on all fours with the hands flat and the fingers pointing back to the knees, rocked back
+ * until the forearms pull, and eased. Seen close, at the hands.
+ */
 val PalmsDownFingersBackDemo: ExerciseDemo =
     rocking(allFours(thigh = -32f, torso = 77.3f, arm = 24.8f))
 
-/** Backs of the hands: on all fours with the backs of the hands down, leaned in lightly over them, and eased. */
+/**
+ * Backs of the hands: on all fours with the backs of the hands down and the fingers to the knees, leaned in lightly
+ * over them, and eased. From the side a hand on its back looks as one on its palm does; the lean says which.
+ */
 val BacksOfTheHandsDemo: ExerciseDemo =
     rocking(allFours(thigh = 14f, torso = 78.4f, arm = -10.8f))
 
-/** Finger pulls: one arm long in front, the other hand drawing each finger back in turn. */
+/**
+ * Finger pulls: one arm out in front with the hand open and the fingers up, the other hand on them drawing them
+ * back toward the wrist, and easing them off. Seen close, at the arms.
+ */
 val FingerPullsDemo: ExerciseDemo = run {
-    val meeting =
-        Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 90f, forearm = 90f, farUpperArm = 70f, farForearm = 115f)
-    val pulled = meeting.copy(farForearm = 128f)
+    val meeting = pulling(wrist = 40f)
+    val pulled = pulling(wrist = 78f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = meeting),
             Keyframe(at = 0.1f, pose = meeting),
+            Keyframe(at = 0.2f, pose = pulling(wrist = 59f)),
             Keyframe(at = 0.3f, pose = pulled),
             Keyframe(at = 0.5f, pose = pulled),
+            Keyframe(at = 0.6f, pose = pulling(wrist = 59f)),
             Keyframe(at = 0.7f, pose = meeting),
             Keyframe(at = 1f, pose = meeting),
         ),
@@ -174,21 +194,58 @@ val FingerPullsDemo: ExerciseDemo = run {
         hold = Hold.Free,
         secondsPerRep = 3f,
         still = 0.4f,
+        crop = armsCloseUp,
     )
 }
 
-/** The forearm stretch: one arm long in front, palm up, the other hand drawing the fingers down and back. */
-val ForearmStretchDemo: ExerciseDemo = run {
-    val drawn =
-        Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 90f, forearm = 90f, farUpperArm = 70f, farForearm = 100f)
-    held(
-        drawn,
-        drawn.copy(farForearm = 104f),
-        root = Root.Ankle,
-        anchor = Offset(Rig.ANKLE_X, Rig.FLOOR),
-        view = Rig.view,
+/**
+ * The forearm stretch: one arm out in front, palm forward and the fingers pointing down, the other hand on them
+ * drawing them back toward the body.
+ */
+val ForearmStretchDemo: ExerciseDemo = held(
+    pulling(wrist = -110f),
+    pulling(wrist = -118f),
+    root = Root.Ankle,
+    anchor = Offset(Rig.ANKLE_X, Rig.FLOOR),
+    view = Rig.view,
+    crop = armsCloseUp,
+)
+
+/** A hand half closed, as a loose fist circling is. */
+private const val LOOSE_FIST = 0.7f
+
+/**
+ * Standing with the near arm out in front, its hand open at [wrist], and the far hand holding it across its
+ * fingers: the far arm reaches there from its own shoulder, the elbow under the line.
+ */
+private fun pulling(wrist: Float): Pose {
+    val upperArm = 60f
+    val forearm = 120f
+    val held = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = upperArm, forearm = forearm, wrist = wrist, palm = 1f)
+        .figure()
+    val grip = held.hand + (held.fingers - held.hand) * GRIP - (held.shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f))
+    val way = atan2(grip.x, grip.y)
+    val bend = acos((grip.getDistance() / (Rig.UPPER_ARM + Rig.FOREARM)).coerceAtMost(1f))
+    return Pose(
+        shin = 0f,
+        thigh = 0f,
+        torso = 0f,
+        upperArm = upperArm,
+        forearm = forearm,
+        wrist = wrist,
+        palm = 1f,
+        farUpperArm = (way - bend).degrees(),
+        farForearm = (way + bend).degrees(),
+        farWrist = 0f,
+        farPalm = HOLDING,
     )
 }
+
+/** How far along the held hand the other takes it, and how far that one is open, closed round it. */
+private const val GRIP = 0.6f
+private const val HOLDING = 0.5f
+
+private fun Float.degrees() = this * 180f / PI.toFloat()
 
 /**
  * Cat-cow: on all fours, the back rounded to the ceiling with the head tucked (the cat, the hips tucked under
@@ -348,19 +405,37 @@ private fun allFours(thigh: Float, torso: Float, arm: Float) = Pose(
     foot = KNEELING_FOOT,
 )
 
-/** From all fours (hands under the shoulders, hips over the knees), moved to [moved] and held a moment, then back. */
+/**
+ * From all fours (hands under the shoulders, hips over the knees), moved to [moved] and held a moment, then back,
+ * seen close at the hands. The hands lie flat with the fingers back toward the knees: each pose turns the wrists to
+ * keep them there as the forearms tip, and since every keyframe is held, they stay there between them too.
+ */
 private fun rocking(moved: Pose): ExerciseDemo {
-    val neutral = allFours(thigh = 0f, torso = 78.7f, arm = 0f)
+    val neutral = allFours(thigh = 0f, torso = 78.7f, arm = 0f).flatHands()
+    val there = moved.flatHands()
     return onAllFours(
-        listOf(0f to neutral, 0.1f to neutral, 0.4f to moved, 0.6f to moved, 0.9f to neutral, 1f to neutral),
+        listOf(0f to neutral, 0.1f to neutral, 0.4f to there, 0.6f to there, 0.9f to neutral, 1f to neutral),
         phases(0.1f to 0, 0.6f to 1, 1f to 2),
         seconds = 4f,
         still = 0.5f,
+        crop = Rect(left = 232f, top = 290f, right = 372f, bottom = 378f),
     )
 }
 
+/** This pose with both hands flat on the floor, the fingers back toward the knees, whatever the forearms do. */
+private fun Pose.flatHands() = copy(wrist = FLAT_HAND - forearm, farWrist = FLAT_HAND - farForearm, palm = 1f)
+
+/** A hand flat on the floor from a wrist a fist's height up, the fingertips back and down to the mat. */
+private const val FLAT_HAND = -76f
+
 /** A demo on all fours from these keyframes, grounded by the hand; each pose keeps the knees where they are. */
-private fun onAllFours(keys: List<Pair<Float, Pose>>, phases: List<DemoPhase>, seconds: Float, still: Float) =
+private fun onAllFours(
+    keys: List<Pair<Float, Pose>>,
+    phases: List<DemoPhase>,
+    seconds: Float,
+    still: Float,
+    crop: Rect? = null,
+) =
     ExerciseDemo(
         keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
         phases = phases,
@@ -370,6 +445,7 @@ private fun onAllFours(keys: List<Pair<Float, Pose>>, phases: List<DemoPhase>, s
         root = Root.Hand,
         anchor = Offset(295f, Rig.FLOOR - Rig.HAND),
         view = matView,
+        crop = crop,
     )
 
 /** A demo on the mat from these keyframes, grounded by the hips. */
@@ -391,6 +467,7 @@ private fun held(
     root: Root = Root.Hips,
     anchor: Offset = matAnchor,
     view: Rect = matView,
+    crop: Rect? = null,
 ) = ExerciseDemo(
     keyframes = listOf(
         Keyframe(at = 0f, pose = held),
@@ -404,4 +481,5 @@ private fun held(
     root = root,
     anchor = anchor,
     view = view,
+    crop = crop,
 )

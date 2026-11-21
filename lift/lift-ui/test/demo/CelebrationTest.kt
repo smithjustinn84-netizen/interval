@@ -91,6 +91,10 @@ class CelebrationTest {
         )
         // The gestures are drawn from the side, so a lift seen from the front gives none yet.
         val fromTheFront = setOf(
+            // And the hands' drills, seen close: a bow would be out of sight.
+            BuiltInExercise.WristCircles,
+            BuiltInExercise.FingerPulls,
+            BuiltInExercise.ForearmStretch,
             BuiltInExercise.Halo,
             BuiltInExercise.Windmill,
             BuiltInExercise.BandPullApart,
