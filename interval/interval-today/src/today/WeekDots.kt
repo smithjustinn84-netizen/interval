@@ -117,8 +117,8 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
  * Monday to Sunday as a block a day, as Log's week draws them: filled and checked in its kind's colour once done
  * (the accent for a session on Lift, the work mark for an interval workout, the rest mark for mobility, dim for a
  * sport day alone), outlined in the accent while planned, a dim fill with a slash once missed, and the surface for
- * a rest day; today's is filled in the gold. Each day still ahead (today, planned or rest) carries its date, not
- * with large text, where a rest day keeps its dot.
+ * a rest day; today's is filled in the gold. Each day still ahead (today and after, planned or rest) carries its
+ * date, not with large text; a rest day gone by, or with large text, keeps its dot.
  * Under each is its short name ("Mon"), and its sport's short name ("BJJ", "Climb") where the week has any, kept
  * level across the days. Each day is a button that opens it, read as the strip on Log is:
  * "Today, done, BJJ logged". A day done since Today last drew the week (a workout finished and come back
@@ -131,6 +131,7 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
     val doneNow = week.filter { it.state == DayState.Done }.map { it.epochDay }
     var doneDrawn by rememberSaveable(stateSaver = doneDaysSaver) { mutableStateOf(doneNow.toSet()) }
     LaunchedEffect(doneNow) { doneDrawn = doneNow.toSet() }
+    val todayEpochDay = week.firstOrNull { it.today }?.epochDay
     Row(modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         week.forEachIndexed { index, day ->
             key(day.epochDay) {
@@ -150,6 +151,7 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
                         day,
                         drawOn = day.state == DayState.Done && day.epochDay !in doneDrawn,
                         delayMillis = Motion.STAGGER_MILLIS * index,
+                        ahead = todayEpochDay != null && day.epochDay >= todayEpochDay,
                     )
                     if (sports && !isLargeText()) DaySportLabel(day)
                 }
@@ -200,7 +202,13 @@ private val doneDaysSaver = listSaver<Set<Long>, Long>(save = { it.toList() }, r
  * spring; at once under reduced motion.
  */
 @Composable
-private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Modifier = Modifier) {
+private fun DayDot(
+    day: DayCell,
+    drawOn: Boolean,
+    delayMillis: Int,
+    modifier: Modifier = Modifier,
+    ahead: Boolean = day.today,
+) {
     val palette = IntervalTheme.palette
     val reducedMotion = prefersReducedMotion()
     // Latched as the day turns done: the strip marks it drawn right after, which must not cut the sweep short.
@@ -253,7 +261,8 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
         // Each day still ahead says its date: today's on the gold, a planned or rest day's dim. A missed day has its
         // slash, a done one its check. With large text the date outgrows the block, and the strip shortens to
         // initials there already.
-        if (day.dated && !isLargeText()) {
+        val large = isLargeText()
+        if (day.dated(ahead) && !large) {
             Text(
                 day.dayOfMonth.toString(),
                 style = IntervalTheme.type.label,
@@ -272,7 +281,7 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
                 },
             )
         }
-        if (day.restDot && isLargeText()) {
+        if (day.restDot && (large || !ahead)) {
             Box(
                 Modifier
                     .size(Sizes.restDot)
@@ -322,10 +331,13 @@ private fun Modifier.missedSlash(color: Color): Modifier = drawBehind {
     )
 }
 
-/** Whether a day's block says its date: today, or a planned or rest day, until it is done. */
-private val DayCell.dated: Boolean
-    get() = state != DayState.Done && (today || state == DayState.Planned || state == DayState.Rest)
+/**
+ * Whether a day's block says its date: a day still [ahead] (today or after it), planned or rest, until it is done.
+ * A day gone by has its mark instead: its check, its slash, or a rest day's dot.
+ */
+internal fun DayCell.dated(ahead: Boolean): Boolean =
+    ahead && state != DayState.Done && (today || state == DayState.Planned || state == DayState.Rest)
 
-/** Whether a day's block wears the rest dot: a rest day not today, where its date would not fit. */
+/** Whether a day's block can wear the rest dot: a rest day not today, gone by or where its date would not fit. */
 private val DayCell.restDot: Boolean
     get() = !today && state == DayState.Rest
