@@ -1,19 +1,21 @@
-/* The app's own accent (core's Theme.kt: 0xFF2456E6 light, 0xFF5B8CFF dark) and its dark ground. */
+/* The app's own colours (core's Theme.kt): Track & Chalk. Pine for the header and the dark ground, the deep gold
+   (0xFF8A5F00) for links by day and the bright gold (0xFFE5A910) by night. */
 :root,
 [data-md-color-scheme="default"] {
-  --md-primary-fg-color: #2456e6;
-  --md-primary-fg-color--light: #5b8cff;
-  --md-primary-fg-color--dark: #1a3fae;
-  --md-accent-fg-color: #2456e6;
+  --md-primary-fg-color: #13221b;
+  --md-primary-fg-color--light: #1e332b;
+  --md-primary-fg-color--dark: #0d1814;
+  --md-accent-fg-color: #8a5f00;
+  --md-typeset-a-color: #8a5f00;
 }
 
 [data-md-color-scheme="slate"] {
-  --md-primary-fg-color: #161a20;
-  --md-primary-fg-color--light: #232b35;
-  --md-primary-fg-color--dark: #0b0d10;
-  --md-accent-fg-color: #5b8cff;
-  --md-default-bg-color: #0b0d10;
-  --md-typeset-a-color: #5b8cff;
+  --md-primary-fg-color: #15241e;
+  --md-primary-fg-color--light: #1e332b;
+  --md-primary-fg-color--dark: #0d1814;
+  --md-accent-fg-color: #e5a910;
+  --md-default-bg-color: #0d1814;
+  --md-typeset-a-color: #e5a910;
 }
 
 /* A row of phone screenshots that wraps on a narrow window. */
@@ -50,24 +52,24 @@
 
 /* The work, rest and done colours of the timer, for the guide's small legends. */
 .phase { font-weight: 700; }
-.phase.work { color: #ff5a43; }
-.phase.rest { color: #2fd3a0; }
-.phase.prep { color: #f2a81d; }
+.phase.work { color: #f0583a; }
+.phase.rest { color: #34c785; }
+.phase.prep { color: #f58a3d; }
 .phase.set-rest { color: #b18cff; }
 
 /* In dark mode the header takes the dark ground, so buttons go by the accent instead. */
 [data-md-color-scheme="slate"] .md-typeset .md-button {
-  color: #5b8cff;
-  border-color: #5b8cff;
+  color: #e5a910;
+  border-color: #e5a910;
 }
 
 [data-md-color-scheme="slate"] .md-typeset .md-button--primary {
-  color: #0b0d10;
-  background-color: #5b8cff;
+  color: #0d1814;
+  background-color: #e5a910;
 }
 
 [data-md-color-scheme="slate"] .md-typeset .md-button:hover {
-  color: #0b0d10;
-  background-color: #5b8cff;
-  border-color: #5b8cff;
+  color: #0d1814;
+  background-color: #e5a910;
+  border-color: #e5a910;
 }

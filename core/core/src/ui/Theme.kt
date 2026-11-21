@@ -78,7 +78,7 @@ data class IntervalPalette(
     /**
      * The phases as Setup draws them: field stripes, values on their tints, History marks. Light
      * mode deepens work and rest so they read on white; dark mode uses the workout's own
-     * [PhaseColors], which are tuned for a near-black ground.
+     * [PhaseColors], which are tuned for the pine ground.
      */
     val prepMark: Color,
     val workMark: Color,
@@ -90,9 +90,39 @@ data class IntervalPalette(
     val onPrepTint: Color,
     /** Heart-rate training zone colours on setup and detail surfaces. */
     val heartZones: HeartZoneColors = darkHeartZones,
+    /**
+     * The accent as a control's fill (a primary button, Start, the selected tab, a day done): brighter than
+     * [accent] where [accent] is deepened to read as text and marks on a pale ground. Labelled by [onFill].
+     */
+    val accentFill: Color = accent,
 ) {
-    /** Selected preset card fill. */
-    val accentTint: Color get() = tint(accent)
+    /** [color] as a fill: the accent becomes [accentFill], any other colour (a phase's mark) stays itself. */
+    fun fillOf(color: Color): Color = if (color == accent) accentFill else color
+
+    /** The label on [fill]: ink or white, whichever reads better, as [WorkoutColors.onFill] picks on the workout. */
+    fun onFill(fill: Color): Color {
+        val lum = fill.luminance()
+        val inkContrast = (lum + CONTRAST_OFFSET) / (PhaseColors.ink.luminance() + CONTRAST_OFFSET)
+        val whiteContrast = (1f + CONTRAST_OFFSET) / (lum + CONTRAST_OFFSET)
+        return if (inkContrast >= whiteContrast) PhaseColors.ink else Color.White
+    }
+
+    /**
+     * The fill of anything selected (a preset card, a chip, a reminder's time): a wash of [accentFill]. Light mode
+     * takes a deeper one, since a tenth of gold on white is the page's own beige and the selection would vanish.
+     */
+    val accentTint: Color
+        get() = lerp(
+            surface,
+            accentFill,
+            if (background.luminance() <
+                DARK_LUMINANCE
+            ) {
+                TINT_STRENGTH
+            } else {
+                LIGHT_ACCENT_TINT
+            },
+        )
 
     /**
      * Rest on a timeline: a deeper wash of [accent] than [accentTint], so it still shows on a
@@ -123,16 +153,20 @@ data class IntervalPalette(
 
     private companion object {
         const val TINT_STRENGTH = 0.1f
+        const val LIGHT_ACCENT_TINT = 0.22f
         const val LANE_LINE_STRENGTH = 0.6f
         const val TIMELINE_REST_STRENGTH = 0.24f
         const val DARK_LUMINANCE = 0.5f
+
+        /** WCAG's flare term in a contrast ratio. */
+        const val CONTRAST_OFFSET = 0.05f
     }
 }
 
 /**
  * The workout's colours (the timer, its summary, an EMOM), following the theme. The phase colour is
  * the ring, the edge band, the phase word and the primary control, so it still reads from across a
- * room without flooding the screen. Dark is [PhaseColors]' near-black "Gym dark"; light keeps the
+ * room without flooding the screen. Dark is [PhaseColors]' pine Track & Chalk; light keeps the
  * page's ground and deepens the phases, as Setup's marks do.
  */
 @Immutable
@@ -179,71 +213,96 @@ data class WorkoutColors(
 }
 
 /**
- * Gym dark: the workout's fixed colours, which [darkWorkoutColors] uses as they are. The splash and
+ * Track & Chalk after dark: the workout's fixed colours, which [darkWorkoutColors] uses as they are. The splash and
  * the sheet scrim use them in either theme.
  */
 object PhaseColors {
-    val prep = Color(0xFFF2A81D)
-    val work = Color(0xFFFF5A43)
-    val rest = Color(0xFF2FD3A0)
+    /** Get ready: a warm amber, apart from the gold of [done] and the accent. */
+    val prep = Color(0xFFF58A3D)
+
+    /** Work: the clay of the track. */
+    val work = Color(0xFFF0583A)
+
+    /** Rest: the infield's green. */
+    val rest = Color(0xFF34C785)
     val setRest = Color(0xFFB18CFF)
-    val done = Color(0xFF5B8CFF)
+
+    /** Done, and the dark theme's accent: varsity gold. */
+    val done = Color(0xFFE5A910)
 
     /** The ring and band while paused. Too dark for [ink], so a paused primary control fills with [onGround]. */
-    val paused = Color(0xFF5E6978)
+    val paused = Color(0xFF6B8278)
 
-    /** The workout screen's background. */
-    val ground = Color(0xFF0B0D10)
+    /** The workout screen's background: the pine of the infield after dark. */
+    val ground = Color(0xFF0D1814)
 
     /** Fill of the secondary controls (End, Skip, Back, +10s, Repeat), stat tiles, and the ring's track. */
-    val control = Color(0xFF161A20)
+    val control = Color(0xFF15241E)
 
     /** Upcoming round dots. */
-    val upcoming = Color(0xFF232B35)
+    val upcoming = Color(0xFF1E332B)
 
-    /** Clock, status, finished round dots, and the labels on [control]. */
-    val onGround = Color(0xFFF1F4F8)
+    /** Clock, status, finished round dots, and the labels on [control]: chalk. */
+    val onGround = Color(0xFFF7F3E9)
 
     /** Next up, the resting tap hint, and the phase word while paused. */
-    val onGroundDim = Color(0xFF97A3B3)
+    val onGroundDim = Color(0xFF93AB9F)
 
     /** Label on a bright fill; [WorkoutColors.onFill] picks it or white. */
-    val ink = Color(0xFF0B0D10)
+    val ink = Color(0xFF0D1814)
 
     /** The lanes round the ring: their lines, and every other lane's fill, a whisper of [control] over the ground. */
     val laneLine = control
     val laneFill = lerp(ground, control, LANE_FILL_STRENGTH)
 }
 
+/**
+ * Track & Chalk by day: chalk for the page, pine ink for the words, and the gold, clay, green and amber of
+ * [PhaseColors] deepened so they read on it. The deep gold is for text and marks; the bright one fills.
+ */
+private object Chalk {
+    val ground = Color(0xFFFAF6EE)
+    val raised = Color(0xFFEFE9DC)
+    val line = Color(0xFFD9D0BE)
+    val ink = Color(0xFF13221B)
+    val inkDim = Color(0xFF5C6D64)
+    val gold = Color(0xFF8A5F00)
+    val clay = Color(0xFFC93B1B)
+    val infield = Color(0xFF157A52)
+    val amber = Color(0xFF9A5500)
+}
+
 internal val lightPalette = IntervalPalette(
-    background = Color(0xFFEEF1F5),
+    background = Chalk.ground,
     surface = Color(0xFFFFFFFF),
-    surfaceVariant = Color(0xFFE3E8EF),
-    text = Color(0xFF141A22),
-    textDim = Color(0xFF5E6978),
-    line = Color(0xFFD5DCE6),
-    accent = Color(0xFF2456E6),
+    surfaceVariant = Chalk.raised,
+    text = Chalk.ink,
+    textDim = Chalk.inkDim,
+    line = Chalk.line,
+    accent = Chalk.gold,
+    accentFill = PhaseColors.done,
     onAccent = Color.White,
-    danger = Color(0xFFBF3019),
+    danger = Color(0xFFB5301A),
     onDanger = Color.White,
     prepMark = PhaseColors.prep,
-    workMark = Color(0xFFD13A26),
-    restMark = Color(0xFF0A5E49),
-    onPrepTint = Color(0xFFA86A05),
+    workMark = Chalk.clay,
+    restMark = Chalk.infield,
+    onPrepTint = Chalk.amber,
     heartZones = lightHeartZones,
 )
 
-/** Gym dark: the workout's near-black ground carried onto Setup, with its bright phase colours. */
+/** The workout's pine ground carried onto Setup, with its bright phase colours and the gold for the accent. */
 internal val darkPalette = IntervalPalette(
     background = PhaseColors.ground,
     surface = PhaseColors.control,
     surfaceVariant = PhaseColors.upcoming,
     text = PhaseColors.onGround,
     textDim = PhaseColors.onGroundDim,
-    line = Color(0xFF2C3541),
-    accent = Color(0xFF5B8CFF),
+    line = Color(0xFF2A453A),
+    accent = PhaseColors.done,
     onAccent = PhaseColors.ink,
-    danger = PhaseColors.work,
+    // Brighter than the work mark, so a Delete reads on every pine ground.
+    danger = Color(0xFFFF6A4A),
     onDanger = PhaseColors.ink,
     prepMark = PhaseColors.prep,
     workMark = PhaseColors.work,
@@ -272,8 +331,8 @@ internal val darkWorkoutColors = WorkoutColors(
  * text on the ground, and white labels the primary control filled with each.
  */
 internal val lightWorkoutColors = WorkoutColors(
-    prep = Color(0xFF966003),
-    work = Color(0xFFC4361F),
+    prep = Color(0xFF8F5200),
+    work = Color(0xFFC0361A),
     rest = lightPalette.restMark,
     setRest = Color(0xFF6A3FC8),
     done = lightPalette.accent,

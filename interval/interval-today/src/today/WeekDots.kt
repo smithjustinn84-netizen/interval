@@ -215,7 +215,7 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
     }
     val shape = Corners.radius12
     val ring = if (day.today) Modifier.border(Sizes.border, palette.text, shape) else Modifier
-    val fill = doneColor(day)
+    val fill = palette.fillOf(doneColor(day))
     Box(
         modifier
             .fillMaxWidth()
@@ -262,7 +262,7 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
             Icon(
                 IntervalIcons.Check,
                 null,
-                tint = palette.onAccent,
+                tint = palette.onFill(fill),
                 modifier = Modifier.size(Sizes.chipIcon).graphicsLayer {
                     scaleX = check.value
                     scaleY = check.value

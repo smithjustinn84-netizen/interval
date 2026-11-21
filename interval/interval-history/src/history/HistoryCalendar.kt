@@ -303,7 +303,7 @@ private fun CalendarDay(cell: DayCell, onClick: () -> Unit, modifier: Modifier =
         val mark = Modifier.size(IntervalSizes.calendarDay).clip(Corners.full)
         val (shape, ink) = when {
             !cell.inMonth -> mark to palette.textDim.copy(alpha = Opacity.OUTSIDE_MONTH)
-            cell.state == DayState.Done -> mark.background(palette.accent) to palette.onAccent
+            cell.state == DayState.Done -> mark.background(palette.accentFill) to palette.onFill(palette.accentFill)
             cell.state == DayState.Planned -> mark.border(Sizes.border, palette.accent, Corners.full) to palette.text
             cell.state == DayState.Missed -> mark.background(palette.surfaceVariant) to palette.textDim
             else -> mark to palette.text

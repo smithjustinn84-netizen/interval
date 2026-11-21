@@ -121,7 +121,7 @@ private fun StepRow(step: FirstWeekStep, leads: Boolean, actions: HomeActions, m
 @Composable
 private fun Tick(done: Boolean, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val fill by animateColorAsState(if (done) palette.accent else Color.Transparent, label = "tick")
+    val fill by animateColorAsState(if (done) palette.accentFill else Color.Transparent, label = "tick")
     Box(
         modifier
             .size(Sizes.icon)
@@ -131,7 +131,12 @@ private fun Tick(done: Boolean, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         if (done) {
-            Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.chipIcon))
+            Icon(
+                IntervalIcons.Check,
+                null,
+                tint = palette.onFill(palette.accentFill),
+                modifier = Modifier.size(Sizes.chipIcon),
+            )
         }
     }
 }

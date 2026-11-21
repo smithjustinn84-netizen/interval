@@ -46,7 +46,7 @@ fun StartButton(
     modifier: Modifier = Modifier,
     label: String = stringResource(Res.string.common_start_workout),
     trailing: String? = null,
-    color: Color = IntervalTheme.palette.accent,
+    color: Color = IntervalTheme.palette.accentFill,
 ) {
     val palette = IntervalTheme.palette
     val shape = Corners.radius18
@@ -86,17 +86,17 @@ fun StartButton(
             Icon(
                 IntervalIcons.Play,
                 contentDescription = null,
-                tint = palette.onAccent,
+                tint = palette.onFill(color),
                 modifier = Modifier.size(IntervalSizes.playIcon),
             )
             Text(
                 label,
                 style = IntervalTheme.type.value,
-                color = palette.onAccent,
+                color = palette.onFill(color),
                 // With its length at the far end, the label takes the room between and the two stand apart.
                 modifier = if (trailing != null) Modifier.weight(1f) else Modifier,
             )
-            trailing?.let { Text(it, style = IntervalTheme.type.value, color = palette.onAccent) }
+            trailing?.let { Text(it, style = IntervalTheme.type.value, color = palette.onFill(color)) }
         }
     }
 }

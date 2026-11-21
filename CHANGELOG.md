@@ -160,6 +160,15 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- A new look: Track & Chalk. Dark mode is the pine of a track's infield after dark, light mode chalk, with a
+  varsity gold for the accent (Start, the selected tab, a strength day, a day done), clay red for work, the
+  infield's green for rest and a warm amber for get-ready. In light the gold that fills a button is bright with dark
+  words on it, and a deeper gold carries words and marks so they read on chalk; a selected chip or card is washed in
+  gold, where the old tint was hard to tell from the page. The app icon, the splash and launch screens, the
+  shortcuts and both platforms' widgets take the same colours. Every pairing of words and ground is held to 4.5:1.
+- A preset's work and rest drawn small under its name on Train's Conditioning, Today's picks and a planned
+  workout's step, so Tabata and 15:15 differ at a glance. Log's time for a week or month says "16 min" or "2h 48m"
+  rather than a clock.
 - Compose Multiplatform 1.13 (rc01, from 1.12.1), compiled against Android 37.1. Lift's rest band closes on its
   last frame (`CapturedAnimatedVisibility`) rather than holding a copy of the rest, the states read from a running
   clock are `computedStateOf`, which is cheaper to invalidate than `derivedStateOf`, and Today keeps its day's plan

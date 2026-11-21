@@ -318,7 +318,7 @@ private fun LeadStep(
                 button,
                 label = start,
                 trailing = upNextLength(item),
-                color = tone,
+                color = palette.fillOf(tone),
             )
 
             is UpNextItem.Lift -> {
@@ -338,7 +338,7 @@ private fun LeadStep(
                         day != null -> stringResource(Res.string.home_start_day, day.number)
                         else -> stringResource(Res.string.home_start_session)
                     },
-                    color = tone,
+                    color = palette.fillOf(tone),
                 )
             }
 
@@ -350,7 +350,7 @@ private fun LeadStep(
                 button,
                 label = start,
                 trailing = upNextLength(item),
-                color = tone,
+                color = palette.fillOf(tone),
             )
         }
         item.movablePlan?.let { planId ->
@@ -573,10 +573,15 @@ private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifie
     Box(modifier.width(maxOf(IntervalSizes.stepNumber, digits)).clearAndSetSemantics {}) {
         when (state) {
             StepState.Done -> Box(
-                Modifier.size(Sizes.icon).clip(CircleShape).background(palette.accent),
+                Modifier.size(Sizes.icon).clip(CircleShape).background(palette.accentFill),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.chipIcon))
+                Icon(
+                    IntervalIcons.Check,
+                    null,
+                    tint = palette.onFill(palette.accentFill),
+                    modifier = Modifier.size(Sizes.chipIcon),
+                )
             }
 
             is StepState.Now -> Text(stepNumber(state.number), style = style, color = tone, maxLines = 1)

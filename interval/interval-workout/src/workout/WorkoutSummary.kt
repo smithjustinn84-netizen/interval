@@ -243,8 +243,9 @@ private fun SummaryActions(
                 stringResource(Res.string.common_done),
                 onExit,
                 Modifier.fillMaxWidth().heightIn(min = Sizes.control),
-                background = IntervalTheme.workout.done,
-                content = IntervalTheme.workout.onFill(IntervalTheme.workout.done),
+                // The ring and its word take the done colour as marks; the button fills with the accent's fill.
+                background = IntervalTheme.palette.fillOf(IntervalTheme.workout.done),
+                content = IntervalTheme.palette.onFill(IntervalTheme.palette.fillOf(IntervalTheme.workout.done)),
                 style = IntervalTheme.type.value,
             )
         }

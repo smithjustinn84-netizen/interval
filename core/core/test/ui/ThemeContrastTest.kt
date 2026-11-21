@@ -50,6 +50,8 @@ class ThemeContrastTest {
     fun `labels read on accent`() {
         palettes.forEach { (theme, p) ->
             assertContrast(4.5, p.onAccent, p.accent, "$theme onAccent on accent")
+            assertContrast(4.5, p.onFill(p.accentFill), p.accentFill, "$theme label on accentFill")
+            listOf(p.workMark, p.restMark).forEach { assertContrast(4.5, p.onFill(it), it, "$theme label on $it") }
             assertContrast(4.5, p.onDanger, p.danger, "$theme onDanger on danger")
         }
     }
@@ -117,7 +119,7 @@ class ThemeContrastTest {
 
     @Test
     fun `accent tint matches the design system`() {
-        assertEquals(Color(0xFFE8EFFF).toArgb(), lightPalette.accentTint.toArgb())
-        assertEquals(Color(0xFF1C2433).toArgb(), darkPalette.accentTint.toArgb())
+        assertEquals(Color(0xFFFAEDD5).toArgb(), lightPalette.accentTint.toArgb())
+        assertEquals(Color(0xFF283022).toArgb(), darkPalette.accentTint.toArgb())
     }
 }

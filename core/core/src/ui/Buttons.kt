@@ -252,12 +252,12 @@ private fun ModalButton(
     val palette = IntervalTheme.palette
     val baseFill = when {
         primary && destructive -> palette.danger
-        primary -> palette.accent
+        primary -> palette.accentFill
         else -> palette.surfaceVariant
     }
     val baseInk = when {
         primary && destructive -> palette.onDanger
-        primary -> palette.onAccent
+        primary -> palette.onFill(palette.accentFill)
         destructive -> palette.danger
         else -> palette.text
     }

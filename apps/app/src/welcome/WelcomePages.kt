@@ -122,16 +122,21 @@ private fun ColumnScope.TodayPage() {
                     .fillMaxWidth()
                     .height(Sizes.save)
                     .clip(Corners.radius18)
-                    .background(palette.accent)
+                    .background(palette.accentFill)
                     .clearAndSetSemantics {},
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(IntervalIcons.Play, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.icon))
+                Icon(
+                    IntervalIcons.Play,
+                    null,
+                    tint = palette.onFill(palette.accentFill),
+                    modifier = Modifier.size(Sizes.icon),
+                )
                 Text(
                     stringResource(Res.string.welcome_example_start),
                     style = IntervalTheme.type.value,
-                    color = palette.onAccent,
+                    color = palette.onFill(palette.accentFill),
                 )
             }
         }
@@ -216,10 +221,10 @@ private fun PageHead(icon: ImageVector, tab: String, title: String, modifier: Mo
                 Modifier
                     .size(AppSizes.welcomeTabWidth, AppSizes.welcomeTabHeight)
                     .clip(Corners.full)
-                    .background(palette.accent),
+                    .background(palette.accentFill),
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(icon, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.icon))
+                Icon(icon, null, tint = palette.onFill(palette.accentFill), modifier = Modifier.size(Sizes.icon))
             }
             Text(tab, style = IntervalTheme.type.caption, color = palette.text)
         }
@@ -345,7 +350,7 @@ private fun Dot(day: ExampleDay, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val done = day == ExampleDay.Strength || day == ExampleDay.FlowAndSport
     val fill = when (day) {
-        ExampleDay.Strength -> palette.accent
+        ExampleDay.Strength -> palette.accentFill
         ExampleDay.FlowAndSport -> palette.restMark
         else -> palette.surfaceVariant
     }
@@ -356,7 +361,7 @@ private fun Dot(day: ExampleDay, modifier: Modifier = Modifier) {
     }
     Box(modifier.clip(BlockShape).background(fill).then(ring), contentAlignment = Alignment.Center) {
         if (done) {
-            Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.fillMaxSize(CHECK_SHARE))
+            Icon(IntervalIcons.Check, null, tint = palette.onFill(fill), modifier = Modifier.fillMaxSize(CHECK_SHARE))
         }
     }
 }

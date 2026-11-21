@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- PhaseColors.ground: the splash, the window behind the app, and the intro share it. -->
-    <color name="ground">#FF0B0D10</color>
+    <color name="ground">#FF0D1814</color>
     <!-- The widget's fills (res/drawable/widget_*.xml), PhaseColors' control, upcoming and done. -->
-    <color name="control">#FF161A20</color>
-    <color name="upcoming">#FF232B35</color>
-    <color name="done">#FF5B8CFF</color>
+    <color name="control">#FF15241E</color>
+    <color name="upcoming">#FF1E332B</color>
+    <color name="done">#FFE5A910</color>
 </resources>

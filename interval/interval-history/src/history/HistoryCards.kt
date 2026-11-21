@@ -315,13 +315,18 @@ fun StartPill(
     Row(
         modifier
             .heightIn(min = Sizes.segment)
-            .surfaceButton(interaction, Corners.full, if (primary) palette.accent else palette.surfaceVariant, onClick)
+            .surfaceButton(
+                interaction,
+                Corners.full,
+                if (primary) palette.accentFill else palette.surfaceVariant,
+                onClick,
+            )
             .padding(horizontal = Spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
         // Centred, for a pill held wider than its words.
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
     ) {
-        val ink = if (primary) palette.onAccent else palette.text
+        val ink = if (primary) palette.onFill(palette.accentFill) else palette.text
         if (primary) Icon(IntervalIcons.Play, null, tint = ink, modifier = Modifier.size(Sizes.chipIcon))
         Text(label, style = IntervalTheme.type.label, color = ink)
     }

@@ -41,10 +41,10 @@ private val Tabs = listOf(
 fun NavigationItems(current: Tab, type: NavigationSuiteType, pillar: Tab, onSelect: (Tab) -> Unit) {
     val palette = IntervalTheme.palette
     val colors = ShortNavigationBarItemDefaults.colors(
-        selectedIconColor = palette.onAccent,
+        selectedIconColor = palette.onFill(palette.accentFill),
         selectedTextColorTopIconPosition = palette.text,
         selectedTextColorStartIconPosition = palette.text,
-        selectedIndicatorColor = palette.accent,
+        selectedIndicatorColor = palette.accentFill,
         unselectedIconColor = palette.textDim,
         unselectedTextColor = palette.textDim,
     )

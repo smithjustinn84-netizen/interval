@@ -21,17 +21,17 @@ CENTER = CANVAS / 2
 RING_RADIUS = 24
 RING_STROKE = 7
 ARCS = [  # (start, end, colour)
-    (14, 64, "F2A81D"),  # Get ready: PhaseColors.prep
-    (93, 227, "FF5A43"),  # Work: PhaseColors.work
-    (256, 346, "2FD3A0"),  # Rest: PhaseColors.rest
+    (14, 64, "F58A3D"),  # Get ready: PhaseColors.prep
+    (93, 227, "F0583A"),  # Work: PhaseColors.work
+    (256, 346, "34C785"),  # Rest: PhaseColors.rest
 ]
 HAND_LENGTH = 15
 HAND_STROKE = 4.5
 HUB_RADIUS = 4.5
 PIN_RADIUS = 1.7  # The hole through the hub
-INK = "F1F4F8"  # PhaseColors.onGround
-GROUND = "0B0D10"  # PhaseColors.ground
-GROUND_GLOW = "1A2029"  # The lighter centre of the icon's background
+INK = "F7F3E9"  # PhaseColors.onGround
+GROUND = "0D1814"  # PhaseColors.ground
+GROUND_GLOW = "1C3129"  # The lighter centre of the icon's background
 
 # Grey levels for iOS's tinted icon, which tints by luminance: the phases stay tellable apart.
 TINTED_ARCS = ["C8C8C8", "FFFFFF", "9A9A9A"]

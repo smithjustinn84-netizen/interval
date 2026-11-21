@@ -85,7 +85,7 @@ data class FigureColors(
         }
 
         /**
-         * The workout screen's: Gym dark, the same in both themes, the body in the clock's colour and the beats in
+         * The workout screen's dark pine, the same in both themes, the body in the clock's colour and the beats in
          * the phases' own, so a flow's move over the ring reads as the ring does.
          */
         @Composable

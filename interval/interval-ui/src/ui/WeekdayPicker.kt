@@ -70,8 +70,11 @@ fun DayToggle(
 ) {
     val palette = IntervalTheme.palette
     val haptics = LocalHapticFeedback.current
-    val fill by animateColorAsState(if (on) palette.accent else palette.surfaceVariant, tween(Motion.STATE_MILLIS))
-    val ink by animateColorAsState(if (on) palette.onAccent else palette.text, tween(Motion.STATE_MILLIS))
+    val fill by animateColorAsState(if (on) palette.accentFill else palette.surfaceVariant, tween(Motion.STATE_MILLIS))
+    val ink by animateColorAsState(
+        if (on) palette.onFill(palette.accentFill) else palette.text,
+        tween(Motion.STATE_MILLIS),
+    )
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier

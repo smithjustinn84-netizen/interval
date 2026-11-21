@@ -92,12 +92,12 @@ struct WeekProvider: TimelineProvider {
 /// The workout page's colours (core's `PhaseColors`, Android's res/values/colors.xml), on every appearance: a
 /// widget sits on the wallpaper as the workout sits on its dark ground.
 enum Palette {
-    static let card = Color(red: 0x16 / 255, green: 0x1A / 255, blue: 0x20 / 255) // control
-    static let done = Color(red: 0x5B / 255, green: 0x8C / 255, blue: 0xFF / 255)
-    static let upcoming = Color(red: 0x23 / 255, green: 0x2B / 255, blue: 0x35 / 255)
-    static let onGround = Color(red: 0xF1 / 255, green: 0xF4 / 255, blue: 0xF8 / 255)
-    static let onGroundDim = Color(red: 0x97 / 255, green: 0xA3 / 255, blue: 0xB3 / 255)
-    static let ink = Color(red: 0x0B / 255, green: 0x0D / 255, blue: 0x10 / 255)
+    static let card = Color(red: 0x15 / 255, green: 0x24 / 255, blue: 0x1E / 255) // control
+    static let done = Color(red: 0xE5 / 255, green: 0xA9 / 255, blue: 0x10 / 255)
+    static let upcoming = Color(red: 0x1E / 255, green: 0x33 / 255, blue: 0x2B / 255)
+    static let onGround = Color(red: 0xF7 / 255, green: 0xF3 / 255, blue: 0xE9 / 255)
+    static let onGroundDim = Color(red: 0x93 / 255, green: 0xAB / 255, blue: 0x9F / 255)
+    static let ink = Color(red: 0x0D / 255, green: 0x18 / 255, blue: 0x14 / 255)
 }
 
 /// The app's `Shortcut` ids, as the quick actions in Info.plist carry them.

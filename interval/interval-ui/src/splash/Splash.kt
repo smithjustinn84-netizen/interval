@@ -68,7 +68,7 @@ fun WithIntro(
  * mark dips, then bursts outward while the ground opens from the centre onto the app behind a ripple
  * of the three phase colours. [onFinish] then removes it.
  *
- * Always Gym dark. Swallows touches until it has gone, so nothing hidden under it can be pressed.
+ * Always the workout's dark pine. Swallows touches until it has gone, so nothing hidden under it can be pressed.
  */
 @Composable
 internal fun Splash(ready: Boolean, onFinish: () -> Unit, modifier: Modifier = Modifier) {
