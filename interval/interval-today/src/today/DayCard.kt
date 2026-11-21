@@ -25,13 +25,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.text.rememberTextMeasurer
 import dev.justinsmith.interval.history.StartPill
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.UpNextLater
@@ -56,6 +56,7 @@ import dev.justinsmith.interval.today.resources.history_lift_any
 import dev.justinsmith.interval.today.resources.history_lift_session
 import dev.justinsmith.interval.today.resources.history_start
 import dev.justinsmith.interval.today.resources.history_up_next
+import dev.justinsmith.interval.today.resources.home_about_minutes
 import dev.justinsmith.interval.today.resources.home_do_it_now
 import dev.justinsmith.interval.today.resources.home_do_it_today
 import dev.justinsmith.interval.today.resources.home_done_cd
@@ -69,9 +70,6 @@ import dev.justinsmith.interval.today.resources.home_rest_title
 import dev.justinsmith.interval.today.resources.home_rest_until
 import dev.justinsmith.interval.today.resources.home_resume_session
 import dev.justinsmith.interval.today.resources.home_spare
-import dev.justinsmith.interval.today.resources.home_start_day
-import dev.justinsmith.interval.today.resources.home_start_day_easier
-import dev.justinsmith.interval.today.resources.home_start_session
 import dev.justinsmith.interval.today.resources.notice_sport_logged
 import dev.justinsmith.interval.today.resources.preview_open_cd
 import dev.justinsmith.interval.today.resources.sport_counts
@@ -117,15 +115,22 @@ internal fun DayCard(
 ) {
     val numbered = plan.done.size + plan.steps.size > 1
     val tone = toneColor(plan.kind.tone)
+    // One lane runs down the marks, in the day's tone up to the step to do now and a hairline after it.
+    val line = IntervalTheme.palette.line
+    fun lane(above: Color?, below: Color?) = Lane(above, below).takeIf { numbered }
     DayColumn(modifier) {
-        plan.done.forEach { DoneRow(it, rail = numbered, last = false) }
+        plan.done.forEachIndexed { index, step ->
+            DoneRow(step, rail = numbered, last = false, lane = lane(tone.takeIf { index > 0 }, tone))
+        }
         plan.steps.forEachIndexed { index, item ->
             val last = index == plan.steps.lastIndex
             val number = (plan.done.size + index + 1).takeIf { numbered }
+            val below = line.takeUnless { last }
             if (index == 0) {
-                LeadStep(item, number, last, easier, tone, actions, onLook)
+                val lead = lane(tone.takeIf { plan.done.isNotEmpty() }, below)
+                LeadStep(item, number, last, easier, tone, actions, onLook, lead)
             } else {
-                LaterStep(item, number, last, plan.spare(item), actions)
+                LaterStep(item, number, last, plan.spare(item), actions, lane(line, below))
             }
         }
         ThenLine(listOfNotNull(plan.next) + plan.later)
@@ -285,13 +290,14 @@ private fun LeadStep(
     tone: Color,
     actions: HomeActions,
     onLook: () -> Unit,
+    lane: Lane? = null,
 ) {
     val palette = IntervalTheme.palette
     // The easier plan is Lift's to offer for the program's day, before it starts.
     val day = (item as? UpNextItem.Lift)?.takeUnless { it.resume }?.programDay
     val offered = easier && day != null
     var eased by rememberSaveable { mutableStateOf(true) }
-    Step(number?.let { StepState.Now(it) }, last, tone = tone) {
+    Step(number?.let { StepState.Now(it) }, last, tone = tone, lane = lane) {
         val look = item.preview()?.let { onLook }
         val described = stringResource(Res.string.preview_open_cd, upNextTitle(item))
         val tap = if (look != null) Modifier.clickable(onClickLabel = described, onClick = look) else Modifier
@@ -299,9 +305,10 @@ private fun LeadStep(
             // In the day's tone, as its number is: the one caption on the card that says "do this now".
             val badge = Modifier.clip(Corners.full).background(palette.tint(tone))
                 .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
-            Text(upNextCaption(item), style = IntervalTheme.type.caption, color = tone, modifier = badge)
+            Text(leadCaption(item), style = IntervalTheme.type.caption, color = tone, modifier = badge)
             Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
-            JoinedText(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)
+            // A session's about-how-long is on its Start, so its line leads with the day.
+            JoinedText(upNextDetail(item, withLength = false), style = IntervalTheme.type.meta, color = palette.textDim)
             StepShape(item, tone, Modifier.padding(top = Spacing.space4))
         }
         if (offered) {
@@ -336,12 +343,8 @@ private fun LeadStep(
                         }
                     },
                     button,
-                    label = when {
-                        item.resume -> stringResource(Res.string.home_resume_session)
-                        day != null && offered && eased -> stringResource(Res.string.home_start_day_easier, day.number)
-                        day != null -> stringResource(Res.string.home_start_day, day.number)
-                        else -> stringResource(Res.string.home_start_session)
-                    },
+                    label = liftStartLabel(item, day, eased = offered && eased),
+                    trailing = item.minutes?.let { stringResource(Res.string.home_about_minutes, it) },
                     color = palette.fillOf(tone),
                 )
             }
@@ -383,8 +386,15 @@ private val UpNextItem.movablePlan: Long?
  * behind a class ([spare]) says it is for spare time, and is done now from "Do it now".
  */
 @Composable
-private fun LaterStep(item: UpNextItem, number: Int?, last: Boolean, spare: Boolean, actions: HomeActions) {
-    Step(number?.let { StepState.Later(it) }, last) {
+private fun LaterStep(
+    item: UpNextItem,
+    number: Int?,
+    last: Boolean,
+    spare: Boolean,
+    actions: HomeActions,
+    lane: Lane? = null,
+) {
+    Step(number?.let { StepState.Later(it) }, last, lane = lane) {
         QuietRow(
             caption = stringResource(Res.string.home_spare).takeIf { spare },
             name = upNextName(item),
@@ -443,7 +453,7 @@ private fun LaterStep(item: UpNextItem, number: Int?, last: Boolean, spare: Bool
 
 /** Something done today: its tick, its name over its kind, and how long it ran. Read as one row, done. */
 @Composable
-private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean) {
+private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean, lane: Lane? = null) {
     val palette = IntervalTheme.palette
     val done = stringResource(Res.string.home_done_cd)
     val name = when (step) {
@@ -475,6 +485,7 @@ private fun DoneRow(step: DoneStep, rail: Boolean, last: Boolean) {
         StepState.Done.takeIf { rail },
         last,
         Modifier.semantics(mergeDescendants = true) { stateDescription = done },
+        lane = lane,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -547,9 +558,23 @@ private fun Step(
     last: Boolean,
     modifier: Modifier = Modifier,
     tone: Color = IntervalTheme.palette.accent,
+    lane: Lane? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier.fillMaxWidth()) {
+    val mark = stepMarkSize()
+    val laneModifier = if (lane == null) {
+        Modifier
+    } else {
+        Modifier.drawBehind {
+            val x = mark.width.toPx() / 2
+            val stroke = Sizes.border.toPx()
+            val gap = Spacing.space4.toPx()
+            val top = Spacing.space12.toPx()
+            lane.above?.let { drawLine(it, Offset(x, 0f), Offset(x, top - gap), stroke) }
+            lane.below?.let { drawLine(it, Offset(x, top + mark.height.toPx() + gap), Offset(x, size.height), stroke) }
+        }
+    }
+    Column(modifier.fillMaxWidth().then(laneModifier)) {
         Row(
             Modifier.fillMaxWidth().padding(vertical = Spacing.space12),
             horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -570,11 +595,8 @@ private fun Step(
 private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val style = IntervalTheme.type.value
-    val measurer = rememberTextMeasurer()
-    val density = LocalDensity.current
-    val digits = with(density) { measurer.measure(stepNumber(0), style).size.width.toDp() }
     // The order is read from the rows themselves; a done row says so as its state.
-    Box(modifier.width(maxOf(IntervalSizes.stepNumber, digits)).clearAndSetSemantics {}) {
+    Box(modifier.width(stepMarkSize().width).clearAndSetSemantics {}) {
         when (state) {
             StepState.Done -> Box(
                 Modifier
@@ -600,4 +622,4 @@ private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifie
 }
 
 /** A step's number in two digits, so the ninth and the tenth take the same room. */
-private fun stepNumber(number: Int): String = number.toString().padStart(2, '0')
+internal fun stepNumber(number: Int): String = number.toString().padStart(2, '0')

@@ -84,6 +84,10 @@ object Sizes {
     /** A progress bar's height: a program's days done, a kind's share of the week. */
     val progressBar = 6.dp
 
+    /** A [LapBar]: its height, and the gap between two laps. */
+    val lapBar = 8.dp
+    val lapGap = 2.dp
+
     /** The timeline waveform on a preset chip or card, and the gap between its segments. */
     val timelineMini = 16.dp
     val timelineMiniGap = 1.dp
@@ -168,6 +172,10 @@ object Sizes {
     val ringOuterGap = 6.dp
     val ringDash = 4.dp
     val ringDashGap = 6.dp
+
+    /** The outer lane drawn as laps, a segment a round ([RingLaps]): its stroke, and the gap between two. */
+    val ringLap = 6.dp
+    val ringLapGap = 6.dp
 
     /**
      * The figure showing how an exercise goes, which both sides draw: on its page, tall enough to read a swing's

@@ -377,13 +377,10 @@ private fun PortraitWorkout(
                 WorkoutHeart(state, actions.onToggleHeart, Modifier.padding(top = Spacing.space12))
             }
         }
+        // The rounds are the dial's laps (RingReadout); a cap has none, and its tally and Round done take the room.
         val cap = state.cap
         if (cap == null) {
-            RoundDots(
-                state,
-                accent,
-                Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8, bottom = Spacing.space20),
-            )
+            Spacer(Modifier.height(Spacing.space20))
         } else {
             CapTally(cap, Modifier.align(Alignment.CenterHorizontally).padding(top = Spacing.space8))
             RoundDoneButton(

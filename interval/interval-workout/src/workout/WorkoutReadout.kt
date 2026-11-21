@@ -53,6 +53,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.RingLaps
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
@@ -175,6 +176,10 @@ internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Mod
     }
 }
 
+/** The rounds as the dial's outer lane: what [RoundDots] would draw, as laps; null where none are drawn. */
+internal fun ringLaps(state: WorkoutUiState): RingLaps? =
+    roundMarks(state)?.let { RingLaps(it.count, it.completed, it.active) }
+
 /** The bars [RoundDots] draws: how many, how many are behind, and the one being worked. */
 private class RoundMarks(val count: Int, val completed: Int, val active: Int?)
 
@@ -202,7 +207,13 @@ internal fun RingReadout(
 ) {
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         PhaseBurst(state, Modifier.matchParentSize())
-        ProgressRing(progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
+        ProgressRing(
+            progress,
+            accent,
+            Modifier.fillMaxSize(),
+            strokeScale = ringSwell(state),
+            laps = { ringLaps(state) },
+        )
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             PhaseLabel(state, accent)
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
@@ -239,7 +250,13 @@ internal fun LandscapeReadout(
     ) {
         Box(ringModifier.size(diameter), contentAlignment = Alignment.Center) {
             PhaseBurst(state, Modifier.matchParentSize())
-            ProgressRing(progress, accent, Modifier.fillMaxSize(), strokeScale = ringSwell(state))
+            ProgressRing(
+                progress,
+                accent,
+                Modifier.fillMaxSize(),
+                strokeScale = ringSwell(state),
+                laps = { ringLaps(state) },
+            )
             Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
         }
         Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -253,10 +270,8 @@ internal fun LandscapeReadout(
                 Text(nextText, style = IntervalTheme.type.label, color = IntervalTheme.workout.onGroundDim)
             }
             RoundStatus(state)
-            val cap = state.cap
-            if (cap == null) {
-                RoundDots(state, accent, Modifier.padding(top = Spacing.space4))
-            } else {
+            // The rounds are the dial's laps; a cap has none and says its tally here.
+            state.cap?.let { cap ->
                 CapTally(cap, Modifier.padding(top = Spacing.space4), centered = false)
             }
             TapHint(state)

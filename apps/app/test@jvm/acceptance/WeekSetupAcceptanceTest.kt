@@ -42,7 +42,7 @@ class WeekSetupAcceptanceTest {
         )
         // Thursday is one of the program's days: its first leads, and says about how long it takes.
         seeUpNext("Your first 100 swings")
-        seeUpNextTakes("about 15 min")
+        seeUpNextTakes("~15 min")
         seeMinutesPicked(15)
     }
 

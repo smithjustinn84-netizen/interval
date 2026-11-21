@@ -34,9 +34,9 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -310,7 +310,10 @@ private fun WeekSplit(week: WeekGoal) {
     )
 }
 
-/** This week's workouts as a share of [goal], drawn closing as it fills; the figure inside reads "3/4". */
+/**
+ * This week's workouts against [goal] as laps, a segment a workout, filling round as they come; the figure inside
+ * reads "3/4". Past [MAX_GOAL_LAPS] a lap would be too short to read, so it is one ring closing as it fills.
+ */
 @Composable
 private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -342,35 +345,36 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
                 val metBrush = Brush.sweepGradient(
                     listOf(palette.prepMark, palette.workMark, palette.restMark, palette.prepMark),
                 )
+                val lapGap = IntervalSizes.goalLapGap.toPx()
                 onDrawBehind {
                     drawCircle(
                         palette.line,
                         radius = size.minDimension / 2 + Spacing.space4.toPx(),
                         style = outerDash,
                     )
-                    drawArc(palette.surfaceVariant, 0f, Angles.FULL_TURN, false, topLeft, arcSize, style = trackStroke)
-                    if (share.value > 0f && closed) {
-                        rotate(Angles.TWELVE_O_CLOCK) {
-                            drawArc(
-                                metBrush,
-                                0f,
-                                Angles.FULL_TURN * share.value,
-                                false,
-                                topLeft,
-                                arcSize,
-                                style = arcStroke,
-                            )
-                        }
-                    } else if (share.value > 0f) {
+                    val fill = if (closed) metBrush else SolidColor(palette.accent)
+                    if (goal in 1..MAX_GOAL_LAPS) {
+                        drawGoalLaps(
+                            goal,
+                            share.value,
+                            topLeft,
+                            arcSize,
+                            trackStroke,
+                            lapGap,
+                            palette.surfaceVariant,
+                            fill,
+                        )
+                    } else {
                         drawArc(
-                            palette.accent,
-                            Angles.TWELVE_O_CLOCK,
-                            Angles.FULL_TURN * share.value,
+                            palette.surfaceVariant,
+                            0f,
+                            Angles.FULL_TURN,
                             false,
                             topLeft,
                             arcSize,
-                            style = arcStroke,
+                            style = trackStroke,
                         )
+                        drawGoalArc(share.value, fill, topLeft, arcSize, arcStroke)
                     }
                 }
             },
@@ -555,3 +559,6 @@ fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier)
         Text(text, style = IntervalTheme.type.label, color = palette.text)
     }
 }
+
+/** The most workouts a goal ring draws as laps; a bigger goal is one ring. */
+internal const val MAX_GOAL_LAPS = 14

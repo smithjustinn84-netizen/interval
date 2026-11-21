@@ -92,7 +92,7 @@ class TodayAcceptanceTest {
         },
     ) {
         seeUpNext("15-minute kettlebell plan")
-        seeUpNextTakes("about 15 min")
+        seeUpNextTakes("~15 min")
     }
 
     @Test

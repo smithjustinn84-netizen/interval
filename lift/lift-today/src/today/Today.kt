@@ -36,10 +36,10 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LapBar
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
-import dev.justinsmith.interval.ui.ProgressBar
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SettingsAction
@@ -185,13 +185,18 @@ fun TodayScreen(
             )
             SettingsAction(onOpenSettings)
         },
-        bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
+        // A program followed starts from its card; with none, Start stays pinned under the groups.
+        bottomBar = if (state.following == null) {
+            { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) }
+        } else {
+            null
+        },
         header = header,
     ) {
         item(key = "following") {
             Group(stringResource(Res.string.today_group_following), group) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    ProgramCard(state, onChooseProgram, onOpenProgram)
+                    ProgramCard(state, onChooseProgram, onOpenProgram, onStartSession)
                     if (state.challenges.isNotEmpty()) ChallengesCard(state.challenges, onOpenTests)
                 }
             }
@@ -369,14 +374,15 @@ private fun LastCard(state: TodayUiState, onOpenSession: (uid: String) -> Unit, 
 
 /**
  * The program followed: where it stands and about how long its day takes, opened by a tap on its days done and
- * left, a bar of how far through it is, and the day's blocks with the load suggested for each; or the way to pick a
- * program.
+ * left, its days as laps (those done filled, today's outlined), the day's blocks with the load suggested for each,
+ * and its Start (or Resume); or the way to pick a program.
  */
 @Composable
 private fun ProgramCard(
     state: TodayUiState,
     onChooseProgram: () -> Unit,
     onOpenProgram: () -> Unit,
+    onStartSession: (ProgramKey?) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val following = state.following
@@ -394,17 +400,20 @@ private fun ProgramCard(
         ProgramHeader(following, state.programDay, state.dayMinutes, onOpenProgram)
         val done = state.programDay?.let { it.number - 1 } ?: following.totalDays
         val described = stringResource(Res.string.today_progress_cd, done, following.totalDays)
-        ProgressBar(
-            state.progress,
+        LapBar(
+            following.totalDays,
+            done,
             IntervalTheme.palette.accent,
             Modifier
                 .padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16)
                 .semantics { contentDescription = described },
+            current = state.programDay != null,
         )
         state.programDay?.blocks?.forEach { block ->
             RowDivider()
             BlockRow(block, state)
         }
+        StartRow(state, onStartSession)
     }
 }
 

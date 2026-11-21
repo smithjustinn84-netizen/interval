@@ -47,6 +47,9 @@ object IntervalSizes {
     val goalRing = 76.dp
     val goalRingStroke = 8.dp
 
+    /** The gap between two laps of the goal ring, a workout each. */
+    val goalLapGap = 6.dp
+
     /** A day on History's month calendar: the cell that takes the tap, and the round mark of its state. */
     val calendarCell = 48.dp
     val calendarDay = 34.dp

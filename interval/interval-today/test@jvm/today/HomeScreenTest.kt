@@ -152,7 +152,8 @@ class HomeScreenTest {
         )
         setThemedContent { HomeScreen(state, HomeActions(onStart = { name, _ -> started += name })) }
 
-        onNodeWithText("Up next · Today").assertIsDisplayed()
+        // The step to do now says what kind it is.
+        onNodeWithText("Up next · Conditioning").assertIsDisplayed()
         onNodeWithText("1 of 3 done").assertIsDisplayed()
         onNodeWithText("Then tomorrow · Tabata").assertIsDisplayed()
         // The Start says how long the workout runs.
@@ -271,7 +272,10 @@ class HomeScreenTest {
         val day = program(ProgramId.PressLadders).day(3)
         var state = empty.copy(upNext = listOf(UpNextItem.Lift(THURSDAY, HistoryDay.Today, day, minutes = 35)))
         setThemedContent { HomeScreen(state, HomeActions(onStartLift = { started += it })) }
-        onNodeWithText("about 35 min", substring = true).assertExists()
+        // About how long it takes is on its Start, and the line under the name leads with the day.
+        onNode(hasText("Start day 3") and hasText("~35 min")).assertExists()
+        onNodeWithText("Day 3 of", substring = true).assertExists()
+        onNodeWithText("about 35 min", substring = true).assertDoesNotExist()
         onNodeWithText("Start day 3").performClick()
         assertEquals(listOf<ProgramKey?>(day.program.key), started)
 

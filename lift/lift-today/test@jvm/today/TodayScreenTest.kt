@@ -194,7 +194,7 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `Start stays on screen under a long program day`() = runUiTest {
+    fun `Start sits at the foot of a long program day's card`() = runUiTest {
         val long = Program(
             ProgramKey.Custom("long"),
             days = listOf(
@@ -213,8 +213,8 @@ class TodayScreenTest {
                 onChooseProgram = {},
             )
         }
-        onNodeWithText("Start day 1").assertIsDisplayed()
-        onNodeWithText("All programs").assertDoesNotExist()
+        // The program starts from its card, after the day's blocks: nothing is pinned over the groups.
+        onNodeWithText("Start day 1").performScrollTo().assertIsDisplayed()
     }
 
     @Test
