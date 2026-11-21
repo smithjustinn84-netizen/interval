@@ -301,6 +301,7 @@ class HistoryViewModel(
             weekLifts = week.sumOf { it.liftWorkouts.size },
             weekSports = week.sumOf { it.sports.size },
             weekMobility = week.sumOf { it.mobility },
+            weekIntervals = week.sumOf { it.workouts.size - it.mobility },
             goal = goal,
             streak = goal?.let(log::streak),
             byKind = week.byKind(),

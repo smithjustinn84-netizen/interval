@@ -476,6 +476,13 @@ class AppNavigationTest {
     }
 
     @Test
+    fun `set up opens from an empty Log`() = appTest {
+        tab("Log").performClick()
+        onNodeWithText("Set up your week").performClick()
+        onNodeWithText("Build my week").assertExists()
+    }
+
+    @Test
     fun `the plan opens from History and goes back`() = appTest {
         tab("Log").performClick()
         onNodeWithText("Plan your week").performClick()

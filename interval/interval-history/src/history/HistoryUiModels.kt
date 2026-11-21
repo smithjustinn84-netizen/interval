@@ -125,7 +125,8 @@ sealed interface UpNextItem {
 
 /**
  * This week against the weekly goal: the days trained on ([count], each day once however many workouts it held),
- * and of its workouts [lifts] Lift's, [sports] sport days logged and [mobility] mobility; [goal] is null until set.
+ * and of its workouts [lifts] Lift's, [sports] sport days logged, [mobility] mobility and [intervals] the interval
+ * workouts that are not, each counted by itself rather than from [count], which counts days; [goal] is null until set.
  */
 data class WeekGoal(
     val count: Int = 0,
@@ -134,6 +135,7 @@ data class WeekGoal(
     val streak: Streak? = null,
     val sports: Int = 0,
     val mobility: Int = 0,
+    val intervals: Int = 0,
 )
 
 /** The summary's figures for its range: how many, and [totalSeconds] of time in all, which the screen words. */
@@ -202,13 +204,14 @@ data class HistoryUiState(
     val range: TrainingRange = TrainingRange.Week,
     val summary: RangeSummary = RangeSummary(0, 0, null, 0, 0),
     /**
-     * This week's workouts against the weekly goal, [weekLifts] of them Lift's, [weekSports] sport days logged and
-     * [weekMobility] mobility; [goal] is null until set.
+     * This week's days trained against the weekly goal, and of its workouts [weekLifts] Lift's, [weekSports] sport
+     * days logged, [weekMobility] mobility and [weekIntervals] the other interval workouts; [goal] is null until set.
      */
     val weekCount: Int = 0,
     val weekLifts: Int = 0,
     val weekSports: Int = 0,
     val weekMobility: Int = 0,
+    val weekIntervals: Int = 0,
     val goal: Int? = null,
     val streak: Streak? = null,
     /** This week by kind, done against planned, for its bars. */
@@ -245,7 +248,7 @@ data class HistoryUiState(
     val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
 
     /** This week's count, goal and streak together, as the goal row takes them. */
-    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports, weekMobility)
+    val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports, weekMobility, weekIntervals)
 
     companion object {
         /** What the screen shows until the first state is built. */

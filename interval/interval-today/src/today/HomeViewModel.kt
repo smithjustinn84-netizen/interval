@@ -329,6 +329,7 @@ class HomeViewModel(
                 streak = goal?.let(log::streak),
                 sports = week.sumOf { it.sports.size },
                 mobility = week.sumOf { it.mobility },
+                intervals = week.sumOf { it.workouts.size - it.mobility },
             ),
             upNext = upNext,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,

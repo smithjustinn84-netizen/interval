@@ -29,6 +29,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -43,7 +44,7 @@ import androidx.compose.ui.unit.LayoutDirection
  * dimmed so the active choice reads at a glance in both light and dark themes. The pill slides to a newly chosen
  * option, its check growing in once it has settled under it. With [selected] null, or not among them, none is chosen
  * and no pill shows. Many options on a narrow row ([check] off, two [maxLines]) leave the check out and tighten
- * spacing rather than losing words.
+ * spacing rather than losing words; a label on one line beside another on two sits in the middle of its pill.
  */
 @Composable
 fun <T> SegmentedPicker(
@@ -75,20 +76,11 @@ fun <T> SegmentedPicker(
                 val gap = Spacing.space4.toPx()
                 val width = (size.width - gap * (options.size - 1)) / options.size
                 val visualSlide = if (layoutDirection == LayoutDirection.Rtl) options.lastIndex - slide else slide
-                val topLeft = Offset((width + gap) * visualSlide, 0f)
-                val pillSize = Size(width, size.height)
-                val radius = CornerRadius(size.height / 2f)
-                drawRoundRect(palette.segmentSelected, topLeft = topLeft, size = pillSize, cornerRadius = radius)
-                drawRoundRect(
-                    palette.line,
-                    topLeft = topLeft,
-                    size = pillSize,
-                    cornerRadius = radius,
-                    style = Stroke(width = Sizes.hairline.toPx()),
-                )
+                drawPill(Offset((width + gap) * visualSlide, 0f), Size(width, size.height), palette)
             }
             .selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
         options.forEach { option ->
             val isSelected = option == selected
@@ -134,6 +126,19 @@ fun <T> SegmentedPicker(
             }
         }
     }
+}
+
+/** The chosen option's pill at [topLeft], filled and edged. */
+private fun DrawScope.drawPill(topLeft: Offset, pillSize: Size, palette: IntervalPalette) {
+    val radius = CornerRadius(pillSize.height / 2f)
+    drawRoundRect(palette.segmentSelected, topLeft = topLeft, size = pillSize, cornerRadius = radius)
+    drawRoundRect(
+        palette.line,
+        topLeft = topLeft,
+        size = pillSize,
+        cornerRadius = radius,
+        style = Stroke(width = Sizes.hairline.toPx()),
+    )
 }
 
 /** At five or more segments across a phone, tighten padding and use caption text so labels stay balanced. */

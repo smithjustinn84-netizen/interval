@@ -605,7 +605,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   beside that program the weekly 15:15; everything else planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's
   `SavedStateHandle`, opens on what stands, and builds once: it never calls `ProgramStore.follow` while a program
   is followed, since following restarts it. The session's length is `AppSettings.sessionMinutes`, which Today's
-  pick by time opens on (`HomeViewModel`, until a length is picked by hand). Today's empty card and Settings'
+  pick by time opens on (`HomeViewModel`, until a length is picked by hand). Today's empty card, the empty Log's and Settings'
   Plan group open it, and a new install comes to it through the welcome, once: `AppContent` starts the back stack
   at `TodayTab, Welcome` when it is Set up's turn (`isSetupTurn`, `FirstRun.kt`: the app offers it, the open is a plain one
   rather than a shortcut's, and `AppSettings.setupOffered` is unset) and there is nothing in the app

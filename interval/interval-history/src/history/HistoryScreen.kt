@@ -44,6 +44,7 @@ import dev.justinsmith.interval.history.resources.history_empty_plan
 import dev.justinsmith.interval.history.resources.history_empty_start
 import dev.justinsmith.interval.history.resources.history_empty_title
 import dev.justinsmith.interval.history.resources.history_plan_add_cd
+import dev.justinsmith.interval.history.resources.history_setup
 import dev.justinsmith.interval.history.resources.history_title
 import dev.justinsmith.interval.history.resources.history_today
 import dev.justinsmith.interval.history.resources.history_tomorrow
@@ -67,6 +68,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.SetupLanes
@@ -87,7 +89,8 @@ import org.koin.compose.viewmodel.koinViewModel
  * [onStartWorkout]; a flow starts as itself, by the key [onStartWorkout] is handed, and the Timer is left alone.
  * [onOpenWorkout] opens one finished workout, [onOpenLift] one kettlebell session, [onOpenClass] one class recorded
  * on a sensor, [onPlan] the plan,
- * [onShowTimer] the Timer, [onOpenSettings] Settings. Starting the lift program's day opens [onStartSession].
+ * [onShowTimer] the Timer, [onOpenSettings] Settings, [onSetup] Set up. Starting the lift program's day opens
+ * [onStartSession].
  * [selectedWorkout] or [selectedLift] is the one open beside the log, on a wide window.
  */
 @Composable
@@ -103,6 +106,7 @@ fun HistoryRoute(
     selectedWorkout: Long? = null,
     selectedLift: String? = null,
     onOpenSettings: () -> Unit = {},
+    onSetup: () -> Unit = {},
     openDay: Long? = null,
     onClearOpenDay: () -> Unit = {},
 ) {
@@ -127,6 +131,7 @@ fun HistoryRoute(
     val showTimer by rememberUpdatedState(onShowTimer)
     val startSession by rememberUpdatedState(onStartSession)
     val openSettings by rememberUpdatedState(onOpenSettings)
+    val setup by rememberUpdatedState(onSetup)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
@@ -186,6 +191,7 @@ fun HistoryRoute(
                 leavingSheet(startSession)
             },
             onOpenSettings = { openSettings() },
+            onSetup = { setup() },
         )
     }
     HistoryScreen(state, actions, modifier, selectedWorkout, selectedLift)
@@ -233,6 +239,8 @@ class HistoryActions(
     /** Opens Lifting: on a new day of this program, or with null a free session; either way, on one in progress. */
     val onStartLift: (ProgramKey?) -> Unit = {},
     val onOpenSettings: () -> Unit = {},
+    /** Opens Set up, which asks what is trained when and builds the week. */
+    val onSetup: () -> Unit = {},
 )
 
 /**
@@ -599,7 +607,10 @@ private fun LogHeading(group: LogGroup, modifier: Modifier = Modifier) {
 private val HistoryUiState.showsMostDone: Boolean
     get() = range == TrainingRange.AllTime && mostDone.isNotEmpty()
 
-/** Before anything is done or planned: what History keeps, and the two ways to begin. */
+/**
+ * Before anything is done or planned: what History keeps, and the ways to begin, as Today's empty card has them:
+ * Set up first, which builds the whole week from four answers, then the plan a workout at a time, then a workout now.
+ */
 @Composable
 private fun FirstRun(actions: HistoryActions, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -607,11 +618,12 @@ private fun FirstRun(actions: HistoryActions, modifier: Modifier = Modifier) {
         Text(stringResource(Res.string.history_empty_title), style = IntervalTheme.type.title, color = palette.text)
         Text(stringResource(Res.string.history_empty), style = IntervalTheme.type.body, color = palette.textDim)
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            AccentButton(stringResource(Res.string.history_empty_plan), actions.onPlan, Modifier.fillMaxWidth())
-            SecondaryButton(
+            AccentButton(stringResource(Res.string.history_setup), actions.onSetup, Modifier.fillMaxWidth())
+            SecondaryButton(stringResource(Res.string.history_empty_plan), actions.onPlan, Modifier.fillMaxWidth())
+            QuietTextButton(
                 stringResource(Res.string.history_empty_start),
                 actions.onShowTimer,
-                Modifier.fillMaxWidth(),
+                Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }

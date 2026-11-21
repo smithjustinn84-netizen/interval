@@ -99,6 +99,7 @@ class HistoryScreenTest {
         onShowTimer = { events += "timer" },
         onStartLift = { events += "lift ${it?.stored}" },
         onOpenSettings = { events += "settings" },
+        onSetup = { events += "setup" },
     )
 
     @Test
@@ -308,6 +309,15 @@ class HistoryScreenTest {
     }
 
     @Test
+    fun `the week's line by kind counts each kind's workouts and not the days`() = runUiTest {
+        // Two days: a session on Lift and three interval workouts, and a class.
+        val state = oneWorkout.copy(weekCount = 2, weekLifts = 1, weekIntervals = 3, weekSports = 1)
+        setThemedContent { HistoryScreen(state, actions) }
+        onNodeWithText("2 days trained").assertExists()
+        onNodeWithText("1 lift · 3 intervals · 1 sport day").assertExists()
+    }
+
+    @Test
     fun `the month's up next starts the next plan and lists the ones after`() = runUiTest {
         val state = oneWorkout.copy(
             range = TrainingRange.Month,
@@ -427,12 +437,13 @@ class HistoryScreenTest {
     }
 
     @Test
-    fun `the first run offers a plan or a workout`() = runUiTest {
+    fun `the first run offers set up then a plan or a workout`() = runUiTest {
         setThemedContent { HistoryScreen(empty, actions) }
         onNodeWithText("Train to a plan").assertExists()
+        onNodeWithText("Set up your week").performClick()
         onNodeWithText("Plan your week").performClick()
         onNodeWithText("Start a workout").performClick()
-        assertEquals(listOf("plan", "timer"), events)
+        assertEquals(listOf("setup", "plan", "timer"), events)
     }
 
     @Test

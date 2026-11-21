@@ -112,6 +112,7 @@ internal fun appEntries(
             onShowTimer = { backStack.showTimer() },
             onStartSession = { backStack.push(Lifting) },
             onOpenSettings = { backStack.push(Settings) },
+            onSetup = { backStack.push(WeekSetup) },
             openDay = pendingHistoryDay.value,
             onClearOpenDay = { pendingHistoryDay.value = null },
         )

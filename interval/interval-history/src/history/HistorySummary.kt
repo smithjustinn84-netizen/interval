@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -37,11 +38,13 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
@@ -86,6 +89,7 @@ import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressBar
 import dev.justinsmith.interval.ui.RollingText
@@ -93,6 +97,7 @@ import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.popOnce
 import dev.justinsmith.interval.ui.rememberRising
@@ -118,6 +123,8 @@ internal fun RangePicker(range: TrainingRange, onRange: (TrainingRange) -> Unit,
         onSelect = onRange,
         modifier = modifier,
         check = false,
+        // With large text "All time" takes two lines rather than losing its end.
+        maxLines = if (isLargeText()) 2 else 1,
     )
 }
 
@@ -156,7 +163,7 @@ internal fun WeekSummary(
         // The figures once any time is logged: a week not begun, or of a class alone, has no 0:00 to show at
         // this size.
         if (summary.totalSeconds > 0) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            StatRow {
                 Stat(
                     stringResource(Res.string.history_time),
                     timeSpent(summary.totalSeconds),
@@ -295,8 +302,9 @@ fun StreakChip(weeks: Int, modifier: Modifier = Modifier) {
  */
 @Composable
 private fun WeekSplit(week: WeekGoal) {
-    val intervals = week.count - week.lifts - week.sports - week.mobility
-    if (intervals == week.count) return
+    // Each kind counts its workouts; the week's count is of days, so nothing here is worked out from it.
+    if (week.lifts == 0 && week.sports == 0 && week.mobility == 0) return
+    val intervals = week.intervals
     val parts = listOfNotNull(
         week.lifts.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_lifts, it, it) },
         intervals.takeIf { it > 0 }?.let { pluralStringResource(Res.plurals.history_week_intervals, it, it) },
@@ -380,13 +388,35 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
             },
         contentAlignment = Alignment.Center,
     ) {
-        RollingText(
-            stringResource(Res.string.history_goal_ring, count, goal),
-            rising = rememberRising(count),
-            style = IntervalTheme.type.value,
-            color = palette.text,
-        )
+        // Inside the ring the figure grows no further than large text begins: past that it would spill over the
+        // ring, and the line beside it ("1 to go") says it at the full size, as the ring's description does.
+        val density = LocalDensity.current
+        CompositionLocalProvider(
+            LocalDensity provides Density(density.density, density.fontScale.coerceAtMost(LARGE_FONT_SCALE)),
+        ) {
+            RollingText(
+                stringResource(Res.string.history_goal_ring, count, goal),
+                rising = rememberRising(count),
+                style = IntervalTheme.type.value,
+                color = palette.text,
+            )
+        }
     }
+}
+
+/**
+ * A row of [Stat]s sharing the width, or with large text one a line, so a figure such as "16 min" stays whole
+ * rather than breaking over two lines in half the card.
+ */
+@Composable
+internal fun StatRow(modifier: Modifier = Modifier, content: @Composable RowScope.() -> Unit) {
+    FlowRow(
+        modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+        maxItemsInEachRow = if (isLargeText()) 1 else Int.MAX_VALUE,
+        content = content,
+    )
 }
 
 /**
@@ -432,7 +462,7 @@ internal fun MonthSummary(
             )
             IconAction(IntervalIcons.Chevron, stringResource(Res.string.history_month_next_cd), { onShiftMonth(1) })
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        StatRow {
             Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
             Stat(stringResource(Res.string.history_time), timeSpent(summary.totalSeconds), summary.totalSeconds)
             if (summary.plannedDue > 0) {
@@ -472,7 +502,7 @@ internal fun AllTimeSummary(
                 color = palette.textDim,
             )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        StatRow {
             Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
             Stat(
                 stringResource(Res.string.history_time),
@@ -484,7 +514,7 @@ internal fun AllTimeSummary(
         // A best streak once there is one: "0 weeks" says nothing.
         val best = streak?.best?.takeIf { it > 0 }
         if (calories != null || best != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            StatRow {
                 calories?.let { Stat(stringResource(Res.string.history_calories), it.toString(), it) }
                 best?.let {
                     Stat(

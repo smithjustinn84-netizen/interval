@@ -6,7 +6,7 @@
   <actions>
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Log" tab</action>
-    <action>Verify that the screen shows "Train to a plan"</action>
+    <action>Verify that the screen shows "Train to a plan", with "Set up your week" first, then "Plan your week" and "Start a workout"</action>
     <action>Tap "Plan your week"</action>
     <action>Verify that the screen shows "Weekly goal" and a "Routine" row for each weekday</action>
     <action>Tap "Raise the goal"</action>

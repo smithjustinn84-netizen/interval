@@ -9,6 +9,7 @@
     <string name="history_pick_text">Its timeline and figures open here.</string>
     <string name="history_empty">Pick the days you train and what you do on them. Every workout lands here, and the week fills in as it goes.</string>
     <string name="history_empty_plan">Plan your week</string>
+    <string name="history_setup">Set up your week</string>
     <string name="history_empty_start">Start a workout</string>
     <string name="history_range_week">Week</string>
     <string name="history_range_month">Month</string>

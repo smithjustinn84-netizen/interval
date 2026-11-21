@@ -509,7 +509,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(listOf(flow.name, "Tabata"), state.sections.single().items.map { it.presetName })
         // Both today: one day trained, one workout of it mobility.
         assertEquals(1 to 1, state.weekCount to state.weekMobility)
-        assertEquals(WeekGoal(count = 1, mobility = 1), state.weekGoal)
+        assertEquals(WeekGoal(count = 1, mobility = 1, intervals = 1), state.weekGoal)
         assertEquals(flow.name, state.mostDone.first { it.config.sameShape(flow.config) }.name)
     }
 
