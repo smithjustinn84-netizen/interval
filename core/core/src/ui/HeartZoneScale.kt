@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,37 +28,30 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.TextLayoutResult
-import androidx.compose.ui.text.drawText
-import androidx.compose.ui.text.rememberTextMeasurer
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.heart_rate_connecting
 import dev.justinsmith.core.resources.heart_rate_disconnected
 import dev.justinsmith.core.resources.heart_rate_last
 import dev.justinsmith.core.resources.heart_rate_scale_cd
-import dev.justinsmith.core.resources.heart_rate_unit
-import dev.justinsmith.core.resources.heart_rate_zone_short
+import dev.justinsmith.core.resources.heart_rate_unit_caps
+import dev.justinsmith.core.resources.heart_rate_zone_named
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.platform.inUse
-import dev.justinsmith.interval.platform.zoneFloor
-import dev.justinsmith.interval.platform.zoneScaleFraction
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The live heart rate as the workout shows it under its ring, to be read from across a gym: the beats a
- * minute, the zone by name and number, and the five zones as a scale a fifth each, the one the heart is in
- * lit in its colour, a marker where in it, and under its two ends the heart rates at which the zone changes.
- * A zone is never told by its colour alone, which at Zone 4 is close to the work phase's.
+ * The live heart rate as the workout shows it under its ring, to be read from across a gym: a dot in the zone's
+ * colour beating with the heart, the beats a minute, the zone by number and name, and the five zones as bars a
+ * fifth each, every one in its own colour faint and the one the heart is in lit and a little taller. A zone is
+ * never told by its colour alone, which at Zone 4 is close to the work phase's.
  *
- * With no reading yet, or the sensor out of reach, the scale stays in its place, unlit, so the ring over it
+ * With no reading yet, or the sensor out of reach, the bars stay in their place, faint, so the ring over them
  * doesn't move; a lost signal says the last heart rate read. Draws nothing unless the sensor is [inUse].
  * On the workout's ground only.
  */
@@ -71,8 +62,7 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
     val reading = (state as? LiveHeartRateState.Reading)?.takeIf { it.contact }
     var lastBpm by remember { mutableStateOf<Int?>(null) }
     LaunchedEffect(reading?.bpm) { reading?.let { lastBpm = it.bpm } }
-    val resting = LocalRestingHeartRate.current
-    val zone = reading?.let { heartRateZone(it.bpm, maxBpm, resting) }
+    val zone = reading?.let { heartRateZone(it.bpm, maxBpm, LocalRestingHeartRate.current) }
 
     Column(
         modifier.widthIn(max = Sizes.zoneScale).fillMaxWidth(),
@@ -85,12 +75,7 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
                 StatusRow(connecting = state == LiveHeartRateState.Connecting, lastBpm = lastBpm)
             }
         }
-        ZoneBars(
-            zone,
-            fraction = reading?.let { zoneScaleFraction(it.bpm, maxBpm, resting) } ?: 0f,
-            maxBpm = maxBpm,
-            restingBpm = resting,
-        )
+        ZoneBars(zone)
     }
 }
 
@@ -111,44 +96,35 @@ internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                IntervalIcons.Heart,
-                contentDescription = null,
-                tint = zoneColor,
-                modifier = Modifier.size(Sizes.icon).graphicsLayer {
-                    val s = scale()
-                    scaleX = s
-                    scaleY = s
-                },
+            Box(
+                Modifier
+                    .size(Sizes.zoneScaleDot)
+                    .graphicsLayer {
+                        val s = scale()
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .clip(Corners.full)
+                    .background(zoneColor),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.stat, color = colors.onGround)
                 Text(
-                    stringResource(Res.string.heart_rate_unit),
+                    stringResource(Res.string.heart_rate_unit_caps),
                     Modifier.alignByBaseline(),
-                    style = IntervalTheme.type.caption,
+                    style = IntervalTheme.type.body,
                     color = colors.onGroundDim,
                 )
             }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(name, style = IntervalTheme.type.section, color = colors.onGround)
-            Text(
-                stringResource(Res.string.heart_rate_zone_short, zone.number),
-                style = IntervalTheme.type.control,
-                color = colors.onFill(zoneColor),
-                modifier = Modifier
-                    .clip(Corners.full)
-                    .background(zoneColor)
-                    .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
-            )
-        }
+        JoinedText(
+            stringResource(Res.string.heart_rate_zone_named, zone.number, name),
+            style = IntervalTheme.type.body,
+            color = colors.onGroundDim,
+        )
     }
 }
 
@@ -162,10 +138,10 @@ internal fun StatusRow(connecting: Boolean, lastBpm: Int?) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(IntervalIcons.Heart, contentDescription = null, tint = dim, modifier = Modifier.size(Sizes.icon))
+            Box(Modifier.size(Sizes.zoneScaleDot).clip(Corners.full).background(dim))
             Text(
                 stringResource(
                     if (connecting) Res.string.heart_rate_connecting else Res.string.heart_rate_disconnected,
@@ -180,99 +156,36 @@ internal fun StatusRow(connecting: Boolean, lastBpm: Int?) {
     }
 }
 
-/**
- * The five zones a bar each, [zone]'s lit and taller, the marker at [fraction] of the way along them, and
- * under the lit bar's ends the heart rates the zone starts at and gives way at. Unlit and bare without a zone.
- */
+/** The five zones a bar each in its own colour, faint, [zone]'s lit and a little taller; all faint without one. */
 @Composable
-private fun ZoneBars(zone: HeartRateZone?, fraction: Float, maxBpm: Int, restingBpm: Int?) {
+private fun ZoneBars(zone: HeartRateZone?) {
     val colors = IntervalTheme.workout
     val fills = HeartRateZone.entries.map { each ->
+        val full = colors.heartZones.of(each)
         animateColorAsState(
-            if (each == zone) colors.heartZones.of(each) else colors.upcoming,
+            if (each == zone) full else full.copy(alpha = Opacity.ZONE_UNLIT),
             tween(Motion.STATE_MILLIS, easing = StandardEasing),
             label = "zoneBar",
         )
     }
-    val at by animateFloatAsState(fraction, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "zoneMarker")
-    val measurer = rememberTextMeasurer()
-    val boundStyle = IntervalTheme.type.caption.copy(color = colors.onGroundDim)
-    val bounds = remember(zone, maxBpm, restingBpm, measurer, boundStyle) {
-        zone?.let { lit ->
-            val above = HeartRateZone.entries.getOrNull(lit.ordinal + 1)
-            listOf(
-                lit.ordinal to zoneFloor(lit, maxBpm, restingBpm),
-                lit.ordinal + 1 to above?.let { zoneFloor(it, maxBpm, restingBpm) },
-            )
-                .mapNotNull { (edge, bpm) -> bpm?.let { edge to measurer.measure("$it", boundStyle) } }
-        }.orEmpty()
-    }
     Spacer(
         Modifier
             .fillMaxWidth()
-            .height(Sizes.zoneScaleMarkerHeight + Spacing.space4 + Sizes.zoneScaleBounds)
+            .height(Sizes.zoneScaleBand)
             .drawBehind {
-                val bars = ZoneBarGeometry(size.width, Spacing.space4.toPx())
+                val gap = Spacing.space8.toPx()
+                val width = (size.width - gap * (ZONES - 1)) / ZONES
                 fills.forEachIndexed { index, fill ->
-                    val lit = index == zone?.ordinal
-                    drawBar(
-                        bars,
-                        index,
-                        if (lit) Sizes.zoneScaleBarLit.toPx() else Sizes.zoneScaleBar.toPx(),
+                    val height = (if (index == zone?.ordinal) Sizes.zoneScaleBarLit else Sizes.zoneScaleBar).toPx()
+                    drawRoundRect(
                         fill.value,
+                        topLeft = Offset(index * (width + gap), (size.height - height) / 2),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(height / 2),
                     )
                 }
-                if (zone != null) drawMarker(bars.xAt(at), colors.onGround, colors.ground)
-                bounds.forEach { (edge, text) -> drawBound(bars, edge, text) }
             },
     )
-}
-
-/** Where the five bars of a scale [width] wide stand, [gap] apart. */
-private class ZoneBarGeometry(private val width: Float, private val gap: Float) {
-    val bar: Float = (width - gap * (ZONES - 1)) / ZONES
-
-    fun start(index: Int): Float = index * (bar + gap)
-
-    /** The line between the bar before [edge] and the one after it: the middle of their gap. */
-    fun edge(edge: Int): Float = (start(edge) - gap / 2).coerceIn(0f, width)
-
-    /** [fraction] of the way along the zones, a fifth each, never in a gap between two. */
-    fun xAt(fraction: Float): Float {
-        val along = fraction.coerceIn(0f, 1f) * ZONES
-        val index = along.toInt().coerceAtMost(ZONES - 1)
-        return start(index) + (along - index) * bar
-    }
-}
-
-private fun DrawScope.drawBar(bars: ZoneBarGeometry, index: Int, height: Float, color: Color) {
-    drawRoundRect(
-        color,
-        topLeft = Offset(bars.start(index), (Sizes.zoneScaleMarkerHeight.toPx() - height) / 2),
-        size = Size(bars.bar, height),
-        cornerRadius = CornerRadius(height / 2),
-    )
-}
-
-/** The marker of the heart rate, with an edge of the ground round it so it parts from the bar it crosses. */
-private fun DrawScope.drawMarker(x: Float, color: Color, ground: Color) {
-    val width = Sizes.zoneScaleMarkerWidth.toPx()
-    val height = Sizes.zoneScaleMarkerHeight.toPx()
-    val edge = Sizes.zoneScaleMarkerEdge.toPx()
-    val left = (x - width / 2).coerceIn(0f, size.width - width)
-    drawRoundRect(
-        ground,
-        topLeft = Offset(left - edge, 0f),
-        size = Size(width + edge * 2, height),
-        cornerRadius = CornerRadius(edge),
-    )
-    drawRoundRect(color, Offset(left, 0f), Size(width, height), CornerRadius(width / 2))
-}
-
-/** A zone's end in beats a minute, centred under the line it is, kept inside the scale. */
-private fun DrawScope.drawBound(bars: ZoneBarGeometry, edge: Int, text: TextLayoutResult) {
-    val left = (bars.edge(edge) - text.size.width / 2f).coerceIn(0f, size.width - text.size.width)
-    drawText(text, topLeft = Offset(left, Sizes.zoneScaleMarkerHeight.toPx() + Spacing.space4.toPx()))
 }
 
 private const val ZONES = 5

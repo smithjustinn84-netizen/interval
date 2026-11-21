@@ -121,16 +121,15 @@ object Sizes {
 
     /**
      * The live zone scale under the workout's ring: the widest it grows, a zone's bar and the lit one's, the
-     * marker of the heart rate along it, and the room its row of numbers takes at arm's length.
+     * band the bars stand in (the trace in their place takes the same, so the ring never moves), the readout's
+     * row and the dot of the zone's colour at its start.
      */
     val zoneScale = 300.dp
     val zoneScaleBar = 6.dp
-    val zoneScaleBarLit = 12.dp
-    val zoneScaleMarkerWidth = 4.dp
-    val zoneScaleMarkerHeight = 20.dp
-    val zoneScaleMarkerEdge = 2.dp
+    val zoneScaleBarLit = 8.dp
+    val zoneScaleBand = 24.dp
     val zoneScaleReadout = 40.dp
-    val zoneScaleBounds = 16.dp
+    val zoneScaleDot = 12.dp
 
     /** The heart rate so far drawn live on a card, shorter than a finished workout's chart. */
     val heartTrace = 56.dp
@@ -270,6 +269,9 @@ object Sizes {
 object Opacity {
     /** A disabled control: an icon action's glyph, a toggle row. */
     const val DISABLED = 0.45f
+
+    /** A zone's bar on the live scale while the heart is in another: its own colour, faint. */
+    const val ZONE_UNLIT = 0.35f
 
     /** A sheet's drag handle, present but quiet. */
     const val HANDLE = 0.45f

@@ -64,9 +64,14 @@ fun LiveHeartTrace(
                 StatusRow(connecting = state == LiveHeartRateState.Connecting, lastBpm = samples.lastRead())
             }
         }
-        val height = Sizes.zoneScaleMarkerHeight + Spacing.space4 + Sizes.zoneScaleBounds
-        Box(Modifier.fillMaxWidth().height(height).clip(Corners.radius12)) {
-            HeartRateChart(samples, maxBpm = maxBpm, onWorkoutGround = true, marks = marks, height = height)
+        Box(Modifier.fillMaxWidth().height(Sizes.zoneScaleBand).clip(Corners.radius12)) {
+            HeartRateChart(
+                samples,
+                maxBpm = maxBpm,
+                onWorkoutGround = true,
+                marks = marks,
+                height = Sizes.zoneScaleBand,
+            )
         }
     }
 }
