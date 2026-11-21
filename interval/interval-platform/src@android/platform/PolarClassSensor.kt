@@ -155,18 +155,32 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     /**
      * Every sensor heard nearby, the nearest first: the scan goes on a few seconds past the first one, since
      * another may be in reach beside it. Empty when none was heard in time.
+     *
+     * The SDK's search opens with every sensor it knows of, heard or not (it asks for known devices: each one
+     * bonded to the phone, and each it has met since the app started), once each, before any advertisement. So
+     * a strap left at home was "found" at once, and paired in place of the armband on the arm. A sensor counts
+     * here only from the second time the search names it, which is an advertisement heard in this scan.
      */
     private suspend fun nearby(): List<NearbySensor> = coroutineScope {
-        val heard = MutableStateFlow(emptyMap<String, PolarDeviceInfo>())
+        val named = MutableStateFlow(emptyMap<String, Named>())
         val scan = launch {
             api.searchForDevice()
                 .filter { found -> SENSOR_NAMES.any { it in found.name } }
-                // A sensor is heard again at each advertisement: its latest signal is the one kept.
-                .collect { found -> heard.update { it + (found.deviceId to found) } }
+                // Its latest signal is the one kept.
+                .collect { found ->
+                    named.update { it + (found.deviceId to Named(found, times = (it[found.deviceId]?.times ?: 0) + 1)) }
+                }
         }
-        if (withTimeoutOrNull(SCAN_MILLIS) { heard.first { it.isNotEmpty() } } != null) delay(SETTLE_MILLIS)
+        val heard = withTimeoutOrNull(SCAN_MILLIS) { named.first { names -> names.values.any { it.heard } } }
+        if (heard != null) delay(SETTLE_MILLIS)
         scan.cancel()
-        heard.value.values.sortedByDescending { it.rssi }.map { NearbySensor(it.deviceId, it.name) }
+        named.value.values.filter { it.heard }.map { it.sensor }.sortedByDescending { it.rssi }
+            .map { NearbySensor(it.deviceId, it.name) }
+    }
+
+    /** A sensor the search has named [times] over: [heard] once that is more than the SDK's own opening mention. */
+    private class Named(val sensor: PolarDeviceInfo, val times: Int) {
+        val heard: Boolean get() = times > 1
     }
 
     override suspend fun forget() = working.withLock {
