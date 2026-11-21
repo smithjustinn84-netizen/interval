@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,6 +44,7 @@ val Move.demo: ExerciseDemo? get() = builtIn?.demo
 fun MoveThumb(demo: ExerciseDemo, modifier: Modifier = Modifier) {
     // Drawn in round the figure: in the view a whole rep takes, a deep squat's still is a speck in a thumb.
     val still = remember(demo) { demo.closeUp() }
+    val palette = IntervalTheme.palette
     ExerciseFigure(
         still,
         progress = { still.still },
@@ -50,7 +52,8 @@ fun MoveThumb(demo: ExerciseDemo, modifier: Modifier = Modifier) {
         modifier = modifier
             .size(Sizes.figureThumbWidth, Sizes.figureThumbHeight)
             .clip(Corners.radius12)
-            .background(IntervalTheme.palette.surface)
+            .background(palette.surface)
+            .border(Sizes.hairline, palette.line, Corners.radius12)
             .padding(Spacing.space4),
     )
 }
@@ -68,6 +71,7 @@ fun MoveFigureBand(
     onOpen: () -> Unit,
     modifier: Modifier = Modifier,
     fill: Color = IntervalTheme.palette.surfaceVariant,
+    border: Color = IntervalTheme.palette.line,
     colors: FigureColors = FigureColors.theme(),
 ) {
     // A band is short: the figure takes all of its height the move needs.
@@ -87,7 +91,8 @@ fun MoveFigureBand(
                 fill = fill,
                 onClick = onOpen,
                 onClickLabel = stringResource(Res.string.move_show_how),
-            ),
+            )
+            .border(Sizes.hairline, border, Corners.radius18),
     ) {
         ExerciseFigure(
             framed,

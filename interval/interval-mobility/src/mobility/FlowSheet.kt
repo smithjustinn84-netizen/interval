@@ -1,9 +1,11 @@
 package dev.justinsmith.interval.mobility
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -12,6 +14,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.mobility.resources.Res
@@ -22,6 +25,7 @@ import dev.justinsmith.interval.mobility.resources.mobility_prep_line
 import dev.justinsmith.interval.mobility.resources.mobility_sheet_note
 import dev.justinsmith.interval.mobility.resources.mobility_start
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.FlowMoves
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -58,11 +62,15 @@ internal fun FlowSheet(
             MoveDetail(flow.moves[open], number = open + 1, of = flow.moves.size, onBack = { openMove = null })
             return@IntervalSheet
         }
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             Text(
                 joined(listOfNotNull(stringResource(Res.string.mobility_kind), movesText(flow), flow.note)),
                 style = IntervalTheme.type.caption,
-                color = palette.textDim,
+                color = palette.restMark,
+                modifier = Modifier
+                    .clip(Corners.full)
+                    .background(palette.tint(palette.restMark))
+                    .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
             )
             Text(
                 flow.name,

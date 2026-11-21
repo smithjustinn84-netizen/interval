@@ -1,19 +1,26 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.resources.Res
@@ -31,14 +38,31 @@ fun FlowMoves(moves: List<Move>, modifier: Modifier = Modifier, onOpen: ((Int) -
     ListCard(modifier, fill = IntervalTheme.palette.surfaceVariant) {
         moves.forEachIndexed { index, move ->
             if (index > 0) RowDivider()
-            MoveRow(move, onOpen = onOpen?.let { open -> { open(index) } })
+            MoveRow(index + 1, move, onOpen = onOpen?.let { open -> { open(index) } })
         }
     }
 }
 
-/** A move: its name and time on one line, how it is done under them, its figure's still at the end. */
+/** A move's 1-based step number in a subtle infield-green circle; decorative, as the list order already conveys it. */
 @Composable
-private fun MoveRow(move: Move, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
+fun MoveNumberBadge(number: Int, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Box(
+        modifier
+            .size(IntervalSizes.stepNumber)
+            .clip(CircleShape)
+            .background(palette.tint(palette.restMark))
+            .border(Sizes.hairline, palette.line, CircleShape)
+            .clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Text("$number", style = IntervalTheme.type.caption, color = palette.restMark)
+    }
+}
+
+/** A move: its number, name and time on one line, how it is done under them, its figure's still at the end. */
+@Composable
+private fun MoveRow(number: Int, move: Move, onOpen: (() -> Unit)?, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val tappable = if (onOpen == null) {
@@ -59,6 +83,7 @@ private fun MoveRow(move: Move, onOpen: (() -> Unit)?, modifier: Modifier = Modi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        MoveNumberBadge(number)
         Column(Modifier.weight(1f)) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
                 Text(move.name, style = IntervalTheme.type.label, color = palette.text, modifier = Modifier.weight(1f))

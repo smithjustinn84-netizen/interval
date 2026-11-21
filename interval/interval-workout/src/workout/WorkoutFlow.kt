@@ -96,6 +96,7 @@ internal fun FlowFigure(flow: FlowNow, paused: Boolean, onOpen: () -> Unit, modi
                 paused = paused,
                 onOpen = onOpen,
                 fill = IntervalTheme.workout.control,
+                border = IntervalTheme.workout.upcoming,
                 colors = FigureColors.workout(),
             )
         }

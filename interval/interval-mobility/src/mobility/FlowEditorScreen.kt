@@ -64,6 +64,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.MoveNumberBadge
 import dev.justinsmith.interval.ui.MoveThumb
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.NoticeAction
@@ -255,13 +256,13 @@ private fun MoveList(moves: List<Move>, onOpen: (Int) -> Unit) {
     ListCard {
         moves.forEachIndexed { index, move ->
             if (index > 0) RowDivider()
-            EditorMoveRow(move, onOpen = { onOpen(index) })
+            EditorMoveRow(index + 1, move, onOpen = { onOpen(index) })
         }
     }
 }
 
 @Composable
-private fun EditorMoveRow(move: Move, onOpen: () -> Unit) {
+private fun EditorMoveRow(number: Int, move: Move, onOpen: () -> Unit) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -274,6 +275,7 @@ private fun EditorMoveRow(move: Move, onOpen: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        MoveNumberBadge(number)
         Column(Modifier.weight(1f)) {
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space12), verticalAlignment = Alignment.Top) {
                 Text(

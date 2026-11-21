@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.Text
@@ -157,32 +158,38 @@ private fun MoveWords(move: Move, onChange: (Move) -> Unit) {
 @Composable
 private fun MoveTime(move: Move, onChange: (Move) -> Unit) {
     val palette = IntervalTheme.palette
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
-        Text(
-            stringResource(if (move.sided) Res.string.move_time_side else Res.string.move_time),
-            style = IntervalTheme.type.label,
-            color = palette.text,
-            modifier = Modifier.weight(1f),
-        )
-        RepeatButton(
-            "−",
-            stringResource(Res.string.move_less_cd),
-            enabled = move.seconds > Move.SECONDS_RANGE.first,
-            onStep = { onChange(move.steppedSeconds(-1)) },
-            modifier = Modifier.size(Sizes.segment),
-        )
-        Text(
-            formatClock(move.seconds),
-            style = IntervalTheme.type.value,
-            color = palette.text,
-            textAlign = TextAlign.Center,
-        )
-        RepeatButton(
-            "+",
-            stringResource(Res.string.move_more_cd),
-            enabled = move.seconds < Move.SECONDS_RANGE.last,
-            onStep = { onChange(move.steppedSeconds(1)) },
-            modifier = Modifier.size(Sizes.segment),
-        )
+    ListCard {
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+        ) {
+            Text(
+                stringResource(if (move.sided) Res.string.move_time_side else Res.string.move_time),
+                style = IntervalTheme.type.label,
+                color = palette.text,
+                modifier = Modifier.weight(1f),
+            )
+            RepeatButton(
+                "−",
+                stringResource(Res.string.move_less_cd),
+                enabled = move.seconds > Move.SECONDS_RANGE.first,
+                onStep = { onChange(move.steppedSeconds(-1)) },
+                modifier = Modifier.size(Sizes.segment),
+            )
+            Text(
+                formatClock(move.seconds),
+                style = IntervalTheme.type.value,
+                color = palette.text,
+                textAlign = TextAlign.Center,
+            )
+            RepeatButton(
+                "+",
+                stringResource(Res.string.move_more_cd),
+                enabled = move.seconds < Move.SECONDS_RANGE.last,
+                onStep = { onChange(move.steppedSeconds(1)) },
+                modifier = Modifier.size(Sizes.segment),
+            )
+        }
     }
 }

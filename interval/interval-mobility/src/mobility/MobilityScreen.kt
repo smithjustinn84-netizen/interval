@@ -34,6 +34,7 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SettingsAction
@@ -185,6 +186,11 @@ private fun FlowRow(item: FlowItem, onOpen: () -> Unit, modifier: Modifier = Mod
                 joined(listOfNotNull(movesText(item.flow), item.flow.note)),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
+            )
+            MiniTimeline(
+                item.flow.config(prepSeconds = 0),
+                Modifier.padding(top = Spacing.space8),
+                work = palette.restMark,
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = palette.text)

@@ -1,11 +1,14 @@
 package dev.justinsmith.interval.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.timer.Move
@@ -32,7 +35,7 @@ fun MoveDetail(move: Move, number: Int, of: Int, onBack: () -> Unit, modifier: M
     val palette = IntervalTheme.palette
     ModalBackHandler(onBack)
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             val time = formatClock(move.seconds)
             Text(
                 joined(
@@ -43,7 +46,11 @@ fun MoveDetail(move: Move, number: Int, of: Int, onBack: () -> Unit, modifier: M
                     ),
                 ),
                 style = IntervalTheme.type.caption,
-                color = palette.textDim,
+                color = palette.restMark,
+                modifier = Modifier
+                    .clip(Corners.full)
+                    .background(palette.tint(palette.restMark))
+                    .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
             )
             Text(
                 move.name,

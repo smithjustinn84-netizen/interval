@@ -6,12 +6,14 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.FlowUse
 import dev.justinsmith.interval.timer.Move
@@ -118,8 +120,9 @@ class MobilityScreenTest {
     @Test
     fun `on your own leads to a new flow and a shipped one's sheet to a copy of it`() = runUiTest {
         setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
-        onNodeWithText("On your own").performScrollTo()
+        onNode(hasScrollAction()).performScrollToNode(hasText("On your own"))
         onNode(hasText("Build a flow") and hasClickAction()).performScrollTo().performClick()
+        onNode(hasScrollAction()).performScrollToNode(hasText("Hips and shoulders"))
         onNode(hasText("Hips and shoulders") and hasClickAction()).performScrollTo().performClick()
         waitForIdle()
         onNodeWithText("Edit").assertDoesNotExist()
