@@ -157,7 +157,9 @@ interval/            the interval timer
                      `dev.justinsmith.interval.home`)
   interval-workout   the running workout, its readout, controls and summary; a flow's move's figure over the ring
   interval-presets   the presets, sheet and editor (`PresetEditorHost`, `PresetDraft`): Train's Conditioning
-                     pillar, a tab's page (`PresetsTab`), with the row that opens the Timer, saying what is on it
+                     pillar, a tab's page (`PresetsTab`), with the row that opens the Timer, saying what is on it,
+                     the user's own, then the built-ins by what each is for (`PresetPurpose`, interval-domain:
+                     anywhere, with a bell, for the mat and the wall)
   interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
                      user's own (`FlowEditorScreen`, the library's moves in `LibraryMoves.kt`, over `lift-ui`'s names
                      and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)
@@ -241,7 +243,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      and how far through it, on a taxed day why and its Easier today switch (`LiftReadiness`, as
                      Today has it); Beside the mat and the wall, `suggestedPrograms`, only for someone on the mat or
                      the wall (`IntervalActivity.matOrWall`), else Programs with All programs alone, each opening the
-                     `ProgramSheet` key; On your own; Lately, the last session and the balance, `MuscleBalance` in
+                     `ProgramSheet` key; On your own, a free session and the tests; Exercises and equipment;
+                     Lately, the last session and the balance, `MuscleBalance` in
                      lift-domain), the gear (bells, bar, bands, records) and the tests (`tests/`: `TestsRoute`, each
                      test's last result, and its sheet, the bell and the attempts with it, which starts one through
                      `SessionStore.startTest`)

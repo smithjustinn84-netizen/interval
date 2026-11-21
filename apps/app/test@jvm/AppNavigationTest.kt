@@ -163,7 +163,7 @@ class AppNavigationTest {
             assertTrue(title.boundsInRoot == before, "the title held its place: ${title.boundsInRoot} vs $before")
         }
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 2L)
-        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Anywhere").assertExists()
         onNodeWithText("Start session").assertDoesNotExist()
         tab("Train").assertIsSelected()
     }
@@ -182,7 +182,7 @@ class AppNavigationTest {
         onNodeWithText("Start workout").assertExists()
         tab("Train").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()
-        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Anywhere").assertExists()
         tab("Train").assertIsSelected()
 
         tab("Today").performClick()
@@ -215,7 +215,7 @@ class AppNavigationTest {
 
         onNodeWithContentDescription("End workout").performClick()
         onNodeWithText("End workout").performClick()
-        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Anywhere").assertExists()
         onNodeWithText("Put on Timer").assertDoesNotExist()
         // The presets are Train's Conditioning pillar, a tab: the bar is back.
         tab("Train").assertIsSelected()

@@ -9,10 +9,10 @@
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab</action>
     <action>Verify that the page is titled "Train", the picker under the title has "Strength" chosen beside "Conditioning" and "Mobility", and "Start session" is pinned at the bottom</action>
-    <action>Verify that Strength's groups read "Following" (with "Follow a program"), "Programs" (with "All programs" alone: nothing on the mat or the wall is logged or planned, so no program for it is offered), "On your own" (with "Free session", "Exercises" and "Your equipment") and "Lately"</action>
+    <action>Verify that Strength's groups read "Following" (with "Follow a program"), "Programs" (with "All programs" alone: nothing on the mat or the wall is logged or planned, so no program for it is offered), "On your own" (with "Free session" and "Tests"), "Exercises and equipment" (with "Exercises" and "Your equipment") and "Lately"</action>
     <action>Tap "All programs" and verify that Programs opens; tap "Back"</action>
     <action>Tap "Conditioning"</action>
-    <action>Verify that the title and the picker stay where they are while the cards under them change, that "Conditioning" is chosen, and that "Built-in" lists "Tabata" with its length</action>
+    <action>Verify that the title and the picker stay where they are while the cards under them change, that "Conditioning" is chosen, and that "Anywhere" lists "Tabata" with its length</action>
     <action>Tap "Tabata", then "Start workout" in its sheet</action>
     <action>Verify that the workout shows "Get ready"; tap "End", then "End workout" in the dialog</action>
     <action>Verify that Train is shown again on "Conditioning", with the "Train" tab selected</action>

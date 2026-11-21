@@ -22,16 +22,12 @@ import dev.justinsmith.interval.mobility.resources.Res
 import dev.justinsmith.interval.mobility.resources.mobility_after
 import dev.justinsmith.interval.mobility.resources.mobility_before
 import dev.justinsmith.interval.mobility.resources.mobility_build
-import dev.justinsmith.interval.mobility.resources.mobility_build_hint
 import dev.justinsmith.interval.mobility.resources.mobility_open_cd
-import dev.justinsmith.interval.mobility.resources.mobility_own
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.LinkRow
-import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.SettingsAction
@@ -73,8 +69,8 @@ fun MobilityRoute(page: MobilityPage, actions: MobilityActions, modifier: Modifi
 /**
  * The flows in two groups, by when each is for, the user's own after the shipped ones: a row is its name, its moves
  * and what it takes ("6 moves · no bell"), and how long it runs. Tapping one opens its [FlowSheet], which lists its
- * moves and starts it, and leads to a copy of a shipped one or the editor of one's own. Under them, "On your own"
- * leads to a new one.
+ * moves and starts it, and leads to a copy of a shipped one or the editor of one's own. The title bar's + leads to a
+ * new one, as Strength's and Conditioning's do.
  */
 @Composable
 fun MobilityScreen(
@@ -105,7 +101,6 @@ fun MobilityScreen(
         item(key = "after") {
             FlowGroup(stringResource(Res.string.mobility_after), state.after, onOpen = { openKey = it })
         }
-        item(key = "own") { OwnGroup(actions.onBuild) }
     }
     state.item(openKey)?.let { open ->
         FlowSheet(
@@ -134,20 +129,6 @@ private fun FlowGroup(label: String, flows: List<FlowItem>, onOpen: (String) -> 
         GroupLabel(label)
         flows.forEach { item ->
             FlowRow(item, onOpen = { onOpen(item.flow.key) })
-        }
-    }
-}
-
-/** "On your own": the way to a flow of the user's making. */
-@Composable
-private fun OwnGroup(onBuild: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        GroupLabel(stringResource(Res.string.mobility_own))
-        ListCard {
-            LinkRow(stringResource(Res.string.mobility_build), stringResource(Res.string.mobility_build_hint), onBuild)
         }
     }
 }

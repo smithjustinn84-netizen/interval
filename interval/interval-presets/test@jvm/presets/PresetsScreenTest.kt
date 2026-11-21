@@ -7,11 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import dev.justinsmith.interval.fakes.hangboardPreset
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
@@ -20,7 +22,6 @@ import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class PresetsScreenTest {
     private val started = mutableListOf<Preset>()
@@ -43,6 +44,8 @@ class PresetsScreenTest {
     @Test
     fun `a row opens its sheet, which starts the preset or puts it on the Timer`() = runUiTest {
         setThemedContent { Screen() }
+        // Under For the mat and the wall, the last group.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Hangboard"))
         onNodeWithText("Hangboard").performClick()
         inSheet("Built-in").assertExists()
         inSheet("10s on · 50s off · ×6 · Climbing").assertExists()
@@ -51,6 +54,7 @@ class PresetsScreenTest {
         assertEquals(listOf(hangboardPreset), started)
         onNodeWithText("Start workout").assertDoesNotExist()
 
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Morning"))
         onNodeWithText("Morning").performClick()
         onNodeWithText("Put on Timer").performClick()
         assertEquals(listOf(morning), putOnTimer)
@@ -129,11 +133,10 @@ class PresetsScreenTest {
     fun `rows show each preset's shape and total in the order given`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("25s on · 10s off · ×8").assertExists()
-        onNodeWithText("10s on · 50s off · ×6 · Climbing").assertExists()
         onNodeWithText("4:00").assertExists()
-        val tabata = onNodeWithText("Tabata").fetchSemanticsNode().positionInRoot.y
-        val hangboard = onNodeWithText("Hangboard").fetchSemanticsNode().positionInRoot.y
-        assertTrue(tabata < hangboard, "Tabata above Hangboard")
+        // Hangboard is under For the mat and the wall, after Anywhere's Tabata: down the page.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Hangboard"))
+        onNodeWithText("10s on · 50s off · ×6 · Climbing").assertExists()
     }
 
     @Test
@@ -172,13 +175,22 @@ class PresetsScreenTest {
     fun `with no presets of their own there is no group of theirs`() = runUiTest {
         setThemedContent { Screen(state(custom = emptyList())) }
         onNodeWithText("Yours").assertDoesNotExist()
-        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Anywhere").assertExists()
+    }
+
+    @Test
+    fun `the built-ins are grouped by what they are for`() = runUiTest {
+        setThemedContent { Screen(state(custom = emptyList())) }
+        onNodeWithText("Built-in").assertDoesNotExist()
+        onNodeWithText("Anywhere").assertExists()
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("For the mat and the wall"))
+        onNodeWithText("For the mat and the wall").assertExists()
     }
 
     @Test
     fun `a tablet shows both groups`() = runUiTest(Window.Tablet) {
         setThemedContent { Screen() }
-        onNodeWithText("Built-in").assertExists()
+        onNodeWithText("Anywhere").assertExists()
         onNodeWithText("Yours").assertExists()
         onNodeWithText("Morning").assertExists()
     }

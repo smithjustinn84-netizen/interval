@@ -15,6 +15,9 @@
     <string name="presets_save_current_hint">Keep what is on the Timer under a name</string>
     <string name="presets_new_cd">New preset</string>
     <string name="presets_built_in">Built-in</string>
+    <string name="presets_anywhere">Anywhere</string>
+    <string name="presets_with_bell">With a bell</string>
+    <string name="presets_mat_wall">For the mat and the wall</string>
     <string name="presets_yours">Yours</string>
     <string name="presets_open_cd">What is in it</string>
     <string name="presets_on_timer">On the Timer</string>

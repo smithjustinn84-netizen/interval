@@ -35,18 +35,21 @@ import dev.justinsmith.interval.presets.resources.common_cancel
 import dev.justinsmith.interval.presets.resources.notice_preset_deleted
 import dev.justinsmith.interval.presets.resources.notice_undo
 import dev.justinsmith.interval.presets.resources.preset_save_title
-import dev.justinsmith.interval.presets.resources.presets_built_in
+import dev.justinsmith.interval.presets.resources.presets_anywhere
 import dev.justinsmith.interval.presets.resources.presets_delete
 import dev.justinsmith.interval.presets.resources.presets_delete_text
 import dev.justinsmith.interval.presets.resources.presets_delete_title
+import dev.justinsmith.interval.presets.resources.presets_mat_wall
 import dev.justinsmith.interval.presets.resources.presets_new_cd
 import dev.justinsmith.interval.presets.resources.presets_on_timer
 import dev.justinsmith.interval.presets.resources.presets_open_cd
 import dev.justinsmith.interval.presets.resources.presets_save_current_hint
 import dev.justinsmith.interval.presets.resources.presets_timer
 import dev.justinsmith.interval.presets.resources.presets_title
+import dev.justinsmith.interval.presets.resources.presets_with_bell
 import dev.justinsmith.interval.presets.resources.presets_yours
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetPurpose
 import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.BackAction
@@ -73,6 +76,7 @@ import dev.justinsmith.interval.ui.rememberArrival
 import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
+import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -265,13 +269,16 @@ private fun PresetsList(
                 )
             }
         }
-        item(key = "builtIn") {
-            PresetGroup(
-                label = stringResource(Res.string.presets_built_in),
-                items = state.builtIn,
-                onOpen = onOpen,
-                modifier = Modifier.animateItem(),
-            )
+        // The built-ins by what each is for, as Mobility's flows are by when.
+        state.builtInGroups.forEach { (purpose, items) ->
+            item(key = "builtIn-$purpose") {
+                PresetGroup(
+                    label = stringResource(purpose.label),
+                    items = items,
+                    onOpen = onOpen,
+                    modifier = Modifier.animateItem(),
+                )
+            }
         }
     }
 }
@@ -464,3 +471,11 @@ private fun PresetsScreenPreview() {
         )
     }
 }
+
+/** A group of the built-ins' label, by what they are for. */
+private val PresetPurpose.label: StringResource
+    get() = when (this) {
+        PresetPurpose.Anywhere -> Res.string.presets_anywhere
+        PresetPurpose.Bell -> Res.string.presets_with_bell
+        PresetPurpose.MatAndWall -> Res.string.presets_mat_wall
+    }

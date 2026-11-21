@@ -47,6 +47,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.ToggleRow
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Equipment
@@ -61,13 +62,10 @@ import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.today.resources.Res
-import dev.justinsmith.lift.today.resources.bells_title
 import dev.justinsmith.lift.today.resources.common_cancel
 import dev.justinsmith.lift.today.resources.common_joined
 import dev.justinsmith.lift.today.resources.kg_pair
 import dev.justinsmith.lift.today.resources.kg_value
-import dev.justinsmith.lift.today.resources.library_entry_text
-import dev.justinsmith.lift.today.resources.library_title
 import dev.justinsmith.lift.today.resources.program_finished
 import dev.justinsmith.lift.today.resources.program_follow_cta
 import dev.justinsmith.lift.today.resources.program_follow_hint
@@ -84,12 +82,9 @@ import dev.justinsmith.lift.today.resources.today_easier_heart
 import dev.justinsmith.lift.today.resources.today_easier_mat
 import dev.justinsmith.lift.today.resources.today_easier_title
 import dev.justinsmith.lift.today.resources.today_easier_what
-import dev.justinsmith.lift.today.resources.today_equipment_hint
-import dev.justinsmith.lift.today.resources.today_equipment_owned
-import dev.justinsmith.lift.today.resources.today_free_session
-import dev.justinsmith.lift.today.resources.today_free_session_hint
 import dev.justinsmith.lift.today.resources.today_group_beside
 import dev.justinsmith.lift.today.resources.today_group_following
+import dev.justinsmith.lift.today.resources.today_group_kit
 import dev.justinsmith.lift.today.resources.today_group_lately
 import dev.justinsmith.lift.today.resources.today_group_own
 import dev.justinsmith.lift.today.resources.today_group_programs
@@ -104,8 +99,6 @@ import dev.justinsmith.lift.today.resources.today_start
 import dev.justinsmith.lift.today.resources.today_start_day
 import dev.justinsmith.lift.today.resources.today_start_day_easier
 import dev.justinsmith.lift.today.resources.today_start_day_over_text
-import dev.justinsmith.lift.today.resources.today_tests
-import dev.justinsmith.lift.today.resources.today_tests_hint
 import dev.justinsmith.lift.today.resources.today_title
 import dev.justinsmith.lift.today.resources.today_weeks
 import dev.justinsmith.lift.ui.blockLine
@@ -167,7 +160,8 @@ fun TodayRoute(
 /**
  * Train's Strength pillar, Lift's side, in groups: the program followed (where it stands, about how long its day
  * takes, how far through it is), programs beside the mat and the wall with the way to all of them, then what there
- * is on one's own (a free session, the exercises, the equipment) and, lately, the last session and the balance.
+ * is on one's own (a free session, the tests), then what is looked up or set (the exercises, the equipment) and,
+ * lately, the last session and the balance.
  * Start (or Resume) stays pinned under them, as Start workout does. The week is Today's to show. [header] sits under
  * the title: the app's picker of Train's pillars.
  */
@@ -227,7 +221,13 @@ fun TodayScreen(
         }
         item(key = "own") {
             Group(stringResource(Res.string.today_group_own), group) {
-                OwnCard(state, onStartSession, onOpenExercises, onOpenBells, { onOpenTests(null) })
+                OwnCard(state, onStartSession, { onOpenTests(null) })
+            }
+        }
+        // What is looked up or set rather than done: apart from a session of one's own.
+        item(key = "kit") {
+            Group(stringResource(Res.string.today_group_kit), group) {
+                KitCard(state, onOpenExercises, onOpenBells)
             }
         }
         item(key = "lately") {
@@ -279,54 +279,6 @@ private fun programLine(program: Program, restSeconds: Int): String = listOf(
     pluralStringResource(Res.plurals.today_weeks, program.weeks, program.weeks),
     estimateLine(program.dayMinutes(restSeconds)),
 ).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
-
-/**
- * A session of one's own, while none is under way; the tests; the exercises; and the equipment, with the bells
- * owned.
- */
-@Composable
-private fun OwnCard(
-    state: TodayUiState,
-    onStartSession: (ProgramKey?) -> Unit,
-    onOpenExercises: () -> Unit,
-    onOpenBells: () -> Unit,
-    onOpenTests: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    ListCard(modifier) {
-        if (!state.inProgress) {
-            LinkRow(
-                stringResource(Res.string.today_free_session),
-                stringResource(Res.string.today_free_session_hint),
-                { onStartSession(null) },
-            )
-            RowDivider()
-        }
-        LinkRow(stringResource(Res.string.today_tests), stringResource(Res.string.today_tests_hint), onOpenTests)
-        RowDivider()
-        LinkRow(
-            stringResource(Res.string.library_title),
-            stringResource(Res.string.library_entry_text),
-            onOpenExercises,
-        )
-        RowDivider()
-        val bells = state.ownedBells.map { stringResource(Res.string.kg_value, formatKg(it)) }
-        LinkRow(
-            stringResource(Res.string.bells_title),
-            if (bells.isEmpty()) {
-                stringResource(Res.string.today_equipment_hint)
-            } else {
-                stringResource(
-                    Res.string.today_equipment_owned,
-                    bells.reduce { joined, part ->
-                        stringResource(Res.string.common_joined, joined, part)
-                    },
-                )
-            },
-            onOpenBells,
-        )
-    }
-}
 
 /** The last session, opened by a tap; or, before the first, what a session is. */
 @Composable
@@ -548,9 +500,12 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, o
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        // With large text the length goes under the name, which then has the row's width, and the badge's ends
+        // square off: a pill grown two lines tall is an oval that clips its words.
+        val large = isLargeText()
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             val badge = Modifier
-                .clip(Corners.full)
+                .clip(if (large) Corners.radius12 else Corners.full)
                 .background(palette.accentTint)
                 .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
             Text(
@@ -565,8 +520,13 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, o
                 color = palette.text,
                 modifier = Modifier.semantics { heading() },
             )
+            if (large && minutes != null) {
+                Text(estimateLine(minutes), style = IntervalTheme.type.meta, color = palette.textDim)
+            }
         }
-        if (minutes != null) Text(estimateLine(minutes), style = IntervalTheme.type.meta, color = palette.textDim)
+        if (!large && minutes != null) {
+            Text(estimateLine(minutes), style = IntervalTheme.type.meta, color = palette.textDim)
+        }
         Icon(
             IntervalIcons.Chevron,
             contentDescription = null,

@@ -7,10 +7,9 @@ import kotlin.test.assertEquals
 
 // Building a flow of your own, apart from the driver they extend: it is as large as a class may be.
 
-/** From Train's Mobility pillar, its "On your own" row, past the shipped flows. */
+/** From Train's Mobility pillar, its title bar's +. */
 fun IntervalAcceptanceDriver.buildAFlow() {
-    scrollTo("Build a flow")
-    tap("Build a flow")
+    tapDescribed("Build a flow")
     see("Add a move")
 }
 

@@ -87,7 +87,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     /** Train's Conditioning pillar: the presets. */
     fun seeConditioning() {
-        see("Built-in")
+        see("Anywhere")
         seePillar("Conditioning")
     }
 
@@ -621,7 +621,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun openAllPresets() {
         tapDescribed("Back")
-        see("Built-in")
+        see("Anywhere")
     }
 
     /** The Timer row reads [reading], settings no preset has, and the row under it offers to save them. */

@@ -113,6 +113,30 @@ val snatchIntervals: Preset = Preset(
     alternateHands = true,
 )
 
+/** Five five-minute rounds with a minute between: rolling, drilling, or rounds of anything. */
+private val matRounds =
+    Preset("Mat rounds", IntervalConfig(prepSeconds = 10, workSeconds = 300, restSeconds = 60, rounds = 5))
+
+/** What a preset is for, which Train's Conditioning groups the built-ins by, in its order. */
+enum class PresetPurpose {
+    /** Nothing but a timer: anywhere, with anything. */
+    Anywhere,
+
+    /** With a kettlebell. */
+    Bell,
+
+    /** For the mat or the wall: rounds of rolling, a hangboard. */
+    MatAndWall,
+}
+
+/** What [this] is for: by what it is done with, and the mat's rounds by their shape, which names no activity. */
+val Preset.purpose: PresetPurpose
+    get() = when {
+        config.activity == Activity.Kettlebell -> PresetPurpose.Bell
+        config.activity == Activity.Climbing || config.sameShape(matRounds.config) -> PresetPurpose.MatAndWall
+        else -> PresetPurpose.Anywhere
+    }
+
 /**
  * The presets the app ships with. Their names are stored names, like a user's own or
  * [defaultPresetName]'s, not labels, so they are data here rather than strings.xml text.
@@ -126,8 +150,7 @@ val builtInPresets: List<Preset> = listOf(
     ),
     Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
     snatchIntervals,
-    // Five five-minute rounds with a minute between: rolling, drilling, or rounds of anything.
-    Preset("Mat rounds", IntervalConfig(prepSeconds = 10, workSeconds = 300, restSeconds = 60, rounds = 5)),
+    matRounds,
     // Ten swings at the top of each minute for ten: hard enough, with most of every minute to recover.
     Preset(
         "Swings on the minute",

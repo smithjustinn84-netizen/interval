@@ -6,6 +6,7 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasScrollAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithText
@@ -118,10 +119,11 @@ class MobilityScreenTest {
     }
 
     @Test
-    fun `on your own leads to a new flow and a shipped one's sheet to a copy of it`() = runUiTest {
+    fun `plus leads to a new flow and a shipped one's sheet to a copy of it`() = runUiTest {
         setThemedContent { MobilityScreen(mobilityState(prepSeconds = 10), page, actions) }
-        onNode(hasScrollAction()).performScrollToNode(hasText("On your own"))
-        onNode(hasText("Build a flow") and hasClickAction()).performScrollTo().performClick()
+        // The title bar's + is the one way to a new flow, as it is on Strength and Conditioning.
+        onNodeWithText("On your own").assertDoesNotExist()
+        onNode(hasContentDescription("Build a flow") and hasClickAction()).performClick()
         onNode(hasScrollAction()).performScrollToNode(hasText("Hips and shoulders"))
         onNode(hasText("Hips and shoulders") and hasClickAction()).performScrollTo().performClick()
         waitForIdle()

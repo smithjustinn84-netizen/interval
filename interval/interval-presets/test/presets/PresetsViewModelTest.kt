@@ -10,6 +10,7 @@ import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Effort
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetPurpose
 import dev.justinsmith.interval.timer.builtInPresets
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlin.test.Test
@@ -54,6 +55,18 @@ class PresetsViewModelTest : MainDispatcherTest() {
         viewModel.save(Preset("Long", IntervalConfig(workSeconds = 60, restSeconds = 30, rounds = 10)))
         viewModel.save(Preset("Short", IntervalConfig(workSeconds = 20, restSeconds = 10, rounds = 4)))
         assertEquals(listOf("Short", "Long"), viewModel.state.value.custom.map { it.preset.name })
+    }
+
+    @Test
+    fun `the built-ins are grouped by what they are for with anywhere first`() {
+        val groups = viewModel.state.value.builtInGroups
+        assertEquals(
+            listOf(PresetPurpose.Anywhere, PresetPurpose.Bell, PresetPurpose.MatAndWall),
+            groups.map {
+                it.first
+            },
+        )
+        assertEquals(listOf("Hangboard", "Mat rounds"), groups.last().second.map { it.preset.name })
     }
 
     @Test

@@ -8,8 +8,10 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.PresetPurpose
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.purpose
 import dev.justinsmith.interval.timer.withPreset
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -42,6 +44,10 @@ data class PresetsUiState(
 ) {
     /** Every row the screen shows, the user's own first. */
     val rows: List<PresetRowItem> get() = custom + builtIn
+
+    /** [builtIn] by what each is for, in [PresetPurpose]'s order, each still shortest first; none left empty. */
+    val builtInGroups: List<Pair<PresetPurpose, List<PresetRowItem>>>
+        get() = builtIn.groupBy { it.preset.purpose }.toList().sortedBy { it.first.ordinal }
 }
 
 class PresetsViewModel(private val presetStore: PresetStore, private val settingsStore: SettingsStore) : ViewModel() {

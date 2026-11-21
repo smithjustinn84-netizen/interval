@@ -181,6 +181,8 @@ class TodayScreenTest {
                 onOpenSession = { opened += it },
             )
         }
+        // Under Lately, the last group.
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Swings"))
         onNodeWithText("Swings").performClick()
         assertEquals(listOf("s1"), opened)
     }
@@ -289,6 +291,8 @@ class TodayScreenTest {
         onNodeWithContentDescription("New program").performClick()
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("All programs"))
         onNodeWithText("All programs").performClick()
+        onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Exercises and equipment"))
+        onNodeWithText("Exercises and equipment").assertExists()
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Your equipment"))
         onNodeWithText("16 kg · 24 kg · records").assertExists()
         onNodeWithText("Your equipment").performClick()
