@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -23,13 +22,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.heart_rate_connecting
 import dev.justinsmith.core.resources.heart_rate_disconnected
 import dev.justinsmith.core.resources.heart_rate_scale_cd
-import dev.justinsmith.core.resources.heart_rate_unit
+import dev.justinsmith.core.resources.heart_rate_unit_caps
+import dev.justinsmith.core.resources.heart_rate_zone_named
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.LiveHeartRateState
@@ -105,15 +105,10 @@ fun HeartCard(
             CardReading(reading.bpm, maxBpm)
         } else {
             Row(
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    IntervalIcons.Heart,
-                    contentDescription = null,
-                    tint = palette.textDim,
-                    modifier = Modifier.size(Sizes.icon),
-                )
+                Box(Modifier.size(Sizes.zoneScaleDot).clip(Corners.full).background(palette.textDim))
                 Text(
                     stringResource(
                         if (state == LiveHeartRateState.Connecting) {
@@ -137,7 +132,7 @@ fun HeartCard(
     }
 }
 
-/** The card's reading: the heart beating in its zone's colour, the number, and the zone named and tagged. */
+/** The card's reading, as the workout's scale reads: a dot beating in the zone's colour, the number, the zone. */
 @Composable
 private fun CardReading(bpm: Int, maxBpm: Int) {
     val palette = IntervalTheme.palette
@@ -151,41 +146,40 @@ private fun CardReading(bpm: Int, maxBpm: Int) {
     val name = heartRateZoneName(zone)
     val description = stringResource(Res.string.heart_rate_scale_cd, bpm, zone.number, name)
     Row(
-        Modifier.fillMaxWidth().semantics(mergeDescendants = true) { contentDescription = description },
+        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                IntervalIcons.Heart,
-                contentDescription = null,
-                tint = zoneColor,
-                modifier = Modifier.size(Sizes.icon).graphicsLayer {
-                    val s = scale()
-                    scaleX = s
-                    scaleY = s
-                },
+            Box(
+                Modifier
+                    .size(Sizes.zoneScaleDot)
+                    .graphicsLayer {
+                        val s = scale()
+                        scaleX = s
+                        scaleY = s
+                    }
+                    .clip(Corners.full)
+                    .background(zoneColor),
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.stat, color = palette.text)
                 Text(
-                    stringResource(Res.string.heart_rate_unit),
+                    stringResource(Res.string.heart_rate_unit_caps),
                     Modifier.alignByBaseline(),
-                    style = IntervalTheme.type.caption,
+                    style = IntervalTheme.type.body,
                     color = palette.textDim,
                 )
             }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(name, style = IntervalTheme.type.label, color = palette.text)
-            ZoneTag(zone, zoneColor, onWorkoutGround = false)
-        }
+        JoinedText(
+            stringResource(Res.string.heart_rate_zone_named, zone.number, name),
+            style = IntervalTheme.type.body,
+            color = palette.textDim,
+        )
     }
 }
 
