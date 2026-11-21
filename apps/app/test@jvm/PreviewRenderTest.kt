@@ -9,10 +9,12 @@ import androidx.compose.ui.InternalComposeUiApi
 import androidx.compose.ui.LocalSystemTheme
 import androidx.compose.ui.SystemTheme
 import androidx.compose.ui.graphics.toAwtImage
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.isRoot
+import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import java.awt.image.BufferedImage
@@ -35,6 +37,7 @@ import kotlin.test.Test
  * - `-Dpreviews=<part of a name>` or `all`: which previews, by the function's name, case ignored
  * - `-Dpreviews.window=Phone` (the default), or any other [Window], or `all`
  * - `-Dpreviews.dark=true`: the dark theme (a preview that names its own theme keeps it)
+ * - `-Dpreviews.fontScale=2`: the system's text that much larger, as Android's font size setting makes it
  * - `-Dpreviews.out=<dir>`: where the PNGs go; `build/previews` at the project's root otherwise
  *
  * A preview is any top-level composable of no parameters whose name ends in `Preview`, in any module `app`
@@ -52,11 +55,17 @@ class PreviewRenderTest {
         }
         check(windows.isNotEmpty()) { "No such window; there are ${Window.entries}" }
         val dark = System.getProperty("previews.dark").toBoolean()
+        val fontScale = System.getProperty("previews.fontScale")?.toFloat()
         val out = System.getProperty("previews.out")?.let(::File) ?: File(projectRoot(), "build/previews")
         out.mkdirs()
         for (preview in previews) {
             for (window in windows) {
-                val name = listOfNotNull(preview.name, window.name.lowercase(), "dark".takeIf { dark })
+                val name = listOfNotNull(
+                    preview.name,
+                    window.name.lowercase(),
+                    "dark".takeIf { dark },
+                    fontScale?.let { "font$it" },
+                )
                 val file = File(out, name.joinToString("-") + ".png")
                 runUiTest(window) {
                     setContent {
@@ -64,8 +73,12 @@ class PreviewRenderTest {
                         // to say which theme `isSystemInDarkTheme` reads here, rather than the machine's.
                         @Suppress("DEPRECATION")
                         val theme = if (dark) SystemTheme.Dark else SystemTheme.Light
+                        val density = LocalDensity.current
                         @Suppress("DEPRECATION")
-                        CompositionLocalProvider(LocalSystemTheme provides theme) {
+                        CompositionLocalProvider(
+                            LocalSystemTheme provides theme,
+                            LocalDensity provides Density(density.density, fontScale ?: density.fontScale),
+                        ) {
                             preview.invoke(null, currentComposer, 0)
                         }
                     }

@@ -43,6 +43,7 @@ import dev.justinsmith.interval.timer.valueOf
 import dev.justinsmith.interval.timer.withBlockAdded
 import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.LadderField
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -141,7 +142,7 @@ fun TimerScreen(
             // Larger text needs more height for the same rows: below it they would be squeezed, so they scroll.
             val fontScale = LocalDensity.current.fontScale
             val expandRows =
-                maxHeight >= COMPACT_PORTRAIT_HEIGHT * fontScale.coerceAtLeast(1f) && fontScale <= COMPACT_FONT_SCALE
+                maxHeight >= COMPACT_PORTRAIT_HEIGHT * fontScale.coerceAtLeast(1f) && fontScale <= LARGE_FONT_SCALE
             val column = Modifier.align(Alignment.TopCenter).safeDrawingPadding().widthIn(max = Sizes.contentWide)
             Box(column.fillMaxSize()) {
                 Column(Modifier.fillMaxSize()) {
@@ -289,10 +290,9 @@ private fun TimerScreenPreview() {
 }
 
 /**
- * Below this portrait height (at a font scale of 1, grown with a larger one) or above [COMPACT_FONT_SCALE], the
+ * Below this portrait height (at a font scale of 1, grown with a larger one) or above [LARGE_FONT_SCALE], the
  * upper fields scroll above a pinned Start row. It is the height the three rows need to share for each to hold
  * its name over its value at the smallest size (80 dp a row), with the row of chips and all that is fixed round
  * them; shorter, and sharing would clip the values.
  */
 private val COMPACT_PORTRAIT_HEIGHT = 730.dp
-private const val COMPACT_FONT_SCALE = 1.35f

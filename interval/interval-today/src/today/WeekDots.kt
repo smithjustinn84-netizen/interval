@@ -51,6 +51,7 @@ import dev.justinsmith.interval.today.resources.history_week_count
 import dev.justinsmith.interval.today.resources.home_week_done
 import dev.justinsmith.interval.today.resources.home_week_goal_met
 import dev.justinsmith.interval.ui.Angles
+import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -59,6 +60,7 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.pressSpring
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
@@ -76,33 +78,36 @@ import kotlin.math.hypot
 internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val goal = week.goal
-    Row(
-        modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-            Text(
-                stringResource(Res.string.history_this_week),
-                style = IntervalTheme.type.caption,
-                color = palette.textDim,
-            )
-            Text(
-                when {
-                    goal == null -> pluralStringResource(Res.plurals.history_week_count, week.count, week.count)
-                    week.count >= goal -> stringResource(Res.string.home_week_goal_met)
-                    else -> stringResource(Res.string.home_week_done, week.count, goal)
-                },
-                style = IntervalTheme.type.label,
-                color = palette.text,
-            )
-        }
-        if (goal == null) {
-            ChipButton(stringResource(Res.string.history_goal_set), onSetGoal)
-        } else {
-            week.streak?.current?.takeIf { it > 0 }?.let { StreakChip(it) }
-        }
-    }
+    // The chip drops under the count when beside it a word would break ("work / outs").
+    BesideOrUnder(
+        modifier = modifier.fillMaxWidth(),
+        gap = Spacing.space12,
+        main = {
+            Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                Text(
+                    stringResource(Res.string.history_this_week),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
+                Text(
+                    when {
+                        goal == null -> pluralStringResource(Res.plurals.history_week_count, week.count, week.count)
+                        week.count >= goal -> stringResource(Res.string.home_week_goal_met)
+                        else -> stringResource(Res.string.home_week_done, week.count, goal)
+                    },
+                    style = IntervalTheme.type.label,
+                    color = palette.text,
+                )
+            }
+        },
+        trailing = {
+            if (goal == null) {
+                ChipButton(stringResource(Res.string.history_goal_set), onSetGoal)
+            } else {
+                week.streak?.current?.takeIf { it > 0 }?.let { StreakChip(it) }
+            }
+        },
+    )
 }
 
 /**
@@ -148,20 +153,25 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
     }
 }
 
-/** A day's short name under its block, and its sport's under that when the week has any ([sports]). */
+/**
+ * A day's short name under its block, and its sport's under that when the week has any ([sports]); with large text
+ * ([isLargeText]) its initial alone, which its column has room for.
+ */
 @Composable
 private fun DayLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    // With large text a day's column holds an initial, and no sport's name: the day's description still says it.
+    val large = isLargeText()
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            weekdayText(day.weekday, WeekdayForm.Short),
+            weekdayText(day.weekday, if (large) WeekdayForm.Initial else WeekdayForm.Short),
             style = IntervalTheme.type.caption,
             color = if (day.today) palette.accent else palette.textDim,
             maxLines = 1,
             softWrap = false,
             overflow = TextOverflow.Visible,
         )
-        if (sports) {
+        if (sports && !large) {
             Text(
                 day.sport?.let { sportShort(it) }.orEmpty(),
                 style = IntervalTheme.type.caption,

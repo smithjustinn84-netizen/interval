@@ -16,10 +16,12 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.longestWordWidth
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
@@ -111,21 +113,30 @@ internal fun LiftHeading(
     onChange: (() -> Unit)? = null,
 ) {
     val name = liftName(exercise, double)
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            name,
-            style = IntervalTheme.type.section,
-            color = IntervalTheme.palette.text,
-            modifier = Modifier.weight(1f).semantics { heading() },
-        )
-        val howTo = stringResource(Res.string.next_how_to_cd, name)
-        QuietTextButton(
-            stringResource(Res.string.next_how_to),
-            { onHowTo(exercise.key) },
-            Modifier.semantics { contentDescription = howTo },
-        )
-        onChange?.let { QuietTextButton(stringResource(Res.string.next_change), it) }
-    }
+    val howTo = stringResource(Res.string.next_how_to_cd, name)
+    // How to and Change drop under the name when beside it a word of the name would break.
+    BesideOrUnder(
+        main = {
+            Text(
+                name,
+                style = IntervalTheme.type.section,
+                color = IntervalTheme.palette.text,
+                modifier = Modifier.semantics { heading() },
+            )
+        },
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                QuietTextButton(
+                    stringResource(Res.string.next_how_to),
+                    { onHowTo(exercise.key) },
+                    Modifier.semantics { contentDescription = howTo },
+                )
+                onChange?.let { QuietTextButton(stringResource(Res.string.next_change), it) }
+            }
+        },
+        gap = Spacing.space4,
+        mainMinWidth = longestWordWidth(name, IntervalTheme.type.section),
+    )
 }
 
 /**

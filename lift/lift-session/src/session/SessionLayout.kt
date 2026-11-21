@@ -6,10 +6,12 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.BoxWithConstraintsScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.width
@@ -186,19 +188,24 @@ private fun StatStrip(stats: List<SessionStat>) {
     Row(
         Modifier
             .fillMaxWidth()
+            // As tall as the tallest column, so a caption that wraps (large text) leaves the values level.
+            .height(IntrinsicSize.Min)
             .clip(Corners.radius18)
             .background(palette.surface)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         stats.forEach { stat ->
-            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
-                Text(stat.label, style = IntervalTheme.type.caption, color = palette.textDim, maxLines = 1)
+            Column(
+                Modifier.weight(1f).fillMaxHeight().semantics(mergeDescendants = true) {},
+                verticalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Text(stat.label, style = IntervalTheme.type.caption, color = palette.textDim)
                 if (stat.rank != null) {
                     val rising = rememberRising(stat.rank)
                     RollingText(stat.value, rising = rising, style = IntervalTheme.type.value, color = palette.text)
                 } else {
-                    Text(stat.value, style = IntervalTheme.type.value, color = palette.text, maxLines = 1)
+                    Text(stat.value, style = IntervalTheme.type.value, color = palette.text)
                 }
             }
         }
@@ -252,32 +259,37 @@ private fun SessionButtons(
     onOpenSheet: () -> Unit,
 ) {
     val next = state.upNext
-    Row(
-        Modifier.padding(Spacing.space16),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        if (state.dayDone) {
-            SecondaryButton(stringResource(Res.string.session_extra_set), onOpenSheet, Modifier.weight(1f))
-            AccentButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(2f))
-        } else {
-            SecondaryButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
-            val emom = next?.emomMinutes != null
-            val density = next?.densityMinutes != null
-            AccentButton(
-                stringResource(
-                    when {
-                        emom -> Res.string.next_emom
-                        density -> Res.string.density_start
-                        else -> Res.string.session_log
+    BoxWithConstraints(Modifier.padding(Spacing.space16)) {
+        // The quiet button takes a third, or its word's width if that is more (large text), so it never breaks
+        // inside its word ("Finis / h"); the accent one the rest.
+        val quiet = Modifier.widthIn(min = (maxWidth - Spacing.space8) / QUIET_SHARE)
+        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            if (state.dayDone) {
+                SecondaryButton(stringResource(Res.string.session_extra_set), onOpenSheet, quiet)
+                AccentButton(stringResource(Res.string.session_finish), onFinish, Modifier.weight(1f))
+            } else {
+                SecondaryButton(stringResource(Res.string.session_finish), onFinish, quiet)
+                val emom = next?.emomMinutes != null
+                val density = next?.densityMinutes != null
+                AccentButton(
+                    stringResource(
+                        when {
+                            emom -> Res.string.next_emom
+                            density -> Res.string.density_start
+                            else -> Res.string.session_log
+                        },
+                    ),
+                    onClick = when {
+                        emom || density -> actions.onStartPlannedClock
+                        next != null -> actions.onLogNext
+                        else -> actions.onLog
                     },
-                ),
-                onClick = when {
-                    emom || density -> actions.onStartPlannedClock
-                    next != null -> actions.onLogNext
-                    else -> actions.onLog
-                },
-                modifier = Modifier.weight(2f),
-            )
+                    modifier = Modifier.weight(1f),
+                )
+            }
         }
     }
 }
+
+/** The quiet button's share of the foot's row at an ordinary size: a third. */
+private const val QUIET_SHARE = 3

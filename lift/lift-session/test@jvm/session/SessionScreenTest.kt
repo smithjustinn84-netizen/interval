@@ -2,17 +2,23 @@
 
 package dev.justinsmith.lift.session
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RecordingHaptics
 import dev.justinsmith.interval.ui.WithHaptics
@@ -128,5 +134,38 @@ class SessionScreenTest {
         setThemedContent(dark = true) { SessionScreen(state, { SessionClocks() }, SessionActions()) }
         onNodeWithText("Copenhagen plank").assertIsDisplayed()
         onNodeWithContentDescription("A figure doing", substring = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `with the system's text at twice the size no word on the session breaks inside itself`() = runUiTest {
+        val state = free.copy(
+            draft = SetDraft(exercise = BuiltInExercise.TwoHandSwing, bellKg = 24.0),
+            ownsBells = true,
+            bells = listOf(16.0, 24.0),
+        )
+        val clocks = SessionClocks(elapsed = "14:32", sinceLast = "0:38", rest = RestState(90, 52, 0.42f))
+        setThemedContent(dark = true) {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                SessionScreen(state, { clocks }, SessionActions())
+            }
+        }
+        // "Finis / h", "Two-ha / nd swing" and "Since" cut from "Since last set" were each a word squeezed narrower
+        // than itself.
+        listOf("Finish", "Two-hand swing", "Since last set", "How to", "Change").forEach { words ->
+            val layout = textLayout(words)
+            val shown = layout.getLineEnd(layout.lineCount - 1, visibleEnd = true)
+            assertEquals(words.length, shown, "\"$words\" is shown whole, not cut after ${words.take(shown)}")
+            for (line in 0 until layout.lineCount - 1) {
+                val end = layout.getLineEnd(line)
+                assertTrue(words[end - 1] == ' ' || words[end] == ' ', "\"$words\" breaks between words")
+            }
+        }
+    }
+
+    private fun DesktopComposeUiTest.textLayout(text: String): TextLayoutResult {
+        val results = mutableListOf<TextLayoutResult>()
+        onNodeWithText(text).fetchSemanticsNode().config[SemanticsActions.GetTextLayoutResult].action?.invoke(results)
+        return results.single()
     }
 }

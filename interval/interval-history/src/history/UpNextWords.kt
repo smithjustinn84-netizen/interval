@@ -1,6 +1,6 @@
 package dev.justinsmith.interval.history
 
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -49,7 +49,8 @@ internal fun DayLabel(text: String, today: Boolean, modifier: Modifier = Modifie
         maxLines = 1,
         softWrap = false,
         overflow = TextOverflow.Visible,
-        modifier = modifier.width(IntervalSizes.dayColumn),
+        // At least the column, so the stripes after it line up; wider for a word that needs it ("Today" in large text).
+        modifier = modifier.widthIn(min = IntervalSizes.dayColumn),
     )
 }
 

@@ -58,6 +58,7 @@ import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import org.jetbrains.compose.resources.stringResource
@@ -117,7 +118,8 @@ private fun StripLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modi
             style = IntervalTheme.type.caption,
             color = if (day.today) palette.accent else palette.textDim,
         )
-        if (sports) {
+        // Not with large text, which a column has no room for: the day's description still says the sport.
+        if (sports && !isLargeText()) {
             // Empty on a day with no sport: the line keeps its height, and the bars their level.
             Text(
                 day.sport?.let { sportShort(it) }.orEmpty(),
