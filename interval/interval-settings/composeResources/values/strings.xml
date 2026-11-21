@@ -127,10 +127,10 @@
     <string name="settings_sensor_pair">Pair a sensor</string>
     <string name="settings_sensor_pair_hint">A Polar Verity Sense or H10, switched on (an H10 worn) and close by</string>
     <string name="settings_sensor_looking">Looking for it…</string>
-    <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day. Tap to forget it</string>
-    <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today. Tap to forget it</string>
-    <string name="settings_sensor_battery">Battery %1$d%. Tap to forget it</string>
-    <string name="settings_sensor_battery_low">Battery low, %1$d%: charge it before a class. Tap to forget it</string>
+    <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day.</string>
+    <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today.</string>
+    <string name="settings_sensor_battery">Battery %1$d%</string>
+    <string name="settings_sensor_battery_low">Battery low, %1$d%: charge it before a class</string>
     <string name="settings_sensor_choose_title">Which sensor?</string>
     <string name="settings_sensor_choose_note">More than one is close by, the nearest first. The id is printed on the sensor.</string>
     <string name="settings_sensor_forget">Forget</string>

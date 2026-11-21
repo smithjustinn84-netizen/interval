@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import dev.justinsmith.interval.platform.HeartRateZone
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.test.Test
@@ -95,6 +96,13 @@ class ThemeContrastTest {
             assertContrast(3.0, p.restMark, p.tint(p.restMark), "$theme rest on its tint")
             assertContrast(3.0, p.onPrepTint, p.tint(p.prepMark), "$theme onPrepTint on the prep tint")
             assertContrast(4.5, p.text, p.tint(p.workMark), "$theme text on the work tint")
+        }
+    }
+
+    @Test
+    fun `a zone's badge reads in white on it in light`() {
+        HeartRateZone.entries.forEach { zone ->
+            assertContrast(4.5, Color.White, lightPalette.heartZones.of(zone), "light white on $zone")
         }
     }
 

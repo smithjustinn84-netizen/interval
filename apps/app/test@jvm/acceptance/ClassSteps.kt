@@ -101,7 +101,7 @@ fun IntervalAcceptanceDriver.openSensorSettings() {
     tap("Sensor settings")
     seeNo("Sensor settings")
     scrollTo(SENSOR_NAME)
-    see(hasText("Tap to forget it", substring = true))
+    see("Forget")
 }
 
 fun IntervalAcceptanceDriver.seeNoSensorInSettings() = seeNo("Heart-rate sensor")

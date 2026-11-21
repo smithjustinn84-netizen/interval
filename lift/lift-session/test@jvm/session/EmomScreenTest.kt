@@ -80,17 +80,17 @@ class EmomScreenTest {
                 onStop = { stops++ },
             )
         }
-        onNodeWithText("Stop").performClick()
-        onNodeWithText("Stop EMOM?").assertExists()
+        onNodeWithText("End").performClick()
+        onNodeWithText("End EMOM?").assertExists()
         onNodeWithText("Sets completed so far stay in the session.").assertExists()
         assertEquals(0, stops)
 
         onNodeWithText("Cancel").performClick()
-        onNodeWithText("Stop EMOM?").assertDoesNotExist()
+        onNodeWithText("End EMOM?").assertDoesNotExist()
         assertEquals(0, stops)
 
-        onNodeWithText("Stop").performClick()
-        onNode(hasText("Stop") and hasAnyAncestor(isDialog())).performClick()
+        onNodeWithText("End").performClick()
+        onNode(hasText("End") and hasAnyAncestor(isDialog())).performClick()
         waitForIdle()
         assertEquals(1, stops)
     }

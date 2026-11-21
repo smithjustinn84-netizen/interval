@@ -20,7 +20,7 @@
     <action>Once the minute's "Work" shows, tap "Set done" and verify that the phone says "Hips back, shins stay vertical"</action>
     <action>Verify that about nine seconds before the next minute, ahead of its 3-2-1, the phone says "Open the hand near the top and punch through so the bell settles softly overhead"</action>
     <action>Let the next minute pass without tapping "Set done" and verify that nothing is said before the minute after it</action>
-    <action>Tap "Stop", then "Finish" and the summary's "Done"</action>
+    <action>Tap "End", then "Finish" and the summary's "Done"</action>
     <action>Tap "Follow a program", tap "20 minutes beside BJJ", then "Follow this program", and tap "Start day 1": verify that the phone says "Groove five light first" as the session opens</action>
     <action>Tap Back and verify that "Leave the session?" says nothing is logged yet, so the session isn't kept; tap "Leave"</action>
     <action>Open Settings from Train's gear, turn "Voice" off and go back to Train</action>

@@ -15,8 +15,10 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -116,7 +118,7 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun `the sensor's row pairs one and forgets a paired one at a tap`() = runUiTest {
+    fun `the sensor's row pairs one and its Forget forgets a paired one`() = runUiTest {
         var sensor by mutableStateOf<SensorStatus>(SensorStatus.Unavailable)
         setThemedContent { Screen(sensor = sensor) }
         scrollToText("Appearance")
@@ -127,7 +129,10 @@ class SettingsScreenTest {
         onNodeWithText("Pair a sensor").performClick()
 
         sensor = SensorStatus.Paired("Polar Sense 1A2B3C4D")
+        // The row itself goes nowhere: only its Forget forgets.
         onNode(hasText("Polar Sense 1A2B3C4D")).performClick()
+        assertEquals(listOf<Any>("pair"), calls)
+        onNodeWithText("Forget").performClick()
         assertEquals(listOf<Any>("pair", "forget"), calls)
     }
 
@@ -149,13 +154,13 @@ class SettingsScreenTest {
         setThemedContent { Screen(sensor = SensorStatus.Recording("Polar H10 1A2B3C4D", sinceEpochMillis = 1)) }
         scrollToText("Polar H10 1A2B3C4D")
 
-        onNode(hasText("Polar H10 1A2B3C4D")).performClick()
+        onNodeWithText("Forget").performClick()
         onNodeWithText("Forget the sensor?").assertExists()
         onNodeWithText("Cancel").performClick()
         assertEquals(emptyList<Any>(), calls)
 
-        onNode(hasText("Polar H10 1A2B3C4D")).performClick()
         onNodeWithText("Forget").performClick()
+        onNode(hasText("Forget") and hasAnyAncestor(isDialog())).performClick()
         onNodeWithText("Forget the sensor?").assertDoesNotExist()
         assertEquals(listOf<Any>("forget"), calls)
     }

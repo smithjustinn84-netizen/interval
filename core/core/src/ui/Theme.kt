@@ -56,7 +56,7 @@ private val darkHeartZones = HeartZoneColors(
 private val lightHeartZones = HeartZoneColors(
     zone1 = Color(0xFF3E6396),
     zone2 = Color(0xFF0A6E55),
-    zone3 = Color(0xFFA86A05),
+    zone3 = Color(0xFF9E6304),
     zone4 = Color(0xFFC44219),
     zone5 = Color(0xFFB81D3D),
 )

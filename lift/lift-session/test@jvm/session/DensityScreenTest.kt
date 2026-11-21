@@ -80,9 +80,9 @@ class DensityScreenTest {
         setThemedContent(dark = true) {
             DensityScreen(snatches, state, onFinishRound = {}, onStop = { stopped = true })
         }
-        onNodeWithText("Stop").performClick()
+        onNodeWithText("End").performClick()
         onNodeWithText("Rounds done so far stay in the session.").assertExists()
-        onNode(hasText("Stop") and hasAnyAncestor(isDialog())).performClick()
+        onNode(hasText("End") and hasAnyAncestor(isDialog())).performClick()
         waitForIdle()
         assertEquals(true, stopped)
     }

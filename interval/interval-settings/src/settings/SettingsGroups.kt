@@ -4,9 +4,13 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -104,8 +108,10 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SegmentedPicker
+import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueRow
@@ -278,29 +284,28 @@ private fun sensorGroup(sensor: SensorRow): SettingsGroup? = SettingsGroup("sens
 
 /**
  * The sensor's row: with none paired, the way to pair the one nearby, saying so while it looks; with one, its
- * name, what it is doing, and a tap to forget it.
+ * name and what it is doing beside Forget, a button of its own rather than a tap on the row, which reads as a
+ * way somewhere.
  */
 @Composable
 private fun SensorRowContent(sensor: SensorRow, modifier: Modifier = Modifier) {
     when (val status = sensor.status) {
-        is SensorStatus.Paired -> LinkRow(
+        is SensorStatus.Paired -> PairedSensorRow(
             status.name,
             when (val battery = sensor.battery) {
                 null -> stringResource(Res.string.settings_sensor_paired_hint)
                 in 0 until LOW_SENSOR_BATTERY -> stringResource(Res.string.settings_sensor_battery_low, battery)
                 else -> stringResource(Res.string.settings_sensor_battery, battery)
             },
-            onClick = sensor.onForget,
-            modifier = modifier,
-            onClickLabel = stringResource(Res.string.settings_sensor_forget),
+            sensor.onForget,
+            modifier,
         )
 
-        is SensorStatus.Recording -> LinkRow(
+        is SensorStatus.Recording -> PairedSensorRow(
             status.name,
             stringResource(Res.string.settings_sensor_recording_hint),
-            onClick = sensor.onForget,
-            modifier = modifier,
-            onClickLabel = stringResource(Res.string.settings_sensor_forget),
+            sensor.onForget,
+            modifier,
         )
 
         else -> LinkRow(
@@ -311,6 +316,26 @@ private fun SensorRowContent(sensor: SensorRow, modifier: Modifier = Modifier) {
             onClick = sensor.onPair,
             modifier = modifier,
         )
+    }
+}
+
+/** A sensor paired: its name over how it stands, and Forget at the end. */
+@Composable
+private fun PairedSensorRow(name: String, hint: String, onForget: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Row(
+        modifier
+            .fillMaxWidth()
+            .heightIn(min = Sizes.listRow)
+            .padding(start = Spacing.space16, end = Spacing.space8, top = Spacing.space8, bottom = Spacing.space8),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
+            Text(name, style = IntervalTheme.type.label, color = palette.text)
+            Text(hint, style = IntervalTheme.type.meta, color = palette.textDim)
+        }
+        QuietTextButton(stringResource(Res.string.settings_sensor_forget), onForget, destructive = true)
     }
 }
 

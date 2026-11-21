@@ -330,23 +330,25 @@ private fun ReminderCard(reminder: ReminderUi, onEdit: () -> Unit, modifier: Mod
     }
 }
 
-/** The weekly goal between − and +, "Off" below one; the streak under it while there is one. */
+/**
+ * The weekly goal: its name over what counts, the streak beside that while there is one, and under them the goal
+ * between − and +, "Off" below one. The stepper has a line of its own so the words take the card's width.
+ */
 @Composable
 private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val goal = state.goal
     ListCard(modifier) {
-        Row(
+        Column(
             Modifier.padding(
                 start = Spacing.space20,
                 end = Spacing.space12,
                 top = Spacing.space12,
                 bottom = Spacing.space12,
             ),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.padding(end = Spacing.space8)) {
                 Text(stringResource(Res.string.plan_goal), style = IntervalTheme.type.label, color = palette.text)
                 val detail = if (goal != null && state.streak > 0) {
                     stringResource(
@@ -359,32 +361,41 @@ private fun GoalCard(state: PlanUiState, onStepGoal: (Int) -> Unit, modifier: Mo
                 }
                 Text(detail, style = IntervalTheme.type.meta, color = palette.textDim)
             }
-            RepeatButton(
-                "−",
-                stringResource(Res.string.plan_goal_less_cd),
-                enabled = goal != null,
-                onStep = { onStepGoal(-1) },
-                modifier = Modifier.size(Sizes.segment),
-            )
-            Box(
-                Modifier.width(Sizes.pillWidth).semantics { liveRegion = LiveRegionMode.Polite },
-                contentAlignment = Alignment.Center,
-            ) {
-                RollingText(
-                    goal?.toString() ?: stringResource(Res.string.plan_goal_off),
-                    rising = rememberRising(goal ?: 0),
-                    style = IntervalTheme.type.value,
-                    color = if (goal == null) palette.textDim else palette.text,
-                )
-            }
-            RepeatButton(
-                "+",
-                stringResource(Res.string.plan_goal_more_cd),
-                enabled = goal == null || goal < AppSettings.WEEKLY_GOAL_RANGE.last,
-                onStep = { onStepGoal(1) },
-                modifier = Modifier.size(Sizes.segment),
+            GoalStepper(goal, onStepGoal)
+        }
+    }
+}
+
+/** The goal between − and +, "Off" below one. */
+@Composable
+private fun GoalStepper(goal: Int?, onStepGoal: (Int) -> Unit) {
+    val palette = IntervalTheme.palette
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        RepeatButton(
+            "−",
+            stringResource(Res.string.plan_goal_less_cd),
+            enabled = goal != null,
+            onStep = { onStepGoal(-1) },
+            modifier = Modifier.size(Sizes.segment),
+        )
+        Box(
+            Modifier.width(Sizes.pillWidth).semantics { liveRegion = LiveRegionMode.Polite },
+            contentAlignment = Alignment.Center,
+        ) {
+            RollingText(
+                goal?.toString() ?: stringResource(Res.string.plan_goal_off),
+                rising = rememberRising(goal ?: 0),
+                style = IntervalTheme.type.value,
+                color = if (goal == null) palette.textDim else palette.text,
             )
         }
+        RepeatButton(
+            "+",
+            stringResource(Res.string.plan_goal_more_cd),
+            enabled = goal == null || goal < AppSettings.WEEKLY_GOAL_RANGE.last,
+            onStep = { onStepGoal(1) },
+            modifier = Modifier.size(Sizes.segment),
+        )
     }
 }
 

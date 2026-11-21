@@ -44,7 +44,7 @@ class SidewaysTest {
         onNodeWithText("0:45").assertIsDisplayed()
         onNodeWithText("Work").assertIsDisplayed()
         onNodeWithText("Two-hand swing · 24 kg × 10").assertIsDisplayed()
-        onNodeWithText("Stop").assertIsDisplayed()
+        onNodeWithText("End").assertIsDisplayed()
         onNodeWithText("Set done").assertIsDisplayed().assertIsEnabled()
         // Beside the ring, not over it as when the readout sat inside a ring too short for it.
         val clock = onNodeWithText("0:45").getUnclippedBoundsInRoot()
