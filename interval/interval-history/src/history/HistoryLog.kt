@@ -22,10 +22,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.class_recorded
 import dev.justinsmith.interval.history.resources.class_rounds
@@ -43,11 +45,13 @@ import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.isFlowShaped
+import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RowDivider
@@ -55,7 +59,9 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.joined
+import dev.justinsmith.interval.ui.longestWordWidth
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.pluralStringResource
@@ -265,8 +271,12 @@ internal fun HistoryRow(
         lift != null -> ({ onOpenLift(lift) })
         else -> null
     }
-    Row(
-        modifier
+    val name = item.presetName ?: workoutDescription(item.config)
+    // With large text the length and chevron go under the name rather than squeeze its line to a word or two.
+    val lead =
+        (if (day != null) IntervalSizes.dayColumn + Spacing.space12 else 0.dp) + IntervalSizes.stripe + Spacing.space12
+    BesideOrUnder(
+        modifier = modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
             .drawBehind { drawRect(fill) }
@@ -288,9 +298,31 @@ internal fun HistoryRow(
                 },
             )
             .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
+        gap = Spacing.space12,
+        mainMinWidth = with(LocalDensity.current) { lead.roundToPx() } +
+            longestWordWidth(name, IntervalTheme.type.label),
+        underStart = lead,
+        under = isLargeText(),
+        main = { HistoryRowText(item, name, day) },
+        trailing = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                Text(item.total, style = IntervalTheme.type.value, color = palette.text)
+                if (click != null) {
+                    Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
+                }
+            }
+        },
+    )
+}
+
+/** A finished workout's row without its length: its day in the column, its kind's stripe, its name over its line. */
+@Composable
+private fun HistoryRowText(item: HistoryItem, name: String, day: DayMark?) {
+    val palette = IntervalTheme.palette
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Spacing.space12)) {
         day?.let { DayLabel(it.text, it.today) }
         StripeMark(markOf(item), height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
@@ -303,16 +335,9 @@ internal fun HistoryRow(
                 item.time,
             )
             // The shape is put into words only for a row with no name to show.
-            Text(
-                item.presetName ?: workoutDescription(item.config),
-                style = IntervalTheme.type.label,
-                color = palette.text,
-            )
-            Text(
-                joined(detail),
-                style = IntervalTheme.type.meta,
-                color = palette.textDim,
-            )
+            Text(name, style = IntervalTheme.type.label, color = palette.text)
+            // Wraps after a dot, never before one.
+            JoinedText(joined(detail), style = IntervalTheme.type.meta, color = palette.textDim)
             item.note?.let { note ->
                 Text(
                     note,
@@ -322,10 +347,6 @@ internal fun HistoryRow(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-        }
-        Text(item.total, style = IntervalTheme.type.value, color = palette.text)
-        if (click != null) {
-            Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
         }
     }
 }
