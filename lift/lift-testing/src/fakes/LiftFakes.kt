@@ -265,6 +265,7 @@ class FakeBandDao(private val sessions: FakeSessionDao) : BandDao {
 class FakeIntervalActivity : IntervalActivity {
     override val workouts = MutableStateFlow(emptyList<IntervalWorkout>())
     override val sportDays = MutableStateFlow(emptyList<SportDay>())
+    override val matOrWall = MutableStateFlow(false)
     override val weeklyGoal = MutableStateFlow<Int?>(null)
     override val bodyWeightKg = MutableStateFlow<Double?>(null)
     override val voice = MutableStateFlow(true)

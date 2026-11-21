@@ -76,6 +76,15 @@
     <string name="today_grip_overreached">More than the weeks before carried: spare your grip, go for goblet squats, get-ups and carries done short</string>
     <string name="today_group_following">Following</string>
     <string name="today_group_beside">Beside the mat and the wall</string>
+    <string name="today_group_programs">Programs</string>
+    <string name="today_start_day_easier">Start day %1$d, easier</string>
+    <string name="today_easier_title">Easier today</string>
+    <string name="today_easier_what">Presses and squats a bell lighter, swings and snatches shorter, rests by the lift</string>
+    <string name="today_easier_hard">Your last session felt very hard, and it was a day and a half ago at most</string>
+    <string name="today_easier_conditioning">A conditioning workout felt very hard, and it was two days ago at most</string>
+    <string name="today_easier_heart">Your heart worked a good deal harder than a usual day, today or yesterday</string>
+    <string name="today_easier_mat">BJJ today or yesterday, and your grip has done more than usual this week</string>
+    <string name="today_easier_grip">Your grip has done a lot more this week than in the weeks before</string>
     <string name="today_group_own">On your own</string>
     <string name="today_group_lately">Lately</string>
     <string name="today_all_programs">All programs</string>

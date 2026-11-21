@@ -20,6 +20,7 @@ import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.LiftAppFixture
 import dev.justinsmith.lift.ui.liftAppTest
@@ -535,7 +536,8 @@ private const val MILLIS_PER_SECOND = 1_000L
 fun liftScenario(
     storage: FakeLiftStorage = FakeLiftStorage(),
     window: Window = Window.Phone,
+    intervals: FakeIntervalActivity = FakeIntervalActivity(),
     scenario: suspend LiftAcceptanceDriver.() -> Unit,
-) = liftAppTest(storage, window = window, timeout = JOURNEY_TIMEOUT) { app ->
+) = liftAppTest(storage, intervals, window = window, timeout = JOURNEY_TIMEOUT) { app ->
     LiftAcceptanceDriver(this, app).scenario()
 }

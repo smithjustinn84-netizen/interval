@@ -3,6 +3,7 @@ package dev.justinsmith.lift.acceptance
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 
@@ -12,12 +13,21 @@ import kotlin.test.Test
  */
 class LiftProgramsAcceptanceTest {
     @Test
-    fun `a program beside the mat and the wall opens with its sheet up and follows`() = liftScenario {
+    fun `a program beside the mat and the wall opens with its sheet up and follows`() = liftScenario(
+        intervals = FakeIntervalActivity().apply { matOrWall.value = true },
+    ) {
         tap("One bell beside BJJ")
         see("Follow this program")
         tap("Follow this program")
         see("Following")
         see("Day 1 of 12 · week 1")
+    }
+
+    @Test
+    fun `with no mat or wall trained on the programs group leads to all of them alone`() = liftScenario {
+        see("Programs")
+        seeNo("One bell beside BJJ")
+        see("All programs")
     }
 
     @Test

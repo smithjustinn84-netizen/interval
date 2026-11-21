@@ -10,7 +10,7 @@ import org.koin.dsl.module
 
 /** The Lift tab's ViewModel, the gear's and the tests'. */
 val liftTodayModule: Module = module {
-    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { TodayViewModel(get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModelOf(::GearViewModel)
     viewModel { TestsViewModel(get(), get(), get(), get(), get()) }
 }

@@ -46,6 +46,7 @@ import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.Equipment
@@ -54,6 +55,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.TestId
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
@@ -75,6 +77,13 @@ import dev.justinsmith.lift.today.resources.sets_count
 import dev.justinsmith.lift.today.resources.today_all_programs
 import dev.justinsmith.lift.today.resources.today_all_programs_hint
 import dev.justinsmith.lift.today.resources.today_days_a_week
+import dev.justinsmith.lift.today.resources.today_easier_conditioning
+import dev.justinsmith.lift.today.resources.today_easier_grip
+import dev.justinsmith.lift.today.resources.today_easier_hard
+import dev.justinsmith.lift.today.resources.today_easier_heart
+import dev.justinsmith.lift.today.resources.today_easier_mat
+import dev.justinsmith.lift.today.resources.today_easier_title
+import dev.justinsmith.lift.today.resources.today_easier_what
 import dev.justinsmith.lift.today.resources.today_equipment_hint
 import dev.justinsmith.lift.today.resources.today_equipment_owned
 import dev.justinsmith.lift.today.resources.today_free_session
@@ -83,6 +92,7 @@ import dev.justinsmith.lift.today.resources.today_group_beside
 import dev.justinsmith.lift.today.resources.today_group_following
 import dev.justinsmith.lift.today.resources.today_group_lately
 import dev.justinsmith.lift.today.resources.today_group_own
+import dev.justinsmith.lift.today.resources.today_group_programs
 import dev.justinsmith.lift.today.resources.today_last
 import dev.justinsmith.lift.today.resources.today_last_open_cd
 import dev.justinsmith.lift.today.resources.today_new_program_cd
@@ -92,6 +102,7 @@ import dev.justinsmith.lift.today.resources.today_progress_cd
 import dev.justinsmith.lift.today.resources.today_resume
 import dev.justinsmith.lift.today.resources.today_start
 import dev.justinsmith.lift.today.resources.today_start_day
+import dev.justinsmith.lift.today.resources.today_start_day_easier
 import dev.justinsmith.lift.today.resources.today_start_day_over_text
 import dev.justinsmith.lift.today.resources.today_tests
 import dev.justinsmith.lift.today.resources.today_tests_hint
@@ -136,6 +147,10 @@ fun TodayRoute(
             }
             onStartSession()
         },
+        onStartEasier = { program ->
+            viewModel.start(program, easier = true)
+            onStartSession()
+        },
         onChooseProgram = onChooseProgram,
         onOpenBells = onOpenBells,
         onOpenSession = onOpenSession,
@@ -170,6 +185,7 @@ fun TodayScreen(
     onNewProgram: () -> Unit = {},
     onOpenProgramSheet: (ProgramKey) -> Unit = {},
     onOpenTests: (TestId?) -> Unit = {},
+    onStartEasier: (ProgramKey) -> Unit = {},
     header: (@Composable () -> Unit)? = null,
 ) {
     val group = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
@@ -196,13 +212,16 @@ fun TodayScreen(
         item(key = "following") {
             Group(stringResource(Res.string.today_group_following), group) {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                    ProgramCard(state, onChooseProgram, onOpenProgram, onStartSession)
+                    ProgramCard(state, onChooseProgram, onOpenProgram, onStartSession, onStartEasier)
                     if (state.challenges.isNotEmpty()) ChallengesCard(state.challenges, onOpenTests)
                 }
             }
         }
         item(key = "beside") {
-            Group(stringResource(Res.string.today_group_beside), group) {
+            // Beside the mat and the wall for someone who trains there; for anyone else, the way to every program.
+            val label =
+                if (state.suggested.isEmpty()) Res.string.today_group_programs else Res.string.today_group_beside
+            Group(stringResource(label), group) {
                 SuggestedCard(state, onOpenProgramSheet, onChooseProgram)
             }
         }
@@ -383,6 +402,7 @@ private fun ProgramCard(
     onChooseProgram: () -> Unit,
     onOpenProgram: () -> Unit,
     onStartSession: (ProgramKey?) -> Unit,
+    onStartEasier: (ProgramKey) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val following = state.following
@@ -413,9 +433,59 @@ private fun ProgramCard(
             RowDivider()
             BlockRow(block, state)
         }
-        StartRow(state, onStartSession)
+        // On a taxed day, why, and the easier plan Lift offers, on unless switched off: as Today says it.
+        var eased by rememberSaveable { mutableStateOf(true) }
+        val taxed = state.taxed?.takeIf { state.programDay != null && !state.inProgress }
+        taxed?.let { reason ->
+            TaxedDay(reason, offered = state.easier, eased = eased, onToggle = { eased = !eased })
+        }
+        val easier = taxed != null && state.easier && eased
+        StartRow(state, onStartSession, easier = easier, onStartEasier = onStartEasier)
     }
 }
+
+/**
+ * Why today is a day to take easier, under the day's lifts, and where Lift has an easier plan for it ([offered]),
+ * the switch that starts the day with it ([eased]).
+ */
+@Composable
+private fun TaxedDay(
+    reason: ReadinessReason,
+    offered: Boolean,
+    eased: Boolean,
+    onToggle: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val palette = IntervalTheme.palette
+    Column(
+        modifier.padding(horizontal = Spacing.space16).padding(top = Spacing.space12),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        Text(taxedText(reason), style = IntervalTheme.type.meta, color = palette.text)
+        if (offered) {
+            ListCard(fill = palette.surfaceVariant) {
+                ToggleRow(
+                    stringResource(Res.string.today_easier_title),
+                    stringResource(Res.string.today_easier_what),
+                    checked = eased,
+                    onToggle = onToggle,
+                )
+            }
+        }
+    }
+}
+
+/** Why a day is one to take easier, as Lift's session says it. */
+@Composable
+private fun taxedText(reason: ReadinessReason): String = stringResource(
+    when (reason) {
+        ReadinessReason.HardSession -> Res.string.today_easier_hard
+        ReadinessReason.HardConditioning -> Res.string.today_easier_conditioning
+        ReadinessReason.HeartLoad -> Res.string.today_easier_heart
+        ReadinessReason.Mat -> Res.string.today_easier_mat
+        ReadinessReason.Grip -> Res.string.today_easier_grip
+    },
+)
 
 /** A block of the day: its lift and shape, and beside them the bell or bar suggested for it. */
 @Composable
@@ -512,7 +582,13 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, o
  * sets.
  */
 @Composable
-private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit, modifier: Modifier = Modifier) {
+private fun StartRow(
+    state: TodayUiState,
+    onStartSession: (ProgramKey?) -> Unit,
+    modifier: Modifier = Modifier,
+    easier: Boolean = false,
+    onStartEasier: (ProgramKey) -> Unit = {},
+) {
     val day = state.programDay
     var asking by rememberSaveable { mutableStateOf(false) }
     Row(
@@ -545,6 +621,12 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
             )
 
             // A free session is a row of its own, under On your own.
+            day != null && easier -> AccentButton(
+                stringResource(Res.string.today_start_day_easier, day.number),
+                onClick = { onStartEasier(day.program.key) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+
             day != null -> AccentButton(
                 stringResource(Res.string.today_start_day, day.number),
                 onClick = { onStartSession(day.program.key) },
@@ -590,6 +672,26 @@ private fun TodayScreenPreview() {
                 lastWhen = "7:42 AM",
                 following = active,
                 programDay = active.dayAfter(2),
+            ),
+            onStartSession = {},
+            onChooseProgram = {},
+        )
+    }
+}
+
+/** A day to take easier after the mat, with Lift's easier plan for the program's day, for no one on the mat. */
+@PreviewFormFactors
+@Composable
+private fun TodayScreenTaxedPreview() {
+    val active = builtInPrograms.first()
+    IntervalTheme {
+        TodayScreen(
+            TodayUiState(
+                following = active,
+                programDay = active.dayAfter(2),
+                taxed = ReadinessReason.Mat,
+                easier = true,
+                suggested = emptyList(),
             ),
             onStartSession = {},
             onChooseProgram = {},

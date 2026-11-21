@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.data
 
 import dev.justinsmith.interval.fakes.FakeStorage
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.platform.WallClock
@@ -15,8 +16,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 import dev.justinsmith.interval.model.PerceivedEffort as IntervalEffort
 
 class RepositoryIntervalActivityTest {
@@ -27,7 +30,14 @@ class RepositoryIntervalActivityTest {
     fun `Lift sees the workouts already logged and each one finished after`() {
         val repository = storage.repository(WallClock { 1_000L })
         repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
-        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
         val first = activity.workouts.value.single()
         assertEquals(1_000L to 300, first.finishedAtEpochMillis to first.elapsedSeconds)
 
@@ -39,7 +49,14 @@ class RepositoryIntervalActivityTest {
     fun `Lift sees the days a sport was logged on`() {
         val repository = storage.repository()
         repository.history.logSport(Sport.Bjj, epochDay = 20_744)
-        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
         assertEquals(listOf(SportDay(20_744L, grappling = true)), activity.sportDays.value)
 
         repository.history.logSport(Sport.Climbing, epochDay = 20_746)
@@ -48,9 +65,37 @@ class RepositoryIntervalActivityTest {
     }
 
     @Test
+    fun `Lift sees whether the mat or the wall is trained on whether logged or planned`() {
+        val repository = storage.repository()
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
+        assertFalse(activity.matOrWall.value)
+
+        // A run is neither.
+        repository.history.logSport(Sport.Running, epochDay = 20_744)
+        assertFalse(activity.matOrWall.value)
+
+        repository.plans.planWeekly(PlanWorkout.SportDay(Sport.Bjj), setOf(2))
+        assertTrue(activity.matOrWall.value)
+    }
+
+    @Test
     fun `Lift sees the weekly goal set on Plan`() {
         val repository = storage.repository()
-        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
         assertNull(activity.weeklyGoal.value)
 
         repository.settings.updateAppSettings { it.copy(weeklyGoal = 3) }
@@ -61,7 +106,14 @@ class RepositoryIntervalActivityTest {
     fun `Lift sees a counted 15-15's snatches set by set with the preset's name`() {
         val repository = storage.repository(WallClock { 1_195_000L })
         val uid = repository.history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
-        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
         assertNull(activity.workouts.value.single().snatches)
 
         repository.history.countSnatches(uid, SnatchCount(8, 16.0))
@@ -76,7 +128,14 @@ class RepositoryIntervalActivityTest {
     fun `Lift sees how hard a workout felt once it is said`() {
         val repository = storage.repository(WallClock { 1_000L })
         val uid = repository.history.recordWorkout(IntervalConfig(), elapsedSeconds = 300)
-        val activity = RepositoryIntervalActivity(repository.history, repository.settings, repository.presets, scope)
+        val activity =
+            RepositoryIntervalActivity(
+                repository.history,
+                repository.settings,
+                repository.presets,
+                repository.plans,
+                scope,
+            )
         assertNull(activity.workouts.value.single().effort)
 
         repository.history.reflectOnWorkout(uid, IntervalEffort.AllOut, note = "")

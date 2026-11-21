@@ -197,14 +197,16 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      sets logged, nothing stored. No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
-                     saying whether it was grappling, each workout's snatches as counted (`IntervalSnatches`, read as
+                     saying whether it was grappling, whether the mat or the wall is trained on at all (`matOrWall`:
+                     BJJ or climbing logged or planned, which Train's Strength offers its programs beside by), each workout's snatches as counted (`IntervalSnatches`, read as
                      sets by `snatchSets`), each workout's effort as said on its summary (read by readiness through
                      `efforts`), the body weight, and the max heart rate and whether a change of zone is
                      chimed, which the session's live heart rate goes by; `app` binds it),
                      `LiftActivity` (what the interval side reads of Lift, the bells owned among it;
                      `SessionRepository` is it), `LiftReadiness` (why today is a taxed day by Lift's reading,
                      whether the program's day ahead can be eased, and easing the session just started; Today
-                     reads it, lift-session's `EasierDay` is it), `LiftLogging` (the followed program's next day logged
+                     and Train's Strength read it, each saying why and starting the day eased, lift-session's
+                     `EasierDay` is it), `LiftLogging` (the followed program's next day logged
                      done as planned from the Log; `SessionRepository` is it). Over
                      `lift-domain` alone
   lift-data          `LiftRepository`, the root of a repository per store (`SessionRepository`, `SetRepository`,
@@ -236,7 +238,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`
   lift-today         Train's Strength pillar, Lift's tab (`TodayRoute`, in groups: Following, the program's day
-                     and how far through it; Beside the mat and the wall, `suggestedPrograms`, each opening the
+                     and how far through it, on a taxed day why and its Easier today switch (`LiftReadiness`, as
+                     Today has it); Beside the mat and the wall, `suggestedPrograms`, only for someone on the mat or
+                     the wall (`IntervalActivity.matOrWall`), else Programs with All programs alone, each opening the
                      `ProgramSheet` key; On your own; Lately, the last session and the balance, `MuscleBalance` in
                      lift-domain), the gear (bells, bar, bands, records) and the tests (`tests/`: `TestsRoute`, each
                      test's last result, and its sheet, the bell and the attempts with it, which starts one through

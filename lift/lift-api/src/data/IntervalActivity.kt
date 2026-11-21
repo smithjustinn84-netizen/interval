@@ -67,6 +67,9 @@ val List<IntervalWorkout>.efforts: List<WorkoutEffort>
 interface IntervalActivity {
     val workouts: StateFlow<List<IntervalWorkout>>
     val sportDays: StateFlow<List<SportDay>>
+
+    /** Whether the lifter trains on the mat or the wall: BJJ or climbing logged on a day, or planned. */
+    val matOrWall: StateFlow<Boolean>
     val weeklyGoal: StateFlow<Int?>
     val bodyWeightKg: StateFlow<Double?>
     val voice: StateFlow<Boolean>

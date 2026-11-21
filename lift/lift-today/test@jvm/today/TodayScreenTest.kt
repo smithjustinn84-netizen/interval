@@ -28,6 +28,7 @@ import dev.justinsmith.lift.domain.MuscleBalance
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
+import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.kettlebellLifts
@@ -85,6 +86,42 @@ class TodayScreenTest {
         onNode(hasScrollToNodeAction()).performScrollToNode(hasText("Free session"))
         onNodeWithText("Free session").performClick()
         assertEquals(listOf<ProgramKey?>(ProgramKey.BuiltIn(ProgramId.GobletSquatRow), null), started)
+    }
+
+    @Test
+    fun `a taxed day says why on the program's card and starts its day easier unless switched off`() = runUiTest {
+        val started = mutableListOf<String>()
+        val goblet = program(ProgramId.GobletSquatRow)
+        val state = TodayUiState(
+            following = goblet,
+            programDay = goblet.dayAfter(0),
+            taxed = ReadinessReason.Mat,
+            easier = true,
+        )
+        setThemedContent {
+            TodayScreen(
+                state,
+                onStartSession = { started += "start" },
+                onChooseProgram = {},
+                onStartEasier = { started += "easier" },
+            )
+        }
+        onNodeWithText("BJJ today or yesterday, and your grip has done more than usual this week").assertExists()
+        onNodeWithText("Easier today").assertExists()
+        onNodeWithText("Start day 1, easier").performClick()
+        onNodeWithText("Easier today").performClick()
+        onNodeWithText("Start day 1").performClick()
+        assertEquals(listOf("easier", "start"), started)
+    }
+
+    @Test
+    fun `with no mat or wall the programs group is the way to all of them alone`() = runUiTest {
+        setThemedContent {
+            TodayScreen(TodayUiState(suggested = emptyList()), onStartSession = {}, onChooseProgram = {})
+        }
+        onNodeWithText("Beside the mat and the wall").assertDoesNotExist()
+        onNodeWithText("Programs").assertExists()
+        onNodeWithText("All programs").assertExists()
     }
 
     @Test

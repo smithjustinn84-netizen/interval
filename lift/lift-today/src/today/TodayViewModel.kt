@@ -1,3 +1,5 @@
+@file:OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+
 package dev.justinsmith.lift.today
 
 import androidx.lifecycle.ViewModel
@@ -9,6 +11,7 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
+import dev.justinsmith.lift.data.LiftReadiness
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
@@ -30,6 +33,7 @@ import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.Readiness
 import dev.justinsmith.lift.domain.ReadinessCheck
+import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.domain.besideTheMat
@@ -53,6 +57,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 
@@ -75,12 +80,16 @@ data class TodayUiState(
     val balance: MuscleBalance? = null,
     /** The rest between sets, which [dayMinutes] is estimated with. */
     val restSeconds: Int = RestClock.DEFAULT_SECONDS,
-    /** Programs for someone who grapples or climbs, other than the one followed: two at most. */
+    /** Programs for someone who grapples or climbs, other than the one followed: two at most; none for anyone else. */
     val suggested: List<Program> = suggestedPrograms(null),
     /** The bells owned, in kg, lightest first. */
     val ownedBells: List<Double> = emptyList(),
     /** The grip's load lately, BJJ's logged days in it; null with nothing in the last four weeks. */
     val grip: GripLoad? = null,
+    /** Why today is a day to take easier, as Lift reads it (and Today says); null on any other. */
+    val taxed: ReadinessReason? = null,
+    /** Whether the program's next day has an easier plan to start it with, on a taxed day. */
+    val easier: Boolean = false,
     /** How ready for today's training, from the last session, the mat and the grip. */
     val readiness: ReadinessCheck = ReadinessCheck(Readiness.Normal),
     /** The benchmarks under way: 10,000 swings, the snatch test, the ABC's best, a bodyweight get-up. */
@@ -113,6 +122,7 @@ class TodayViewModel(
     private val gearStore: GearStore,
     setStore: SetStore,
     private val intervals: IntervalActivity,
+    private val readiness: LiftReadiness,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
@@ -148,6 +158,16 @@ class TodayViewModel(
                     { state: TodayUiState -> state.withChallenges(sessions, followed, weight, workouts) }
                 },
             ) { state, with -> with(state) }
+            // The programs beside the mat and the wall only for someone who trains there.
+            .combine(intervals.matOrWall) { state, matOrWall ->
+                if (matOrWall) state else state.copy(suggested = emptyList())
+            }
+            // Lift's reading of the day, as Today has it, taken again as the day turns: it goes by the clock.
+            .combine(
+                clock.days(timestamps, dayCheckMillis).flatMapLatest {
+                    combine(readiness.taxedBy, readiness.easierAhead, ::Pair)
+                },
+            ) { state, (taxed, easier) -> state.copy(taxed = taxed, easier = easier && taxed != null) }
             .flowOn(computation)
             .stateIn(
                 viewModelScope,
@@ -169,7 +189,7 @@ class TodayViewModel(
                     programStore.followed.value,
                     intervals.bodyWeightKg.value,
                     intervals.workouts.value,
-                ),
+                ).let { if (intervals.matOrWall.value) it else it.copy(suggested = emptyList()) },
             )
 
     /**
@@ -193,9 +213,13 @@ class TodayViewModel(
         ),
     )
 
-    /** Starts the session about to open: [program]'s next day, or a free one with null; none with one in progress. */
-    fun start(program: ProgramKey?) {
+    /**
+     * Starts the session about to open: [program]'s next day, or a free one with null; none with one in progress.
+     * [easier] eases its plan as Lift offers on a taxed day, on the same writer, as Today does.
+     */
+    fun start(program: ProgramKey?, easier: Boolean = false) {
         sessionStore.startSession(program)
+        if (easier) readiness.useEasier()
     }
 
     /** Drops the session in progress and starts [program]'s next day in its place. */

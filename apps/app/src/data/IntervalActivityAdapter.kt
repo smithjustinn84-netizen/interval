@@ -1,8 +1,10 @@
 package dev.justinsmith.interval.data
 
+import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
+import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
@@ -24,12 +26,14 @@ import kotlinx.coroutines.flow.stateIn
 
 /**
  * What Lift reads of the interval side, from its [historyStore] and [settingsStore], kept current on [scope]; a
- * workout's snatches named by the one of [presetStore]'s presets it matches.
+ * workout's snatches named by the one of [presetStore]'s presets it matches, and the mat or the wall planned from
+ * the plan store's.
  */
 class RepositoryIntervalActivity(
     private val historyStore: HistoryStore,
     private val settingsStore: SettingsStore,
     private val presetStore: PresetStore,
+    planStore: PlanStore,
     scope: CoroutineScope,
 ) : IntervalActivity {
     override val workouts: StateFlow<List<IntervalWorkout>> =
@@ -53,6 +57,12 @@ class RepositoryIntervalActivity(
                 it.asSportDay(historyStore.classes.value, settingsStore.appSettings.value.body)
             },
         )
+
+    override val matOrWall: StateFlow<Boolean> =
+        combine(historyStore.sportDays, planStore.planned) { days, planned ->
+            days.any { it.sport in MatAndWall } ||
+                planned.any { (it.workout as? PlanWorkout.SportDay)?.sport in MatAndWall }
+        }.stateIn(scope, SharingStarted.Eagerly, false)
 
     override val weeklyGoal: StateFlow<Int?> = settingsStore.appSettings
         .map { it.weeklyGoal }
@@ -116,3 +126,6 @@ private fun HistoryEntry.asIntervalWorkout(presets: List<Preset>, body: BodySett
         ?.let { heartLoad(it, body.maxHeartRate ?: DEFAULT_MAX_BPM, restingBpm = body.restingHeartRate) }
         ?.takeIf { it > 0 },
 )
+
+/** The sports Lift's programs beside the mat and the wall are for. */
+private val MatAndWall = setOf(Sport.Bjj, Sport.Climbing)

@@ -75,7 +75,8 @@ class LiftPlanChangesAcceptanceTest {
         seeNo("Save as Goblet squat and row (yours)")
         closeSummary()
         seeNo("Keep today's changes?")
-        seeProgramDay("Day 2 of 8 · week 1", "Goblet squat and row", "Start day 2")
+        // An all-out day makes the next one taxed: Train offers it easier.
+        seeProgramDay("Day 2 of 8 · week 1", "Goblet squat and row", "Start day 2, easier")
         assertTrue(app.storage.programs.rows.value.isEmpty())
     }
 

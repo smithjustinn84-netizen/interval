@@ -20,8 +20,10 @@ import dev.justinsmith.lift.domain.MuscleGroup
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.Readiness
+import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.barbellLifts
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
+import dev.justinsmith.lift.fakes.FakeLiftReadiness
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
 import kotlinx.coroutines.CoroutineDispatcher
@@ -39,11 +41,14 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class TodayViewModelTest {
     private val storage = FakeLiftStorage()
     private val intervals = FakeIntervalActivity()
+    private val readiness = FakeLiftReadiness()
     private val repository = with(storage) {
         LiftRepository(
             sessions,
@@ -69,6 +74,7 @@ class TodayViewModelTest {
         repository.gear,
         repository.sets,
         intervals,
+        readiness,
         FixedTimestampFormatter,
         clock,
         computation = computation,
@@ -162,6 +168,32 @@ class TodayViewModelTest {
 
         repository.sets.setRestSeconds(180)
         assertEquals(20, today.state.value.dayMinutes)
+    }
+
+    @Test
+    fun `the programs beside the mat and the wall are offered only to someone who trains there`() {
+        val today = today(clock = { 1_000L }, main)
+        assertEquals(emptyList(), today.state.value.suggested)
+
+        intervals.matOrWall.value = true
+        assertEquals(2, today.state.value.suggested.size)
+    }
+
+    @Test
+    fun `a taxed day says why and starts the program's day easier`() {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+        repository.programs.follow(ladders)
+        readiness.taxedBy.value = ReadinessReason.Mat
+        readiness.easierAhead.value = true
+        val today = today(clock = { 1_000L }, main)
+        assertEquals(ReadinessReason.Mat, today.state.value.taxed)
+        assertTrue(today.state.value.easier)
+
+        today.start(ladders, easier = true)
+        assertEquals(1, readiness.used)
+        // A day taxed with nothing to ease offers no easier plan.
+        readiness.easierAhead.value = false
+        assertFalse(today.state.value.easier)
     }
 
     @Test
