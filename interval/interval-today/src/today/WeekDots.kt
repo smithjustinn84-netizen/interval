@@ -114,9 +114,9 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
  * Monday to Sunday as a block a day, as Log's week draws them: filled and checked in its kind's colour once done
  * (the accent for a session on Lift, the work mark for an interval workout, the rest mark for mobility, dim for a
  * sport day alone), outlined in the accent while planned, a dim fill with a slash once missed, and the surface for
- * a rest day; today's is ringed in the text colour. Under each is its short name ("Mon"), and its sport's short
- * name ("BJJ", "Climb") where the
- * week has any, kept level across the days. Each day is a button that opens it, read as the strip on Log is:
+ * a rest day; today's is ringed in the text colour, with its date in it until it is done (not with large text).
+ * Under each is its short name ("Mon"), and its sport's short name ("BJJ", "Climb") where the week has any, kept
+ * level across the days. Each day is a button that opens it, read as the strip on Log is:
  * "Today, done, BJJ logged". A day done since Today last drew the week (a workout finished and come back
  * from, a class logged) draws its mark on, the fill sweeping round and the check landing; the days done as
  * Today opens are simply done. What was drawn is kept with the entry, so coming back from the workout counts.
@@ -246,6 +246,18 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
             .then(ring),
         contentAlignment = Alignment.Center,
     ) {
+        // With large text the date outgrows the block, and the strip already shortens to initials: its ring and
+        // the day's name in the accent mark it there.
+        if (day.today && day.state != DayState.Done && !isLargeText()) {
+            // Today's date in its block until it is done, which puts the check there: the week at a glance says
+            // where in it you stand.
+            Text(
+                day.dayOfMonth.toString(),
+                style = IntervalTheme.type.label,
+                color = palette.text,
+                maxLines = 1,
+            )
+        }
         if (day.state == DayState.Done) {
             Icon(
                 IntervalIcons.Check,

@@ -55,6 +55,15 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun `a day's tone reads as a caption on its card`() {
+        palettes.forEach { (theme, p) ->
+            assertContrast(4.5, p.accent, p.surface, "$theme accent caption on surface")
+            assertContrast(4.5, p.workMark, p.surface, "$theme workMark caption on surface")
+            assertContrast(4.5, p.restMark, p.surface, "$theme restMark caption on surface")
+        }
+    }
+
+    @Test
     fun `accent marks stand out from setup grounds`() {
         palettes.forEach { (theme, p) ->
             assertContrast(3.0, p.accent, p.background, "$theme accent on background")
