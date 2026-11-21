@@ -166,7 +166,12 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun repeatNow() = tap("Repeat now")
 
     /** Train's other pillar, by the picker under its title. */
-    fun pickPillar(name: String) = tap(hasText(name) and isSelectable())
+    fun pickPillar(name: String) {
+        // Train reopens a pillar where it was left, which may be scrolled down past the picker: back to it first.
+        val pillar = hasText(name) and isSelectable()
+        if (ui.onAllNodes(pillar).fetchSemanticsNodes().isEmpty()) scrollTo(name)
+        tap(pillar)
+    }
 
     private fun seePillar(name: String) {
         see(hasText(name) and isSelectable() and isSelected())
