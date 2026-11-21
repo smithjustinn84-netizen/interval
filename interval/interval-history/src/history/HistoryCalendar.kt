@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,9 +24,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +60,7 @@ import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
+import dev.justinsmith.interval.ui.Radius
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
@@ -134,6 +140,27 @@ private fun StripLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modi
     }
 }
 
+/** Top-rounded bar shape for completed days on the week bar chart. */
+private val WeekBarShape = RoundedCornerShape(
+    topStart = Radius.radius12,
+    topEnd = Radius.radius12,
+    bottomStart = Spacing.space4,
+    bottomEnd = Spacing.space4,
+)
+
+/** A dashed rounded outline for a planned day still to come on the week chart. */
+private fun Modifier.dashedBox(color: Color): Modifier = drawBehind {
+    val stroke = Sizes.border.toPx()
+    val dash = PathEffect.dashPathEffect(floatArrayOf(Sizes.dayDash.toPx(), Sizes.dayDashGap.toPx()))
+    drawRoundRect(
+        color = color,
+        topLeft = Offset(stroke / 2, stroke / 2),
+        size = Size(size.width - stroke, size.height - stroke),
+        cornerRadius = CornerRadius(Radius.radius12.toPx()),
+        style = Stroke(width = stroke, pathEffect = dash),
+    )
+}
+
 /** A kind's share of a day's bar: its [seconds] and the colour it is marked in. */
 private data class DayPart(val seconds: Int, val color: Color)
 
@@ -183,7 +210,7 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
                         val placeable = measurable.measure(constraints.copy(minHeight = height, maxHeight = height))
                         layout(placeable.width, placeable.height) { placeable.place(0, 0) }
                     }
-                    .clip(Corners.radius12),
+                    .clip(WeekBarShape),
             ) {
                 // Top to bottom: mobility over the interval workouts over Lift's sessions, each its share of the
                 // day in its kind's colour. A day with no time to share out (a session that took none) is Lift's.
@@ -194,12 +221,7 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
             }
         }
 
-        DayState.Planned -> Box(
-            Modifier
-                .fillMaxWidth()
-                .height(Sizes.weekBarMark)
-                .border(Sizes.border, palette.accent, Corners.radius12),
-        )
+        DayState.Planned -> Box(Modifier.fillMaxWidth().height(Sizes.weekBarMark).dashedBox(palette.accent))
 
         DayState.Missed -> Box(
             Modifier

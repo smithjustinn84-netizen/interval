@@ -3,6 +3,7 @@ package dev.justinsmith.interval.presets
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -48,6 +50,7 @@ import dev.justinsmith.interval.timer.builtInPresets
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -229,7 +232,12 @@ private fun PresetsList(
         modifier,
         navigation = onBack?.let { back -> { BackAction(back) } },
         actions = {
-            IconAction(IntervalIcons.Add, stringResource(Res.string.presets_new_cd), onClick = onNew)
+            IconAction(
+                IntervalIcons.Add,
+                stringResource(Res.string.presets_new_cd),
+                onClick = onNew,
+                bordered = true,
+            )
             tab?.let { SettingsAction(it.onOpenSettings) }
         },
         header = tab?.header,
@@ -325,10 +333,16 @@ private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifi
         StripeMark(if (item.selected) palette.accent else palette.workMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             if (item.selected) {
+                val badge = Modifier
+                    .padding(bottom = Spacing.space4)
+                    .clip(Corners.full)
+                    .background(palette.accentTint)
+                    .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
                 Text(
                     stringResource(Res.string.presets_on_timer),
                     style = IntervalTheme.type.caption,
                     color = palette.accent,
+                    modifier = badge,
                 )
             }
             Text(
@@ -400,6 +414,7 @@ private fun TimerRow(state: PresetsUiState, onOpen: () -> Unit, modifier: Modifi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(stringResource(Res.string.presets_timer), style = IntervalTheme.type.label, color = palette.text)
             Text(

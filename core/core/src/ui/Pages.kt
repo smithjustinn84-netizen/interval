@@ -82,7 +82,7 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
 @Composable
 fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
     LocalSensorPulse.current?.let { SensorPulseBadge(it) }
-    IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onClick, modifier)
+    IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onClick, modifier, bordered = true)
 }
 
 /**

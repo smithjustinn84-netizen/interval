@@ -577,13 +577,17 @@ private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifie
     Box(modifier.width(maxOf(IntervalSizes.stepNumber, digits)).clearAndSetSemantics {}) {
         when (state) {
             StepState.Done -> Box(
-                Modifier.size(Sizes.icon).clip(CircleShape).background(palette.accentFill),
+                Modifier
+                    .size(Sizes.icon)
+                    .clip(CircleShape)
+                    .background(palette.tint(palette.restMark))
+                    .border(Sizes.hairline, palette.line, CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
                     IntervalIcons.Check,
                     null,
-                    tint = palette.onFill(palette.accentFill),
+                    tint = palette.restMark,
                     modifier = Modifier.size(Sizes.chipIcon),
                 )
             }

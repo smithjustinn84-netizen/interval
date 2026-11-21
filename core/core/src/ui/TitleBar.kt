@@ -1,6 +1,8 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -113,10 +115,16 @@ fun IconAction(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     haptic: HapticFeedbackType? = null,
+    bordered: Boolean = false,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
+    val chrome = if (bordered) {
+        Modifier.background(palette.surface).border(Sizes.hairline, palette.line, CircleShape)
+    } else {
+        Modifier
+    }
     Box(
         modifier
             .size(Sizes.iconButton)
@@ -139,6 +147,7 @@ fun IconAction(
                 .pressScale(interaction)
                 .size(Sizes.iconButtonVisual)
                 .clip(CircleShape)
+                .then(chrome)
                 .indication(interaction, LocalIndication.current),
             contentAlignment = Alignment.Center,
         ) {

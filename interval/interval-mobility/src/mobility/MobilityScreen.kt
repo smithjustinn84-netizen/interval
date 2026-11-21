@@ -91,7 +91,12 @@ fun MobilityScreen(
         page.title,
         modifier,
         actions = {
-            IconAction(IntervalIcons.Add, stringResource(Res.string.mobility_build), actions.onBuild)
+            IconAction(
+                IntervalIcons.Add,
+                stringResource(Res.string.mobility_build),
+                actions.onBuild,
+                bordered = true,
+            )
             SettingsAction(page.onOpenSettings)
         },
         header = page.header,

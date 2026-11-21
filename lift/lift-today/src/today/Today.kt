@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.today
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -20,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -28,6 +30,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ConfirmDialog
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
@@ -174,7 +177,12 @@ fun TodayScreen(
         stringResource(Res.string.today_title),
         modifier,
         actions = {
-            IconAction(IntervalIcons.Add, stringResource(Res.string.today_new_program_cd), onNewProgram)
+            IconAction(
+                IntervalIcons.Add,
+                stringResource(Res.string.today_new_program_cd),
+                onNewProgram,
+                bordered = true,
+            )
             SettingsAction(onOpenSettings)
         },
         bottomBar = { StartRow(state, onStartSession, Modifier.widthIn(max = Sizes.content)) },
@@ -461,15 +469,20 @@ private fun ProgramHeader(following: Program, day: ProgramDay?, minutes: Int?, o
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            val badge = Modifier
+                .clip(Corners.full)
+                .background(palette.accentTint)
+                .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
             Text(
                 if (day == null) stringResource(Res.string.program_finished) else programDayLine(day),
                 style = IntervalTheme.type.caption,
-                color = palette.textDim,
+                color = palette.accent,
+                modifier = badge,
             )
             Text(
                 programName(following),
-                style = IntervalTheme.type.section,
+                style = IntervalTheme.type.value,
                 color = palette.text,
                 modifier = Modifier.semantics { heading() },
             )
@@ -554,7 +567,8 @@ private fun StartRow(state: TodayUiState, onStartSession: (ProgramKey?) -> Unit,
 @PreviewFormFactors
 @Composable
 private fun TodayScreenPreview() {
-    IntervalTheme(darkTheme = true) {
+    val active = builtInPrograms.first()
+    IntervalTheme {
         TodayScreen(
             TodayUiState(
                 last = LiftSession(
@@ -565,7 +579,8 @@ private fun TodayScreenPreview() {
                     sets = emptyList(),
                 ),
                 lastWhen = "7:42 AM",
-                following = builtInPrograms.first(),
+                following = active,
+                programDay = active.dayAfter(2),
             ),
             onStartSession = {},
             onChooseProgram = {},

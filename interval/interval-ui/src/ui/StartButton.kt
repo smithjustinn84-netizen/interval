@@ -49,8 +49,9 @@ fun StartButton(
     color: Color = IntervalTheme.palette.accentFill,
 ) {
     val palette = IntervalTheme.palette
-    val shape = Corners.radius18
+    val shape = Corners.full
     val glow = color.copy(alpha = Opacity.START_SHADOW)
+    val ink = palette.onFill(color)
     val interaction = remember { MutableInteractionSource() }
     val haptics = LocalHapticFeedback.current
     var launches by remember { mutableIntStateOf(0) }
@@ -80,23 +81,25 @@ fun StartButton(
                     onClick()
                 }
                 .padding(horizontal = Spacing.space20, vertical = Spacing.space8),
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space12, Alignment.CenterHorizontally),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8, Alignment.CenterHorizontally),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Icon(
-                IntervalIcons.Play,
-                contentDescription = null,
-                tint = palette.onFill(color),
-                modifier = Modifier.size(IntervalSizes.playIcon),
-            )
-            Text(
-                label,
-                style = IntervalTheme.type.value,
-                color = palette.onFill(color),
-                // With its length at the far end, the label takes the room between and the two stand apart.
-                modifier = if (trailing != null) Modifier.weight(1f) else Modifier,
-            )
-            trailing?.let { Text(it, style = IntervalTheme.type.value, color = palette.onFill(color)) }
+            val playIcon = @Composable {
+                Icon(
+                    IntervalIcons.Play,
+                    contentDescription = null,
+                    tint = ink,
+                    modifier = Modifier.size(IntervalSizes.playIcon),
+                )
+            }
+            if (trailing != null) {
+                Text(label, style = IntervalTheme.type.value, color = ink, modifier = Modifier.weight(1f))
+                playIcon()
+                Text(trailing, style = IntervalTheme.type.value, color = ink)
+            } else {
+                playIcon()
+                Text(label, style = IntervalTheme.type.value, color = ink)
+            }
         }
     }
 }

@@ -33,6 +33,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -333,11 +334,20 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
                 val arcSize = Size(size.width - stroke, size.height - stroke)
                 val trackStroke = Stroke(stroke)
                 val arcStroke = Stroke(stroke, cap = StrokeCap.Round)
+                val outerDash = Stroke(
+                    width = Sizes.hairline.toPx(),
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(Sizes.dayDash.toPx(), Sizes.dayDashGap.toPx())),
+                )
                 // Met, the ring wears the three phase colours round: the intro's ripple, and the summary's.
                 val metBrush = Brush.sweepGradient(
                     listOf(palette.prepMark, palette.workMark, palette.restMark, palette.prepMark),
                 )
                 onDrawBehind {
+                    drawCircle(
+                        palette.line,
+                        radius = size.minDimension / 2 + Spacing.space4.toPx(),
+                        style = outerDash,
+                    )
                     drawArc(palette.surfaceVariant, 0f, Angles.FULL_TURN, false, topLeft, arcSize, style = trackStroke)
                     if (share.value > 0f && closed) {
                         rotate(Angles.TWELVE_O_CLOCK) {
@@ -532,14 +542,16 @@ private fun WeekBars(goal: Int?, weeks: List<WeekCount>, modifier: Modifier = Mo
 /** A pill-shaped quiet action, such as "Set a weekly goal". */
 @Composable
 fun ChipButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .heightIn(min = Sizes.segment)
-            .surfaceButton(interaction, Corners.full, IntervalTheme.palette.surfaceVariant, onClick)
+            .surfaceButton(interaction, Corners.full, palette.surfaceVariant, onClick)
+            .border(Sizes.hairline, palette.line, Corners.full)
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = IntervalTheme.type.label, color = IntervalTheme.palette.text)
+        Text(text, style = IntervalTheme.type.label, color = palette.text)
     }
 }

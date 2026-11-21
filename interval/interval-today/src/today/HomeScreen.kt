@@ -34,7 +34,6 @@ import dev.justinsmith.interval.history.HistoryDay
 import dev.justinsmith.interval.history.PreviewHost
 import dev.justinsmith.interval.history.StartPreview
 import dev.justinsmith.interval.history.Streak
-import dev.justinsmith.interval.history.SummaryCard
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.WeekGoal
 import dev.justinsmith.interval.history.dayHeading
@@ -305,7 +304,6 @@ fun HomeScreen(
         stringResource(Res.string.home_title),
         modifier,
         actions = { SettingsAction(actions.onOpenSettings) },
-        header = note?.let { { CoachLine(it, coachPadding.padding(bottom = Spacing.space8)) } },
         eyebrow = if (coached) {
             {
                 DayCaption(
@@ -320,12 +318,16 @@ fun HomeScreen(
     ) {
         if (state.loading) return@TabGrid
         item(key = "week") {
-            SummaryCard(card) {
+            Column(
+                Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space8),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
                 WeekHeader(state.weekGoal, actions.onPlan)
                 // A day leads to the log, where its sheet opens.
                 WeekDots(state.week, onDay = actions.onOpenHistory)
             }
         }
+        note?.let { item(key = "coach") { CoachLine(it, card) } }
         dayItems(state, plan, actions, card, onLook = { looking = LEAD })
         plan.sensorCard(sensor.card)?.let { shown ->
             item(key = "sensor") {

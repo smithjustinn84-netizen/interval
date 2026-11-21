@@ -94,6 +94,15 @@ object Sizes {
     /** A planned or missed day in the week chart: an outlined or filled block this tall. */
     val weekBarMark = 32.dp
 
+    /** A day circle on Today's week strip, its dashed planned ring, and the quiet dot for a rest day. */
+    val weekDayDot = 36.dp
+    val dayDash = 3.dp
+    val dayDashGap = 3.dp
+    val restDot = 4.dp
+
+    /** The status dot at the start of Today's coach banner. */
+    val coachDot = 8.dp
+
     /** A swatch in the week chart's key. */
     val legendSwatch = 10.dp
 

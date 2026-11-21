@@ -10,8 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,7 +30,9 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -57,6 +59,7 @@ import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WeekdayForm
@@ -141,57 +144,59 @@ internal fun WeekDots(week: List<DayCell>, onDay: (Long) -> Unit, modifier: Modi
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(Spacing.space8),
                 ) {
+                    DayWeekdayLabel(day)
                     DayDot(
                         day,
                         drawOn = day.state == DayState.Done && day.epochDay !in doneDrawn,
                         delayMillis = Motion.STAGGER_MILLIS * index,
                     )
-                    DayLabels(day, sports)
+                    if (sports && !isLargeText()) DaySportLabel(day)
                 }
             }
         }
     }
 }
 
-/**
- * A day's short name under its block, and its sport's under that when the week has any ([sports]); with large text
- * ([isLargeText]) its initial alone, which its column has room for.
- */
+/** A day's short name over its circle; with large text ([isLargeText]) its initial alone. */
 @Composable
-private fun DayLabels(day: DayCell, sports: Boolean, modifier: Modifier = Modifier) {
+private fun DayWeekdayLabel(day: DayCell, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    // With large text a day's column holds an initial, and no sport's name: the day's description still says it.
     val large = isLargeText()
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            weekdayText(day.weekday, if (large) WeekdayForm.Initial else WeekdayForm.Short),
-            style = IntervalTheme.type.caption,
-            color = if (day.today) palette.accent else palette.textDim,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Visible,
-        )
-        if (sports && !large) {
-            Text(
-                day.sport?.let { sportShort(it) }.orEmpty(),
-                style = IntervalTheme.type.caption,
-                color = if (day.sportLogged) palette.text else palette.textDim,
-                maxLines = 1,
-                softWrap = false,
-                // A name wider than its day's column runs into the gap beside it, not off its end.
-                overflow = TextOverflow.Visible,
-            )
-        }
-    }
+    Text(
+        weekdayText(day.weekday, if (large) WeekdayForm.Initial else WeekdayForm.Short),
+        style = IntervalTheme.type.caption,
+        color = if (day.today) palette.accent else palette.textDim,
+        maxLines = 1,
+        softWrap = false,
+        overflow = TextOverflow.Visible,
+        modifier = modifier,
+    )
+}
+
+/** A day's sport short name under its circle, kept level across the week when any day carries one. */
+@Composable
+private fun DaySportLabel(day: DayCell, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    Text(
+        day.sport?.let { sportShort(it) }.orEmpty(),
+        style = IntervalTheme.type.caption,
+        color = if (day.sportLogged) palette.text else palette.textDim,
+        maxLines = 1,
+        softWrap = false,
+        // A name wider than its day's column runs into the gap beside it, not off its end.
+        overflow = TextOverflow.Visible,
+        modifier = modifier,
+    )
 }
 
 /** The days drawn done, kept across the entry's recreation: a `Set<Long>` saved as a list. */
 private val doneDaysSaver = listSaver<Set<Long>, Long>(save = { it.toList() }, restore = { it.toSet() })
 
 /**
- * One day's block, by its state, as wide as its day's column; today's wears a ring whatever its state. A done
- * day told to [drawOn] sweeps its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and
- * lands its check on a spring; at once under reduced motion.
+ * One day's circle, by its state: today stands out filled, past done days wear a soft tinted circle and check,
+ * planned days wear a dashed ring, missed days a dim slash, and rest days a quiet dot. A done day told to [drawOn]
+ * sweeps its fill round from twelve over [Motion.ENTER_MILLIS], after [delayMillis], and lands its check on a
+ * spring; at once under reduced motion.
  */
 @Composable
 private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Modifier = Modifier) {
@@ -213,48 +218,42 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
             check.snapTo(1f)
         }
     }
-    val shape = Corners.radius12
-    val ring = if (day.today) Modifier.border(Sizes.border, palette.text, shape) else Modifier
-    val fill = palette.fillOf(doneColor(day))
+    val done = doneColor(day)
+    val fill = if (day.today) palette.fillOf(done) else palette.tint(done)
+    val checkInk = if (day.today) palette.onFill(fill) else done
+    val surface = when {
+        day.state == DayState.Done ->
+            Modifier
+                .drawBehind {
+                    val radius = hypot(size.width, size.height) / 2
+                    drawArc(
+                        fill,
+                        Angles.TWELVE_O_CLOCK,
+                        Angles.FULL_TURN * sweep.value,
+                        useCenter = true,
+                        topLeft = Offset(center.x - radius, center.y - radius),
+                        size = Size(radius * 2, radius * 2),
+                    )
+                }
+                .then(if (day.today) Modifier else Modifier.border(Sizes.hairline, palette.line, CircleShape))
+
+        day.today -> Modifier.background(palette.accentFill)
+
+        day.state == DayState.Planned -> Modifier.dashedRing(palette.accent)
+
+        day.state == DayState.Missed -> Modifier.background(palette.surfaceVariant).missedSlash(palette.textDim)
+
+        else -> Modifier.background(palette.surfaceVariant)
+    }
     Box(
-        modifier
-            .fillMaxWidth()
-            .height(Sizes.weekBarMark)
-            .clip(shape)
-            .then(
-                when (day.state) {
-                    DayState.Done -> Modifier.drawBehind {
-                        // A circle round the block's corners, so the sweep fills it to its edges as it closes.
-                        val radius = hypot(size.width, size.height) / 2
-                        drawArc(
-                            fill,
-                            Angles.TWELVE_O_CLOCK,
-                            Angles.FULL_TURN * sweep.value,
-                            useCenter = true,
-                            topLeft = Offset(center.x - radius, center.y - radius),
-                            size = Size(radius * 2, radius * 2),
-                        )
-                    }
-
-                    DayState.Planned -> Modifier.border(Sizes.border, palette.accent, shape)
-
-                    DayState.Missed -> Modifier.background(palette.surfaceVariant).missedSlash(palette.textDim)
-
-                    DayState.Rest -> Modifier.background(palette.surfaceVariant)
-                },
-            )
-            .then(ring),
+        modifier.size(Sizes.weekDayDot).clip(CircleShape).then(surface),
         contentAlignment = Alignment.Center,
     ) {
-        // With large text the date outgrows the block, and the strip already shortens to initials: its ring and
-        // the day's name in the accent mark it there.
         if (day.today && day.state != DayState.Done && !isLargeText()) {
-            // Today's date in its block until it is done, which puts the check there: the week at a glance says
-            // where in it you stand.
             Text(
                 day.dayOfMonth.toString(),
                 style = IntervalTheme.type.label,
-                color = palette.text,
+                color = palette.onFill(palette.accentFill),
                 maxLines = 1,
             )
         }
@@ -262,14 +261,33 @@ private fun DayDot(day: DayCell, drawOn: Boolean, delayMillis: Int, modifier: Mo
             Icon(
                 IntervalIcons.Check,
                 null,
-                tint = palette.onFill(fill),
+                tint = checkInk,
                 modifier = Modifier.size(Sizes.chipIcon).graphicsLayer {
                     scaleX = check.value
                     scaleY = check.value
                 },
             )
         }
+        if (!day.today && day.state == DayState.Rest) {
+            Box(
+                Modifier
+                    .size(Sizes.restDot)
+                    .clip(CircleShape)
+                    .background(palette.textDim.copy(alpha = Opacity.DISABLED)),
+            )
+        }
     }
+}
+
+/** A dashed circular ring for a planned day still to come. */
+private fun Modifier.dashedRing(color: Color): Modifier = drawBehind {
+    val stroke = Sizes.border.toPx()
+    val dash = PathEffect.dashPathEffect(floatArrayOf(Sizes.dayDash.toPx(), Sizes.dayDashGap.toPx()))
+    drawCircle(
+        color = color,
+        radius = (size.minDimension - stroke) / 2,
+        style = Stroke(width = stroke, pathEffect = dash),
+    )
 }
 
 /**

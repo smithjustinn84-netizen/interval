@@ -265,7 +265,8 @@ fun HistoryScreen(
     // Two actions, as the board draws them: the plan is a tap away in the body ("Edit plan", "Set a weekly
     // goal", the day sheet's "Open plan"), and clearing the log lives in Settings beside export.
     val titleActions: @Composable RowScope.() -> Unit = {
-        IconAction(IntervalIcons.Add, stringResource(Res.string.history_plan_add_cd), { planning = true })
+        val addCd = stringResource(Res.string.history_plan_add_cd)
+        IconAction(IntervalIcons.Add, addCd, { planning = true }, bordered = true)
         SettingsAction(actions.onOpenSettings)
     }
     val selected = { item: HistoryItem ->

@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -17,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
@@ -43,6 +45,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -186,21 +189,26 @@ private fun ComingUpRow(
     )
 }
 
-/** The quiet action to the plan, beside Up next's heading and Coming up's: accent words, no fill of its own. */
+/** The quiet action to the plan, beside Up next's heading and Coming up's: a tinted accent pill in a 48dp target. */
 @Composable
 private fun EditPlan(onPlan: () -> Unit, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .heightIn(min = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, Color.Transparent, onPlan)
-            .padding(horizontal = Spacing.space12),
+            .surfaceButton(interaction, Corners.full, Color.Transparent, onPlan),
         contentAlignment = Alignment.Center,
     ) {
         Text(
             stringResource(Res.string.history_edit_plan),
-            style = IntervalTheme.type.label,
-            color = IntervalTheme.palette.accent,
+            style = IntervalTheme.type.caption,
+            color = palette.accent,
+            modifier = Modifier
+                .clip(Corners.full)
+                .background(palette.accentTint)
+                .border(Sizes.hairline, palette.accent.copy(alpha = Opacity.DISABLED), Corners.full)
+                .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
         )
     }
 }

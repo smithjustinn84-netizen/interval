@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
@@ -142,6 +143,7 @@ fun AccentButton(
         haptic = HapticFeedbackType.Confirm,
         modifier = modifier,
         enabled = enabled,
+        shape = Corners.full,
     )
 }
 
@@ -164,6 +166,7 @@ fun SecondaryButton(
         modifier = modifier,
         enabled = enabled,
         destructive = destructive,
+        shape = Corners.full,
     )
 }
 
@@ -248,6 +251,7 @@ private fun ModalButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     destructive: Boolean = false,
+    shape: Shape = Corners.radius18,
 ) {
     val palette = IntervalTheme.palette
     val baseFill = when {
@@ -264,10 +268,12 @@ private fun ModalButton(
     val fill = if (enabled) baseFill else baseFill.copy(alpha = Opacity.DISABLED)
     val ink = if (enabled) baseInk else baseInk.copy(alpha = Opacity.DISABLED)
     val interaction = remember { MutableInteractionSource() }
+    val outline = if (primary) Modifier else Modifier.border(Sizes.hairline, palette.line, shape)
     Box(
         modifier
             .heightIn(min = Sizes.save)
-            .surfaceButton(interaction, Corners.radius18, fill, onClick, enabled = enabled, haptic = haptic)
+            .surfaceButton(interaction, shape, fill, onClick, enabled = enabled, haptic = haptic)
+            .then(outline)
             .padding(horizontal = padding, vertical = Spacing.space8),
         contentAlignment = Alignment.Center,
     ) {

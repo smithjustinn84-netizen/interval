@@ -66,9 +66,9 @@ fun <T> SegmentedPicker(
     Row(
         modifier
             .fillMaxWidth()
-            .clip(Corners.radius18)
+            .clip(Corners.full)
             .background(palette.segmentTrack)
-            .border(Sizes.hairline, palette.line, Corners.radius18)
+            .border(Sizes.hairline, palette.line, Corners.full)
             .padding(Spacing.space4)
             .drawBehind {
                 if (index < 0) return@drawBehind
@@ -77,7 +77,7 @@ fun <T> SegmentedPicker(
                 val visualSlide = if (layoutDirection == LayoutDirection.Rtl) options.lastIndex - slide else slide
                 val topLeft = Offset((width + gap) * visualSlide, 0f)
                 val pillSize = Size(width, size.height)
-                val radius = CornerRadius(Radius.radius12.toPx())
+                val radius = CornerRadius(size.height / 2f)
                 drawRoundRect(palette.segmentSelected, topLeft = topLeft, size = pillSize, cornerRadius = radius)
                 drawRoundRect(
                     palette.line,
@@ -101,7 +101,7 @@ fun <T> SegmentedPicker(
                 Modifier
                     .weight(1f)
                     .heightIn(min = Sizes.segment)
-                    .clip(Corners.radius12)
+                    .clip(Corners.full)
                     .selectable(selected = isSelected, role = Role.RadioButton) {
                         haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
                         onSelect(option)

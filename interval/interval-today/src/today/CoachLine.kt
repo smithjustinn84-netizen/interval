@@ -1,9 +1,19 @@
 package dev.justinsmith.interval.today
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.today.resources.Res
@@ -30,7 +40,11 @@ import dev.justinsmith.interval.today.resources.home_day_rest
 import dev.justinsmith.interval.today.resources.home_day_run
 import dev.justinsmith.interval.today.resources.home_day_sport
 import dev.justinsmith.interval.today.resources.home_day_strength
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.Opacity
+import dev.justinsmith.interval.ui.Sizes
+import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.lift.domain.ReadinessReason
 import org.jetbrains.compose.resources.stringResource
@@ -51,17 +65,34 @@ internal fun DayCaption(weekday: Int?, kind: DayKind, modifier: Modifier = Modif
 }
 
 /**
- * The one thing worth saying of the day, under the title: that it is a day to take easier and why, that it is
- * the mat's and to loosen up first, that it is done, that rest is part of the week.
+ * The one thing worth saying of the day, as a tinted readiness banner under the week strip: that it is a day to
+ * take easier and why, that it is the mat's and to loosen up first, that it is done, that rest is part of the week.
  */
 @Composable
 internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
-    Text(
-        coachText(note),
-        style = IntervalTheme.type.section,
-        color = IntervalTheme.palette.text,
-        modifier = modifier.fillMaxWidth(),
-    )
+    val palette = IntervalTheme.palette
+    val warm = note is CoachNote.Taxed || note is CoachNote.ForSport
+    val fill = if (warm) palette.accentTint else palette.tint(palette.restMark)
+    val dot = if (warm) palette.accentFill else palette.restMark
+    val border = (if (warm) palette.accent else palette.restMark).copy(alpha = Opacity.DISABLED)
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(Corners.radius18)
+            .background(fill)
+            .border(Sizes.hairline, border, Corners.radius18)
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+    ) {
+        Box(Modifier.size(Sizes.coachDot).clip(CircleShape).background(dot))
+        Text(
+            coachText(note),
+            style = IntervalTheme.type.label,
+            color = palette.text,
+            modifier = Modifier.weight(1f),
+        )
+    }
 }
 
 /** A day's tone as the theme draws it. */

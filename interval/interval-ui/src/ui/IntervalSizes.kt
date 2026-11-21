@@ -12,13 +12,13 @@ object IntervalSizes {
     val rail = 120.dp
 
     /** Start workout's height, and the Timer's square start button. */
-    val start = 72.dp
+    val start = 60.dp
 
     /** Elevation of Start workout, the only raised element (`shadow-start`). */
     val startElevation = 8.dp
 
     /** The play glyph inside Start workout. */
-    val playIcon = 26.dp
+    val playIcon = 22.dp
 
     /**
      * Start's launch: the square its ring of the accent opens across, centred on the button and reaching past a
