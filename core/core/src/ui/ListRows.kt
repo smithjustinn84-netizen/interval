@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -71,7 +72,8 @@ fun ListCard(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
-            .background(fill),
+            .background(fill)
+            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18),
         content = content,
     )
 }

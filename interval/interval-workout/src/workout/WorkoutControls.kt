@@ -2,6 +2,7 @@ package dev.justinsmith.interval.workout
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -171,9 +172,16 @@ internal fun BigButton(
     content: @Composable () -> Unit,
 ) {
     val interaction = remember { MutableInteractionSource() }
+    val workout = IntervalTheme.workout
+    val outline = if (background == workout.control) {
+        Modifier.border(Sizes.hairline, workout.upcoming, Corners.radius18)
+    } else {
+        Modifier
+    }
     Box(
         modifier
             .surfaceButton(interaction, Corners.radius18, background, onClick, haptic = haptic)
+            .then(outline)
             .padding(horizontal = Spacing.space12, vertical = Spacing.space8),
         contentAlignment = Alignment.Center,
     ) {
@@ -190,10 +198,12 @@ private fun PillButton(
     haptic: HapticFeedbackType? = null,
 ) {
     val interaction = remember { MutableInteractionSource() }
+    val workout = IntervalTheme.workout
     Box(
         modifier
             .sizeIn(minWidth = Sizes.pillWidth, minHeight = Sizes.pillHeight)
-            .surfaceButton(interaction, Corners.radius12, IntervalTheme.workout.control, onClick, haptic = haptic)
+            .surfaceButton(interaction, Corners.radius12, workout.control, onClick, haptic = haptic)
+            .border(Sizes.hairline, workout.upcoming, Corners.radius12)
             .semantics { contentDescription = description }
             .padding(horizontal = Spacing.space16),
         contentAlignment = Alignment.Center,

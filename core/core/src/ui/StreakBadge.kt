@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
@@ -45,6 +46,7 @@ fun StreakBadge(
         modifier
             .clip(Corners.full)
             .background(fill)
+            .border(Sizes.hairline, palette.line, Corners.full)
             .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),

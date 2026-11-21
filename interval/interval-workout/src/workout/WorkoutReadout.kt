@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -18,8 +19,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -155,10 +158,16 @@ internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Mod
                 else -> IntervalTheme.workout.upcoming
             }
             val color by animateColorAsState(target, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "dot")
+            val width by animateDpAsState(
+                if (round == marks.active) IntervalSizes.roundMarkActiveWidth else IntervalSizes.roundMarkWidth,
+                tween(Motion.STATE_MILLIS, easing = StandardEasing),
+                label = "dotWidth",
+            )
             Box(
                 Modifier
                     .weight(1f, fill = false)
-                    .size(IntervalSizes.roundMarkWidth, IntervalSizes.roundMarkHeight)
+                    .width(width)
+                    .height(IntervalSizes.roundMarkHeight)
                     .clip(Corners.full)
                     .drawBehind { drawRect(color) },
             )

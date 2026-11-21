@@ -153,9 +153,12 @@ object Sizes {
     /** A text field, such as a preset's name. */
     val field = 52.dp
 
-    /** The workout's progress ring: its stroke, and its widest on a big window. */
+    /** The workout's progress ring: its stroke, its widest on a big window, and its dashed outer track lane. */
     val ring = 22.dp
     val ringMax = 420.dp
+    val ringOuterGap = 6.dp
+    val ringDash = 4.dp
+    val ringDashGap = 6.dp
 
     /**
      * The figure showing how an exercise goes, which both sides draw: on its page, tall enough to read a swing's

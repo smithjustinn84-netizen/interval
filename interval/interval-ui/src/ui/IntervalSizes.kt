@@ -89,8 +89,9 @@ object IntervalSizes {
     /** A time cap's Round done: the workout's biggest target, for a tap mid-effort without looking. */
     val roundDone = 96.dp
 
-    /** A round's mark on the workout screen: a short bar, narrowing when many share a row. */
+    /** A round's mark on the workout screen: a short bar, widening on the active round. */
     val roundMarkWidth = 24.dp
+    val roundMarkActiveWidth = 36.dp
     val roundMarkHeight = 6.dp
 
     /** The ring around Done on the summary. */

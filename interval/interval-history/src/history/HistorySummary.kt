@@ -3,6 +3,7 @@ package dev.justinsmith.interval.history
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -127,6 +128,7 @@ fun SummaryCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(IntervalTheme.palette.surface)
+            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18)
             .padding(horizontal = Spacing.space20, vertical = Spacing.space16),
         verticalArrangement = Arrangement.spacedBy(Spacing.space16),
         content = content,

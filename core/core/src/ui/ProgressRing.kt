@@ -15,6 +15,7 @@ import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -54,14 +55,36 @@ fun ProgressRing(
             }
         }
     }
-    val track = IntervalTheme.workout.control
+    val workout = IntervalTheme.workout
+    val track = workout.control
+    val outerTrack = workout.upcoming
     Spacer(
         modifier.clearAndSetSemantics {}.drawWithCache {
             val ring = RingStrokes()
+            val outerGap = Sizes.ringOuterGap.toPx()
+            val outerStroke = Stroke(
+                width = Sizes.hairline.toPx(),
+                pathEffect = PathEffect.dashPathEffect(
+                    floatArrayOf(Sizes.ringDash.toPx(), Sizes.ringDashGap.toPx()),
+                ),
+            )
             onDrawBehind {
                 val width = Sizes.ring.toPx() * strokeScale()
                 ring.widen(width)
-                val diameter = size.minDimension - width
+                val outerDiameter = size.minDimension - outerStroke.width
+                if (outerDiameter > 0f) {
+                    val outerTopLeft = Offset((size.width - outerDiameter) / 2, (size.height - outerDiameter) / 2)
+                    drawArc(
+                        outerTrack,
+                        0f,
+                        Angles.FULL_TURN,
+                        useCenter = false,
+                        outerTopLeft,
+                        Size(outerDiameter, outerDiameter),
+                        style = outerStroke,
+                    )
+                }
+                val diameter = size.minDimension - width - outerGap * 2
                 val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
                 val arc = Size(diameter, diameter)
                 drawArc(track, 0f, Angles.FULL_TURN, useCenter = false, topLeft, arc, style = ring.track)

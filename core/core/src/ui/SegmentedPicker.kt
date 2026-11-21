@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -67,6 +68,7 @@ fun <T> SegmentedPicker(
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(palette.segmentTrack)
+            .border(Sizes.hairline, palette.line, Corners.radius18)
             .padding(Spacing.space4)
             .drawBehind {
                 if (index < 0) return@drawBehind

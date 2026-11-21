@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.history
 
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -321,6 +322,7 @@ fun StartPill(
                 if (primary) palette.accentFill else palette.surfaceVariant,
                 onClick,
             )
+            .then(if (primary) Modifier else Modifier.border(Sizes.hairline, palette.line, Corners.full))
             .padding(horizontal = Spacing.space16),
         verticalAlignment = Alignment.CenterVertically,
         // Centred, for a pill held wider than its words.

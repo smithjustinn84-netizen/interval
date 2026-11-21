@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.today
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -264,6 +265,7 @@ private fun DayColumn(modifier: Modifier = Modifier, content: @Composable Column
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(IntervalTheme.palette.surface)
+            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18)
             .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
         content = content,
     )
@@ -295,7 +297,9 @@ private fun LeadStep(
         val tap = if (look != null) Modifier.clickable(onClickLabel = described, onClick = look) else Modifier
         Column(Modifier.fillMaxWidth().then(tap), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
             // In the day's tone, as its number is: the one caption on the card that says "do this now".
-            Text(upNextCaption(item), style = IntervalTheme.type.caption, color = tone)
+            val badge = Modifier.clip(Corners.full).background(palette.tint(tone))
+                .padding(horizontal = Spacing.space8, vertical = Spacing.space4)
+            Text(upNextCaption(item), style = IntervalTheme.type.caption, color = tone, modifier = badge)
             Text(upNextTitle(item), style = IntervalTheme.type.value, color = palette.text)
             JoinedText(upNextDetail(item), style = IntervalTheme.type.meta, color = palette.textDim)
             StepShape(item, tone, Modifier.padding(top = Spacing.space4))
