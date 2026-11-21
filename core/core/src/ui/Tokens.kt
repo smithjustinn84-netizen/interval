@@ -191,28 +191,35 @@ object Sizes {
     val summaryFade = 48.dp
 
     /**
-     * The lanes behind the Setup tabs: a track whose centre sits this far past the column's start
-     * edge and below its bottom, so the lanes sweep in from the side and bend down; the innermost
-     * lane's radius, the step out to the next, and the line between lanes.
+     * The sweeping track bend behind the Setup tabs: its apex height below the top edge, its minimum inner radius,
+     * the spacing between lanes, the crisp chalk line stroke, dashed cadence segments, and staggered-start ticks.
      */
-    val laneCentreOut = 700.dp
-    val laneCentreBelow = 56.dp
-    val laneFirst = 700.dp
-    val laneStep = 44.dp
-    val laneStroke = 1.5.dp
+    val laneApex = 44.dp
+    val laneFirst = 540.dp
+    val laneStep = 34.dp
+    val laneStroke = 1.dp
+    val laneDash = 4.dp
+    val laneDashGap = 6.dp
+    val laneTick = 6.dp
+
+    /** The quiet corner track echo balancing the foot of Setup tabs on taller viewports. */
+    val laneEchoOut = 176.dp
+    val laneEchoBelow = 156.dp
+    val laneEchoFirst = 260.dp
 
     /** The workout's lanes circle the ring: the gap from the ring's edge to the first, and the step between. */
-    val workoutLaneGap = 27.dp
-    val workoutLaneStep = 40.dp
+    val workoutLaneGap = 24.dp
+    val workoutLaneStep = 36.dp
 
     /** A comet: its stroke, how long its tail trails, and how far past the column's edge it starts and ends. */
-    val cometStroke = 4.dp
-    val cometTail = 160.dp
+    val cometStroke = 2.5.dp
+    val cometTail = 130.dp
     val cometMargin = 80.dp
 
-    /** The dim second comet on the workout's outer lane. */
-    val chaseStroke = 3.dp
-    val chaseTail = 120.dp
+    /** The quiet Setup pace glint and the dim second comet on the workout's outer lane. */
+    val setupCometStroke = 2.dp
+    val chaseStroke = 1.5.dp
+    val chaseTail = 100.dp
 
     /** The band of phase colour along the workout screen's top edge (its start edge in landscape). */
     val phaseBand = 10.dp

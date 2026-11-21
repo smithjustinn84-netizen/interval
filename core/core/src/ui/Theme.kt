@@ -154,7 +154,7 @@ data class IntervalPalette(
     private companion object {
         const val TINT_STRENGTH = 0.1f
         const val LIGHT_ACCENT_TINT = 0.22f
-        const val LANE_LINE_STRENGTH = 0.6f
+        const val LANE_LINE_STRENGTH = 0.45f
         const val TIMELINE_REST_STRENGTH = 0.24f
         const val DARK_LUMINANCE = 0.5f
 
@@ -252,7 +252,7 @@ object PhaseColors {
     val ink = Color(0xFF0D1814)
 
     /** The lanes round the ring: their lines, and every other lane's fill, a whisper of [control] over the ground. */
-    val laneLine = control
+    val laneLine = lerp(control, upcoming, WORKOUT_LANE_LINE_STRENGTH)
     val laneFill = lerp(ground, control, LANE_FILL_STRENGTH)
 }
 
@@ -478,4 +478,7 @@ object IntervalTheme {
 }
 
 /** How far the lanes' fill leans from the page towards a card, in every palette. */
-private const val LANE_FILL_STRENGTH = 0.45f
+private const val LANE_FILL_STRENGTH = 0.30f
+
+/** How far the dark workout's inner track ring steps above [PhaseColors.control] before fading outward. */
+private const val WORKOUT_LANE_LINE_STRENGTH = 0.35f
