@@ -60,7 +60,8 @@ fun LiftActivity.lifting(): Flow<Lifting> =
  * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
  * at by then: the first of them the next day, each after it the day after. With no plan of a session on Lift at
  * all, the program's next day falls where its pace puts it ([programDayOn]: today, or after the rest its days a
- * week leave), today while a session is under way, and leads the plans of its day. A sport planned today and not
+ * week leave, and past a day [programPutOff] from Today), today while a session is under way, and leads the plans
+ * of its day. A sport planned today and not
  * yet logged brings the flow to do before it, until mobility is done.
  */
 fun TimestampFormatter.upNext(
@@ -68,13 +69,18 @@ fun TimestampFormatter.upNext(
     planned: List<PlannedWorkout>,
     lifting: Lifting,
     today: Long,
+    programPutOff: Long? = null,
 ): List<UpNextItem> {
     val unplanned = lifting.programDay?.takeIf { planned.none { it.workout is PlanWorkout.Lift } }?.let { day ->
         val sessionDays = lifting.sessions
             .filter { it.program == day.program.key }
             .mapNotNull { session -> session.finishedAtEpochMillis?.let(::dayNumber) }
         // A session under way is today's, whatever the pace says.
-        val epochDay = if (lifting.inProgress) today else programDayOn(day.program.daysPerWeek, sessionDays, today)
+        val epochDay = if (lifting.inProgress) {
+            today
+        } else {
+            programDayOn(day.program.daysPerWeek, sessionDays, today, programPutOff)
+        }
         UpNextItem.Lift(
             epochDay,
             heading(epochDay, today),
@@ -121,11 +127,13 @@ fun TimestampFormatter.upNext(
  * (every day at four a week or more, every other day at three, every third at two), never before [today]; and once
  * a week, Monday to Sunday, holds as many of its sessions as the program asks, the next waits for the Monday after.
  * [sessionDays] are the days its sessions finished on. Done early from Today's "Do it today", it moves on from there.
+ * A day [putOff] from Today ("Not today") holds it to the day after.
  */
-internal fun programDayOn(daysPerWeek: Int, sessionDays: List<Long>, today: Long): Long {
+internal fun programDayOn(daysPerWeek: Int, sessionDays: List<Long>, today: Long, putOff: Long? = null): Long {
     val perWeek = daysPerWeek.coerceAtLeast(1)
     val gap = (DAYS_PER_WEEK / perWeek).coerceAtLeast(1)
     var day = sessionDays.maxOrNull()?.let { maxOf(today, it + gap) } ?: today
+    if (putOff != null && day <= putOff) day = putOff + 1
     while (sessionDays.count { weekStartOf(it) == weekStartOf(day) } >= perWeek) {
         day = weekStartOf(day) + DAYS_PER_WEEK
     }

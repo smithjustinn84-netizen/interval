@@ -78,6 +78,11 @@ data class AppSettings(
      * never on for someone who had the app before it.
      */
     val firstWeek: Boolean = false,
+    /**
+     * The day the followed program's day, with no session on Lift planned, was put off from Today ("Not today"), as
+     * an epoch day: it falls on none earlier than the day after. Null while none is. Not exported.
+     */
+    val programPutOffDay: Long? = null,
 ) {
     companion object {
         val WEEKLY_GOAL_RANGE = 1..7

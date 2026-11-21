@@ -155,6 +155,20 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `not today puts the program's day off to tomorrow and undo brings it back`() {
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+        assertEquals(TODAY, viewModel.state.value.upNext.single().epochDay)
+
+        val undo = viewModel.putOffProgramDay()
+        val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
+        assertEquals(TODAY + 1, next.epochDay)
+        assertEquals(1, next.programDay?.number)
+
+        undo()
+        assertEquals(TODAY, viewModel.state.value.upNext.single().epochDay)
+    }
+
+    @Test
     fun `a session in progress is the one to resume`() {
         bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
         viewModel.startLift(null)

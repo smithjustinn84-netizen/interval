@@ -57,6 +57,7 @@
     <string name="sport_counts">Counts toward your week</string>
     <string name="sport_log_it">Log it</string>
     <string name="notice_sport_logged">%1$s logged</string>
+    <string name="notice_program_put_off">%1$s moved to tomorrow</string>
     <string name="notice_sensor_started">Recording. The phone can go in the bag.</string>
     <string name="home_before_class">Before class</string>
     <string name="home_before_climbing">Before climbing</string>

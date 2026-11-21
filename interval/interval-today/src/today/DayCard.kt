@@ -69,6 +69,7 @@ import dev.justinsmith.interval.today.resources.home_rest_move
 import dev.justinsmith.interval.today.resources.home_rest_until
 import dev.justinsmith.interval.today.resources.home_resume_session
 import dev.justinsmith.interval.today.resources.home_spare
+import dev.justinsmith.interval.today.resources.notice_program_put_off
 import dev.justinsmith.interval.today.resources.notice_sport_logged
 import dev.justinsmith.interval.today.resources.preview_open_cd
 import dev.justinsmith.interval.today.resources.sport_counts
@@ -337,15 +338,31 @@ private fun LeadStep(
                 color = palette.fillOf(tone),
             )
         }
-        item.movablePlan?.let { planId ->
-            QuietTextButton(
+        val planId = item.movablePlan
+        val putOff = stringResource(Res.string.notice_program_put_off, upNextTitle(item))
+        when {
+            planId != null -> QuietTextButton(
                 stringResource(Res.string.home_not_today),
                 onClick = { actions.onNotToday(planId) },
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+            )
+
+            // The program's day with no plan has no day to move: it is put off to tomorrow.
+            item.isProgramUnplanned -> QuietTextButton(
+                stringResource(Res.string.home_not_today),
+                onClick = { actions.onPutOffProgram(putOff) },
                 modifier = Modifier.align(Alignment.CenterHorizontally),
             )
         }
     }
 }
+
+/**
+ * The followed program's day with no plan of a session on Lift behind it, and none under way: "Not today" puts it
+ * off.
+ */
+private val UpNextItem.isProgramUnplanned: Boolean
+    get() = this is UpNextItem.Lift && planId == null && !resume && programDay != null
 
 /**
  * The plan behind a step that "Not today" can move to a day after: an interval workout planned or a session on

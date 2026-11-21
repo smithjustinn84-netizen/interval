@@ -214,6 +214,15 @@ class SettingsRepositoryTest {
     }
 
     @Test
+    fun `the program's day put off stays put off after a restart`() {
+        assertEquals(null, repository().settings.appSettings.value.programPutOffDay)
+        repository().settings.updateAppSettings { it.copy(programPutOffDay = 20_000L) }
+        assertEquals(20_000L, repository().settings.appSettings.value.programPutOffDay)
+        repository().settings.updateAppSettings { it.copy(programPutOffDay = null) }
+        assertEquals(null, repository().settings.appSettings.value.programPutOffDay)
+    }
+
+    @Test
     fun `the first week card stays on after a restart until it is hidden`() {
         assertEquals(false, repository().settings.appSettings.value.firstWeek)
         repository().settings.updateAppSettings { it.copy(firstWeek = true) }

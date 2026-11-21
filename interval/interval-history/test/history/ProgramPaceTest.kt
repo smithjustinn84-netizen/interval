@@ -38,6 +38,13 @@ class ProgramPaceTest {
     }
 
     @Test
+    fun `a day put off from today falls tomorrow and keeps the pace after it`() {
+        assertEquals(thursday + 1, programDayOn(3, emptyList(), today = thursday, putOff = thursday))
+        // Put off yesterday: today is the day again.
+        assertEquals(thursday, programDayOn(3, emptyList(), today = thursday, putOff = thursday - 1))
+    }
+
+    @Test
     fun `a session long gone by leaves the day today`() {
         assertEquals(thursday, programDayOn(3, listOf(thursday - 10), today = thursday))
     }

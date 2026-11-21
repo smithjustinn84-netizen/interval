@@ -131,6 +131,23 @@ class TodayAcceptanceTest {
         }
 
     @Test
+    fun `the program's day followed without a plan is put off to tomorrow and undone`() = acceptanceScenario(
+        lift = FakeLiftStorage().apply {
+            val program = ProgramId.FifteenMinuteKettlebell.name
+            following.row.value = FollowingEntity(programId = program, startedAtEpochMillis = 0)
+        },
+    ) {
+        seeUpNext("15-minute kettlebell plan")
+        tap("Not today")
+        see("15-minute kettlebell plan moved to tomorrow")
+        seeCoachSays("rest day", "Rest is part of the week.")
+        see("Nothing due until tomorrow")
+        undoNotice()
+        seeUpNext("15-minute kettlebell plan")
+        see("Not today")
+    }
+
+    @Test
     fun `a day with nothing planned is a rest day and tomorrow's stands back`() = acceptanceScenario {
         openPlanFromToday()
         planSportEvery("BJJ", weekday = "Friday")

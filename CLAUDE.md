@@ -411,7 +411,9 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   Up next sees it there. A sport keeps its day. `todayAgenda` (`history/TodayAgenda.kt`) is how Today and History lead with what
   is up next: the program followed with no session on Lift planned has its day where its pace puts it
   (`programDayOn`, `UpNext.kt`: after a session the rest its days a week leave, and once a week holds them the
-  Monday after; a session under way today), which the week strip and the calendar mark planned (`withProgramDay`);
+  Monday after; a session under way today; never on a day put off from Today's "Not today", which holds it to the
+  day after: `AppSettings.programPutOffDay`, not exported, `HomeViewModel.putOffProgramDay` with Undo), which the
+  week strip and the calendar mark planned (`withProgramDay`);
   on a day with a sport still to log, the program's unplanned day stands beside the lead
   rather than taking it, and with no workout the user planned themself the lead is the
   flow to do before the sport (`UpNextItem.Flow`, which `upNext` adds until mobility is done that day and History

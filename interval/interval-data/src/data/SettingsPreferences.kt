@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
@@ -46,6 +47,7 @@ private val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
 private val SESSION_MINUTES = intPreferencesKey("session_minutes")
 private val SETUP_OFFERED = booleanPreferencesKey("setup_offered")
 private val FIRST_WEEK = booleanPreferencesKey("first_week")
+private val PROGRAM_PUT_OFF = longPreferencesKey("program_put_off_day")
 
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
@@ -124,6 +126,7 @@ internal fun Preferences.toAppSettings(): AppSettings {
         sessionMinutes = this[SESSION_MINUTES]?.takeIf { it in AppSettings.SESSION_MINUTES },
         setupOffered = this[SETUP_OFFERED] ?: defaults.setupOffered,
         firstWeek = this[FIRST_WEEK] ?: defaults.firstWeek,
+        programPutOffDay = this[PROGRAM_PUT_OFF],
     )
 }
 
@@ -138,6 +141,8 @@ internal fun MutablePreferences.write(app: AppSettings) {
     if (session == null) remove(SESSION_MINUTES) else this[SESSION_MINUTES] = session
     this[SETUP_OFFERED] = app.setupOffered
     this[FIRST_WEEK] = app.firstWeek
+    val putOff = app.programPutOffDay
+    if (putOff == null) remove(PROGRAM_PUT_OFF) else this[PROGRAM_PUT_OFF] = putOff
     write(app.body)
 }
 

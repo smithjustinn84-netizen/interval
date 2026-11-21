@@ -164,17 +164,8 @@ fun HomeRoute(
     val openMobility by rememberUpdatedState(onOpenMobility)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
-    val recording = stringResource(Res.string.notice_sensor_started)
     val failures by rememberUpdatedState(SensorFailure.entries.associateWith { stringResource(it.words) })
-    LaunchedEffect(sensors, notices) {
-        sensors.events.collect { event ->
-            when (event) {
-                ClassSensorEvent.Started -> notices.show(recording)
-                is ClassSensorEvent.Synced -> openClass(event.startedAtEpochMillis)
-                is ClassSensorEvent.Failed -> notices.show(failures.getValue(event.why))
-            }
-        }
-    }
+    SensorEvents(sensors, failures, onOpenClass = { openClass(it) })
     val actions = remember(viewModel, sensors, bluetooth, notices, undo) {
         // The sensor is reached only once Bluetooth may be used; a refusal says so as any failure to reach it does.
         fun reaching(work: () -> Unit) = bluetooth.ask { granted ->
@@ -205,6 +196,9 @@ fun HomeRoute(
                 notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
             },
             onNotToday = viewModel::openMove,
+            onPutOffProgram = { putOffText ->
+                notices.show(putOffText, NoticeAction(undo, viewModel.putOffProgramDay()))
+            },
             onCloseMove = { viewModel.openMove(null) },
             onMovePlanned = { toDay, movedText ->
                 viewModel.movePlanned(toDay)?.let { move ->
@@ -229,6 +223,28 @@ fun HomeRoute(
     HomeScreen(state, actions, modifier, sensor)
 }
 
+/** The sensor's events as they come: a notice of a recording started or of a failure, and a class synced opened. */
+@Composable
+private fun SensorEvents(
+    sensors: ClassSensorViewModel,
+    failures: Map<SensorFailure, String>,
+    onOpenClass: (Long) -> Unit,
+) {
+    val notices = LocalNotices.current
+    val recording = stringResource(Res.string.notice_sensor_started)
+    val failed by rememberUpdatedState(failures)
+    val open by rememberUpdatedState(onOpenClass)
+    LaunchedEffect(sensors, notices) {
+        sensors.events.collect { event ->
+            when (event) {
+                ClassSensorEvent.Started -> notices.show(recording)
+                is ClassSensorEvent.Synced -> open(event.startedAtEpochMillis)
+                is ClassSensorEvent.Failed -> notices.show(failed.getValue(event.why))
+            }
+        }
+    }
+}
+
 /** What the Today tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
 @Immutable
 class HomeActions(
@@ -244,6 +260,8 @@ class HomeActions(
     val onLogSport: (sport: Sport, loggedText: String) -> Unit = { _, _ -> },
     /** Opens the move sheet on today's plan, by its id: "Not today". */
     val onNotToday: (planId: Long) -> Unit = {},
+    /** Puts the program's day with no plan off to tomorrow, with the line saying so: its "Not today". */
+    val onPutOffProgram: (putOffText: String) -> Unit = {},
     val onCloseMove: () -> Unit = {},
     /** Moves the move sheet's plan to an epoch day, with the line saying so ("Moved Tabata to Thursday"). */
     val onMovePlanned: (toDay: Long, movedText: String) -> Unit = { _, _ -> },

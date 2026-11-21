@@ -290,6 +290,17 @@ class HomeViewModel(
         planStore.unmovePlanned(move.plan, move.fromDay, move.toDay)
     }
 
+    /**
+     * "Not today" on the followed program's day with no session on Lift planned: puts it off to tomorrow. Returns
+     * its Undo, which puts back the day put off before.
+     */
+    fun putOffProgramDay(): () -> Unit {
+        val before = settingsStore.appSettings.value.programPutOffDay
+        val today = timestamps.dayNumber(clock.nowMillis())
+        settingsStore.updateAppSettings { it.copy(programPutOffDay = today) }
+        return { settingsStore.updateAppSettings { it.copy(programPutOffDay = before) } }
+    }
+
     private fun buildState(
         history: List<HistoryEntry>,
         sports: List<LoggedSport>,
@@ -303,7 +314,7 @@ class HomeViewModel(
         val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), sports, timestamps::dayNumber)
         val week = log.week()
         val goal = app.weeklyGoal
-        val upNext = timestamps.upNext(log, planned, lifting, today)
+        val upNext = timestamps.upNext(log, planned, lifting, today, app.programPutOffDay)
         val done = log.day(today).doneSteps(names::of)
         // Today's block is ticked once the day's steps are, as its card has them: a warm-up done leaves it planned.
         val open = todayPlan(todayAgenda(upNext), done).steps.isNotEmpty()

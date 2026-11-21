@@ -42,7 +42,9 @@ class AppDataImporter(
         lift.importAll(liftImport)
         if (withSettings) {
             // Whoever imports has the app open already: the file's settings never bring Set up back.
-            intervals.settings.updateAppSettings { plan.settings.app.copy(setupOffered = true) }
+            intervals.settings.updateAppSettings {
+                plan.settings.app.copy(setupOffered = true, programPutOffDay = it.programPutOffDay)
+            }
             intervals.settings.updateCueSettings { plan.settings.cues }
             intervals.settings.updateConfig { plan.settings.timer }
         }

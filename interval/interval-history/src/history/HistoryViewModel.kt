@@ -270,7 +270,7 @@ class HistoryViewModel(
         val log = TrainingLog(history, planned, today, lifts, sports, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
-        val upNext = timestamps.upNext(log, planned, lifting, today)
+        val upNext = timestamps.upNext(log, planned, lifting, today, app.programPutOffDay)
         val liftLog = timestamps.liftLog(today, lifting, followedSince)
 
         val classes = logged.classes.groupBy({ it.epochDay }) {
