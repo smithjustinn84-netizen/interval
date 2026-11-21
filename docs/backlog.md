@@ -48,6 +48,12 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   start or a sync and starts it again after, and takes a forget under the same lock. None of it has met a sensor:
   pair, Record and Sync on a Verity Sense, and Record tapped while a workout streams the heart rate.
   *Brings it in:* the sensor in hand.
+- **Pairing and the pulse, on the real sensors** (2026-11-20: tried, both worked). Pairing took an H10 left at
+  home in place of the Verity Sense on the arm, since Polar's search opens by naming every sensor the phone knows;
+  it now takes only one heard advertising in the scan, and asks "Which sensor?" with two in reach. The paired
+  sensor's heart rate beside the gear on every tab came with it. Both were run on the real sensors that day. Not
+  said to be tried: the "Which sensor?" sheet with an armband and a strap both awake, the pulse's sheet, a low
+  battery's dot, and "Rec" through a class.
 - **Live heart rate on a real strap** (2026-11-19). Lift's session now takes the max heart rate and the alerts
   switch from Settings, the stream is held by its users (a workout's and a session's, neither ending the other's),
   a strap that reads no heart shows as no signal, and a dropped connection is tried again (`PolarHeartStream`, a
