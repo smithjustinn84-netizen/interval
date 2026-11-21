@@ -229,7 +229,8 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `FigureSilhouette.kt`, its back bowed round or arched by `Pose.spine`, its hands opened and turned at the wrist (`palm`, `wrist`; a wrist drill drawn close by `ExerciseDemo.crop`), each near part with a gap cut round it in a layer of its own, and beside
                      its pose it breathes and its weight flares as a drive starts, `FigureMotion.kt`; a figure shown
                      alone takes `ExerciseDemo.framed()`, which follows one that lies down and stands up, `follows`), and `Demonstration`,
-                     the card of the figure over its timeline and cues lit in turn, which the exercise page and a
+                     the card of the figure over its timeline and cues lit in turn (Step, Slow; under Watch for a
+                     lift's `faults`, squatting the hinge shown done wrong by `ExerciseDemo.doneWrong`), which the exercise page and a
                      flow's move both show; most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),

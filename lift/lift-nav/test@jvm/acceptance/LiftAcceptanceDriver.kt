@@ -472,6 +472,39 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     /** The figure's cues grouped: what is done once before the reps, then what each rep does. */
     fun seeSetUpThenEachRep() = seeMatches("Set up", "Each rep")
 
+    /** Slows the figure to half speed, which Full speed puts back. */
+    fun slowDemonstration() {
+        tap("Slow")
+        see("Full speed")
+    }
+
+    /** Steps the figure on to where the next of its cues starts, which stops it there and lights [to]. */
+    fun stepDemonstration(to: String) {
+        tap("Step")
+        see("Play")
+        seeCurrentCue(to)
+    }
+
+    /**
+     * Under Watch for, taps a fault the figure can show (by its [correction]): the figure does it wrong, marked so,
+     * and the row is lit.
+     */
+    fun showFault(correction: String) {
+        see("Watch for")
+        tap(correction)
+        see(hasContentDescription("Done wrong", substring = true))
+        see(hasText(correction) and isSelected())
+    }
+
+    /** A fault only said in words: the figure can't show it, so its row offers nothing to tap. */
+    fun seeFaultNotShown(correction: String) = see(hasText(correction) and !hasClickAction())
+
+    /** Taps the fault shown again: the figure does it right. */
+    fun hideFault(correction: String) {
+        tap(correction)
+        seeNo(hasContentDescription("Done wrong", substring = true))
+    }
+
     /** Taps the set-up's cue, which plays the set-up again and lights it. */
     fun showSetUp(cue: String) {
         tap(cue)

@@ -47,6 +47,7 @@ import dev.justinsmith.lift.domain.PastSession
 import dev.justinsmith.lift.domain.Trend
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.collapsedSets
+import dev.justinsmith.lift.domain.faults
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.library.resources.Res
@@ -196,7 +197,13 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
         is BuiltInExercise -> {
             val cues = stringArrayResource(exercise.cues())
             val demo = exercise.demo
-            if (demo == null) Cues(cues) else Demonstration(demo, exerciseName(exercise), cues)
+            if (demo ==
+                null
+            ) {
+                Cues(cues)
+            } else {
+                Demonstration(demo, exerciseName(exercise), cues, faults = exercise.faults)
+            }
             Works(exercise)
         }
 

@@ -91,4 +91,17 @@ class ExerciseLibraryAcceptanceTest {
         seeSetUpThenEachRep()
         showSetUp("Hold the bell by the horns at your chest, elbows down")
     }
+
+    @Test
+    fun `a swing's figure is slowed and stepped through and shown done wrong`() = liftScenario {
+        openExerciseLibrary()
+        scrollTo("Two-hand swing")
+        openExercise("Two-hand swing")
+        slowDemonstration()
+        stepDemonstration(to = "Let it float to chest height, then wait until your upper arms touch your ribs to hinge")
+        stepDemonstration(to = "Set the bell a foot in front, hinge at the hips and hike it high between your legs")
+        showFault("Hips back, shins stay vertical")
+        seeFaultNotShown("Loosen at the top, grip on the way down")
+        hideFault("Hips back, shins stay vertical")
+    }
 }

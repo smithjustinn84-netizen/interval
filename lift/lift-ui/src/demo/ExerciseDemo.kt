@@ -427,6 +427,15 @@ class ExerciseDemo(
     val stretches: List<Pair<Float, DemoPhase>>
         get() = phases.mapIndexed { i, phase -> (if (i == 0) 0f else phases[i - 1].until) to phase }
 
+    /**
+     * Where the next stretch starts after [from]: the rep's start from the set-up, and from the last stretch the
+     * first again, never the set-up. One that starts just past [from] counts as where it is, not the next.
+     */
+    fun stepAfter(from: Float): Float {
+        if (from < 0f) return 0f
+        return stretches.map { it.first }.firstOrNull { it > from + STEP_EPSILON } ?: 0f
+    }
+
     /** Where the first stretch that [cue] speaks to starts (-1 for the set-up's), or null if none does. */
     fun startOf(cue: Int): Float? =
         if (cue == setUp?.cue) SETTING_UP else stretches.firstOrNull { (_, phase) -> phase.cue == cue }?.first
@@ -524,6 +533,9 @@ class ExerciseDemo(
     companion object {
         /** Where a set-up starts, before the rep's 0. */
         const val SETTING_UP = -1f
+
+        /** How near the start of a stretch a step counts as at it already. */
+        private const val STEP_EPSILON = 0.005f
 
         /** How many places a trail remembers. */
         const val TRAIL_STEPS = 9

@@ -22,7 +22,7 @@ import dev.justinsmith.interval.ui.StandardEasing
  * a demo's [ExerciseDemo.earliest], -1 when it sets up first.
  */
 @Stable
-class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float = 0f) {
+class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float = 0f, slow: Boolean = false) {
     /** How far through the rep it is, 0 to 1; below 0, how far through setting up, from -1. */
     var progress by mutableFloatStateOf(progress)
         private set
@@ -30,6 +30,21 @@ class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float 
     /** Whether it runs on by itself. */
     var playing by mutableStateOf(playing)
         private set
+
+    /** Whether it runs at [SLOW] of its speed, for a quick lift to be followed. */
+    var slow by mutableStateOf(slow)
+        private set
+
+    /** Runs it slowly, or at its own speed again, from where it is. */
+    fun toggleSlow() {
+        slow = !slow
+    }
+
+    /**
+     * Stops it and takes it to where the next of [demo]'s stretches starts, from where it is or, already on its way
+     * somewhere, from there: from the set-up into the rep, and from the last stretch round to the first.
+     */
+    fun step(demo: ExerciseDemo) = show(demo.stepAfter(heading ?: progress))
 
     /**
      * Whether its figure is on screen: one scrolled away stops taking frames, but keeps [playing], so it runs on
@@ -92,16 +107,26 @@ class DemoPlayer(progress: Float, playing: Boolean, private val earliest: Float 
     }
 
     internal companion object {
+        /** How fast it runs slowed: half speed. */
+        const val SLOW = 0.5f
+
         val Saver = listSaver<DemoPlayer, Any>(
-            save = { listOf(it.progress, it.playing, it.earliest) },
-            restore = { DemoPlayer(progress = it[0] as Float, playing = it[1] as Boolean, earliest = it[2] as Float) },
+            save = { listOf(it.progress, it.playing, it.earliest, it.slow) },
+            restore = {
+                DemoPlayer(
+                    progress = it[0] as Float,
+                    playing = it[1] as Boolean,
+                    earliest = it[2] as Float,
+                    slow = it[3] as Boolean,
+                )
+            },
         )
     }
 }
 
 /**
  * A player for [demo], kept across a rotation, setting up first if the demo does, then advancing a rep each
- * [ExerciseDemo.secondsPerRep] while it plays.
+ * [ExerciseDemo.secondsPerRep] while it plays, or at half that speed slowed ([DemoPlayer.slow]).
  * The frames come from an infinite animation, so UI tests (which cancel those) never wait on it. With reduced
  * motion it stands at [ExerciseDemo.still] and never runs by itself; it still moves where it is dragged. Shown a
  * place ([DemoPlayer.show]) it moves there the short way round ([placeBetween]), or is there at once with reduced
@@ -113,13 +138,15 @@ fun rememberDemoPlayer(demo: ExerciseDemo): DemoPlayer {
     val player = rememberSaveable(demo, saver = DemoPlayer.Saver) {
         DemoPlayer(progress = if (still) demo.still else demo.earliest, playing = !still, earliest = demo.earliest)
     }
-    LaunchedEffect(player, still, player.playing, player.inView) {
+    // Slowing it or speeding it up starts the run again from where it is, so it never jumps.
+    LaunchedEffect(player, still, player.playing, player.inView, player.slow) {
         if (still || !player.playing || !player.inView) return@LaunchedEffect
         val from = player.progress
+        val speed = if (player.slow) DemoPlayer.SLOW else 1f
         val start = withInfiniteAnimationFrameMillis { it }
         while (true) {
             val elapsed = withInfiniteAnimationFrameMillis { it } - start
-            player.runTo(demo.after(from, elapsed / MILLIS_PER_SECOND))
+            player.runTo(demo.after(from, elapsed * speed / MILLIS_PER_SECOND))
         }
     }
     LaunchedEffect(player, still, player.heading) {

@@ -372,6 +372,14 @@
     <string name="demo_set_up">Set up</string>
     <string name="demo_each_rep">Each rep</string>
     <string name="demo_set_up_jump">Show the set-up</string>
+    <string name="demo_step">Step</string>
+    <string name="demo_slow">Slow</string>
+    <string name="demo_full_speed">Full speed</string>
+    <string name="demo_watch_for">Watch for</string>
+    <string name="demo_show_wrong">Show it done wrong</string>
+    <string name="demo_hide_wrong">Show it done right</string>
+    <string name="demo_done_wrong">Done wrong</string>
+    <string name="demo_done_wrong_figure">%1$s, shown by a figure. Done wrong</string>
     <string name="test_snatch_name">Snatch test</string>
     <string name="test_abc_name">Armor Building Complex test</string>
     <string name="test_press_name">Press: most reps</string>
