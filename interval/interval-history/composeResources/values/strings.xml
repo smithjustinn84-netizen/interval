@@ -15,7 +15,7 @@
     <string name="history_range_month">Month</string>
     <string name="history_range_all">All time</string>
     <string name="history_this_week">This week</string>
-    <string name="history_workouts">Workouts</string>
+    <string name="history_days_trained">Days trained</string>
     <string name="history_time">Time</string>
     <string name="history_calories">Calories</string>
     <string name="history_calories_value">%1$d kcal</string>
@@ -67,7 +67,10 @@
     <string name="history_heatmap_title">Activity · 12 weeks</string>
     <string name="history_heatmap_cd">%1$d active days over the last %2$d weeks</string>
     <string name="history_heatmap_day_cd">Open %1$s</string>
-    <string name="history_goal_line">Goal %1$d a week</string>
+    <plurals name="history_goal_line">
+        <item quantity="one">Goal: %1$d day a week</item>
+        <item quantity="other">Goal: %1$d days a week</item>
+    </plurals>
     <string name="history_weeks_cd">Days trained a week over the last 12 weeks: %1$s</string>
     <string name="history_most_done">Most done</string>
     <string name="history_times">×%1$d</string>

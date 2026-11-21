@@ -221,6 +221,9 @@ class HistoryScreenTest {
         onAllNodesWithText("4:00").assertCountEquals(1)
 
         state = oneWorkout.copy(range = TrainingRange.Month)
+        // The month counts what the week does: days trained, not workouts.
+        onNodeWithText("Days trained").assertExists()
+        onNodeWithText("Workouts").assertDoesNotExist()
         onNodeWithText("Done", useUnmergedTree = true).assertExists()
         onNodeWithText("Planned", useUnmergedTree = true).assertExists()
         onNodeWithText("Missed", useUnmergedTree = true).assertExists()

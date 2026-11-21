@@ -138,9 +138,9 @@ data class WeekGoal(
     val intervals: Int = 0,
 )
 
-/** The summary's figures for its range: how many, and [totalSeconds] of time in all, which the screen words. */
+/** The summary's figures for its range: the days trained, and [totalSeconds] of time in all, which the screen words. */
 data class RangeSummary(
-    val count: Int,
+    val days: Int,
     val totalSeconds: Int,
     val calories: Int?,
     val plannedDone: Int,

@@ -290,7 +290,7 @@ class HistoryViewModel(
             sections = sections,
             range = view.range,
             summary = RangeSummary(
-                count = stats.count,
+                days = stats.days,
                 totalSeconds = stats.seconds,
                 calories = stats.calories,
                 plannedDone = stats.plannedDone,

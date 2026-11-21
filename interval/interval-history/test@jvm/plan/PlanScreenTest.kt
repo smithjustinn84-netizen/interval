@@ -218,7 +218,7 @@ class PlanScreenTest {
         onNode(hasSetTextAction()).performTextInput("tabata mon wed fri, hiit 30/30 next sat, 4 a week")
         onNodeWithText("Mon · Wed · Fri", substring = true).assertExists()
         onNodeWithText("Sat · 17", substring = true).assertExists()
-        onNodeWithText("Goal 4 a week").assertExists()
+        onNodeWithText("Goal: 4 days a week").assertExists()
         clickAdd()
         assertEquals(
             listOf("described Tabata [1, 3, 5] []", "described HIIT 30/30 [] [${TODAY + 2}]", "goal 4"),

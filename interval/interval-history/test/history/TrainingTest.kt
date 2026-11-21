@@ -172,18 +172,18 @@ class TrainingTest {
         val none = BodySettings(weightKg = null)
 
         val week = log.stats(TrainingRange.Week, none)
-        assertEquals(RangeStats(count = 2, seconds = 340, calories = null, plannedDone = 2, plannedDue = 3), week)
+        assertEquals(RangeStats(days = 2, seconds = 340, calories = null, plannedDone = 2, plannedDue = 3), week)
 
         val month = log.stats(TrainingRange.Month, none)
-        assertEquals(3, month.count)
+        assertEquals(3, month.days)
         assertEquals(400, month.seconds)
 
         val all = log.stats(TrainingRange.AllTime, none)
-        assertEquals(4, all.count)
+        assertEquals(4, all.days)
         assertEquals(epochDayOf(2026, 3, 2), all.firstDay)
 
         val march = log.stats(TrainingRange.Month, none, monthOf = epochDayOf(2026, 3, 20))
-        assertEquals(1, march.count)
+        assertEquals(1, march.days)
         assertNull(week.firstDay)
     }
 
@@ -269,7 +269,8 @@ class TrainingTest {
         assertEquals(2, log.day(monday).count)
         assertEquals(240 + 900, log.day(monday).seconds)
         val week = log.stats(TrainingRange.Week, BodySettings())
-        assertEquals(3, week.count)
+        // Three workouts over two days trained.
+        assertEquals(2, week.days)
         assertEquals(240 + 900 + 900, week.seconds)
     }
 
@@ -347,7 +348,7 @@ class TrainingTest {
         // The class logged and the workout missed; the class that went by is neither.
         assertEquals(1, week.plannedDone)
         assertEquals(2, week.plannedDue)
-        assertEquals(1, week.count)
+        assertEquals(1, week.days)
     }
 
     @Test
@@ -376,7 +377,8 @@ class TrainingTest {
         )
 
         assertEquals(2, log.day(monday).count)
-        assertEquals(3, log.stats(TrainingRange.Week, BodySettings()).count)
+        // Two sports on Monday and a workout today: two days trained.
+        assertEquals(2, log.stats(TrainingRange.Week, BodySettings()).days)
         assertEquals(240, log.stats(TrainingRange.Week, BodySettings()).seconds)
         // Days trained: last week's Monday, then this Monday (two sports, one day) and today.
         assertEquals(listOf(1, 2), log.weeklyCounts(2).map { it.count })

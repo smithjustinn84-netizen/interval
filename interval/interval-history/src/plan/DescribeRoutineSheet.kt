@@ -45,6 +45,7 @@ import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
+import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -149,7 +150,7 @@ private fun DescribedRoutinePreview(routine: DescribedRoutine, today: Long) {
         routine.goal?.let { goal ->
             if (routine.plans.isNotEmpty()) RowDivider()
             Text(
-                stringResource(Res.string.history_goal_line, goal),
+                pluralStringResource(Res.plurals.history_goal_line, goal, goal),
                 style = IntervalTheme.type.label,
                 color = palette.text,
                 modifier = Modifier

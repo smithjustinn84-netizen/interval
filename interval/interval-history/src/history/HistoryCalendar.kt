@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -242,13 +243,9 @@ private fun DayBar(day: DayCell, share: Float, index: Int) {
                 },
         )
 
-        DayState.Rest -> Box(
-            Modifier
-                .fillMaxWidth()
-                .height(Sizes.weekBarEmpty)
-                .clip(Corners.full)
-                .background(palette.surfaceVariant),
-        )
+        // Nothing drawn, as Today's week has it: a grey bar read as a short workout. Its room is kept, so the
+        // strip's days line up.
+        DayState.Rest -> Spacer(Modifier.fillMaxWidth().height(Sizes.weekBarEmpty))
     }
 }
 

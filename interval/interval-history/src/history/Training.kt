@@ -112,12 +112,13 @@ data class TrainingDay(
 enum class TrainingRange { Week, Month, AllTime }
 
 /**
- * A range's totals. [plannedDone] of the [plannedDue] plans whose day has come (today's open ones aside, and
- * the sport days that went by unlogged) were done. [firstDay] is the day of the first workout ever, for All time;
- * null without one.
+ * A range's totals: [days] trained in it, each once however many workouts it held, as the week and its goal
+ * count them, and the time they took. [plannedDue] are the plans whose day has come (today's open ones aside, and
+ * the sport days that went by unlogged), [plannedDone] of them done. [firstDay] is the day of the first workout
+ * ever, for All time; null without one.
  */
 data class RangeStats(
-    val count: Int,
+    val days: Int,
     val seconds: Int,
     val calories: Int?,
     val plannedDone: Int,
@@ -125,7 +126,7 @@ data class RangeStats(
     val firstDay: Long? = null,
 )
 
-/** One week of the weekly bars: its Monday, how many workouts, and whether it is this week. */
+/** One week of the weekly bars: its Monday, how many days trained, and whether it is this week. */
 data class WeekCount(val weekStart: Long, val count: Int, val current: Boolean)
 
 /**
@@ -235,7 +236,7 @@ class TrainingLog(
         val due = dueDays.flatMap { day(it).plans }
             .filter { it.state == PlanState.Done || it.state == PlanState.Missed }
         return RangeStats(
-            count = workouts.size + lifts.size + sportsByDay.filterKeys { it in span }.values.sumOf { it.size },
+            days = span.count(::trainedOn),
             seconds = workouts.sumOf { it.elapsedSeconds } + lifts.sumOf { it.elapsedSeconds },
             calories = body.weightKg?.let {
                 workouts.sumOf { it.calories(body) ?: 0 } + lifts.sumOf { it.calories(body) ?: 0 }
@@ -294,9 +295,11 @@ class TrainingLog(
     private fun days(from: Long, count: Int): List<TrainingDay> = (0 until count).map { day(from + it) }
 
     /** The days of the week starting [weekStart] trained on: a workout, a session or a sport, each day once. */
-    private fun countInWeek(weekStart: Long): Int = (weekStart until weekStart + DAYS_PER_WEEK).count {
-        !byDay[it].isNullOrEmpty() || !liftsByDay[it].isNullOrEmpty() || !sportsByDay[it].isNullOrEmpty()
-    }
+    private fun countInWeek(weekStart: Long): Int = (weekStart until weekStart + DAYS_PER_WEEK).count(::trainedOn)
+
+    // A workout, a session on Lift or a sport logged on the day.
+    private fun trainedOn(day: Long): Boolean =
+        !byDay[day].isNullOrEmpty() || !liftsByDay[day].isNullOrEmpty() || !sportsByDay[day].isNullOrEmpty()
 
     // The first day anything happened: a workout, or a plan made or falling due.
     private fun allTimeStart(): Long {

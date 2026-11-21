@@ -121,9 +121,9 @@ class HistoryViewModelTest : MainDispatcherTest() {
             ),
             swings,
         )
-        // Two workouts, one day trained: the week counts days, the summary workouts.
+        // Two workouts, one day trained: the week and the summary both count days.
         assertEquals(1, state.weekCount)
-        assertEquals(2, state.summary.count)
+        assertEquals(1, state.summary.days)
     }
 
     @Test
@@ -311,7 +311,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val october = viewModel.state.value
         assertEquals("10/2026", october.month.title)
         assertTrue(october.month.current)
-        assertEquals(1, october.summary.count)
+        assertEquals(1, october.summary.days)
         assertEquals(35, october.month.cells.size)
 
         viewModel.shiftMonth(-1)
@@ -321,7 +321,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
         assertEquals(60, september.summary.totalSeconds)
 
         viewModel.setRange(TrainingRange.AllTime)
-        assertEquals(2, viewModel.state.value.summary.count)
+        assertEquals(2, viewModel.state.value.summary.days)
         assertEquals("day ${epochDayOf(2026, 9, 30)}", viewModel.state.value.summary.since)
     }
 

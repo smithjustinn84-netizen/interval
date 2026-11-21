@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
+import dev.justinsmith.interval.history.resources.history_days_trained
 import dev.justinsmith.interval.history.resources.history_goal_cd
 import dev.justinsmith.interval.history.resources.history_goal_line
 import dev.justinsmith.interval.history.resources.history_goal_met
@@ -79,7 +80,6 @@ import dev.justinsmith.interval.history.resources.history_week_mobility
 import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
-import dev.justinsmith.interval.history.resources.history_workouts
 import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Bar
 import dev.justinsmith.interval.ui.Bars
@@ -463,7 +463,7 @@ internal fun MonthSummary(
             IconAction(IntervalIcons.Chevron, stringResource(Res.string.history_month_next_cd), { onShiftMonth(1) })
         }
         StatRow {
-            Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
+            Stat(stringResource(Res.string.history_days_trained), summary.days.toString(), summary.days)
             Stat(stringResource(Res.string.history_time), timeSpent(summary.totalSeconds), summary.totalSeconds)
             if (summary.plannedDue > 0) {
                 Stat(
@@ -482,7 +482,7 @@ internal fun MonthSummary(
     }
 }
 
-/** Everything so far: the totals, the best streak, and workouts a week over the last twelve. */
+/** Everything so far: the totals, the best streak, and days trained a week over the last twelve. */
 @Composable
 internal fun AllTimeSummary(
     summary: RangeSummary,
@@ -503,7 +503,7 @@ internal fun AllTimeSummary(
             )
         }
         StatRow {
-            Stat(stringResource(Res.string.history_workouts), summary.count.toString(), summary.count)
+            Stat(stringResource(Res.string.history_days_trained), summary.days.toString(), summary.days)
             Stat(
                 stringResource(Res.string.history_time),
                 timeSpent(summary.totalSeconds),
@@ -547,7 +547,7 @@ private fun WeekBars(goal: Int?, weeks: List<WeekCount>, modifier: Modifier = Mo
             )
             goal?.let {
                 Text(
-                    stringResource(Res.string.history_goal_line, it),
+                    pluralStringResource(Res.plurals.history_goal_line, it, it),
                     style = IntervalTheme.type.caption,
                     color = palette.textDim,
                 )
@@ -557,7 +557,7 @@ private fun WeekBars(goal: Int?, weeks: List<WeekCount>, modifier: Modifier = Mo
             bars = weeks.map { week ->
                 Bar(week.count.toFloat(), filled = goal == null || week.count >= goal, outlined = week.current)
             },
-            // The most workouts in a week, at least the goal so its line fits.
+            // The most days trained in a week, at least the goal so its line fits.
             max = maxOf(weeks.maxOfOrNull { it.count } ?: 0, goal ?: 0, 1).toFloat(),
             description = description,
             line = goal?.toFloat(),

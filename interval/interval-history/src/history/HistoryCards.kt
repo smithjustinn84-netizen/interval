@@ -22,7 +22,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_joined
 import dev.justinsmith.interval.history.resources.history_coming_up
@@ -44,6 +43,7 @@ import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.RowDivider
@@ -160,10 +160,10 @@ private fun ComingUpRow(
             ) {
                 DayLabel(dayColumn(item.day, item.epochDay), today)
                 StripeMark(kindColor(upNextKind(item)), height = IntervalSizes.historyMarkHeight)
-                // Today's row has the pill where the figure would stand, so its length goes into the line, which
-                // may take a second beside the pill's height; a later row's keeps to one.
+                // Today's row has the pill where the figure would stand, so its length goes into the line. The line
+                // is never cut, so a program's lifts are named in full, broken after a dot.
                 val meta = if (today && figure != null) joined(listOf(upNextMeta(item), figure)) else upNextMeta(item)
-                UpNextText(name, meta, Modifier.weight(1f), maxLines = if (today) 2 else 1)
+                UpNextText(name, meta, Modifier.weight(1f))
             }
         },
         trailing = {
@@ -290,17 +290,15 @@ private fun UpNextAction(item: UpNextItem, actions: HistoryActions, raised: Bool
     }
 }
 
-/** Up next's headline: its name over a line of what it is, cut to [maxLines] where the row has no room for more. */
+/** Up next's headline: its name over a line of what it is, which wraps after a dot, never before one. */
 @Composable
-private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifier, maxLines: Int = Int.MAX_VALUE) {
+private fun UpNextText(name: String, detail: String, modifier: Modifier = Modifier) {
     Column(modifier) {
         Text(name, style = IntervalTheme.type.label, color = IntervalTheme.palette.text)
-        Text(
+        JoinedText(
             detail,
             style = IntervalTheme.type.meta,
             color = IntervalTheme.palette.textDim,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
