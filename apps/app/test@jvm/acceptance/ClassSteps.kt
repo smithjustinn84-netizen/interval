@@ -1,10 +1,15 @@
 package dev.justinsmith.interval.acceptance
 
+import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
+import dev.justinsmith.interval.fakes.FakeLiveHeartRate
 import dev.justinsmith.interval.fakes.RecordingClassSensor
 import dev.justinsmith.interval.fakes.SENSOR_NAME
 import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.platform.ClassSensor
+import dev.justinsmith.interval.platform.LiveHeartRate
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.SensorFailure
 import dev.justinsmith.interval.platform.SensorStatus
 
@@ -44,6 +49,60 @@ fun IntervalAcceptanceDriver.pairArmbandAmongTwo() {
 }
 
 private const val STRAP_NAME = "Polar H10 5E6F7A8B"
+
+private val IntervalAcceptanceDriver.heart: FakeLiveHeartRate
+    get() = app.koin.koin.get<LiveHeartRate>() as FakeLiveHeartRate
+
+/** A sensor is the app's already, within reach but not yet read, its battery as it last said. */
+fun IntervalAcceptanceDriver.haveSensorPaired(battery: Int? = null) {
+    heart.emit(LiveHeartRateState.Idle)
+    sensor.battery.value = battery
+    sensor.status.value = SensorStatus.Paired(SENSOR_NAME)
+}
+
+/** The sensor reads the heart at [bpm], once the app has reached for it. */
+fun IntervalAcceptanceDriver.heartBeatsAt(bpm: Int) {
+    heartRateIsStreamed()
+    heart.emitBpm(bpm)
+}
+
+/** The sensor goes out of reach. */
+fun IntervalAcceptanceDriver.sensorDropsOut() = heart.emit(LiveHeartRateState.Disconnected)
+
+/** The app holds the sensor's stream for as long as it is on show with one paired. */
+fun IntervalAcceptanceDriver.heartRateIsStreamed(streamed: Boolean = true) =
+    waitFor("the heart rate streamed: $streamed") { heart.started == streamed }
+
+/** The title bar of the tab on show has the sensor's pulse, reading [bpm] in [zone]. */
+fun IntervalAcceptanceDriver.seePulse(bpm: Int, zone: Int) =
+    see(hasContentDescription("Heart rate $bpm, zone $zone, $SENSOR_NAME") and hasClickAction())
+
+/** The pulse stands dim: the sensor is paired and not read. */
+fun IntervalAcceptanceDriver.seePulseNotConnected() =
+    see(hasContentDescription("Heart-rate sensor $SENSOR_NAME, not connected") and hasClickAction())
+
+fun IntervalAcceptanceDriver.seePulseBatteryLow() =
+    see(hasContentDescription("Heart-rate sensor $SENSOR_NAME, not connected, battery low"))
+
+fun IntervalAcceptanceDriver.seeNoPulse() = seeNo(hasContentDescription("Heart-rate sensor", substring = true))
+
+/** Taps the pulse: the sensor's sheet, by its name. */
+fun IntervalAcceptanceDriver.openSensorSheet() {
+    tap(hasContentDescription(SENSOR_NAME, substring = true) and hasClickAction())
+    see(SENSOR_NAME)
+}
+
+/** The sheet's heart rate, read as one line: the number, and its zone by number and name. */
+fun IntervalAcceptanceDriver.seeSheetReading(bpm: Int, zone: String) =
+    see(hasContentDescription("$bpm beats per minute, $zone"))
+
+/** The sheet's way to Settings, where the sensor is forgotten. */
+fun IntervalAcceptanceDriver.openSensorSettings() {
+    tap("Sensor settings")
+    seeNo("Sensor settings")
+    scrollTo(SENSOR_NAME)
+    see(hasText("Tap to forget it", substring = true))
+}
 
 fun IntervalAcceptanceDriver.seeNoSensorInSettings() = seeNo("Heart-rate sensor")
 

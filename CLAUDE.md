@@ -674,7 +674,13 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   nothing). A recorded class weighs on the grip by the time its rounds came to (`SportDay.matSeconds`,
   `grapplingGripLoad`: half to twice the flat 300). The sensor's battery is `ClassSensor.battery`, heard as the
   sensor connects and kept between (`FEATURE_BATTERY_INFO`), on Settings' row and, under
-  `LOW_SENSOR_BATTERY`, on Today's card.
+  `LOW_SENSOR_BATTERY`, on Today's card. The paired sensor is on every tab too, beside the gear: the app's
+  `WithSensorPulse` (`apps/app/src/ui/SensorSheet.kt`, round `AppShell`) holds the stream while the app is on show
+  with one paired (a workout or session keeps its own hold) and provides `LocalSensorPulse` (core), which
+  `SettingsAction` draws before the gear as `SensorPulseBadge`: the heart beating in its zone's colour and the
+  number, a dim still heart while it isn't read, "Rec" while it records a class, a dot for a low battery, nothing
+  with none paired. So no tab knows of a sensor. A tap opens `SensorSheet`: the name, the rate and its zone or why
+  there is none, the battery, and the way to Settings.
 - **Reminders for the plan**: `AppSettings.reminderMinuteOfDay` (set on Plan, null is off). `PlanReminderScheduler`
   (`interval/interval-history/src/plan/`, an eager single) recomputes `plannedReminders` (the next 14 days with a plan
   still open, from `TrainingLog.upNext`) on every change and at midnight, and hands the whole set to

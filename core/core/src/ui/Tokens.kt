@@ -203,6 +203,10 @@ object Sizes {
     /** Line icons: tabs and top-bar actions. */
     val icon = 24.dp
 
+    /** The heart of the sensor's pulse in a title bar, and the dot on it while the battery is low. */
+    val sensorPulseHeart = 20.dp
+    val sensorPulseDot = 8.dp
+
     /** The round hit area of an icon-only top-bar action. */
     val iconButton = 48.dp
 

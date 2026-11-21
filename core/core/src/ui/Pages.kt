@@ -74,9 +74,14 @@ fun BackAction(onBack: () -> Unit, modifier: Modifier = Modifier) {
     IconAction(IntervalIcons.Back, stringResource(Res.string.common_back), onBack, modifier)
 }
 
-/** The way to Settings, for a tab's [TitleBar]: the gear, the last of its actions on every tab. */
+/**
+ * The way to Settings, for a tab's [TitleBar]: the gear, the last of its actions on every tab. Before it, since
+ * it is the one thing every tab's bar has, the paired heart-rate sensor's pulse where the app provides one
+ * ([LocalSensorPulse]).
+ */
 @Composable
 fun SettingsAction(onClick: () -> Unit, modifier: Modifier = Modifier) {
+    LocalSensorPulse.current?.let { SensorPulseBadge(it) }
     IconAction(IntervalIcons.Settings, stringResource(Res.string.common_settings), onClick, modifier)
 }
 

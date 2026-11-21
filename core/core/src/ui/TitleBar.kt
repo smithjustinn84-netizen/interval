@@ -83,10 +83,10 @@ fun TitleBar(
 private const val TITLE_CAP_HEIGHT_EM = 0.7f
 
 /** How far a [TitleBar] moves its icon glyphs from their touch target's centre; zero elsewhere. */
-// Private to this file and set only by TitleBar: the alternative is a parameter every action in
-// every title bar must remember to pass, which is how one ends up misaligned.
+// Kept to this module (the sensor's pulse reads it too) and set only by TitleBar: the alternative is a
+// parameter every action in every title bar must remember to pass, which is how one ends up misaligned.
 @Suppress("detekt.CompositionLocalAllowlist")
-private val LocalTitleBarGlyphShift = staticCompositionLocalOf { 0.dp }
+internal val LocalTitleBarGlyphShift = staticCompositionLocalOf { 0.dp }
 
 /**
  * Places text so its capitals start [capTop] below this node's top, from its first baseline. The

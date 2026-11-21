@@ -66,6 +66,7 @@ import dev.justinsmith.interval.nav.WeekSetup
 import dev.justinsmith.interval.nav.Welcome
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
+import dev.justinsmith.interval.nav.push
 import dev.justinsmith.interval.platform.ActiveWorkout
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.SystemBarIcons
@@ -85,6 +86,7 @@ import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.Notices
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WatchForIdle
+import dev.justinsmith.interval.ui.WithSensorPulse
 import dev.justinsmith.interval.ui.backPreviewCorners
 import dev.justinsmith.interval.ui.backPreviewTransition
 import dev.justinsmith.interval.ui.navigationSuiteType
@@ -219,7 +221,11 @@ internal fun AppContent(
                     LocalNotices provides notices,
                     // Every heart-rate zone drawn goes by the reserve over this, once one is set.
                     LocalRestingHeartRate provides settings.body.restingHeartRate,
-                ) { AppShell(backStack, notices) }
+                ) {
+                    WithSensorPulse(settings.body.maxHeartRate, onOpenSettings = { backStack.push(Settings) }) {
+                        AppShell(backStack, notices)
+                    }
+                }
             }
         }
     }

@@ -23,5 +23,11 @@
     <string name="heart_rate_last">Last %1$d bpm</string>
     <string name="heart_rate_scale_cd">%1$d beats per minute, Zone %2$d, %3$s</string>
     <string name="heart_rate_chart_cd">Heart rate over the workout</string>
+    <!-- The paired sensor in a tab's title bar: what a screen reader says of it, and its mark while it records. -->
+    <string name="sensor_pulse_reading_cd">Heart rate %1$d, zone %2$d, %3$s</string>
+    <string name="sensor_pulse_idle_cd">Heart-rate sensor %1$s, not connected</string>
+    <string name="sensor_pulse_recording_cd">Heart-rate sensor %1$s, recording a class</string>
+    <string name="sensor_pulse_low_battery_cd">battery low</string>
+    <string name="sensor_pulse_rec">Rec</string>
     <string name="heart_rate_badge_cd">%1$d beats per minute, Zone %2$d</string>
 </resources>
