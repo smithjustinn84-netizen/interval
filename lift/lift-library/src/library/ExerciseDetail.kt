@@ -208,6 +208,8 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
         }
 
         is CustomExercise -> {
+            // The built-in's cues and faults are not the user's: the figure alone, its own cues under it.
+            exercise.demo?.let { Demonstration(it, exercise.name, cues = emptyList()) }
             if (exercise.cues.isBlank()) {
                 Text(
                     stringResource(Res.string.detail_no_cues),

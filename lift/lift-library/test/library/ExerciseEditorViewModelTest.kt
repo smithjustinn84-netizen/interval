@@ -3,6 +3,7 @@ package dev.justinsmith.lift.library
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Measure
@@ -59,6 +60,15 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `an exercise opened again starts from the figure it was saved with`() {
+        val uid = repository.exercises.saveExercise(
+            null,
+            ExerciseDraft("Pause goblet squat", Equipment.Kettlebell, figure = BuiltInExercise.GobletSquat),
+        )
+        editor(uid).use { assertEquals(BuiltInExercise.GobletSquat, state.value.draft.figure) }
+    }
+
+    @Test
     fun `archiving follows the exercise as saved`() {
         val uid = repository.exercises.saveExercise(null, ExerciseDraft(name = "Copenhagen plank"))
         editor(uid).use {
@@ -72,9 +82,16 @@ class ExerciseEditorViewModelTest : MainDispatcherTest() {
     @Test
     fun `a draft left in saved state comes back until the sheet is opened again`() {
         val saved = SavedStateHandle()
-        editor(name = "Sit-up", saved = saved).use { change { it.copy(name = "Get-up", measure = Measure.Time) } }
         editor(name = "Sit-up", saved = saved).use {
-            assertEquals(ExerciseDraft(name = "Get-up", measure = Measure.Time), state.value.draft)
+            change {
+                it.withEquipment(Equipment.Kettlebell).copy(name = "Get-up", figure = BuiltInExercise.GetUp)
+            }
+        }
+        editor(name = "Sit-up", saved = saved).use {
+            assertEquals(
+                ExerciseDraft(name = "Get-up", equipment = Equipment.Kettlebell, figure = BuiltInExercise.GetUp),
+                state.value.draft,
+            )
             reopen()
             assertEquals(ExerciseDraft(name = "Sit-up"), state.value.draft)
         }

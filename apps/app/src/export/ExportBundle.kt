@@ -18,8 +18,8 @@ import kotlinx.serialization.Serializable
  * schema 12 the Lift exercise a flow's move is, `exercise`, and the day a one-off plan was moved from, `movedFromDay`,
  * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`; schema 14
  * the classes recorded on a heart-rate sensor, `classes`; schema 15 the max heart rate in the settings and a
- * workout's or a session's heart rate as a sensor read it live, `heartRateSamples`, the rest absent from older
- * files). Lift's
+ * workout's or a session's heart rate as a sensor read it live, `heartRateSamples`; schema 16 the built-in an
+ * exercise of the user's own is shown by, `figure`, the rest absent from older files). Lift's
  * sessions carry their sets but not how a day's plan was changed: the sets are the record.
  */
 @Serializable
@@ -44,7 +44,7 @@ data class ExportBundle(
     val classes: List<ClassExport> = emptyList(),
 ) {
     companion object {
-        const val SCHEMA = 15
+        const val SCHEMA = 16
         const val APP = "interval"
         const val MIME_TYPE = "application/json"
 
@@ -241,6 +241,8 @@ data class ExerciseExport(
     val focus: String,
     val cues: String,
     val archived: Boolean,
+    /** The built-in it is shown by, by key; null for none, and in files before schema 16. */
+    val figure: String? = null,
 )
 
 /** A program of the user's own, by its stored [key]; a built-in needs no row. */

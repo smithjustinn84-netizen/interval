@@ -72,7 +72,7 @@ data class SetEntity(
 
 /**
  * An exercise the user added. [equipment], [measure] and [focus] are their enums by name; [archived] keeps
- * it, and its sets, out of the picker.
+ * it, and its sets, out of the picker; [figure] is the key of the built-in it is shown by, null for none.
  */
 @Entity(tableName = "custom_exercise")
 data class CustomExerciseEntity(
@@ -86,6 +86,7 @@ data class CustomExerciseEntity(
     val cues: String,
     val archived: Boolean,
     @ColumnInfo(name = "updated_at") val updatedAtEpochMillis: Long,
+    val figure: String? = null,
 )
 
 /**

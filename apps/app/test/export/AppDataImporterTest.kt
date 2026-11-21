@@ -9,7 +9,7 @@ import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.sparringRecording
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
 import dev.justinsmith.interval.fixtures.FOREIGN_JSON
-import dev.justinsmith.interval.fixtures.SCHEMA_16_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_17_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import dev.justinsmith.interval.model.CapRound
 import dev.justinsmith.interval.model.PerceivedEffort
@@ -138,7 +138,11 @@ class AppDataImporterTest {
         lift.gear.setOwned(20.0, owned = true)
         lift.gear.setPair(20.0, pair = true)
         lift.gear.setBar(15.0)
-        val press = lift.exercises.saveExercise(null, ExerciseDraft("Landmine press", Equipment.Barbell))
+        // Shown by a built-in's figure, schema 16's.
+        val press = lift.exercises.saveExercise(
+            null,
+            ExerciseDraft("Landmine press", Equipment.Barbell, figure = BuiltInExercise.BarbellJerk),
+        )
         lift.sessions.startSession(null)
         lift.sets.logSet(BuiltInExercise.TwoHandSwing, bellKg = 16.0, reps = 10, side = null)
         lift.sets.logSet(
@@ -375,7 +379,7 @@ class AppDataImporterTest {
     @Test
     fun `a newer file says so and changes nothing`() = runTest {
         val target = Phone(now)
-        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_16_EXPORT)
+        val file = ShareableFile("new.json", ExportBundle.MIME_TYPE, SCHEMA_17_EXPORT)
         assertEquals(ImportReview.TooNew("0.9.0"), target.importer.review(file))
         assertFailsWith<IllegalArgumentException> { target.importer.import(file, withSettings = true) }
         assertTrue(target.intervals.history.history.value.isEmpty())

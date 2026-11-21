@@ -99,7 +99,7 @@ fun ExerciseEditorSheet(name: String, onDismiss: () -> Unit) {
 
 /**
  * An exercise of the user's, as a sheet's form: its name, what it is done with, how it is counted and sided,
- * its focus, cues. One saved can be archived, or restored, with [onArchive].
+ * its focus, cues and the built-in's figure it is shown by. One saved can be archived, or restored, with [onArchive].
  */
 @Composable
 fun ExerciseEditorForm(
@@ -153,7 +153,7 @@ fun ExerciseEditorForm(
             Text(stringResource(Res.string.exercise_locked), style = IntervalTheme.type.meta, color = palette.textDim)
         } else {
             ChoiceRow(Equipment.entries, draft.equipment, { equipmentName(it) }, { e ->
-                onChange { it.copy(equipment = e) }
+                onChange { it.withEquipment(e) }
             })
             GroupLabel(stringResource(Res.string.library_measured))
             ChoiceRow(Measure.entries, draft.measure, { measureName(it) }, { m -> onChange { it.copy(measure = m) } })
@@ -176,6 +176,7 @@ fun ExerciseEditorForm(
             maxLength = MAX_EXERCISE_CUES,
             multiLine = true,
         )
+        FigureChoice(draft.figure, draft.figures, onChoose = { f -> onChange { it.copy(figure = f) } })
         SaveAction(
             canSave = draft.canSave(typed, state.taken),
             needsName = typed.isBlank(),

@@ -170,7 +170,7 @@ private fun PlannedWorkout.export(): PlannedExport {
 private fun Band.export() = BandExport(id, name, colour.name, position, archived)
 
 private fun CustomExercise.export() =
-    ExerciseExport(uid, name, equipment.name, measure.name, perSide, focus.name, cues, archived)
+    ExerciseExport(uid, name, equipment.name, measure.name, perSide, focus.name, cues, archived, figure?.key)
 
 private fun Program.export() =
     ProgramExport(key.stored, name, daysPerWeek, weeks, days.map { day -> day.map { it.export() } })

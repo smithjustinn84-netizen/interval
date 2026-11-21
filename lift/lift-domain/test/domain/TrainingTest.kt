@@ -290,6 +290,16 @@ class TrainingTest {
     }
 
     @Test
+    fun `an exercise of the user's own is shown by a built-in done with its equipment`() {
+        val draft = ExerciseDraft("Pause goblet squat", Equipment.Kettlebell, figure = BuiltInExercise.GobletSquat)
+        assertTrue(draft.figures.all { it.equipment == Equipment.Kettlebell })
+        assertTrue(BuiltInExercise.GobletSquat in draft.figures)
+        assertEquals(BuiltInExercise.GobletSquat, draft.withEquipment(Equipment.Kettlebell).figure)
+        assertNull(draft.withEquipment(Equipment.Bodyweight).figure)
+        assertEquals(Equipment.Bodyweight, draft.withEquipment(Equipment.Bodyweight).equipment)
+    }
+
+    @Test
     fun `the catalogue runs built-ins then the user's by name then unknowns`() {
         val zercher = CustomExercise("z", "zercher carry", Equipment.Kettlebell, Measure.Reps, false, Focus.FullBody)
         val bear = CustomExercise("b", "Bear crawl", Equipment.Bodyweight, Measure.Time, false, Focus.FullBody)

@@ -28,6 +28,7 @@ import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
@@ -399,6 +400,8 @@ private fun ExerciseExport.toDomain(): CustomExercise {
         enumNamed<Focus>(focus),
         cues,
         archived,
+        // One this build doesn't draw, or done with other equipment, is shown by none.
+        figure = (figure?.let { Exercise.parse(it) } as? BuiltInExercise)?.takeIf { it.equipment.name == equipment },
     )
 }
 

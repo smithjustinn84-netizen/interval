@@ -307,6 +307,20 @@ class LiftRepositoryTest {
     }
 
     @Test
+    fun `an exercise the user adds keeps the figure it is shown by unless done with other equipment`() = runTest {
+        val uid = repository.exercises.saveExercise(
+            null,
+            ExerciseDraft("Pause goblet squat", Equipment.Kettlebell, figure = BuiltInExercise.GobletSquat),
+        )
+        assertEquals(BuiltInExercise.GobletSquat, repository.exercises.customExercises.value.single().figure)
+        repository.exercises.saveExercise(
+            uid,
+            ExerciseDraft("Pause squat", Equipment.Bodyweight, figure = BuiltInExercise.GobletSquat),
+        )
+        assertNull(repository.exercises.customExercises.value.single().figure)
+    }
+
+    @Test
     fun `an archived exercise stays archived when changed and comes back when restored`() = runTest {
         val uid = repository.exercises.saveExercise(null, ExerciseDraft("Copenhagen plank", Equipment.Bodyweight))
         repository.exercises.setArchived(uid, archived = true)

@@ -73,6 +73,7 @@ class ExerciseRepository(
             draft.focus,
             draft.cues.trim(),
             archived = _customExercises.value.any { it.uid == id && it.archived },
+            figure = draft.figure?.takeIf { it.equipment == draft.equipment },
         )
         writer.persist { dao.upsert(made.toEntity(clock.nowMillis())) }
         return id

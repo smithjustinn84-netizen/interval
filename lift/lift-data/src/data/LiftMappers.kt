@@ -2,6 +2,7 @@ package dev.justinsmith.lift.data
 
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
@@ -104,7 +105,10 @@ internal fun decodeHeartRateSamples(json: String?): List<Int>? {
         ?.takeIf { it.isNotEmpty() }
 }
 
-/** An exercise the user added; one whose kinds this build doesn't know is left out. */
+/**
+ * An exercise the user added; one whose kinds this build doesn't know is left out, and a figure it doesn't know
+ * (a built-in from a newer build) is none.
+ */
 internal fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
     uid,
     name,
@@ -114,6 +118,7 @@ internal fun CustomExerciseEntity.toDomain(): CustomExercise? = CustomExercise(
     focus = Focus.entries.firstOrNull { it.name == focus } ?: return null,
     cues = cues,
     archived = archived,
+    figure = figure?.let { Exercise.parse(it) as? BuiltInExercise },
 )
 
 internal fun CustomExercise.toEntity(updatedAtEpochMillis: Long) = CustomExerciseEntity(
@@ -126,6 +131,7 @@ internal fun CustomExercise.toEntity(updatedAtEpochMillis: Long) = CustomExercis
     cues,
     archived,
     updatedAtEpochMillis,
+    figure?.key,
 )
 
 internal fun BandEntity.toDomain() =

@@ -227,7 +227,7 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `SessionStats`, `BalanceBars`, `Sparkline`: an exercise's trend, each session's best set by its kg × reps over
                      its latest 24, `exerciseTrend` in lift-domain), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
                      figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
-                     `Exercise.demo`, seen from the side or, for a lift that goes sideways or across the floor, from the front or
+                     `Exercise.demo`, one of the user's own the built-in's it names, `CustomExercise.figure`, seen from the side or, for a lift that goes sideways or across the floor, from the front or
                      from above on a mat: `Facing.Front`, `Facing.Above`, `FrontDemos.kt`; `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
                      a figure on its feet gives a record, a one-rep demo from where it stood; its body is `Build`'s,
                      `FigureSilhouette.kt`, its back bowed round or arched by `Pose.spine`, its hands opened and turned at the wrist (`palm`, `wrist`; a wrist drill drawn close by `ExerciseDemo.crop`), each near part with a gap cut round it in a layer of its own, and beside

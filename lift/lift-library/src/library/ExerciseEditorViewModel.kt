@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dev.justinsmith.lift.data.ExerciseStore
 import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
@@ -95,7 +96,7 @@ class ExerciseEditorViewModel(
     }?.uid
 
     private fun savedDraft() = exerciseStore.customExercises.value.firstOrNull { it.uid == uid }
-        ?.let { ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues) }
+        ?.let { ExerciseDraft(it.name, it.equipment, it.measure, it.perSide, it.focus, it.cues, it.figure) }
         ?: ExerciseDraft(name = openedName.trim())
 
     /** Changes the draft; a locked one keeps its equipment and measure. */
@@ -133,6 +134,7 @@ private fun SavedStateHandle.keep(draft: ExerciseDraft) {
     this[PER_SIDE] = draft.perSide
     this[FOCUS] = draft.focus.name
     this[CUES] = draft.cues
+    this[FIGURE] = draft.figure?.name
 }
 
 // Every field is kept together, so a draft without its name was never kept.
@@ -146,6 +148,7 @@ private fun SavedStateHandle.restoredDraft(): ExerciseDraft? {
         perSide = get<Boolean>(PER_SIDE) ?: blank.perSide,
         focus = Focus.entries.firstOrNull { it.name == get<String>(FOCUS) } ?: blank.focus,
         cues = get<String>(CUES) ?: blank.cues,
+        figure = BuiltInExercise.entries.firstOrNull { it.name == get<String>(FIGURE) },
     )
 }
 
@@ -155,3 +158,4 @@ private const val MEASURE = "draft_measure"
 private const val PER_SIDE = "draft_per_side"
 private const val FOCUS = "draft_focus"
 private const val CUES = "draft_cues"
+private const val FIGURE = "draft_figure"

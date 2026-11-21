@@ -5,7 +5,8 @@ import kotlin.test.Test
 
 /**
  * `journeys/exercise-library.xml`: search and narrow the library, add an exercise from a search that finds
- * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by a figure.
+ * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by a figure;
+ * one of the user's own shown by a built-in's figure.
  */
 class ExerciseLibraryAcceptanceTest {
     @Test
@@ -103,5 +104,29 @@ class ExerciseLibraryAcceptanceTest {
         showFault("Hips back, shins stay vertical")
         seeFaultNotShown("Loosen at the top, grip on the way down")
         hideFault("Hips back, shins stay vertical")
+    }
+
+    @Test
+    fun `an exercise of the user's own is shown by a built-in's figure`() = liftScenario {
+        openExerciseLibrary()
+        searchFor("Pause goblet squat")
+        addSearchedExercise("Pause goblet squat")
+        see("No figure")
+        choose("Kettlebell")
+        writeCues("Two seconds at the bottom")
+        chooseFigure("Goblet squat")
+        choose("Bodyweight")
+        see("No figure")
+        choose("Kettlebell")
+        chooseFigure("Goblet squat")
+        saveExercise()
+
+        openExercise("Pause goblet squat")
+        seeDemonstration("Pause goblet squat")
+        see("Two seconds at the bottom")
+        seeNo("Watch for")
+        tap("Edit")
+        see("Goblet squat")
+        pressSystemBack()
     }
 }

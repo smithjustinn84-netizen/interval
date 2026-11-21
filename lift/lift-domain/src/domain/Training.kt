@@ -61,7 +61,8 @@ private const val CUSTOM_EXERCISE_PREFIX = "custom:"
 
 /**
  * An exercise the user added, by its [uid], named as they wrote it, with [cues] to remember mid-set. An
- * [archived] one is out of the picker but keeps its sets. A kettlebell one can be done with two bells.
+ * [archived] one is out of the picker but keeps its sets. A kettlebell one can be done with two bells. It is
+ * shown by the [figure] of a built-in done with the same equipment that moves as it does, or by none.
  */
 data class CustomExercise(
     val uid: String,
@@ -72,6 +73,7 @@ data class CustomExercise(
     override val focus: Focus,
     val cues: String = "",
     val archived: Boolean = false,
+    val figure: BuiltInExercise? = null,
 ) : Exercise {
     override val key: String get() = CUSTOM_EXERCISE_PREFIX + uid
 
@@ -100,7 +102,15 @@ data class ExerciseDraft(
     val perSide: Boolean = false,
     val focus: Focus = Focus.FullBody,
     val cues: String = "",
-)
+    val figure: BuiltInExercise? = null,
+) {
+    /** The built-ins it can be shown by: those done with its equipment. */
+    val figures: List<BuiltInExercise> get() = BuiltInExercise.entries.filter { it.equipment == equipment }
+
+    /** The draft done with [equipment] instead, which drops a figure done with another. */
+    fun withEquipment(equipment: Equipment): ExerciseDraft =
+        copy(equipment = equipment, figure = figure?.takeIf { it.equipment == equipment })
+}
 
 /**
  * The exercises that ship with the app, stored by name: a name, once shipped, never changes. Screens name

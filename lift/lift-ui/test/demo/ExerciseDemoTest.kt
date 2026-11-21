@@ -3,6 +3,10 @@ package dev.justinsmith.lift.ui.demo
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.CustomExercise
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Focus
+import dev.justinsmith.lift.domain.Measure
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -19,6 +23,14 @@ class ExerciseDemoTest {
     fun `every built-in lift is drawn`() {
         assertSame(TwoHandSwingDemo, BuiltInExercise.TwoHandSwing.demo)
         BuiltInExercise.entries.forEach { exercise -> assertNotNull(exercise.demo, "$exercise is not drawn") }
+    }
+
+    @Test
+    fun `an exercise of the user's own is drawn by the built-in it names`() {
+        val squat =
+            CustomExercise("a1", "Pause goblet squat", Equipment.Kettlebell, Measure.Reps, false, Focus.LowerBody)
+        assertNull(squat.demo)
+        assertSame(BuiltInExercise.GobletSquat.demo, squat.copy(figure = BuiltInExercise.GobletSquat).demo)
     }
 
     @Test

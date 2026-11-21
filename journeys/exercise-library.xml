@@ -60,6 +60,15 @@
     <action>Verify that the figure stops at the bottom of the squat about to drive up, the marker where the bar turns to the colour it drives up in, and that cue is lit</action>
     <action>Tap "Hold the bell by the horns at your chest, elbows down"</action>
     <action>Verify that the button reads "Pause", the marker goes back to the set-up's stretch with that cue lit, and after a moment the figure squats again, the marker carrying on into the rep</action>
+    <action>Tap "Back" to close the sheet, type "Pause goblet squat" into "Search exercises" and tap "Add “Pause goblet squat” as an exercise"</action>
+    <action>Verify that under "Figure" the row reads "No figure" with "Change" at its end</action>
+    <action>Tap "Kettlebell", type "Two seconds at the bottom" into the "Cues" field, then tap "Change" under "Figure"</action>
+    <action>Verify that a list opens under the row: "No figure", then the kettlebell lifts, each with a still of its figure</action>
+    <action>Tap "Goblet squat"</action>
+    <action>Verify that the list closes and the row reads "Goblet squat" with its figure's still; then tap "Bodyweight"</action>
+    <action>Verify that the row reads "No figure" again; tap "Kettlebell", then "Change" and "Goblet squat" again, then "Save exercise"</action>
+    <action>Tap "Pause goblet squat"</action>
+    <action>Verify that its page shows a card with a figure squatting with a bell at its chest, its timeline under it and no cues lit in the card, then "Cues" with "Two seconds at the bottom", and no "Watch for"</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

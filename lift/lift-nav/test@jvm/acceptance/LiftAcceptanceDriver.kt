@@ -441,6 +441,14 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun saveExercise() = tap("Save exercise")
 
+    /** Opens the editor's figures and picks the built-in [exercise] to show it by, which then stands in the row. */
+    fun chooseFigure(exercise: String) {
+        tap(hasText("Change") and hasClickAction())
+        tap(hasText(exercise) and isSelectable())
+        seeNo(hasText("No figure") and isSelectable())
+        see(exercise)
+    }
+
     fun seeCannotSaveExercise() {
         see("One of yours already has this name.")
         ui.onAllNodes(hasText("Save exercise")).onLast().assertIsNotEnabled()

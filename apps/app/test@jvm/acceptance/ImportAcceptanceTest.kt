@@ -1,7 +1,7 @@
 package dev.justinsmith.interval.acceptance
 
 import dev.justinsmith.interval.fixtures.DAMAGED_EXPORT
-import dev.justinsmith.interval.fixtures.SCHEMA_16_EXPORT
+import dev.justinsmith.interval.fixtures.SCHEMA_17_EXPORT
 import dev.justinsmith.interval.fixtures.SCHEMA_1_EXPORT
 import kotlin.test.Test
 
@@ -32,7 +32,7 @@ class ImportAcceptanceTest {
         openSettings()
         importFile(DAMAGED_EXPORT)
         seeImportRefused("isn't an Interval export")
-        importFile(SCHEMA_16_EXPORT)
+        importFile(SCHEMA_17_EXPORT)
         seeImportRefused("from a newer Interval, 0.9.0")
         nothingIsSaved()
     }

@@ -1,6 +1,5 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
@@ -8,12 +7,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.ui.resources.Res
@@ -24,6 +21,7 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.ui.demo.ExerciseDemo
 import dev.justinsmith.lift.ui.demo.ExerciseFigure
 import dev.justinsmith.lift.ui.demo.FigureColors
+import dev.justinsmith.lift.ui.demo.FigureThumb
 import dev.justinsmith.lift.ui.demo.demo
 import dev.justinsmith.lift.ui.demo.rememberDemoPlayer
 import org.jetbrains.compose.resources.stringResource
@@ -36,27 +34,9 @@ val Move.builtIn: BuiltInExercise? get() = exercise?.let { Exercise.parse(it) as
 /** The figure that shows how the move goes; null for a move with none (a stretch, a move typed in). */
 val Move.demo: ExerciseDemo? get() = builtIn?.demo
 
-/**
- * A still of [demo] at the end of a list row, where the figure holds its shape best: decoration beside the row's
- * words, which name the move, so a screen reader hears nothing of it.
- */
+/** A still of [demo] at the end of a list row, as each figure's row in an exercise's editor shows. */
 @Composable
-fun MoveThumb(demo: ExerciseDemo, modifier: Modifier = Modifier) {
-    // Drawn in round the figure: in the view a whole rep takes, a deep squat's still is a speck in a thumb.
-    val still = remember(demo) { demo.closeUp() }
-    val palette = IntervalTheme.palette
-    ExerciseFigure(
-        still,
-        progress = { still.still },
-        contentDescription = null,
-        modifier = modifier
-            .size(Sizes.figureThumbWidth, Sizes.figureThumbHeight)
-            .clip(Corners.radius12)
-            .background(palette.surface)
-            .border(Sizes.hairline, palette.line, Corners.radius12)
-            .padding(Spacing.space4),
-    )
-}
+fun MoveThumb(demo: ExerciseDemo, modifier: Modifier = Modifier) = FigureThumb(demo, modifier)
 
 /**
  * [move]'s figure doing it over and over, a band across the screen: as Lift's session card shows the next lift.
