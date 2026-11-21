@@ -56,8 +56,7 @@
     <string name="move_sided_hint">Left, then right, with five seconds to switch</string>
     <string name="move_held_still">Held still</string>
     <string name="move_held_hint">The screen says Hold; off, it says Move</string>
-    <string name="move_up">Move up</string>
-    <string name="move_down">Move down</string>
+    <string name="flow_reorder_move_cd">Drag to reorder %1$s</string>
     <string name="move_remove">Remove</string>
     <string name="move_done">Done</string>
 </resources>

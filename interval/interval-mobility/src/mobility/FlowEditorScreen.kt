@@ -1,9 +1,11 @@
 package dev.justinsmith.interval.mobility
 
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -43,6 +45,7 @@ import dev.justinsmith.interval.mobility.resources.flow_no_moves
 import dev.justinsmith.interval.mobility.resources.flow_note
 import dev.justinsmith.interval.mobility.resources.flow_note_label
 import dev.justinsmith.interval.mobility.resources.flow_note_placeholder
+import dev.justinsmith.interval.mobility.resources.flow_reorder_move_cd
 import dev.justinsmith.interval.mobility.resources.flow_save
 import dev.justinsmith.interval.mobility.resources.flow_saved
 import dev.justinsmith.interval.mobility.resources.flow_total
@@ -60,6 +63,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.keyed
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
+import dev.justinsmith.interval.ui.DragHandle
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
@@ -78,6 +82,8 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.demo
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.rememberReorderState
+import dev.justinsmith.interval.ui.reorderItem
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -143,7 +149,11 @@ fun FlowEditorScreen(state: FlowEditorUiState, actions: FlowEditorActions, modif
     ScrollPage(title, modifier, navigation = { BackAction(actions.onBack) }) {
         FlowWords(draft, actions.onChange)
         GroupLabel(stringResource(Res.string.flow_moves))
-        MoveList(draft.moves, onOpen = { editing = it })
+        MoveList(
+            draft.moves,
+            onOpen = { editing = it },
+            onMove = { index, by -> actions.onChange { it.moving(index, by) } },
+        )
         SecondaryButton(
             stringResource(Res.string.flow_add_move),
             { adding = true },
@@ -167,21 +177,10 @@ fun FlowEditorScreen(state: FlowEditorUiState, actions: FlowEditorActions, modif
         MoveSheet(
             move,
             onChange = { changed -> actions.onChange { it.replacing(index, changed) } },
-            actions = MoveActions(
-                onUp = {
-                    actions.onChange { it.moving(index, -1) }
-                    editing = index - 1
-                }.takeIf { index > 0 },
-                onDown = {
-                    actions.onChange { it.moving(index, 1) }
-                    editing = index + 1
-                }
-                    .takeIf { index < draft.moves.lastIndex },
-                onRemove = {
-                    editing = null
-                    actions.onChange { it.removing(index) }
-                },
-            ),
+            onRemove = {
+                editing = null
+                actions.onChange { it.removing(index) }
+            },
             onDismiss = { editing = null },
         )
     }
@@ -245,33 +244,75 @@ private fun FlowWords(draft: FlowDraft, onChange: ((FlowDraft) -> FlowDraft) -> 
     }
 }
 
-/** The moves in order, each a row that opens it; or, with none, a line saying so. */
+/**
+ * The moves in order, each a row that opens it and, with more than one, starts with a handle that drags it to another
+ * place ([onMove], a place at a time); or, with none, a line saying so.
+ */
 @Composable
-private fun MoveList(moves: List<Move>, onOpen: (Int) -> Unit) {
+private fun MoveList(moves: List<Move>, onOpen: (Int) -> Unit, onMove: (index: Int, by: Int) -> Unit) {
     val palette = IntervalTheme.palette
     if (moves.isEmpty()) {
         Text(stringResource(Res.string.flow_no_moves), style = IntervalTheme.type.meta, color = palette.textDim)
         return
     }
+    val order = rememberReorderState()
     ListCard {
         moves.forEachIndexed { index, move ->
-            if (index > 0) RowDivider()
-            EditorMoveRow(index + 1, move, onOpen = { onOpen(index) })
+            Column(
+                Modifier
+                    .reorderItem(order, index)
+                    .background(if (order.dragging == index) palette.surfaceVariant else palette.surface),
+            ) {
+                val name = move.name.ifBlank { stringResource(Res.string.flow_move_unnamed) }
+                EditorMoveRow(
+                    index + 1,
+                    move,
+                    onOpen = { onOpen(index) },
+                    handle = if (moves.size > 1) {
+                        {
+                            DragHandle(
+                                stringResource(Res.string.flow_reorder_move_cd, name),
+                                index,
+                                moves.size,
+                                order,
+                                onMove,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                )
+                if (index < moves.lastIndex) RowDivider()
+            }
         }
     }
 }
 
 @Composable
-private fun EditorMoveRow(number: Int, move: Move, onOpen: () -> Unit) {
+private fun EditorMoveRow(number: Int, move: Move, onOpen: () -> Unit, handle: (@Composable () -> Unit)?) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        if (handle != null) Box(Modifier.padding(start = Spacing.space4)) { handle() }
+        EditorMoveRowBody(
+            number,
+            move,
+            onOpen,
+            Modifier
+                .weight(1f)
+                .then(if (handle == null) Modifier.padding(start = Spacing.space16) else Modifier),
+        )
+    }
+}
+
+@Composable
+private fun EditorMoveRowBody(number: Int, move: Move, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
-        Modifier
-            .fillMaxWidth()
+        modifier
             .heightIn(min = Sizes.listRow)
             .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onOpen)
             .pressScale(interaction)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .padding(end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {

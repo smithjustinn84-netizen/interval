@@ -1,18 +1,13 @@
 package dev.justinsmith.lift.programs
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -25,7 +20,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
@@ -37,7 +31,6 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
-import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
@@ -51,9 +44,7 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SheetColumns
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.sheetIsSideways
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
@@ -98,7 +89,6 @@ import dev.justinsmith.lift.session.resources.notice_block_removed
 import dev.justinsmith.lift.session.resources.notice_day_removed
 import dev.justinsmith.lift.session.resources.notice_program_saved
 import dev.justinsmith.lift.session.resources.session_undo
-import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.stringResource
@@ -262,6 +252,7 @@ private fun ProgramEditorBody(
                 state.choices.bands,
                 canRemove = draft.days.size > 1,
                 onOpen = { index -> onOpenBlock(day, index) },
+                onMove = { index, by -> actions.onChange { it.moveBlock(day, index, by) } },
                 onAdd = {
                     actions.onChange { it.addBlock(day) }
                     onOpenBlock(day, blocks.size)
@@ -390,7 +381,7 @@ private fun ScheduleCard(draft: ProgramDraft, onChange: ((ProgramDraft) -> Progr
     )
 }
 
-/** Day [day] (from 0) of the program: its blocks, each opening on a tap, and Add block. */
+/** Day [day] (from 0) of the program: its blocks, each opening on a tap and dragged by its handle, and Add block. */
 @Composable
 private fun DayCard(
     day: Int,
@@ -398,10 +389,10 @@ private fun DayCard(
     bands: List<Band>,
     canRemove: Boolean,
     onOpen: (Int) -> Unit,
+    onMove: (index: Int, by: Int) -> Unit,
     onAdd: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val palette = IntervalTheme.palette
     val removeDayCd = stringResource(Res.string.editor_remove_day_cd, day + 1)
     Row(verticalAlignment = Alignment.CenterVertically) {
         GroupLabel(stringResource(Res.string.editor_day, day + 1), Modifier.weight(1f))
@@ -414,25 +405,7 @@ private fun DayCard(
         }
     }
     ListCard {
-        blocks.forEachIndexed { i, block ->
-            val interaction = remember { MutableInteractionSource() }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .heightIn(min = Sizes.listRow)
-                    .clickable(interaction, LocalIndication.current, role = Role.Button) { onOpen(i) }
-                    .pressScale(interaction)
-                    .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
-                    Text(blockLine(block, bands), style = IntervalTheme.type.meta, color = palette.textDim)
-                }
-                Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))
-            }
-            RowDivider()
-        }
+        DayBlockRows(blocks, bands, onOpen, onMove)
         LinkRow(stringResource(Res.string.editor_add_block), null, onClick = onAdd)
     }
 }

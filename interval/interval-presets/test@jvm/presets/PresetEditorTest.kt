@@ -3,18 +3,22 @@
 package dev.justinsmith.interval.presets
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertTextContains
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextClearance
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
@@ -215,11 +219,35 @@ class PresetEditorTest {
         onNodeWithText("4").performClick()
         onNodeWithText("Done").performClick()
         onNodeWithText("7:00").performScrollTo().assertExists()
-        onNodeWithContentDescription("Move block 2 up").performScrollTo().performClick()
+        onNodeWithContentDescription("Drag to reorder block 2").performScrollTo()
+            .performCustomAccessibilityActionWithLabel("Move up")
         onNodeWithText("7:00").performScrollTo().assertExists()
         onNodeWithContentDescription("Remove block 2").performScrollTo().performClick()
         onNodeWithText("Block 1").assertDoesNotExist()
         onNodeWithText("2:20").performScrollTo().assertExists()
+        saveInEditor()
+        assertEquals(listOf(Preset("Morning", morning.config.copy(rounds = 4), id = 7)), saved)
+    }
+
+    @Test
+    fun `a block dragged by its handle above the one before takes its place in the sheet`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Morning").performClick()
+        onNodeWithText("Edit").performClick()
+        onNodeWithText("Add a block").performScrollTo().performClick()
+        onAllNodesWithText("×8").onLast().performScrollTo().performClick()
+        onNodeWithText("4").performClick()
+        onNodeWithText("Done").performClick()
+        onNodeWithContentDescription("Drag to reorder block 2").performScrollTo()
+        // From one block's heading to the next: a card and the gap after it.
+        val step = onNodeWithText("Block 2").getBoundsInRoot().top - onNodeWithText("Block 1").getBoundsInRoot().top
+        onNodeWithContentDescription("Drag to reorder block 2").performTouchInput {
+            down(center)
+            repeat(STEPS) { moveBy(Offset(0f, -step.toPx() / STEPS)) }
+            up()
+        }
+        waitForIdle()
+        onNodeWithContentDescription("Remove block 2").performScrollTo().performClick()
         saveInEditor()
         assertEquals(listOf(Preset("Morning", morning.config.copy(rounds = 4), id = 7)), saved)
     }
@@ -254,5 +282,9 @@ class PresetEditorTest {
         assertEquals(true, config.capped)
         assertEquals(1200, config.workSeconds)
         assertEquals(false, saved.single().alternateHands)
+    }
+
+    private companion object {
+        const val STEPS = 10
     }
 }

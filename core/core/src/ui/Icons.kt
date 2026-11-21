@@ -53,9 +53,10 @@ object IntervalIcons {
     /** A vertical disclosure chevron (Filters, Licenses), unmirrored so up and down stay up and down in RTL. */
     val ChevronDown: ImageVector = lineIcon("ChevronDown", "M6 9l6 6 6-6")
 
-    /** [ChevronDown] turned up: a sequence's block moved earlier. */
-    val ChevronUp: ImageVector = lineIcon("ChevronUp", "M6 15l6-6 6 6")
     val Check: ImageVector = lineIcon("Check", "M5 12l5 5L20 7")
+
+    /** Two bars: a row's handle, dragged to put it in another place. */
+    val DragHandle: ImageVector = lineIcon("DragHandle", "M5 9h14M5 15h14")
 
     /** The Timer's way to describe a workout in words: lines of text and a pencil. */
     val Describe: ImageVector = lineIcon("Describe", "M4 6h16M4 11h9M4 16h5", "M14 20v-2.5l5.5-5.5 2.5 2.5-5.5 5.5z")

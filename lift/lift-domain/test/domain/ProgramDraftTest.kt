@@ -32,6 +32,24 @@ class ProgramDraftTest {
     }
 
     @Test
+    fun `a day's blocks move earlier and later within it`() {
+        val rows = Block(BuiltInExercise.Row, rounds = 3, reps = 10)
+        val squats = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10)
+        val draft = ProgramDraft().addBlock(
+            0,
+            swings,
+        ).addBlock(0, rows).addBlock(0, squats).addDay().addBlock(1, swings)
+        assertEquals(listOf(swings, squats, rows), draft.moveBlock(0, 2, by = -1).days[0])
+        assertEquals(listOf(rows, swings, squats), draft.moveBlock(0, 0, by = 1).days[0])
+        assertEquals(listOf(rows, squats, swings), draft.moveBlock(0, 0, by = 2).days[0])
+        // The other day stays as it was, and neither end moves past itself.
+        assertEquals(listOf(swings), draft.moveBlock(0, 0, by = 1).days[1])
+        assertEquals(draft, draft.moveBlock(0, 0, by = -1))
+        assertEquals(draft, draft.moveBlock(0, 2, by = 1))
+        assertEquals(draft, draft.moveBlock(1, 0, by = 1))
+    }
+
+    @Test
     fun `a block run as a ladder gets rungs and back as sets keeps its reps`() {
         val ladder = swings.asKind(BlockKind.Ladder)
         assertEquals(listOf(1, 2, 3), ladder.rungs)

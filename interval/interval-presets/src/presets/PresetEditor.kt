@@ -40,11 +40,10 @@ import dev.justinsmith.interval.presets.resources.preset_editor_add_block
 import dev.justinsmith.interval.presets.resources.preset_editor_block
 import dev.justinsmith.interval.presets.resources.preset_editor_copy_title
 import dev.justinsmith.interval.presets.resources.preset_editor_edit_title
-import dev.justinsmith.interval.presets.resources.preset_editor_move_down
-import dev.justinsmith.interval.presets.resources.preset_editor_move_up
 import dev.justinsmith.interval.presets.resources.preset_editor_new_title
 import dev.justinsmith.interval.presets.resources.preset_editor_prep_hint
 import dev.justinsmith.interval.presets.resources.preset_editor_remove_block
+import dev.justinsmith.interval.presets.resources.preset_editor_reorder_block
 import dev.justinsmith.interval.presets.resources.preset_editor_same_shape
 import dev.justinsmith.interval.presets.resources.preset_editor_save_as_preset
 import dev.justinsmith.interval.presets.resources.preset_editor_saves_as
@@ -76,6 +75,7 @@ import dev.justinsmith.interval.timer.withoutBlock
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.ActivitySheet
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.DragHandle
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -91,6 +91,8 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.ValueSheet
 import dev.justinsmith.interval.ui.labelRes
+import dev.justinsmith.interval.ui.rememberReorderState
+import dev.justinsmith.interval.ui.reorderItem
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -137,11 +139,11 @@ data class PresetDraft(
  * Names and shapes a preset in a sheet: the name with its count, a card of rows for each block (Work, Rest and
  * Rounds, the ladder and the sets; one for a workout of one block), Add a block, then the rest between blocks, the
  * warm-up, cool-down and activity, each row opening its edit sheet; the total it comes to with the user's get-ready
- * countdown, and Save. A sequence's blocks each say their number and move up or down or go. A blank name saves as
- * the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what the repository will do with a
- * name another of [presets] has ("Saves as Tabata 2") and which one already has this shape. Each change to the shape
- * goes back through [onChangeShape], so the [draft] lives with its caller. In [EditorMode.Timer] there is no name:
- * Done hands the shape to [onSave], and Save as preset goes to [onSaveAsPreset].
+ * countdown, and Save. A sequence's blocks each say their number, are dragged by their handle to another place, or
+ * go. A blank name saves as the shape's own ("40/20 ×6"), which the empty field shows. Before Save it says what the
+ * repository will do with a name another of [presets] has ("Saves as Tabata 2") and which one already has this
+ * shape. Each change to the shape goes back through [onChangeShape], so the [draft] lives with its caller. In
+ * [EditorMode.Timer] there is no name: Done hands the shape to [onSave], and Save as preset goes to [onSaveAsPreset].
  */
 @Composable
 internal fun PresetEditor(
@@ -289,10 +291,12 @@ private fun EditorBlocks(
     onChangeShape: ((IntervalConfig) -> IntervalConfig) -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val order = rememberReorderState(gap = Spacing.space8)
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         config.blocks.forEachIndexed { index, block ->
             Column(
                 Modifier
+                    .reorderItem(order, index)
                     .fillMaxWidth()
                     .clip(Corners.radius18)
                     .background(IntervalTheme.palette.surfaceVariant)
@@ -303,9 +307,15 @@ private fun EditorBlocks(
                 if (config.isSequence) {
                     BlockHeader(
                         number = index + 1,
-                        first = index == 0,
-                        last = index == config.blocks.lastIndex,
-                        onMove = { by -> onChangeShape { it.withBlockMoved(index, by) } },
+                        handle = {
+                            DragHandle(
+                                stringResource(Res.string.preset_editor_reorder_block, index + 1),
+                                index,
+                                config.blocks.size,
+                                order,
+                                onMove = { from, by -> onChangeShape { it.withBlockMoved(from, by) } },
+                            )
+                        },
                         onRemove = { onChangeShape { it.withoutBlock(index) } },
                     )
                     RowDivider()
@@ -332,38 +342,25 @@ private fun EditorBlocks(
     }
 }
 
-/** "Block 2", a heading, with the ways to move it earlier or later and to take it out. */
+/** "Block 2", a heading after the [handle] that drags it to another place, with the way to take it out. */
 @Composable
 private fun BlockHeader(
     number: Int,
-    first: Boolean,
-    last: Boolean,
-    onMove: (Int) -> Unit,
+    handle: @Composable () -> Unit,
     onRemove: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier.fillMaxWidth().padding(start = Spacing.space16, end = Spacing.space4),
+        modifier.fillMaxWidth().padding(start = Spacing.space4, end = Spacing.space4),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        handle()
         Text(
             stringResource(Res.string.preset_editor_block, number),
             style = IntervalTheme.type.label,
             color = IntervalTheme.palette.text,
             modifier = Modifier.weight(1f).semantics { heading() },
         )
-        if (!first) {
-            IconAction(IntervalIcons.ChevronUp, stringResource(Res.string.preset_editor_move_up, number), {
-                onMove(-1)
-            })
-        }
-        if (!last) {
-            IconAction(
-                IntervalIcons.ChevronDown,
-                stringResource(Res.string.preset_editor_move_down, number),
-                { onMove(+1) },
-            )
-        }
         IconAction(IntervalIcons.Close, stringResource(Res.string.preset_editor_remove_block, number), onRemove)
     }
 }

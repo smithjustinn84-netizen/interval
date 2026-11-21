@@ -27,6 +27,16 @@ data class ProgramDraft(
     fun removeBlock(day: Int, index: Int): ProgramDraft =
         mapDay(day) { blocks -> blocks.filterIndexed { i, _ -> i != index } }
 
+    /** With block [index] of day [day] moved [by] places, earlier for less than 0; past either end, unchanged. */
+    fun moveBlock(day: Int, index: Int, by: Int): ProgramDraft = mapDay(day) { blocks ->
+        val to = index + by
+        if (index !in blocks.indices || to !in blocks.indices) {
+            blocks
+        } else {
+            blocks.toMutableList().apply { add(to, removeAt(index)) }
+        }
+    }
+
     private fun mapDay(day: Int, transform: (List<Block>) -> List<Block>) =
         copy(days = days.mapIndexed { i, blocks -> if (i == day) transform(blocks) else blocks })
 

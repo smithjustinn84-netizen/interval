@@ -22,7 +22,6 @@ import dev.justinsmith.interval.mobility.resources.flow_add_move
 import dev.justinsmith.interval.mobility.resources.move_cue_label
 import dev.justinsmith.interval.mobility.resources.move_cue_placeholder
 import dev.justinsmith.interval.mobility.resources.move_done
-import dev.justinsmith.interval.mobility.resources.move_down
 import dev.justinsmith.interval.mobility.resources.move_held_hint
 import dev.justinsmith.interval.mobility.resources.move_held_still
 import dev.justinsmith.interval.mobility.resources.move_less_cd
@@ -39,7 +38,6 @@ import dev.justinsmith.interval.mobility.resources.move_time_side
 import dev.justinsmith.interval.mobility.resources.move_title
 import dev.justinsmith.interval.mobility.resources.move_type
 import dev.justinsmith.interval.mobility.resources.move_type_hint
-import dev.justinsmith.interval.mobility.resources.move_up
 import dev.justinsmith.interval.timer.Move
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.steppedSeconds
@@ -82,19 +80,13 @@ internal fun AddMoveSheet(onPick: (Move) -> Unit, onDismiss: () -> Unit) {
     }
 }
 
-/** What a move's sheet can do besides change it: move it up or down the flow, or take it out. */
-internal class MoveActions(
-    val onUp: (() -> Unit)?,
-    val onDown: (() -> Unit)?,
-    val onRemove: () -> Unit,
-)
-
 /**
  * One move of the flow: its name and how it is done, its time in steps of five seconds, whether it is done a side at
- * a time and whether it is held still. Each change is handed on as it is made ([onChange]); Done closes it.
+ * a time and whether it is held still. Each change is handed on as it is made ([onChange]); Done closes it, Remove
+ * takes it out of the flow ([onRemove]).
  */
 @Composable
-internal fun MoveSheet(move: Move, onChange: (Move) -> Unit, actions: MoveActions, onDismiss: () -> Unit) {
+internal fun MoveSheet(move: Move, onChange: (Move) -> Unit, onRemove: () -> Unit, onDismiss: () -> Unit) {
     IntervalSheet(move.name.ifBlank { stringResource(Res.string.move_title) }, onDismiss) { hide ->
         MoveWords(move, onChange)
         MoveTime(move, onChange)
@@ -114,11 +106,12 @@ internal fun MoveSheet(move: Move, onChange: (Move) -> Unit, actions: MoveAction
             )
         }
         AccentButton(stringResource(Res.string.move_done), hide, Modifier.fillMaxWidth())
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            actions.onUp?.let { QuietTextButton(stringResource(Res.string.move_up), it) }
-            actions.onDown?.let { QuietTextButton(stringResource(Res.string.move_down), it) }
-            QuietTextButton(stringResource(Res.string.move_remove), actions.onRemove, destructive = true)
-        }
+        QuietTextButton(
+            stringResource(Res.string.move_remove),
+            onRemove,
+            Modifier.align(Alignment.CenterHorizontally),
+            destructive = true,
+        )
     }
 }
 

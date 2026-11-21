@@ -2,15 +2,23 @@
 
 package dev.justinsmith.interval.mobility
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isHeading
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performCustomAccessibilityActionWithLabel
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.timer.Clash
 import dev.justinsmith.interval.timer.FlowDraft
 import dev.justinsmith.interval.timer.FlowUse
@@ -57,19 +65,31 @@ class FlowEditorScreenTest {
     }
 
     @Test
-    fun `a move opens on its sheet where its time steps and it moves down`() = runUiTest {
-        val drafts = mutableListOf<FlowDraft>()
-        setThemedContent {
-            FlowEditorScreen(ready, FlowEditorActions(onChange = { drafts += it(ready.draft) }))
-        }
+    fun `a move opens on its sheet where its time steps`() = runUiTest {
+        setThemedContent { FlowEditorScreen(ready, FlowEditorActions()) }
         onNode(hasText("Plank") and hasClickAction()).performClick()
         waitForIdle()
         onNodeWithText("A side at a time").assertExists()
-        onNode(hasText("Move up") and hasClickAction()).assertDoesNotExist()
-        onNode(hasText("Move down") and hasClickAction()).performScrollTo().performClick()
-        waitForIdle()
+    }
 
-        assertEquals(listOf(bridge, plank), drafts.last().moves)
+    @Test
+    fun `a move dragged by its handle past the next takes its place`() = runUiTest {
+        var draft by mutableStateOf(ready.draft)
+        setThemedContent {
+            FlowEditorScreen(ready.copy(draft = draft), FlowEditorActions(onChange = { draft = it(draft) }))
+        }
+        val next = onNode(hasText("Shoulder bridge") and hasClickAction()).getBoundsInRoot()
+        onNodeWithContentDescription("Drag to reorder Plank").performScrollTo().performTouchInput {
+            val rowHeight = (next.bottom - next.top).toPx()
+            down(center)
+            repeat(STEPS) { moveBy(Offset(0f, rowHeight / STEPS)) }
+            up()
+        }
+        waitForIdle()
+        assertEquals(listOf(bridge, plank), draft.moves)
+        onNodeWithContentDescription("Drag to reorder Plank").performCustomAccessibilityActionWithLabel("Move up")
+        waitForIdle()
+        assertEquals(listOf(plank, bridge), draft.moves)
     }
 
     @Test
@@ -79,5 +99,9 @@ class FlowEditorScreenTest {
         onNode(hasText("Edit flow") and isHeading()).assertExists()
         onNode(hasText("Delete flow") and hasClickAction()).performScrollTo().performClick()
         assertEquals(1, deleted)
+    }
+
+    private companion object {
+        const val STEPS = 10
     }
 }
