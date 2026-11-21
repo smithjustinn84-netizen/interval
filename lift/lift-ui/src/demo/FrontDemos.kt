@@ -45,7 +45,8 @@ val WindmillDemo: ExerciseDemo = run {
         farUpperArm = -4f,
         farForearm = -4f,
     )
-    val down = tall.copy(torso = -60f, farUpperArm = 42f, farForearm = 42f)
+    // The bell side long, the waist bowed out toward it.
+    val down = tall.copy(torso = -60f, farUpperArm = 42f, farForearm = 42f, spine = -14f)
     ExerciseDemo(
         keyframes = listOf(
             Keyframe(at = 0f, pose = tall),

@@ -36,6 +36,10 @@ import kotlin.math.sin
  * as [reach] does for the arms, [legs], [farLegs] and [trunk] are how much of each leg's and the trunk's length
  * shows, for a thigh that points at the eye or a back folded toward it.
  *
+ * [spine] bows the back between the hips and the shoulders, which stay where [torso] puts them: positive rounds it
+ * (the back bowed out, as a cat's or a curl's), negative arches it (the belly let down, as a cow's). Seen from the
+ * front it bows the trunk across the body: positive carries the waist toward the far side, negative the near.
+ *
  * Seen from above ([Facing.Above]) it is the same figure lying on a mat, looked down on.
  */
 data class Pose(
@@ -58,6 +62,7 @@ data class Pose(
     val legs: Float = 1f,
     val farLegs: Float = legs,
     val trunk: Float = 1f,
+    val spine: Float = 0f,
 ) {
     internal fun angles(): FloatArray = floatArrayOf(
         shin,
@@ -79,10 +84,11 @@ data class Pose(
         legs,
         farLegs,
         trunk,
+        spine,
     )
 
     internal companion object {
-        const val JOINTS = 19
+        const val JOINTS = 20
 
         /** The pose whose joints are [angles], in the order [Pose.angles] gives them. */
         fun of(angles: FloatArray): Pose {
@@ -107,6 +113,7 @@ data class Pose(
                 legs = angles[16],
                 farLegs = angles[17],
                 trunk = angles[18],
+                spine = angles[19],
             )
         }
     }
@@ -496,6 +503,7 @@ data class Figure(
     val farShoulder: Offset = shoulder,
     val front: Boolean = false,
     val behind: Boolean = false,
+    val spine: Float = 0f,
 ) {
     /** The middle of the hips, and of the shoulders: the two ends of the spine, whichever way it is seen. */
     val hips: Offset get() = (hip + farHip) / 2f
@@ -531,6 +539,7 @@ data class Figure(
         farShoulder = farShoulder + by,
         front = front,
         behind = behind,
+        spine = spine,
     )
 }
 
@@ -681,6 +690,7 @@ fun Pose.figure(
         farElbow = farElbow,
         farHand = farHand,
         farBell = farHand.down(Rig.BELL_REACH, farHangs),
+        spine = spine,
     )
     return figure.grounded(root, anchor)
 }
@@ -733,6 +743,7 @@ private fun Pose.frontFigure(hangs: Float, farHangs: Float): Figure {
         farShoulder = farShoulder,
         front = true,
         behind = behind > BEHIND,
+        spine = spine,
     )
     return if (turn == 0f) standing else standing.turned(turn.radians(), about = standing.hips)
 }
@@ -790,7 +801,7 @@ internal fun rests(elbow: Offset, hand: Offset, bell: Offset): Boolean {
 private fun Figure.lowest(): Float = maxOf(
     maxOf(toe.y, heel.y, farToe.y, farHeel.y),
     maxOf(knee.y, farKnee.y) + Rig.LEG / 2,
-    maxOf(maxOf(hip.y, farHip.y) + Build.PELVIS, chest().y + Build.CHEST),
+    maxOf(maxOf(hip.y, farHip.y) + Build.PELVIS, chest().y + Build.CHEST, waist().y + Build.WAIST),
     maxOf(shoulder.y, farShoulder.y) + Build.SHOULDERS,
     head.y + Rig.HEAD,
     maxOf(elbow.y, farElbow.y) + Rig.ARM / 2,

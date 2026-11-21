@@ -289,6 +289,30 @@ class ExerciseDemoTest {
     }
 
     @Test
+    fun `a straight spine keeps the waist and chest on the line from the hips to the shoulders`() {
+        demos.forEach { demo ->
+            (0..20).map { demo.figureAt(it / 20f) }.filter { it.spine == 0f && !it.front }.forEach { figure ->
+                val line = figure.shoulder - figure.hip
+                assertEquals(figure.hip + line * Build.WAIST_AT, figure.waist())
+                assertEquals(figure.hip + line * Build.CHEST_AT + figure.front() * Build.CHEST_FORWARD, figure.chest())
+            }
+        }
+    }
+
+    @Test
+    fun `a rounded back bows away from the chest and lying on it stays on the mat`() {
+        val straight = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f)
+        val round = straight.copy(spine = 30f).figure()
+        assertTrue(round.waist().x < straight.figure().waist().x - 10f, "The back bows to ${round.waist()}")
+        assertTrue(straight.copy(spine = -20f).figure().waist().x > straight.figure().waist().x + 5f)
+        listOf(RollingLikeABallDemo, SealDemo, SpinalRockDemo, RollUpDemo).forEach { demo ->
+            (0..40).map { demo.figureAt(it / 40f) }.forEach { figure ->
+                assertTrue(figure.waist().y + Build.WAIST <= Rig.FLOOR + 0.5f, "The back sinks into the mat")
+            }
+        }
+    }
+
+    @Test
     fun `hands round behind a figure seen from the front are drawn behind it`() {
         val pose = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f)
         assertFalse(pose.figure(facing = Facing.Front).behind)

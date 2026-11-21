@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.ui.demo
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
 // The figure's parts seen from the front (Facing.Front): each side has its own hip and shoulder and is as near as
@@ -13,8 +14,11 @@ internal fun DrawScope.drawFrontTrunk(pen: FigurePen, figure: Figure) {
     val chest = Build.FRONT_CHEST + pen.breath * Build.BREATH
     val hips = figure.hips
     val neck = figure.neck
-    val waist = hips + (neck - hips) * Build.WAIST_AT
-    val ribs = hips + (neck - hips) * Build.CHEST_AT
+    // A bowed spine bends the trunk across the body, the waist most: to the near side, or arched to the far one.
+    val spine = neck - hips
+    val across = Offset(-spine.y, spine.x) / spine.getDistance().coerceAtLeast(1f)
+    val waist = hips + spine * Build.WAIST_AT - across * (figure.spine * Build.BOW * Build.WAIST_BOW)
+    val ribs = hips + spine * Build.CHEST_AT - across * (figure.spine * Build.BOW * Build.CHEST_BOW)
     drawSegment(pen, figure.hip, figure.farHip, Build.PELVIS, Build.PELVIS)
     drawSegment(pen, hips, waist, Build.FRONT_HIPS, Build.FRONT_WAIST)
     drawSegment(pen, waist, ribs, Build.FRONT_WAIST, chest)

@@ -254,11 +254,16 @@ internal fun Figure.front(): Offset {
 
 /**
  * The middle of the waist, and of the chest: ahead of the spine by as much as it is deeper than the hips, so the
- * back is one line from the hips up and a figure on its back lies on all of it.
+ * back is one line from the hips up and a figure on its back lies on all of it. A bowed [Figure.spine] carries
+ * both back from that line, the waist most, as the middle of a rounded back is; an arched one, forward.
  */
-internal fun Figure.waist(): Offset = hip + (shoulder - hip) * Build.WAIST_AT
+internal fun Figure.waist(): Offset = hip + (shoulder - hip) * Build.WAIST_AT - front() * bow(Build.WAIST_BOW)
 
-internal fun Figure.chest(): Offset = hip + (shoulder - hip) * Build.CHEST_AT + front() * Build.CHEST_FORWARD
+internal fun Figure.chest(): Offset =
+    hip + (shoulder - hip) * Build.CHEST_AT + front() * (Build.CHEST_FORWARD - bow(Build.CHEST_BOW))
+
+/** How far the spine's bow carries a part [share] of the most it carries the middle of the back. */
+private fun Figure.bow(share: Float): Float = spine * Build.BOW * share
 
 /**
  * The body's build, in [Rig] units: how thick each part is (its radius) and where along its bone it is thickest.
@@ -282,6 +287,14 @@ internal object Build {
     const val FRONT_COLLAR = 14f
     const val HEAD_ACROSS = 17.5f
     const val HEAD_ALONG = 19.5f
+
+    /**
+     * How far a degree of [Pose.spine] carries the middle of the back off the line from the hips to the shoulders,
+     * and the waist's and the chest's shares of that.
+     */
+    const val BOW = 0.6f
+    const val WAIST_BOW = 1f
+    const val CHEST_BOW = 0.7f
 
     /** How far the chest swells with a breath in. */
     const val BREATH = 1.1f

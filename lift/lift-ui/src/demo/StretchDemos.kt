@@ -195,10 +195,12 @@ val ForearmStretchDemo: ExerciseDemo = run {
  * and the elbows soft), then let sink with the head up (the cow). The hands and the knees stay put.
  */
 val CatCowDemo: ExerciseDemo = run {
-    val cow = allFours(thigh = 6f, torso = 78.6f, arm = -4.7f)
-    val cat = allFours(thigh = -10f, torso = 92f, arm = -33.5f).copy(forearm = 51.3f, farForearm = 51.3f)
+    // The cow lets the belly down and the cat rounds the back up, between hips and shoulders that stay put.
+    val cow = allFours(thigh = 6f, torso = 78.6f, arm = -4.7f).copy(spine = -32f)
+    val cat = allFours(thigh = -10f, torso = 92f, arm = -33.5f).copy(forearm = 51.3f, farForearm = 51.3f, spine = 36f)
     // Halfway, solved too, so the knees stay put as the elbows bend.
-    val between = allFours(thigh = -2f, torso = 85.5f, arm = -29.3f).copy(forearm = 30.4f, farForearm = 30.4f)
+    val between = allFours(thigh = -2f, torso = 85.5f, arm = -29.3f)
+        .copy(forearm = 30.4f, farForearm = 30.4f, spine = 7f)
     onAllFours(
         listOf(
             0f to cow,

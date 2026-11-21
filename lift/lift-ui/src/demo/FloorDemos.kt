@@ -46,8 +46,8 @@ private val tucked = Pose(
  */
 val SpinalRockDemo: ExerciseDemo = run {
     val tall = sitting(torso = -10f)
-    val rounded = sitting(torso = 15f).copy(upperArm = 40f, forearm = 60f)
-    val back = tucked.copy(torso = 5f).tipped(-75f)
+    val rounded = sitting(torso = 15f).copy(upperArm = 40f, forearm = 60f, spine = 26f)
+    val back = tucked.copy(torso = 5f, spine = 18f).tipped(-75f)
     onTheMat(
         listOf(
             0f to tall,

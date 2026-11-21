@@ -48,10 +48,14 @@ class StretchDemosTest {
     }
 
     @Test
-    fun `the cat tucks the head under where the cow lifts it`() {
+    fun `the cat tucks the head under and rounds the back where the cow lifts it and lets the belly down`() {
         val cow = CatCowDemo.figureAt(0f)
         val cat = CatCowDemo.figureAt(CatCowDemo.still)
         assertTrue(cat.head.y > cow.head.y + 20f, "The head only drops to ${cat.head} from ${cow.head}")
+        // Measured from the line from the hips to the shoulders, which stays about where it is.
+        fun sag(figure: Figure) = figure.waist().y - (figure.hip.y + (figure.shoulder.y - figure.hip.y) * 0.42f)
+        assertTrue(sag(cow) > 8f, "The cow's belly only drops ${sag(cow)}")
+        assertTrue(sag(cat) < -15f, "The cat's back only rises ${-sag(cat)}")
     }
 
     @Test

@@ -55,9 +55,10 @@ val HundredDemo: ExerciseDemo = run {
 /** The roll-up: from lying long, arms overhead, peeled up through sitting to reach past the toes, and back down. */
 val RollUpDemo: ExerciseDemo = run {
     val lying = back(torso = FLAT, legs = DOWN, arms = OVERHEAD).flexed()
-    val peeling = lying.copy(torso = -45f).arms(UP)
-    val sitting = lying.copy(torso = 10f).arms(100f)
-    val folded = lying.copy(torso = 55f).arms(80f)
+    // It peels up through a rounded back, a bone at a time, and folds over the legs rounded too.
+    val peeling = lying.copy(torso = -45f, spine = 18f).arms(UP)
+    val sitting = lying.copy(torso = 10f, spine = 14f).arms(100f)
+    val folded = lying.copy(torso = 55f, spine = 30f).arms(80f)
     mat(
         listOf(
             0f to lying,
@@ -78,7 +79,7 @@ val RollUpDemo: ExerciseDemo = run {
 
 /** Rolling like a ball: balanced behind the sit bones, knees hugged in, rolled back to the shoulder blades and up. */
 val RollingLikeABallDemo: ExerciseDemo = run {
-    val ball = tuck(torso = -15f, arms = 50f, hands = 65f)
+    val ball = tuck(torso = -15f, arms = 50f, hands = 65f).copy(spine = BALL_SPINE)
     rolling(ball, listOf(0f to ball, 0.15f to ball), seconds = 2.4f)
 }
 
@@ -138,7 +139,7 @@ val CrissCrossDemo: ExerciseDemo = run {
 /** The spine stretch forward: sitting tall, legs long and feet flexed, rounded forward reaching ahead, stacked up. */
 val SpineStretchForwardDemo: ExerciseDemo = run {
     val tall = seated.arms(BY_SIDES)
-    val round = seated.copy(torso = 45f).arms(100f)
+    val round = seated.copy(torso = 45f, spine = 30f).arms(100f)
     mat(
         listOf(0f to tall, 0.1f to tall, 0.45f to round, 0.6f to round, 1f to tall),
         phases(0.1f to 0, 0.6f to 1, 1f to 2),
@@ -316,7 +317,7 @@ val ShoulderBridgeDemo: ExerciseDemo = run {
 
 /** The seal: balanced holding the ankles, the feet clapped three times, rolled back and up to clap again. */
 val SealDemo: ExerciseDemo = run {
-    val ball = tuck(torso = -5f, arms = 38f, hands = 38f)
+    val ball = tuck(torso = -5f, arms = 38f, hands = 38f).copy(spine = BALL_SPINE)
     val clap = ball.copy(farThigh = 190f)
     rolling(
         ball,
@@ -408,6 +409,9 @@ private fun Pose.far(leg: Float) = copy(farShin = leg, farThigh = leg, farFoot =
 private fun Pose.hugNear() = copy(shin = HUGGED_SHIN, thigh = HUGGED_THIGH, foot = pointed(HUGGED_SHIN))
 
 private fun Pose.hugFar() = copy(farShin = HUGGED_SHIN, farThigh = HUGGED_THIGH, farFoot = pointed(HUGGED_SHIN))
+
+/** How round the back is in a ball, rolled back onto it: no more than keeps the hips on the mat. */
+private const val BALL_SPINE = 18f
 
 /**
  * Balanced behind the sit bones at [torso], the knees drawn in to the chest and the feet off the mat, the
