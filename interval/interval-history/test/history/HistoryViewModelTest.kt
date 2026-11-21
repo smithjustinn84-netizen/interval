@@ -196,19 +196,37 @@ class HistoryViewModelTest : MainDispatcherTest() {
     }
 
     @Test
-    fun `once a day of the program is done today the next one is up tomorrow`() {
-        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+    fun `once a day of a daily program is done today the next one is up tomorrow`() {
+        val swings = ProgramKey.BuiltIn(ProgramId.DailySwingsGetUps)
         // Followed first thing, so the session after it counts as its first day.
+        clock = TODAY * DAY_MILLIS
+        bells.programs.follow(swings)
+        val finished = noonOf(TODAY)
+        clock = finished
+        lift.finished("b1", "Swings", finished - 1_000_000, finished, 16.0 to 10, program = swings)
+
+        val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
+        assertEquals(TODAY + 1, next.epochDay)
+        assertEquals(HistoryDay.Tomorrow, next.day)
+        assertEquals(2, next.programDay?.number)
+    }
+
+    @Test
+    fun `a program of three days a week leaves the day after its session for rest`() {
+        val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
         clock = TODAY * DAY_MILLIS
         bells.programs.follow(ladders)
         val finished = noonOf(TODAY)
         clock = finished
         lift.finished("b1", "Press ladders", finished - 1_000_000, finished, 16.0 to 6, program = ladders)
 
-        val next = assertIs<UpNextItem.Lift>(viewModel.state.value.upNext.single())
-        assertEquals(TODAY + 1, next.epochDay)
-        assertEquals(HistoryDay.Tomorrow, next.day)
+        val state = viewModel.state.value
+        val next = assertIs<UpNextItem.Lift>(state.upNext.single())
+        assertEquals(TODAY + 2, next.epochDay)
         assertEquals(2, next.programDay?.number)
+        // The strip says so too: tomorrow rests and the day after has the program's day on it.
+        assertEquals(DayState.Rest, state.week.single { it.epochDay == TODAY + 1 }.state)
+        assertEquals(DayState.Planned, state.week.single { it.epochDay == TODAY + 2 }.state)
     }
 
     @Test

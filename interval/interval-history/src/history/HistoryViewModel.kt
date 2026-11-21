@@ -270,6 +270,7 @@ class HistoryViewModel(
         val log = TrainingLog(history, planned, today, lifts, sports, timestamps::dayNumber)
         val body = app.body
         val week = log.week()
+        val upNext = timestamps.upNext(log, planned, lifting, today)
         val liftLog = timestamps.liftLog(today, lifting, followedSince)
 
         val classes = logged.classes.groupBy({ it.epochDay }) {
@@ -305,10 +306,10 @@ class HistoryViewModel(
             byKind = week.byKind(),
             weekStart = week.first().epochDay,
             today = today,
-            week = week.map { timestamps.dayCell(it) },
+            week = week.map { timestamps.dayCell(it) }.withProgramDay(upNext),
             month = MonthView(
                 title = timestamps.monthTitle(monthOf),
-                cells = log.month(monthOf).map { timestamps.dayCell(it.day, it.inMonth) },
+                cells = log.month(monthOf).map { timestamps.dayCell(it.day, it.inMonth) }.withProgramDay(upNext),
                 current = monthOf == monthStartOf(today),
             ),
             weeks = log.weeklyCounts(WEEKS_SHOWN),
@@ -318,7 +319,7 @@ class HistoryViewModel(
             },
             // Led as Today leads it: on a day with a sport, the program's day stands back behind it.
             // The flow suggested before a day's sport is Today's to offer: History lists what is planned.
-            upNext = todayAgenda(timestamps.upNext(log, planned, lifting, today).filter { it !is UpNextItem.Flow }).all,
+            upNext = todayAgenda(upNext.filter { it !is UpNextItem.Flow }).all,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             programDay = lifting.programDay,
             liftLog = liftLog,

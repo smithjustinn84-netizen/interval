@@ -2,7 +2,8 @@
   <description>
     The app opens on Today. With nothing planned it leads to Set up and to the plan; a session planned for today is up next
     there and starts from it; a preset that fits a few minutes starts from "Or pick by time", and so does the
-    flow that fits; and a program followed puts its next day up next, saying about how long it takes. A line under the title says what
+    flow that fits; and a program followed puts its next day up next, saying about how long it takes, at the program's pace (a
+    program of three days a week leaves the day after its session for rest). A line under the title says what
     kind of day it is; once today's steps are done the day says so, and a day with nothing planned is a rest day. Run on a fresh install
     (adb shell pm clear dev.justinsmith.interval).
   </description>

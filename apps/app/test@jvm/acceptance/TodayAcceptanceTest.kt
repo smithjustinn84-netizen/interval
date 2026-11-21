@@ -10,6 +10,7 @@ import dev.justinsmith.lift.data.SetEntity
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
 import dev.justinsmith.interval.model.PerceivedEffort as IntervalEffort
@@ -114,6 +115,22 @@ class TodayAcceptanceTest {
     }
 
     @Test
+    fun `a program of three days a week followed without a plan leaves the day after its session for rest`() =
+        acceptanceScenario(
+            lift = FakeLiftStorage().apply {
+                val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
+                following.row.value = FollowingEntity(programId = ladders.id.name, startedAtEpochMillis = -DAY_MILLIS)
+                // A day of it finished an hour before the clock's start, the Wednesday.
+                finished("w", "Press ladders", -2 * HOUR_MILLIS, -HOUR_MILLIS, 16.0 to 6, program = ladders)
+            },
+        ) {
+            seeCoachSays("rest day", "Rest is part of the week.")
+            see("Nothing due until tomorrow")
+            see("Up next · Tomorrow")
+            seeNo("Not today")
+        }
+
+    @Test
     fun `a day with nothing planned is a rest day and tomorrow's stands back`() = acceptanceScenario {
         openPlanFromToday()
         planSportEvery("BJJ", weekday = "Friday")
@@ -174,3 +191,4 @@ class TodayAcceptanceTest {
 }
 
 private const val HOUR_MILLIS = 3_600_000L
+private const val DAY_MILLIS = 24 * HOUR_MILLIS

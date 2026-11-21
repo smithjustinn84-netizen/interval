@@ -135,6 +135,15 @@ class HomeViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `the program's day without a plan is planned on the week strip as on the card`() {
+        bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
+
+        val week = viewModel.state.value.week
+        assertEquals(DayState.Planned, week.single { it.today }.state)
+        assertEquals(DayState.Rest, week.single { it.epochDay == TODAY + 1 }.state)
+    }
+
+    @Test
     fun `a session in progress is the one to resume`() {
         bells.programs.follow(ProgramKey.BuiltIn(ProgramId.PressLadders))
         viewModel.startLift(null)

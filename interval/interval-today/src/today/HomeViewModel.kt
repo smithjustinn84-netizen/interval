@@ -24,6 +24,7 @@ import dev.justinsmith.interval.history.keptFrom
 import dev.justinsmith.interval.history.lifting
 import dev.justinsmith.interval.history.todayAgenda
 import dev.justinsmith.interval.history.upNext
+import dev.justinsmith.interval.history.withProgramDay
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.LoggedSport
@@ -301,8 +302,9 @@ class HomeViewModel(
         val log = TrainingLog(history, planned, today, lifting.sessions.asLiftWorkouts(), sports, timestamps::dayNumber)
         val week = log.week()
         val goal = app.weeklyGoal
+        val upNext = timestamps.upNext(log, planned, lifting, today)
         return HomeUiState(
-            week = week.map { timestamps.dayCell(it) },
+            week = week.map { timestamps.dayCell(it) }.withProgramDay(upNext),
             weekGoal = WeekGoal(
                 count = week.sumOf { it.count },
                 lifts = week.sumOf { it.liftWorkouts.size },
@@ -311,7 +313,7 @@ class HomeViewModel(
                 sports = week.sumOf { it.sports.size },
                 mobility = week.sumOf { it.mobility },
             ),
-            upNext = timestamps.upNext(log, planned, lifting, today),
+            upNext = upNext,
             hasPlans = planned.isNotEmpty() || lifting.programDay != null,
             done = log.day(today).doneSteps(names::of),
             firstWeek = if (app.firstWeek) {

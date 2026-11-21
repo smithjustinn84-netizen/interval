@@ -7,8 +7,10 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.SportClass
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.timer.Activity
+import dev.justinsmith.interval.timer.DAYS_PER_WEEK
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.flowBefore
+import dev.justinsmith.interval.timer.weekStartOf
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.ProgramDay
@@ -57,8 +59,9 @@ fun LiftActivity.lifting(): Flow<Lifting> =
 /**
  * The plans still to do from [today], by day. A plan of the program's next day takes the day the program will be
  * at by then: the first of them the next day, each after it the day after. With no plan of a session on Lift at
- * all, the program's next day falls today, unless a day of it was finished today already, and leads the plans of
- * its day. A sport planned today and not yet logged brings the flow to do before it, until mobility is done.
+ * all, the program's next day falls where its pace puts it ([programDayOn]: today, or after the rest its days a
+ * week leave), today while a session is under way, and leads the plans of its day. A sport planned today and not
+ * yet logged brings the flow to do before it, until mobility is done.
  */
 fun TimestampFormatter.upNext(
     log: TrainingLog,
@@ -67,10 +70,11 @@ fun TimestampFormatter.upNext(
     today: Long,
 ): List<UpNextItem> {
     val unplanned = lifting.programDay?.takeIf { planned.none { it.workout is PlanWorkout.Lift } }?.let { day ->
-        val doneToday = lifting.sessions.any { session ->
-            session.program == day.program.key && session.finishedAtEpochMillis?.let(::dayNumber) == today
-        }
-        val epochDay = if (doneToday) today + 1 else today
+        val sessionDays = lifting.sessions
+            .filter { it.program == day.program.key }
+            .mapNotNull { session -> session.finishedAtEpochMillis?.let(::dayNumber) }
+        // A session under way is today's, whatever the pace says.
+        val epochDay = if (lifting.inProgress) today else programDayOn(day.program.daysPerWeek, sessionDays, today)
         UpNextItem.Lift(
             epochDay,
             heading(epochDay, today),
@@ -109,6 +113,32 @@ fun TimestampFormatter.upNext(
         UpNextItem.Flow(today, heading(today, today), flowBefore(it), it)
     }
     return (listOfNotNull(unplanned, suggested) + plans).sortedBy { it.epochDay }
+}
+
+/**
+ * The day the followed program's next day falls on with no plan of a session on Lift, keeping the program's pace
+ * so the days between its sessions are rest: after a session of it, the next comes a week over [daysPerWeek] later
+ * (every day at four a week or more, every other day at three, every third at two), never before [today]; and once
+ * a week, Monday to Sunday, holds as many of its sessions as the program asks, the next waits for the Monday after.
+ * [sessionDays] are the days its sessions finished on. Done early from Today's "Do it today", it moves on from there.
+ */
+internal fun programDayOn(daysPerWeek: Int, sessionDays: List<Long>, today: Long): Long {
+    val perWeek = daysPerWeek.coerceAtLeast(1)
+    val gap = (DAYS_PER_WEEK / perWeek).coerceAtLeast(1)
+    var day = sessionDays.maxOrNull()?.let { maxOf(today, it + gap) } ?: today
+    while (sessionDays.count { weekStartOf(it) == weekStartOf(day) } >= perWeek) {
+        day = weekStartOf(day) + DAYS_PER_WEEK
+    }
+    return day
+}
+
+/**
+ * The week strip, or the calendar, with the followed program's day on it where no plan puts one: a day it falls on
+ * with nothing else planned or done reads as planned, as Today's card has it.
+ */
+fun List<DayCell>.withProgramDay(upNext: List<UpNextItem>): List<DayCell> {
+    val day = upNext.firstOrNull { it is UpNextItem.Lift && it.planId == null }?.epochDay ?: return this
+    return map { if (it.epochDay == day && it.state == DayState.Rest) it.copy(state = DayState.Planned) else it }
 }
 
 /** [day] as the week strip or the calendar draws it. */
