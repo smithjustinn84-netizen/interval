@@ -20,9 +20,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -156,6 +161,31 @@ fun Modifier.phaseStripe(color: Color): Modifier = drawBehind {
     val stripeWidth = IntervalSizes.stripe.toPx()
     val x = if (layoutDirection == LayoutDirection.Rtl) size.width - stripeWidth else 0f
     drawRect(color, topLeft = Offset(x, 0f), size = Size(stripeWidth, size.height))
+}
+
+/**
+ * A curved accent border hugging a rounded card's start edge and tapering cleanly into its top and bottom
+ * corners. Built once per layout size via [drawWithCache] so redraws allocate nothing.
+ */
+fun Modifier.curvedAccentEdge(
+    color: Color,
+    radius: Dp = Radius.radius18,
+    width: Dp = IntervalSizes.accentEdge,
+): Modifier = drawWithCache {
+    val r = radius.toPx().coerceAtMost(minOf(size.width, size.height) / 2f)
+    val t = width.toPx().coerceAtMost(size.width)
+    val corner = CornerRadius(r, r)
+    val outer = Path().apply { addRoundRect(RoundRect(0f, 0f, size.width, size.height, corner)) }
+    val inner = Path().apply {
+        val left = if (layoutDirection == LayoutDirection.Rtl) 0f else t
+        val right = if (layoutDirection == LayoutDirection.Rtl) size.width - t else size.width
+        addRoundRect(RoundRect(left, 0f, right, size.height, corner))
+    }
+    val edge = Path().apply { op(outer, inner, PathOperation.Difference) }
+    onDrawWithContent {
+        drawContent()
+        drawPath(edge, color)
+    }
 }
 
 /** A phase's mark beside a heading or a row: a rounded stripe of [color], [height] tall. */

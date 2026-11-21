@@ -89,6 +89,9 @@ object IntervalSizes {
     /** A phase's colour stripe at the start of a field row, and a history mark's width. */
     val stripe = 6.dp
 
+    /** The curved accent border hugging a standalone card's start edge (presets, mobility flows, timer rows). */
+    val accentEdge = 4.dp
+
     /** A time cap's Round done: the workout's biggest target, for a tap mid-effort without looking. */
     val roundDone = 96.dp
 

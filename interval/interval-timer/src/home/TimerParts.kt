@@ -74,13 +74,13 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StartButton
 import dev.justinsmith.interval.ui.TitleBar
 import dev.justinsmith.interval.ui.blockDescription
+import dev.justinsmith.interval.ui.curvedAccentEdge
 import dev.justinsmith.interval.ui.displayText
 import dev.justinsmith.interval.ui.editRes
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.labelRes
 import dev.justinsmith.interval.ui.ladderNote
-import dev.justinsmith.interval.ui.phaseStripe
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.interval.ui.shortDurationText
@@ -346,8 +346,8 @@ private fun StepperRow(
                 onClickLabel = stringResource(field.editRes),
             )
             .border(Sizes.hairline, palette.line, Corners.radius18)
-            .phaseStripe(stripe)
-            .padding(start = IntervalSizes.stripe + Spacing.space16, end = Spacing.space12),
+            .curvedAccentEdge(stripe)
+            .padding(start = IntervalSizes.accentEdge + Spacing.space16, end = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {

@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -54,7 +55,6 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
-import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
@@ -66,11 +66,12 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.curvedAccentEdge
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberArrival
 import dev.justinsmith.interval.ui.risingEnter
+import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -287,18 +288,16 @@ private fun PresetGroup(
     modifier: Modifier = Modifier,
     rising: Boolean = false,
 ) {
-    Column(modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4).animateContentSize()) {
+    Column(
+        modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4).animateContentSize(),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
         GroupLabel(label)
         val atOpen = remember { items.map { it.preset.id }.toSet() }
-        ListCard {
-            items.forEachIndexed { index, item ->
-                key(item.preset.id ?: item.preset.name) {
-                    AnimatedVisibility(rememberArrival(rising && item.preset.id !in atOpen), enter = risingEnter()) {
-                        Column {
-                            if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                            PresetRow(item, onClick = { onOpen(item.preset) })
-                        }
-                    }
+        items.forEach { item ->
+            key(item.preset.id ?: item.preset.name) {
+                AnimatedVisibility(rememberArrival(rising && item.preset.id !in atOpen), enter = risingEnter()) {
+                    PresetRow(item, onClick = { onOpen(item.preset) })
                 }
             }
         }
@@ -306,31 +305,32 @@ private fun PresetGroup(
 }
 
 /**
- * One preset: a stripe in Conditioning's colour, its name over its shape in words and drawn in the stripe's colour,
- * and its total at the end of the row, which is the button. The one on the Timer says so over its name and takes
- * the accent.
+ * One preset as its own Track & Chalk card: a curved accent edge in Conditioning's colour, its name over its
+ * shape in words and mini waveform, and its total at the end. The one on the Timer says so over its name and
+ * takes the accent gold.
  */
 @Composable
 private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
+    val accent = if (item.selected) palette.accent else palette.workMark
     Row(
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .clickable(
+            .surfaceButton(
                 interaction,
-                LocalIndication.current,
-                role = Role.Button,
-                onClickLabel = stringResource(Res.string.presets_open_cd),
+                Corners.radius18,
+                palette.surface,
                 onClick = onClick,
+                onClickLabel = stringResource(Res.string.presets_open_cd),
             )
-            .pressScale(interaction)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .border(Sizes.hairline, palette.line, Corners.radius18)
+            .curvedAccentEdge(accent)
+            .padding(start = Spacing.space20, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(if (item.selected) palette.accent else palette.workMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             if (item.selected) {
                 val badge = Modifier
@@ -363,7 +363,7 @@ private fun PresetRow(item: PresetRowItem, onClick: () -> Unit, modifier: Modifi
             MiniTimeline(
                 item.preset.config,
                 Modifier.padding(top = Spacing.space8),
-                work = if (item.selected) palette.accent else palette.workMark,
+                work = accent,
             )
         }
         Text(item.total, style = IntervalTheme.type.value, color = if (item.selected) palette.accent else palette.text)
@@ -382,14 +382,16 @@ private fun TimerCard(
     onSaveCurrent: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    ListCard(modifier.animateContentSize()) {
+    val palette = IntervalTheme.palette
+    ListCard(modifier.animateContentSize().curvedAccentEdge(palette.accent)) {
         TimerRow(state, onOpenTimer)
         if (state.canSaveCurrent) {
-            RowDivider()
+            RowDivider(Modifier.padding(start = Spacing.space4))
             LinkRow(
                 stringResource(Res.string.preset_save_title),
                 stringResource(Res.string.presets_save_current_hint),
                 onClick = onSaveCurrent,
+                modifier = Modifier.padding(start = Spacing.space4),
             )
         }
     }
@@ -410,11 +412,10 @@ private fun TimerRow(state: PresetsUiState, onOpen: () -> Unit, modifier: Modifi
             .heightIn(min = Sizes.listRow)
             .clickable(interaction, LocalIndication.current, role = Role.Button, onClick = onOpen)
             .pressScale(interaction)
-            .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space8, bottom = Spacing.space8),
+            .padding(start = Spacing.space20, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.accent, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(stringResource(Res.string.presets_timer), style = IntervalTheme.type.label, color = palette.text)
             Text(

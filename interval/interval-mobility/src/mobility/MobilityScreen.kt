@@ -1,7 +1,6 @@
 package dev.justinsmith.interval.mobility
 
-import androidx.compose.foundation.LocalIndication
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,7 +17,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.Role
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.mobility.resources.Res
 import dev.justinsmith.interval.mobility.resources.mobility_after
@@ -27,24 +25,23 @@ import dev.justinsmith.interval.mobility.resources.mobility_build
 import dev.justinsmith.interval.mobility.resources.mobility_build_hint
 import dev.justinsmith.interval.mobility.resources.mobility_open_cd
 import dev.justinsmith.interval.mobility.resources.mobility_own
+import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
-import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.MiniTimeline
 import dev.justinsmith.interval.ui.PreviewFormFactors
-import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SettingsAction
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.curvedAccentEdge
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.movesText
-import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.interval.ui.surfaceButton
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -135,11 +132,8 @@ private fun FlowGroup(label: String, flows: List<FlowItem>, onOpen: (String) -> 
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
         GroupLabel(label)
-        ListCard {
-            flows.forEachIndexed { index, item ->
-                if (index > 0) RowDivider(Modifier.padding(start = Spacing.space20))
-                FlowRow(item, onOpen = { onOpen(item.flow.key) })
-            }
+        flows.forEach { item ->
+            FlowRow(item, onOpen = { onOpen(item.flow.key) })
         }
     }
 }
@@ -158,7 +152,7 @@ private fun OwnGroup(onBuild: () -> Unit, modifier: Modifier = Modifier) {
     }
 }
 
-/** One flow: its name over its moves and note, and its length at the end of the row, which is the button. */
+/** One flow as its own Track & Chalk card: a curved infield-green edge, name, moves, waveform, and length. */
 @Composable
 private fun FlowRow(item: FlowItem, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
@@ -167,19 +161,19 @@ private fun FlowRow(item: FlowItem, onOpen: () -> Unit, modifier: Modifier = Mod
         modifier
             .fillMaxWidth()
             .heightIn(min = Sizes.listRow)
-            .clickable(
+            .surfaceButton(
                 interaction,
-                LocalIndication.current,
-                role = Role.Button,
-                onClickLabel = stringResource(Res.string.mobility_open_cd),
+                Corners.radius18,
+                palette.surface,
                 onClick = onOpen,
+                onClickLabel = stringResource(Res.string.mobility_open_cd),
             )
-            .pressScale(interaction)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+            .border(Sizes.hairline, palette.line, Corners.radius18)
+            .curvedAccentEdge(palette.restMark)
+            .padding(start = Spacing.space20, end = Spacing.space16, top = Spacing.space12, bottom = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        StripeMark(palette.restMark, height = IntervalSizes.historyMarkHeight)
         Column(Modifier.weight(1f)) {
             Text(item.flow.name, style = IntervalTheme.type.label, color = palette.text)
             Text(
