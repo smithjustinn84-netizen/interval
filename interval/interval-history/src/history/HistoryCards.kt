@@ -17,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.history.resources.Res
@@ -34,6 +35,7 @@ import dev.justinsmith.interval.history.resources.preview_open_cd
 import dev.justinsmith.interval.history.resources.sport_log_it
 import dev.justinsmith.interval.plan.sportTitle
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
@@ -45,7 +47,9 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.WeekdayForm
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.joined
+import dev.justinsmith.interval.ui.longestWordWidth
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.weekdayText
 import dev.justinsmith.interval.ui.workoutDescription
@@ -122,9 +126,13 @@ private fun ComingUpRow(
     val today = item.day == HistoryDay.Today
     val figure = upNextFigure(item)
     val looks = item.preview() != null
-    val described = stringResource(Res.string.preview_open_cd, upNextName(item))
-    Row(
-        modifier
+    val name = upNextName(item)
+    val described = stringResource(Res.string.preview_open_cd, name)
+    // With large text the way to do it, or the length, goes under the name rather than squeeze it to a word a line,
+    // as it would beside a pill as wide as the larger words make it.
+    val lead = IntervalSizes.dayColumn + IntervalSizes.stripe + Spacing.space12 * 2
+    BesideOrUnder(
+        modifier = modifier
             .fillMaxWidth()
             .then(
                 if (looks) {
@@ -136,29 +144,45 @@ private fun ComingUpRow(
             )
             .heightIn(min = Sizes.listRow)
             .padding(start = Spacing.space16, end = Spacing.space12, top = Spacing.space12, bottom = Spacing.space12),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        DayLabel(dayColumn(item.day, item.epochDay), today)
-        StripeMark(kindColor(upNextKind(item)), height = IntervalSizes.historyMarkHeight)
-        // Today's row has the pill where the figure would stand, so its length goes into the line, which may
-        // take a second beside the pill's height; a later row's keeps to one.
-        val meta = if (today && figure != null) joined(listOf(upNextMeta(item), figure)) else upNextMeta(item)
-        UpNextText(upNextName(item), meta, Modifier.weight(1f), maxLines = if (today) 2 else 1)
-        if (today) {
-            UpNextAction(item, actions, raised)
-        } else {
-            figure?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
-            if (looks) {
-                Icon(
-                    IntervalIcons.Chevron,
-                    null,
-                    tint = palette.textDim,
-                    modifier = Modifier.size(Sizes.chipIcon),
-                )
+        gap = Spacing.space12,
+        mainMinWidth = with(LocalDensity.current) { lead.roundToPx() } +
+            longestWordWidth(name, IntervalTheme.type.label),
+        underStart = lead,
+        under = isLargeText(),
+        main = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                DayLabel(dayColumn(item.day, item.epochDay), today)
+                StripeMark(kindColor(upNextKind(item)), height = IntervalSizes.historyMarkHeight)
+                // Today's row has the pill where the figure would stand, so its length goes into the line, which
+                // may take a second beside the pill's height; a later row's keeps to one.
+                val meta = if (today && figure != null) joined(listOf(upNextMeta(item), figure)) else upNextMeta(item)
+                UpNextText(name, meta, Modifier.weight(1f), maxLines = if (today) 2 else 1)
             }
-        }
-    }
+        },
+        trailing = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                if (today) {
+                    UpNextAction(item, actions, raised)
+                } else {
+                    figure?.let { Text(it, style = IntervalTheme.type.value, color = palette.text) }
+                    if (looks) {
+                        Icon(
+                            IntervalIcons.Chevron,
+                            null,
+                            tint = palette.textDim,
+                            modifier = Modifier.size(Sizes.chipIcon),
+                        )
+                    }
+                }
+            }
+        },
+    )
 }
 
 /** The quiet action to the plan, beside Up next's heading and Coming up's: accent words, no fill of its own. */
@@ -201,15 +225,27 @@ fun UpNextLater(later: List<UpNextItem>, modifier: Modifier = Modifier, count: I
 /** Up next's lead: its kind's mark, its name over what it is and its length, and the way to do it. */
 @Composable
 private fun UpNextLead(next: UpNextItem, actions: HistoryActions, modifier: Modifier = Modifier) {
-    Row(
-        modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-    ) {
-        StripeMark(kindColor(upNextKind(next)), height = IntervalSizes.historyMarkHeight)
-        UpNextText(upNextName(next), joined(listOfNotNull(upNextMeta(next), upNextFigure(next))), Modifier.weight(1f))
-        UpNextAction(next, actions)
-    }
+    val name = upNextName(next)
+    val lead = IntervalSizes.stripe + Spacing.space12
+    // As Coming up's rows: with large text the way to do it goes under the name.
+    BesideOrUnder(
+        modifier = modifier,
+        gap = Spacing.space12,
+        mainMinWidth = with(LocalDensity.current) { lead.roundToPx() } +
+            longestWordWidth(name, IntervalTheme.type.label),
+        underStart = lead,
+        under = isLargeText(),
+        main = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                StripeMark(kindColor(upNextKind(next)), height = IntervalSizes.historyMarkHeight)
+                UpNextText(name, joined(listOfNotNull(upNextMeta(next), upNextFigure(next))), Modifier.weight(1f))
+            }
+        },
+        trailing = { UpNextAction(next, actions) },
+    )
 }
 
 /**
