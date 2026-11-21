@@ -25,10 +25,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.rememberTextMeasurer
 import dev.justinsmith.interval.history.StartPill
 import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.history.UpNextLater
@@ -557,13 +559,18 @@ private fun Step(
 
 /**
  * A step's mark, in the room two digits take: a check on the accent once done, its number in the day's colour for
- * the one to do now ("01"), dim for one after.
+ * the one to do now ("01"), dim for one after. The room is the wider of [IntervalSizes.stepNumber] and "00" as the
+ * number is set, so with large text the digits stay on one line and every row's words still start level.
  */
 @Composable
 private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
+    val style = IntervalTheme.type.value
+    val measurer = rememberTextMeasurer()
+    val density = LocalDensity.current
+    val digits = with(density) { measurer.measure(stepNumber(0), style).size.width.toDp() }
     // The order is read from the rows themselves; a done row says so as its state.
-    Box(modifier.width(IntervalSizes.stepNumber).clearAndSetSemantics {}) {
+    Box(modifier.width(maxOf(IntervalSizes.stepNumber, digits)).clearAndSetSemantics {}) {
         when (state) {
             StepState.Done -> Box(
                 Modifier.size(Sizes.icon).clip(CircleShape).background(palette.accent),
@@ -572,10 +579,9 @@ private fun StepMark(state: StepState, tone: Color, modifier: Modifier = Modifie
                 Icon(IntervalIcons.Check, null, tint = palette.onAccent, modifier = Modifier.size(Sizes.chipIcon))
             }
 
-            is StepState.Now -> Text(stepNumber(state.number), style = IntervalTheme.type.value, color = tone)
+            is StepState.Now -> Text(stepNumber(state.number), style = style, color = tone, maxLines = 1)
 
-            is StepState.Later ->
-                Text(stepNumber(state.number), style = IntervalTheme.type.value, color = palette.textDim)
+            is StepState.Later -> Text(stepNumber(state.number), style = style, color = palette.textDim, maxLines = 1)
         }
     }
 }
