@@ -712,7 +712,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   stretches of two minutes or more with the heart rate in the upper half of the class's own range, split where
   the arm goes still for thirty seconds, each with its drop 30 and 60 seconds after; its constants are a first
   reading), so nothing of a round is stored and a retuned detector reads old classes anew. Settings pairs and
-  forgets (`SensorSettingsViewModel`, the "sensor" group, shown unless Unavailable); Today's `ClassSensorCard`
+  forgets (`SensorSettingsViewModel`, its row in the "Body and heart rate" group, shown unless Unavailable); Today's `ClassSensorCard`
   (`interval-today/sensor/`, `ClassSensorViewModel`, its events said as notices) offers Record class on a day
   with a sport still to log and Sync class while one is on the sensor (`TodayPlan.sensorCard`), asking Bluetooth's
   leave first; a sync keeps the class, logs its sport's day (the day it started) and opens `ClassDetail` (an app

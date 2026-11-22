@@ -35,10 +35,9 @@ import dev.justinsmith.interval.settings.resources.settings_app_icon_hint
 import dev.justinsmith.interval.settings.resources.settings_app_icon_kettlebell
 import dev.justinsmith.interval.settings.resources.settings_app_icon_ring
 import dev.justinsmith.interval.settings.resources.settings_appearance
-import dev.justinsmith.interval.settings.resources.settings_calories
+import dev.justinsmith.interval.settings.resources.settings_body
 import dev.justinsmith.interval.settings.resources.settings_clear_log
 import dev.justinsmith.interval.settings.resources.settings_clear_log_hint
-import dev.justinsmith.interval.settings.resources.settings_cues
 import dev.justinsmith.interval.settings.resources.settings_cues_all_off
 import dev.justinsmith.interval.settings.resources.settings_data
 import dev.justinsmith.interval.settings.resources.settings_effort
@@ -51,7 +50,6 @@ import dev.justinsmith.interval.settings.resources.settings_goal_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
 import dev.justinsmith.interval.settings.resources.settings_halfway_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway_needs_cue
-import dev.justinsmith.interval.settings.resources.settings_health
 import dev.justinsmith.interval.settings.resources.settings_health_install_hint
 import dev.justinsmith.interval.settings.resources.settings_health_off_hint
 import dev.justinsmith.interval.settings.resources.settings_health_on_hint
@@ -75,7 +73,6 @@ import dev.justinsmith.interval.settings.resources.settings_resting_hr
 import dev.justinsmith.interval.settings.resources.settings_resting_hr_edit
 import dev.justinsmith.interval.settings.resources.settings_resting_hr_hint
 import dev.justinsmith.interval.settings.resources.settings_resting_hr_unset
-import dev.justinsmith.interval.settings.resources.settings_sensor
 import dev.justinsmith.interval.settings.resources.settings_sensor_battery
 import dev.justinsmith.interval.settings.resources.settings_sensor_battery_low
 import dev.justinsmith.interval.settings.resources.settings_sensor_forget
@@ -102,7 +99,7 @@ import dev.justinsmith.interval.settings.resources.settings_weight_unit
 import dev.justinsmith.interval.settings.resources.settings_weight_unit_hint
 import dev.justinsmith.interval.settings.resources.settings_weight_unset
 import dev.justinsmith.interval.settings.resources.settings_weight_value
-import dev.justinsmith.interval.settings.resources.settings_workout
+import dev.justinsmith.interval.settings.resources.settings_workout_and_cues
 import dev.justinsmith.interval.settings.resources.theme_dark
 import dev.justinsmith.interval.settings.resources.theme_light
 import dev.justinsmith.interval.settings.resources.theme_system
@@ -161,9 +158,10 @@ class AppIconRow(
 )
 
 /**
- * The groups in order: cues, the workout, calories, the health store where there is one, the heart-rate sensor
- * where the platform has one, the plan's goal and reminder, appearance (the theme, and the app's icon where the
- * platform has more than one), your data and, at the foot with no label, the way to About.
+ * The groups in order: the workout and its cues; the body and the heart rate (what the calories and the zones go
+ * by, then the health store and the heart-rate sensor, each where the platform has one); the plan's goal and
+ * reminder; appearance (the theme, and the app's icon where the platform has more than one); your data and, at
+ * the foot with no label, the way to About.
  */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 internal fun settingsGroups(
@@ -188,33 +186,15 @@ internal fun settingsGroups(
     onShowSetup: () -> Unit,
     onShowAbout: () -> Unit,
 ): List<SettingsGroup> = listOfNotNull(
-    SettingsGroup("cues") {
-        GroupLabel(stringResource(Res.string.settings_cues))
-        CuesCard(state.cues, onToggle)
-    },
     SettingsGroup("workout") {
-        GroupLabel(stringResource(Res.string.settings_workout))
-        ListCard {
-            FieldRow(ConfigField.Prep, state.prepSeconds, onClick = onEditPrep, compact = true)
-            RowDivider()
-            ToggleRow(
-                stringResource(Res.string.settings_keep_screen_on),
-                stringResource(Res.string.settings_keep_screen_on_hint),
-                state.app.keepScreenOn,
-                onToggle = onToggleKeepScreenOn,
-            )
-        }
+        GroupLabel(stringResource(Res.string.settings_workout_and_cues))
+        WorkoutCard(state, onEditPrep, onToggleKeepScreenOn, onToggle)
     },
-    SettingsGroup("calories") {
-        GroupLabel(stringResource(Res.string.settings_calories))
-        CaloriesCard(state, onEditWeight, onSetWeightUnit, onEditMaxHeartRate, onEditRestingHeartRate, onSetEffort)
+    SettingsGroup("body") {
+        GroupLabel(stringResource(Res.string.settings_body))
+        BodyCard(state, onEditWeight, onSetWeightUnit, onEditMaxHeartRate, onEditRestingHeartRate, onSetEffort)
+        ConnectionsCard(state.health, health, sensor, Modifier.padding(top = Spacing.space12))
     },
-    // After the calories its weight feeds, and only where the platform has a store.
-    SettingsGroup("health") {
-        GroupLabel(stringResource(Res.string.settings_health))
-        ListCard { HealthRow(state.health, health) }
-    }.takeIf { state.health != HealthStatus.Unavailable },
-    sensorGroup(sensor),
     SettingsGroup("plan") {
         GroupLabel(stringResource(Res.string.settings_plan))
         PlanCard(state.app.weeklyGoal, state.reminderTime, onShowPlan, onShowSetup)
@@ -261,7 +241,7 @@ internal fun settingsGroups(
 )
 
 /**
- * The health store's row, a group of its own: a switch while the store is there, which opens its permission
+ * The health store's row: a switch while the store is there, which opens its permission
  * sheet or gives the permissions back; a link to fetch it while it is missing.
  */
 @Composable
@@ -288,11 +268,26 @@ private fun HealthRow(status: HealthStatus, actions: HealthActions, modifier: Mo
     }
 }
 
-/** The heart-rate sensor's group, where the platform can reach one. */
-private fun sensorGroup(sensor: SensorRow): SettingsGroup? = SettingsGroup("sensor") {
-    GroupLabel(stringResource(Res.string.settings_sensor))
-    ListCard { SensorRowContent(sensor) }
-}.takeIf { sensor.status != SensorStatus.Unavailable }
+/**
+ * What the app reaches beyond itself for the heart rate and the workouts, a card under the body's: the health store
+ * and the heart-rate sensor, each only where the platform has one, and no card where it has neither.
+ */
+@Composable
+private fun ConnectionsCard(
+    status: HealthStatus,
+    health: HealthActions,
+    sensor: SensorRow,
+    modifier: Modifier = Modifier,
+) {
+    val hasStore = status != HealthStatus.Unavailable
+    val hasSensor = sensor.status != SensorStatus.Unavailable
+    if (!hasStore && !hasSensor) return
+    ListCard(modifier) {
+        if (hasStore) HealthRow(status, health)
+        if (hasStore && hasSensor) RowDivider()
+        if (hasSensor) SensorRowContent(sensor)
+    }
+}
 
 /**
  * The sensor's row: with none paired, the way to pair the one nearby, saying so while it looks; with one, its
@@ -352,15 +347,34 @@ private fun PairedSensorRow(name: String, hint: String, onForget: () -> Unit, mo
 }
 
 /**
- * The four cue switches: which of the beeps, voice, halfway alert and vibration play. A switch turned
- * on plays its cue once. The halfway alert is a beep or spoken, so it dims while sound and voice are
- * both off, keeping its own setting for when one comes back; with every cue off, a line says so.
+ * The workout's card: the prep before it and whether the screen stays on, then the cue switches, which of the
+ * beeps, voice, halfway alert, vibration and heart-rate alerts play. A switch turned on plays its cue once. The
+ * halfway alert is a beep or spoken, so it dims while sound and voice are both off, keeping its own setting for
+ * when one comes back; with every cue off, a line under the card says so.
  */
 @Composable
-private fun CuesCard(cues: CueSettings, onToggle: (CueToggle) -> Unit, modifier: Modifier = Modifier) {
+private fun WorkoutCard(
+    state: SettingsUiState,
+    onEditPrep: () -> Unit,
+    onToggleKeepScreenOn: () -> Unit,
+    onToggle: (CueToggle) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cues = state.cues
     val halfwayAudible = cues.sound || cues.voice
     Column(modifier) {
-        ListCard { CueRows(cues, halfwayAudible, onToggle) }
+        ListCard {
+            FieldRow(ConfigField.Prep, state.prepSeconds, onClick = onEditPrep, compact = true)
+            RowDivider()
+            ToggleRow(
+                stringResource(Res.string.settings_keep_screen_on),
+                stringResource(Res.string.settings_keep_screen_on_hint),
+                state.app.keepScreenOn,
+                onToggle = onToggleKeepScreenOn,
+            )
+            RowDivider()
+            CueRows(cues, halfwayAudible, onToggle)
+        }
         AnimatedVisibility(
             !halfwayAudible && !cues.vibrate,
             enter = enterExpanding(),
@@ -376,7 +390,7 @@ private fun CuesCard(cues: CueSettings, onToggle: (CueToggle) -> Unit, modifier:
     }
 }
 
-/** The rows of [CuesCard]'s card, in its column. */
+/** The cue rows of [WorkoutCard]'s card, in its column. */
 @Suppress("detekt.MultipleEmitters", "detekt.ModifierMissing") // The card's rows, laid out by the ListCard.
 @Composable
 private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onToggle: (CueToggle) -> Unit) {
@@ -530,9 +544,12 @@ private fun <T> ChoiceRow(
     }
 }
 
-/** The calorie estimates' inputs, in one card: the body weight, which opens its sheet, and the effort of the work. */
+/**
+ * What the estimates go by, in one card: the body weight, which opens its sheet, and its unit; the max and resting
+ * heart rate the zones are cut from; and the effort of the work, which the calories take with the weight.
+ */
 @Composable
-private fun CaloriesCard(
+private fun BodyCard(
     state: SettingsUiState,
     onEditWeight: () -> Unit,
     onSetWeightUnit: (WeightUnit) -> Unit,

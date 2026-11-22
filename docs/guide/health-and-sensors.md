@@ -57,7 +57,7 @@ stays in place unlit with the last reading) and the sensor is tried again until 
 Record a whole class on a **Polar Verity Sense** or a **Polar H10** chest strap with the phone in your bag. One
 is paired at a time, and either shows your heart rate live in a workout too:
 
-1. **Pair** it in Settings, under *Heart-rate sensor*. The app asks for leave to reach nearby devices; it never
+1. **Pair** it in Settings, under *Body and heart rate*. The app asks for leave to reach nearby devices; it never
    asks for your location.
 2. On a class day, Today offers **Record class**. The sensor records on its own memory.
 3. Afterwards, **Sync class**. It logs the day and opens the class: its length, its heart rate drawn with each

@@ -7,7 +7,7 @@
   </description>
   <actions>
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
-    <action>Tap the gear on "Today" and scroll to "Heart-rate sensor"</action>
+    <action>Tap the gear on "Today" and scroll to "Body and heart rate", where the sensor's row sits under its card</action>
     <action>Verify that its row reads "Pair a sensor" over "A Polar Verity Sense or H10, switched on (an H10 worn) and close by"</action>
     <action>Tap "Pair a sensor" and allow "Nearby devices" when Android asks</action>
     <action>With a second Polar sensor awake nearby (an H10 worn beside a Verity Sense): verify that a sheet asks "Which sensor?" with both names, the nearest first, and tap the one meant; with only one, no sheet shows</action>

@@ -22,6 +22,7 @@ import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
 import dev.justinsmith.interval.platform.AppIcon
 import dev.justinsmith.interval.platform.AppIconSwitcher
+import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorFailure
@@ -403,6 +404,30 @@ private fun SettingsScreenPreview() {
             onToggleKeepScreenOn = {},
             onSetTheme = {},
             onShowAbout = {},
+        )
+    }
+}
+
+/** On a phone with a health store connected and a sensor paired: the body's group with both under it. */
+@PreviewFormFactors
+@Composable
+private fun SettingsScreenConnectedPreview() {
+    IntervalTheme {
+        SettingsScreen(
+            state = SettingsUiState(
+                CueSettings(vibrate = false),
+                prepSeconds = 10,
+                app = AppSettings(),
+                health = HealthStatus.Connected,
+            ),
+            onBack = {},
+            onToggle = {},
+            onStepPrep = {},
+            onSetPrep = {},
+            onToggleKeepScreenOn = {},
+            onSetTheme = {},
+            onShowAbout = {},
+            sensor = SensorRow(SensorStatus.Paired("Polar H10 1A2B3C4D"), battery = 82),
         )
     }
 }

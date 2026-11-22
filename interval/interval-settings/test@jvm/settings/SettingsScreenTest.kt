@@ -101,14 +101,12 @@ class SettingsScreenTest {
     fun `the health group shows only where there is a store and connects or disconnects it`() = runUiTest {
         var state by mutableStateOf(defaults)
         setThemedContent { Screen(state) }
-        // Its place is between Calories and Appearance: nothing there without a store.
+        // Its place is under the body's card: nothing there without a store.
         scrollToText("Appearance")
-        onNodeWithText("Health").assertDoesNotExist()
         onNodeWithText("Health Connect").assertDoesNotExist()
 
         state = defaults.copy(health = HealthStatus.Disconnected)
         scrollToText("Health Connect")
-        onNodeWithText("Health").assertExists()
         onNodeWithText("Health Connect").assertIsOff()
         onNodeWithText("Health Connect").performClick()
 
@@ -123,11 +121,25 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `the health store and the sensor sit under the body's settings`() = runUiTest {
+        setThemedContent { Screen(defaults.copy(health = HealthStatus.Connected), sensor = SensorStatus.Unpaired) }
+        scrollToText("Pair a sensor")
+        fun top(text: String) = onNodeWithText(text).fetchSemanticsNode().boundsInRoot.top
+        val effort = top("Effort")
+        val store = top("Health Connect")
+        val sensor = top("Pair a sensor")
+        assertTrue(
+            effort < store && store < sensor,
+            "Effort, then the store, then the sensor: $effort, $store, $sensor",
+        )
+    }
+
+    @Test
     fun `the sensor's row pairs one and its Forget forgets a paired one`() = runUiTest {
         var sensor by mutableStateOf<SensorStatus>(SensorStatus.Unavailable)
         setThemedContent { Screen(sensor = sensor) }
         scrollToText("Appearance")
-        onNodeWithText("Heart-rate sensor").assertDoesNotExist()
+        onNodeWithText("Pair a sensor").assertDoesNotExist()
 
         sensor = SensorStatus.Unpaired
         scrollToText("Pair a sensor")
@@ -201,18 +213,18 @@ class SettingsScreenTest {
     @Test
     fun `full screen on a tablet the groups sit side by side`() = runUiTest(Window.TabletPortrait) {
         setThemedContent { Screen() }
-        val cues = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
-        val workout = onNodeWithText("Workout").fetchSemanticsNode().boundsInRoot
-        assertTrue(workout.left > cues.right, "Workout beside Cues: $cues, $workout")
+        val workout = onNodeWithText("Workout and cues").fetchSemanticsNode().boundsInRoot
+        val body = onNodeWithText("Body and heart rate").fetchSemanticsNode().boundsInRoot
+        assertTrue(body.left > workout.right, "Body beside Workout: $workout, $body")
     }
 
     @Test
     fun `beside the timer the groups stay in one column`() = runUiTest(Window.TabletPortrait) {
         setThemedContent { Screen(inPane = true) }
-        val cues = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
-        val workout = onNodeWithText("Workout").fetchSemanticsNode().boundsInRoot
-        assertEquals(cues.left, workout.left)
-        assertTrue(workout.top > cues.bottom, "Workout under Cues: $cues, $workout")
+        val workout = onNodeWithText("Workout and cues").fetchSemanticsNode().boundsInRoot
+        val body = onNodeWithText("Body and heart rate").fetchSemanticsNode().boundsInRoot
+        assertEquals(workout.left, body.left)
+        assertTrue(body.top > workout.bottom, "Body under Workout: $workout, $body")
     }
 
     @Test

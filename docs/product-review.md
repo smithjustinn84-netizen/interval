@@ -125,6 +125,7 @@ Targeted fixes for the sharpest daily user friction.
 - **Where**: `interval/interval-settings/src/settings/SettingsGroups.kt` (636 lines, 9 stacked groups)
 - **Issue**: Settings has grown to Cues, Workout, Calories, Health, Sensor, Plan, Appearance, Data, and About in one long scroll list.
 - **Improvement**: Consolidate into tighter, scannable sections (*Audio & Cues*, *Body & Heart Rate* grouping weight, HR zones, Health Connect/Apple Health, and sensor, *Plan & Schedule*, *Appearance*, *Data & Backup*, *About*), moving dense groups (like Data & Backup or Audio & Cues) to dedicated sub-pages where helpful.
+- **Done (2026-11-22)**: nine groups are five and About's foot. *Workout and cues* holds the prep, Keep screen on and the five cue switches in one card; *Body and heart rate* the weight, its unit, the max and resting heart rate and the effort, with the health store and the sensor in a card under it, each where the platform has one and no card where it has neither; *Plan*, *Appearance* and *Your data* stand as they were. No sub-pages: the densest group is seven rows, every row is a set-once tap that a page between would only add to, and Settings beside the Timer on a wide window would need navigation of its own. Checked by `SettingsScreenTest` and by drawing the page on a phone and a tablet with a store and a sensor.
 
 ### P6. Persist Lift session live heart-rate samples
 - **Where**: `lift/lift-session/src/session/SessionViewModel.kt`, `lift/lift-data/src/data/LiftDatabase.kt`

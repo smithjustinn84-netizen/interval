@@ -9,7 +9,7 @@
     <action>Tap the "Train" tab, which opens on "Strength", then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that Train's Strength pillar is shown</action>
     <action>Tap the "Log" tab, then the "Settings" button in its title bar, and verify that Settings opens; tap "Back" and verify that the Log tab is shown</action>
     <action>Tap the "Train" tab, tap "Conditioning", then tap "Timer" at the top of the presets, then the Timer's "Settings" button</action>
-    <action>Verify, scrolling down, that the Settings screen shows "Cues", "Workout", "Calories", "Health", "Plan", "Appearance" and "Your data", and "About Interval" at its foot with no heading over it</action>
+    <action>Verify, scrolling down, that the Settings screen shows "Workout and cues", "Body and heart rate" (with "Health Connect" under its card), "Plan", "Appearance" and "Your data", and "About Interval" at its foot with no heading over it</action>
     <action>Under "Plan", verify that "Weekly goal" and "Reminder" each read "Off" (a fresh install), then tap "Weekly goal" and verify that the Plan page opens</action>
     <action>Tap "Raise the goal", tap "Reminder", pick "6:00 PM" and tap "Done"; tap "Back" and verify that Settings reads "3" beside "Weekly goal" and "6:00 PM" beside "Reminder"</action>
     <action>Tap "Export" under "Your data"</action>
@@ -20,7 +20,7 @@
     <action>Tap the export in Downloads (or Recent) and verify that a sheet says "Exported on" its date, lists what is "New:" and offers "Also settings" off and "Import"</action>
     <action>Tap "Import" in the sheet and verify that a notice says "Imported" with the same counts</action>
     <action>Tap "Import" under "Your data" again, pick the same file, and verify that the sheet says "Everything in it is already here."; tap "Cancel"</action>
-    <action>Scroll up to "Cues" and tap the "Voice" switch</action>
+    <action>Scroll up to "Workout and cues" and tap the "Voice" switch</action>
     <action>Verify that the "Voice" switch is off</action>
     <action>Scroll to "Appearance" and verify that "Dark" is selected under "Theme", the theme a fresh install starts on</action>
     <action>Tap "Light" under "Theme"</action>

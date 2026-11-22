@@ -17,7 +17,7 @@
     <action>Verify that the "Health Connect" switch is on and says "Finished workouts and Lift sessions are saved there"</action>
     <action>Open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Weight), add a weight entry of 82 kg for today, and return to Interval's Settings</action>
     <action>Tap "Back", then the Timer's "Settings" button again, so Settings reads Health Connect afresh</action>
-    <action>Scroll to "Calories", tap "Body weight" (which reads its value in a pill), and verify that the sheet offers "Use Health Connect's: 82 kg"</action>
+    <action>Scroll to "Body and heart rate", tap "Body weight" (which reads its value in a pill), and verify that the sheet offers "Use Health Connect's: 82 kg"</action>
     <action>Tap "Use Health Connect's: 82 kg" and verify that the weight reads 82, the button turns into a disabled "From Health Connect: 82 kg" without the sheet moving, and that "More weight" makes it 83 and offers "Use Health Connect's: 82 kg" again; tap that once more</action>
     <action>Tap "Done" and verify that "Body weight" reads "82 kg"</action>
     <action>Tap "Back"</action>
