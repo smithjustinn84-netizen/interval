@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 
-/** Draws one animation frame of [rep] onto [stage]: floor, shadow, props, telemetry, contoured body, and foreground. */
+/** Draws one animation frame of [rep] onto [stage]: floor, shadow, props, telemetry, sculpted body, and foreground. */
 internal fun DrawScope.drawCanvasScene(
     rep: ExerciseRep,
     stage: DemoStage,
@@ -22,6 +22,7 @@ internal fun DrawScope.drawCanvasScene(
     }
     val place = stage::place
     val s = stage.scale
+    val detail = mode != DemoDisplayMode.Thumb
     drawFloorAndShadow(
         frame = joints,
         floorY = stage.floor,
@@ -33,6 +34,7 @@ internal fun DrawScope.drawCanvasScene(
         scale = s,
         beatColor = beatColor,
         shadowColor = colors.shadow,
+        detail = detail,
         place = place,
     )
     val propsBehind = rep.propsBehind
@@ -44,6 +46,8 @@ internal fun DrawScope.drawCanvasScene(
     drawMotionAccents(rep, stage, joints, at, beatColor, mode)
 
     val pen = stage.pen
+    pen.detail = detail
+    pen.tone.update(colors.body, colors.far)
     drawContext.canvas.saveLayer(stage.layerBounds, pen.layer)
     drawBody(rep, joints, pen, beatColor, colors, place)
     drawContext.canvas.restore()
@@ -53,7 +57,7 @@ internal fun DrawScope.drawCanvasScene(
     for (i in rails.indices) drawRepProp(rails[i], stage.floor, stage.top, s, colors.far, place)
 }
 
-/** The body and what it holds, from the side, the front or above, into the body's layer. */
+/** The sculpted body and what it holds, from the side, the front or above, into the body's layer. */
 private fun DrawScope.drawBody(
     rep: ExerciseRep,
     joints: BodyFrame,
@@ -63,7 +67,7 @@ private fun DrawScope.drawBody(
     place: (Offset) -> Offset,
 ) {
     if (joints.front) {
-        drawFrontBody(rep.hold, joints, pen, bellColor, colors.body, place)
+        drawFrontBody(rep.hold, joints, pen, bellColor, colors, place)
     } else {
         drawSideBody(rep, joints, pen, bellColor, colors, place)
     }
@@ -71,8 +75,8 @@ private fun DrawScope.drawBody(
 
 /**
  * A [DemoDisplayMode.Ghost]'s frame, all in the quiet [ExerciseDemoColors.far]: the floor as a hairline (none
- * from above), what the lift is done on or against, and the body with what it holds as one line round all of it,
- * every part drawn a stroke fatter then cleared at its own size ([BodyPen.rim], [BodyPen.hollow]).
+ * from above), what the lift is done on or against, and the sculpted body with what it holds as one line round
+ * all of it, every part drawn a stroke fatter then cleared at its own size ([BodyPen.rim], [BodyPen.hollow]).
  */
 private fun DrawScope.drawGhostScene(
     rep: ExerciseRep,
@@ -86,6 +90,7 @@ private fun DrawScope.drawGhostScene(
     val pen = stage.pen
     pen.breath = 0f
     pen.pulse = 0f
+    pen.detail = false
     if (stage.matFromAbove == null) {
         drawLine(
             stage.floorBrush,
@@ -109,7 +114,6 @@ private fun DrawScope.drawGhostScene(
     pen.solid()
     drawContext.canvas.restore()
 
-    // A bar's plate, end on, is a ring the body shows through, as its disc lets it when filled in.
     if (rep.hold == RepHold.Bar) {
         drawCircle(ink, BodyProportions.PLATE_RADIUS * s, place(joints.kettlebellAnchor), style = stage.markStyle)
     }
@@ -192,7 +196,10 @@ private fun DrawScope.drawTrajectory(
     }
 }
 
-/** Side-view contoured body drawn back to front with clean cutaway halos (no joint dots). */
+/**
+ * Side-view sculpted athlete drawn back to front: recessed far limbs with cast hip/shoulder occlusion, seamless
+ * contoured trunk & near leg, and foreground arm/bell with refined hairline separation where they cross the torso.
+ */
 private fun DrawScope.drawSideBody(
     rep: ExerciseRep,
     joints: BodyFrame,
@@ -203,6 +210,7 @@ private fun DrawScope.drawSideBody(
 ) {
     val hold = rep.hold
     val hip = place(joints.hip)
+    val knee = place(joints.knee)
     val shoulder = place(joints.shoulder)
     val head = place(joints.headCenter)
     val bell = place(joints.kettlebellCenter)
@@ -214,19 +222,39 @@ private fun DrawScope.drawSideBody(
     val swinging = hold == RepHold.BothHands || rep.bellLag > 0f || rep.showsTrail
     val betweenLegs = bell.y > hip.y && swinging
     if (behindHead) drawNearArmAndBell(hold, joints, pen, bellColor, colors.body, place)
-    gapped(pen, colors.body) { drawSideTrunk(pen, hip, shoulder, head, joints.spineBow) }
+
+    pen.ink(colors.body)
+    drawSideTrunk(pen, hip, shoulder, head, joints.spineBow)
+
     if (betweenLegs) drawNearArmAndBell(hold, joints, pen, bellColor, colors.body, place)
-    gapped(pen, colors.body) {
-        drawContouredLeg(
-            pen,
-            hip = hip,
-            knee = place(joints.knee),
-            ankle = place(joints.ankle),
-            heel = place(joints.heel),
-            toe = place(joints.toe),
-        )
-    }
+
+    pen.ink(colors.body)
+    drawContouredLeg(
+        pen,
+        hip = hip,
+        knee = knee,
+        ankle = place(joints.ankle),
+        heel = place(joints.heel),
+        toe = place(joints.toe),
+    )
+    drawHipFlexionShade(pen, hip, knee, shoulder)
+
     if (!behindHead && !betweenLegs) drawNearArmAndBell(hold, joints, pen, bellColor, colors.body, place)
+}
+
+/** Subtle anatomical hip-crease occlusion shadow when the near thigh folds toward the trunk (squat/hinge/lunge). */
+private fun DrawScope.drawHipFlexionShade(pen: BodyPen, hip: Offset, knee: Offset, shoulder: Offset) {
+    if (!pen.detail) return
+    val spine = shoulder - hip
+    val thigh = knee - hip
+    val sLen = safeDistance(spine.x, spine.y)
+    val tLen = safeDistance(thigh.x, thigh.y)
+    // Dot product near -1 when standing straight, rising toward +1 in deep squat or tight hinge.
+    val fold = ((spine.x * thigh.x + spine.y * thigh.y) / (sLen * tLen) + HIP_FOLD_START)
+        .coerceIn(0f, 1f)
+    if (fold <= 0f) return
+    val crease = hip + (spine / sLen + thigh / tLen) * (HIP_CREASE_SHIFT * pen.scale)
+    drawBodyOcclusion(pen, crease, HIP_CREASE_RADIUS * pen.scale, strength = fold * HIP_CREASE_STRENGTH)
 }
 
 private fun DrawScope.drawSideFarLimbs(
@@ -239,33 +267,51 @@ private fun DrawScope.drawSideFarLimbs(
     farColor: Color,
     place: (Offset) -> Offset,
 ) {
-    val farShift = Offset(-BodyProportions.FAR_LEG_OFFSET * pen.scale, 0f)
-    pen.ink(farColor)
+    val legOffset = if (joints.showsFarSide) BodyProportions.FAR_LEG_OFFSET else FAR_STANCE_LEG_OFFSET
+    val farShift = Offset(-legOffset * pen.scale, 0f)
+    val farKnee = place(joints.farKnee) + farShift
+    pen.ink(farColor, far = true)
     drawContouredLeg(
         pen,
         hip = hip,
-        knee = place(joints.farKnee) + farShift,
+        knee = farKnee,
         ankle = place(joints.farAnkle) + farShift,
         heel = place(joints.farHeel) + farShift,
         toe = place(joints.farToe) + farShift,
         limbScale = BodyBuild.FAR,
     )
+    // Soft shadow cast by the pelvis & near thigh onto the receding far thigh (no surgical cutout gap).
+    if (joints.showsFarSide) {
+        val farThighDir = farKnee - hip
+        val farThighLen = safeDistance(farThighDir.x, farThighDir.y)
+        val castAt = hip + farThighDir * ((FAR_CAST_SHIFT * pen.scale) / farThighLen).coerceAtMost(MAX_CAST_SHARE)
+        drawBodyOcclusion(pen, castAt, FAR_CAST_RADIUS * pen.scale, strength = FAR_CAST_STRENGTH)
+    }
+
     val showFarArm = (hold != RepHold.BothHands && hold != RepHold.Bar) || joints.showsFarSide
     if (!showFarArm) return
     val farArmShift = Offset(-BodyProportions.FAR_ARM_OFFSET * pen.scale, 0f)
+    val farShoulder = shoulder + farArmShift
+    val farElbow = place(joints.farElbow) + farArmShift
     val farHand = place(joints.farBellAnchor) + farArmShift
     val farBell = place(joints.farBellCenter) + farArmShift
-    pen.ink(farColor)
+    pen.ink(farColor, far = true)
     drawContouredArm(
         pen,
-        shoulder = shoulder + farArmShift,
-        elbow = place(joints.farElbow) + farArmShift,
+        shoulder = farShoulder,
+        elbow = farElbow,
         wrist = place(joints.farWrist) + farArmShift,
         hand = farHand,
         fingers = place(joints.farFingers) + farArmShift,
         openPalm = joints.hasFarOpenPalm,
         limbScale = BodyBuild.FAR,
     )
+    if (joints.showsFarSide) {
+        val farArmDir = farElbow - farShoulder
+        val farArmLen = safeDistance(farArmDir.x, farArmDir.y)
+        val castAt = farShoulder + farArmDir * ((FAR_CAST_SHIFT * pen.scale) / farArmLen).coerceAtMost(MAX_CAST_SHARE)
+        drawBodyOcclusion(pen, castAt, FAR_ARM_CAST_RADIUS * pen.scale, strength = FAR_CAST_STRENGTH)
+    }
     if (hold == RepHold.Pair) gapped(pen, bellColor) { drawSculptedKettlebell(pen, farHand, farBell) }
 }
 
@@ -295,7 +341,22 @@ private fun DrawScope.drawNearArmAndBell(
             openPalm = joints.hasOpenPalm,
         )
     }
-    if (resting) gapped(pen, bellColor) { drawSculptedKettlebell(pen, hand, bell) }
+    if (resting) {
+        drawBodyOcclusion(pen, bell, BELL_CAST_RADIUS * pen.scale, strength = BELL_CAST_STRENGTH)
+        gapped(pen, bellColor) { drawSculptedKettlebell(pen, hand, bell) }
+    }
 }
 
 private const val HALF = 0.5f
+private const val FAR_STANCE_LEG_OFFSET = 0.011f
+private const val FAR_CAST_SHIFT = 0.055f
+private const val FAR_CAST_RADIUS = 0.052f
+private const val FAR_ARM_CAST_RADIUS = 0.038f
+private const val FAR_CAST_STRENGTH = 0.72f
+private const val MAX_CAST_SHARE = 0.45f
+private const val HIP_FOLD_START = 0.45f
+private const val HIP_CREASE_SHIFT = 0.034f
+private const val HIP_CREASE_RADIUS = 0.034f
+private const val HIP_CREASE_STRENGTH = 0.22f
+private const val BELL_CAST_RADIUS = 0.064f
+private const val BELL_CAST_STRENGTH = 0.50f

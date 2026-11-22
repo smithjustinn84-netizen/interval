@@ -12,13 +12,15 @@ import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.graphics.lerp
 import kotlin.math.atan2
+import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
-import kotlin.math.min
+import kotlin.math.sin
 
-// Sculpted equipment (kettlebell, barbell bumper plate), props (bench, wall, rail, bands), dynamic ground shadow,
-// mats, drive glow, and tapered motion ribbon trail — all scaled in standing-height units.
+// Sculpted cast-iron equipment (kettlebell, barbell bumper plate), props (bench, wall, rail, bands), soft radial
+// ground & per-contact shadows, mats, smooth radial drive glow, and tapered motion ribbon trail.
 
 /** Whether a bell at [bell] lies back along the forearm from [elbow] to [hand] (rack / lockout) rather than hanging. */
 internal fun bellRestsOnForearm(elbow: Offset, hand: Offset, bell: Offset): Boolean {
@@ -28,11 +30,11 @@ internal fun bellRestsOnForearm(elbow: Offset, hand: Offset, bell: Offset): Bool
 }
 
 /**
- * A sculpted kettlebell gripped at [hand] with its body centred at [body]: arched quadratic handle, cast body with
- * a flat base, bottom shade arc, and top specular highlight arc. When cutting, clears a gap round its silhouette.
- * In an outline ([BodyPen.outlining]) it is that silhouette filled with the outline's ink and no shading, a gap
- * cleared round it, drawn in the second pass alone, so it lies over the parts before it and under those after.
+ * A sculpted cast-iron kettlebell gripped at [hand] with its body centred at [body]: arched handle with subtly
+ * flared horns and top grip highlight, flat-bottomed cast sphere shaded with a world-aligned studio radial gradient,
+ * and specular rim reflection. When cutting, clears a refined hairline gap round its silhouette.
  */
+@Suppress("detekt.MagicNumber") // Sculpted kettlebell geometry & cast-iron lighting ratios.
 internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: Offset) {
     val s = pen.scale
     val dist = (body - hand).getDistance().coerceAtLeast(MIN_STEP)
@@ -75,11 +77,28 @@ internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: 
         style = Stroke(handleWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
         blendMode = pen.blend,
     )
+    if (!pen.cutting && pen.detail) {
+        // Subtle metallic specular line along the upper handle grip bar.
+        drawLine(
+            color = Color.White.copy(alpha = HANDLE_SHEEN_ALPHA),
+            start = leftGrip - along * (BELL_HANDLE_STROKE * 0.24f * s),
+            end = rightGrip - along * (BELL_HANDLE_STROKE * 0.24f * s),
+            strokeWidth = HANDLE_SHEEN_STROKE * s,
+            cap = StrokeCap.Round,
+        )
+    }
+
     if (pen.cutting) {
         drawCircle(pen.color, radius + pen.pad, body, blendMode = pen.blend)
         return
     }
-    // Cast body with subtle flat bottom aligned opposite the handle.
+    drawKettlebellSphere(pen, body, along, radius)
+}
+
+@Suppress("detekt.MagicNumber") // Flat-bottomed cast-iron sphere shading and specular reflection.
+private fun DrawScope.drawKettlebellSphere(pen: BodyPen, body: Offset, along: Offset, radius: Float) {
+    val s = pen.scale
+    val path = pen.path
     path.rewind()
     path.arcTo(
         Rect(Offset.Zero, radius),
@@ -88,51 +107,101 @@ internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: 
         forceMoveTo = true,
     )
     path.close()
-    val angle = Angles.degrees(atan2(along.y, along.x)) - Angles.QUARTER_TURN
+    val angleDeg = Angles.degrees(atan2(along.y, along.x)) - Angles.QUARTER_TURN
+    val invRad = -Angles.radians(angleDeg)
+    val cosI = cos(invRad)
+    val sinI = sin(invRad)
+    val localLightX = STUDIO_LIGHT_X * cosI - STUDIO_LIGHT_Y * sinI
+    val localLightY = STUDIO_LIGHT_X * sinI + STUDIO_LIGHT_Y * cosI
+    val bodyBrush = if (pen.detail) {
+        Brush.radialGradient(
+            0f to lerp(pen.color, Color.White, BELL_LIT_MIX),
+            0.40f to pen.color,
+            0.84f to lerp(pen.color, Color.Black, BELL_SHADE_MIX),
+            1f to lerp(pen.color, Color.Black, BELL_EDGE_MIX),
+            center = Offset(localLightX * radius * BELL_LIGHT_OFFSET, localLightY * radius * BELL_LIGHT_OFFSET),
+            radius = radius * BELL_LIGHT_REACH,
+        )
+    } else {
+        null
+    }
     withTransform({
         translate(body.x, body.y)
-        rotate(angle, pivot = Offset.Zero)
-    }) { drawPath(path, pen.color) }
-    val detailR = radius * BELL_DETAIL_RATIO
-    val arcBox = Size(detailR * 2f, detailR * 2f)
-    val arcTopLeft = Offset(body.x - detailR, body.y - detailR)
-    drawArc(
-        color = Color.Black.copy(alpha = BELL_SHADE_ALPHA),
-        startAngle = BELL_SHADE_START,
-        sweepAngle = BELL_SHADE_SWEEP,
-        useCenter = false,
-        topLeft = arcTopLeft,
-        size = arcBox,
-        style = Stroke(BELL_SHADE_STROKE * s, cap = StrokeCap.Round),
-    )
-    drawArc(
-        color = Color.White.copy(alpha = BELL_HIGHLIGHT_ALPHA),
-        startAngle = BELL_HIGHLIGHT_START,
-        sweepAngle = BELL_HIGHLIGHT_SWEEP,
-        useCenter = false,
-        topLeft = arcTopLeft,
-        size = arcBox,
-        style = Stroke(BELL_HIGHLIGHT_STROKE * s, cap = StrokeCap.Round),
-    )
+        rotate(angleDeg, pivot = Offset.Zero)
+    }) {
+        if (bodyBrush != null) drawPath(path, bodyBrush) else drawPath(path, pen.color)
+        if (pen.detail) {
+            val baseY = radius * cos(Angles.radians(BASE_HALF_DEGREES))
+            val baseHalf = radius * sin(Angles.radians(BASE_HALF_DEGREES)) * 0.85f
+            drawLine(
+                color = Color.Black.copy(alpha = BELL_BASE_CHAMFER_ALPHA),
+                start = Offset(-baseHalf, baseY - BELL_CHAMFER_INSET * s),
+                end = Offset(baseHalf, baseY - BELL_CHAMFER_INSET * s),
+                strokeWidth = BELL_CHAMFER_STROKE * s,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+    if (pen.detail) {
+        val detailR = radius * BELL_DETAIL_RATIO
+        drawArc(
+            color = Color.White.copy(alpha = BELL_HIGHLIGHT_ALPHA),
+            startAngle = BELL_HIGHLIGHT_START,
+            sweepAngle = BELL_HIGHLIGHT_SWEEP,
+            useCenter = false,
+            topLeft = Offset(body.x - detailR, body.y - detailR),
+            size = Size(detailR * 2f, detailR * 2f),
+            style = Stroke(BELL_HIGHLIGHT_STROKE * s, cap = StrokeCap.Round),
+        )
+    }
 }
 
-/** A barbell seen end on: translucent bumper disc, bold outer rim, inner machined flange, sleeve, and axle. */
+/** A machined barbell bumper plate seen end on: shaded rubber disc, beveled outer rim, hub ring, and steel axle. */
+@Suppress("detekt.MagicNumber") // Bumper plate radial gradient stops and rim proportions.
 internal fun DrawScope.drawBarbellPlate(sleeve: Offset, scale: Float, color: Color, axle: Color) {
     val plateR = BodyProportions.PLATE_RADIUS * scale
     val rim = BodyProportions.PLATE_RIM * scale
-    drawCircle(color.copy(alpha = PLATE_FILL_ALPHA), plateR - rim * HALF, sleeve)
-    drawCircle(color, plateR - rim * HALF, sleeve, style = Stroke(rim))
+    val discR = plateR - rim * HALF
+    val discBrush = Brush.radialGradient(
+        0f to color.copy(alpha = PLATE_FILL_ALPHA * 1.45f),
+        0.65f to color.copy(alpha = PLATE_FILL_ALPHA),
+        1f to lerp(color, Color.Black, 0.35f).copy(alpha = PLATE_FILL_ALPHA * 1.6f),
+        center = sleeve + Offset(STUDIO_LIGHT_X, STUDIO_LIGHT_Y) * (discR * 0.3f),
+        radius = discR * 1.35f,
+    )
+    drawCircle(discBrush, discR, sleeve)
+    drawCircle(color, discR, sleeve, style = Stroke(rim))
+    drawArc(
+        color = Color.White.copy(alpha = PLATE_RIM_SHEEN_ALPHA),
+        startAngle = BELL_HIGHLIGHT_START,
+        sweepAngle = 80f,
+        useCenter = false,
+        topLeft = Offset(sleeve.x - discR, sleeve.y - discR),
+        size = Size(discR * 2f, discR * 2f),
+        style = Stroke(rim * 0.28f, cap = StrokeCap.Round),
+    )
     drawCircle(
         color.copy(alpha = PLATE_INNER_ALPHA),
         plateR * PLATE_INNER_RATIO,
         sleeve,
         style = Stroke(PLATE_INNER_STROKE * scale),
     )
-    drawCircle(color, BodyProportions.SLEEVE * scale, sleeve)
+    val sleeveR = BodyProportions.SLEEVE * scale
+    drawCircle(
+        brush = Brush.radialGradient(
+            0f to lerp(color, Color.White, 0.25f),
+            1f to lerp(color, Color.Black, 0.25f),
+            center = sleeve + Offset(STUDIO_LIGHT_X, STUDIO_LIGHT_Y) * (sleeveR * 0.35f),
+            radius = sleeveR * 1.3f,
+        ),
+        radius = sleeveR,
+        center = sleeve,
+    )
     drawCircle(axle.copy(alpha = PLATE_AXLE_ALPHA), PLATE_AXLE_RADIUS * scale, sleeve)
 }
 
-/** A soft radial glow behind the weight that flares wider and brighter as a [RepBeat.Drive] stretch starts. */
+/** A silky radial glow behind the weight that flares wider and brighter as a [RepBeat.Drive] stretch starts. */
+@Suppress("detekt.MagicNumber") // Smooth radial glow falloff stops.
 internal fun DrawScope.drawWeightGlow(
     hold: RepHold,
     hand: Offset,
@@ -147,12 +216,23 @@ internal fun DrawScope.drawWeightGlow(
     val base = if (bar) {
         BodyProportions.PLATE_RADIUS * GLOW_PLATE_REACH
     } else {
-        BodyProportions.BELL_RADIUS *
-            GLOW_BELL_REACH
+        BodyProportions.BELL_RADIUS * GLOW_BELL_REACH
     }
     val radius = base * scale * (1f + pulse * GLOW_FLARE)
-    val step = (GLOW_ALPHA + pulse * GLOW_PULSE_ALPHA) / GLOW_STEPS
-    for (i in GLOW_STEPS downTo 1) drawCircle(color.copy(alpha = step), radius * i / GLOW_STEPS, at)
+    if (radius <= MIN_STEP) return
+    val peak = (GLOW_ALPHA + pulse * GLOW_PULSE_ALPHA).coerceIn(0f, 1f)
+    drawCircle(
+        brush = Brush.radialGradient(
+            0f to color.copy(alpha = peak),
+            0.42f to color.copy(alpha = peak * 0.48f),
+            0.78f to color.copy(alpha = peak * 0.12f),
+            1f to Color.Transparent,
+            center = at,
+            radius = radius,
+        ),
+        radius = radius,
+        center = at,
+    )
 }
 
 /** Tapered motion ribbon behind [tip] with a brighter inner core streak. */
@@ -221,9 +301,10 @@ private fun trailNormal(pen: BodyPen, tip: Offset, index: Int): Offset {
 }
 
 /**
- * Fading floor line, dynamic two-layer ground shadow tracking the figure's footprint and elevation, and (for
- * unweighted exercises with no bands) a mat in [beatColor].
+ * Fading floor line, feathered radial ambient shadow + concentrated per-contact ground occlusion pools tracking
+ * planted feet, knees, hips, and hands, and (for unweighted exercises with no bands) a mat in [beatColor].
  */
+@Suppress("detekt.LongParameterList", "detekt.MagicNumber") // Floor, mat, and contact-shadow staging inputs.
 internal fun DrawScope.drawFloorAndShadow(
     frame: BodyFrame,
     floorY: Float,
@@ -235,6 +316,7 @@ internal fun DrawScope.drawFloorAndShadow(
     scale: Float,
     beatColor: Color,
     shadowColor: Color,
+    detail: Boolean,
     place: (Offset) -> Offset,
 ) {
     if (matFromAbove != null) {
@@ -250,54 +332,105 @@ internal fun DrawScope.drawFloorAndShadow(
         return
     }
     drawLine(floorBrush, Offset(floorFrom, floorY), Offset(floorTo, floorY), FLOOR_STROKE * scale, StrokeCap.Round)
-    val toe = place(frame.toe)
-    val heel = place(frame.heel)
-    val farToe = place(frame.farToe)
-    val farHeel = place(frame.farHeel)
-    val knee = place(frame.knee)
-    val farKnee = place(frame.farKnee)
-    val hip = place(frame.hip)
-    val shoulder = place(frame.shoulder)
-    val head = place(frame.headCenter)
-    val hand = place(frame.kettlebellAnchor)
-    val farHand = place(frame.farBellAnchor)
-    val minX = min(
-        min(min(toe.x, heel.x), min(farToe.x, farHeel.x)),
-        min(min(min(knee.x, farKnee.x), min(hip.x, shoulder.x)), min(head.x, min(hand.x, farHand.x))),
-    )
-    val maxX = max(
-        max(max(toe.x, heel.x), max(farToe.x, farHeel.x)),
-        max(max(max(knee.x, farKnee.x), max(hip.x, shoulder.x)), max(head.x, max(hand.x, farHand.x))),
-    )
-    val lowestY = max(
-        max(max(toe.y, heel.y), max(farToe.y, farHeel.y)),
-        max(max(max(knee.y, farKnee.y), max(hip.y, shoulder.y)), max(head.y, max(hand.y, farHand.y))),
-    )
-    val clearance = ((floorY - lowestY) / scale).coerceAtLeast(0f)
-    val elevation = (1f - clearance / SHADOW_FADE_HEIGHT).coerceIn(SHADOW_MIN_ALPHA_FACTOR, 1f)
-    val centerX = (minX + maxX) * HALF
-    val span = ((maxX - minX) * SHADOW_SPAN_RATIO + SHADOW_PADDING * scale)
-        .coerceIn(SHADOW_MIN_WIDTH * scale, SHADOW_MAX_WIDTH * scale)
-    val outerW = span * (1f + clearance / SHADOW_SPREAD_HEIGHT)
-    val outerH = SHADOW_HEIGHT * scale
-    val innerW = span * SHADOW_CORE_RATIO
-    val innerH = outerH * SHADOW_CORE_HEIGHT_RATIO
-    val shadowY = floorY + SHADOW_DROP * scale
-    val shadowAlpha = shadowColor.alpha * elevation
-    drawOval(
-        shadowColor.copy(alpha = shadowAlpha * SHADOW_OUTER_ALPHA),
-        topLeft = Offset(centerX - outerW * HALF, shadowY - outerH * HALF),
-        size = Size(outerW, outerH),
-    )
-    drawOval(
-        shadowColor.copy(alpha = shadowAlpha * SHADOW_INNER_ALPHA),
-        topLeft = Offset(centerX - innerW * HALF, shadowY - innerH * HALF),
-        size = Size(innerW, innerH),
-    )
+
+    if (shadowColor.alpha > 0f) {
+        val toe = place(frame.toe)
+        val heel = place(frame.heel)
+        val farToe = place(frame.farToe)
+        val farHeel = place(frame.farHeel)
+        val knee = place(frame.knee)
+        val farKnee = place(frame.farKnee)
+        val hip = place(frame.hip)
+        val shoulder = place(frame.shoulder)
+        val head = place(frame.headCenter)
+        val hand = place(frame.kettlebellAnchor)
+        val farHand = place(frame.farBellAnchor)
+        val minX =
+            minOf(toe.x, heel.x, farToe.x, farHeel.x, knee.x, farKnee.x, hip.x, shoulder.x, head.x, hand.x, farHand.x)
+        val maxX =
+            maxOf(toe.x, heel.x, farToe.x, farHeel.x, knee.x, farKnee.x, hip.x, shoulder.x, head.x, hand.x, farHand.x)
+        val lowestY =
+            maxOf(toe.y, heel.y, farToe.y, farHeel.y, knee.y, farKnee.y, hip.y, shoulder.y, head.y, hand.y, farHand.y)
+        val clearance = ((floorY - lowestY) / scale).coerceAtLeast(0f)
+        val elevation = (1f - clearance / SHADOW_FADE_HEIGHT).coerceIn(SHADOW_MIN_ALPHA_FACTOR, 1f)
+        val span = ((maxX - minX) * SHADOW_SPAN_RATIO + SHADOW_PADDING * scale)
+            .coerceIn(SHADOW_MIN_WIDTH * scale, SHADOW_MAX_WIDTH * scale)
+        val outerW = span * (1f + clearance / SHADOW_SPREAD_HEIGHT)
+        val ambient = shadowColor.copy(alpha = shadowColor.alpha * elevation * SHADOW_OUTER_ALPHA)
+        drawSoftShadowEllipse(
+            (minX + maxX) * HALF,
+            floorY + SHADOW_DROP * scale,
+            outerW,
+            SHADOW_HEIGHT * scale,
+            ambient,
+        )
+
+        if (detail) {
+            val contactY = floorY + CONTACT_DROP * scale
+            val contactH = CONTACT_HEIGHT * scale
+            fun contact(x: Float, y: Float, widthS: Float) {
+                val gap = ((floorY - y) / scale).coerceAtLeast(0f)
+                if (gap > CONTACT_MAX_GAP) return
+                val grip = 1f - gap / CONTACT_MAX_GAP
+                val tint = shadowColor.copy(alpha = shadowColor.alpha * CONTACT_ALPHA * grip * grip)
+                drawSoftShadowEllipse(x, contactY, widthS * scale * (1f + gap * 2f), contactH, tint)
+            }
+            contact((heel.x + toe.x) * HALF, max(heel.y, toe.y), CONTACT_FOOT_WIDTH)
+            if (frame.showsFarSide || frame.front) {
+                contact((farHeel.x + farToe.x) * HALF, max(farHeel.y, farToe.y), CONTACT_FOOT_WIDTH)
+            }
+            contact(knee.x, knee.y, CONTACT_JOINT_WIDTH)
+            contact(farKnee.x, farKnee.y, CONTACT_JOINT_WIDTH)
+            contact(hip.x, hip.y, CONTACT_HIP_WIDTH)
+            contact(hand.x, hand.y, CONTACT_JOINT_WIDTH)
+            contact(farHand.x, farHand.y, CONTACT_JOINT_WIDTH)
+        }
+    }
+
     if (matRange != null) {
         val matPx = BodyProportions.MAT * scale
         val matY = floorY + matPx * HALF
         drawLine(beatColor, Offset(matRange.start, matY), Offset(matRange.endInclusive, matY), matPx, StrokeCap.Round)
+        if (detail) {
+            drawLine(
+                color = Color.White.copy(alpha = MAT_HIGHLIGHT_ALPHA),
+                start = Offset(matRange.start + matPx * HALF, matY - matPx * 0.25f),
+                end = Offset(matRange.endInclusive - matPx * HALF, matY - matPx * 0.25f),
+                strokeWidth = matPx * 0.22f,
+                cap = StrokeCap.Round,
+            )
+        }
+    }
+}
+
+/** Draws a smoothly feathered radial-gradient ellipse centered at ([centerX], [centerY]) with zero hard rim. */
+@Suppress("detekt.MagicNumber") // Smooth radial shadow falloff curve.
+private fun DrawScope.drawSoftShadowEllipse(
+    centerX: Float,
+    centerY: Float,
+    width: Float,
+    height: Float,
+    color: Color,
+) {
+    if (width <= MIN_STEP || height <= MIN_STEP || color.alpha <= 0f) return
+    val rx = width * HALF
+    val ry = height * HALF
+    withTransform({
+        translate(centerX, centerY)
+        scale(rx, ry, pivot = Offset.Zero)
+    }) {
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to color,
+                0.45f to color.copy(alpha = color.alpha * 0.58f),
+                0.80f to color.copy(alpha = color.alpha * 0.14f),
+                1f to Color.Transparent,
+                center = Offset.Zero,
+                radius = 1f,
+            ),
+            radius = 1f,
+            center = Offset.Zero,
+        )
     }
 }
 
@@ -336,7 +469,8 @@ internal fun DrawScope.drawRepBands(
     }
 }
 
-/** Draws a prop behind the figure: padded bench, wall with backing, rail end-on, or band anchor post. */
+/** Draws a prop behind the figure: padded bench, wall with gradient backing, machined rail, or band anchor post. */
+@Suppress("detekt.MagicNumber") // Metallic rail sheen and post collar proportions.
 internal fun DrawScope.drawRepProp(
     prop: RepProp,
     floorY: Float,
@@ -349,11 +483,40 @@ internal fun DrawScope.drawRepProp(
 
     is RepWall -> drawRepWall(prop, floorY, topY, scale, color, place)
 
-    is RepRail -> drawRepRail(prop, scale, color, place)
+    is RepRail -> {
+        val at = place(prop.at)
+        val r = BodyProportions.RAIL * scale
+        val rim = RAIL_RIM_STROKE * scale
+        drawCircle(
+            brush = Brush.radialGradient(
+                0f to lerp(color, Color.White, 0.25f).copy(alpha = RAIL_FILL_ALPHA),
+                1f to color.copy(alpha = RAIL_FILL_ALPHA),
+                center = at + Offset(STUDIO_LIGHT_X, STUDIO_LIGHT_Y) * (r * 0.35f),
+                radius = r * 1.3f,
+            ),
+            radius = r,
+            center = at,
+        )
+        drawCircle(color, r - rim * HALF, at, style = Stroke(rim))
+        drawCircle(Color.White.copy(alpha = RAIL_CORE_ALPHA), RAIL_CORE_RADIUS * scale, at)
+    }
 
     is RepBand -> {
-        drawBandPost(prop.from, floorY, scale, color, place)
-        drawBandPost(prop.to, floorY, scale, color, place)
+        for (end in arrayOf(prop.from, prop.to)) {
+            if (end !is RepBandEnd.Post) continue
+            val at = place(end.at)
+            val post = BodyProportions.POST * scale
+            drawLine(color, Offset(at.x, floorY), Offset(at.x, at.y - post * 2f), post, StrokeCap.Round)
+            val halfBase = POST_BASE_HALF * scale
+            drawLine(
+                color,
+                Offset(at.x - halfBase, floorY),
+                Offset(at.x + halfBase, floorY),
+                POST_BASE_STROKE * scale,
+                StrokeCap.Round,
+            )
+            drawCircle(color, POST_COLLAR_RADIUS * scale, at)
+        }
     }
 }
 
@@ -380,37 +543,7 @@ internal fun DrawScope.drawRepRailStand(
     )
 }
 
-private fun DrawScope.drawRepRail(rail: RepRail, scale: Float, color: Color, place: (Offset) -> Offset) {
-    val at = place(rail.at)
-    val r = BodyProportions.RAIL * scale
-    val rim = RAIL_RIM_STROKE * scale
-    drawCircle(color.copy(alpha = RAIL_FILL_ALPHA), r, at)
-    drawCircle(color, r - rim * HALF, at, style = Stroke(rim))
-    drawCircle(Color.White.copy(alpha = RAIL_CORE_ALPHA), RAIL_CORE_RADIUS * scale, at)
-}
-
-private fun DrawScope.drawBandPost(
-    end: RepBandEnd,
-    floorY: Float,
-    scale: Float,
-    color: Color,
-    place: (Offset) -> Offset,
-) {
-    if (end !is RepBandEnd.Post) return
-    val at = place(end.at)
-    val post = BodyProportions.POST * scale
-    drawLine(color, Offset(at.x, floorY), Offset(at.x, at.y - post * 2f), post, StrokeCap.Round)
-    val halfBase = POST_BASE_HALF * scale
-    drawLine(
-        color,
-        Offset(at.x - halfBase, floorY),
-        Offset(at.x + halfBase, floorY),
-        POST_BASE_STROKE * scale,
-        StrokeCap.Round,
-    )
-    drawCircle(color, POST_COLLAR_RADIUS * scale, at)
-}
-
+@Suppress("detekt.MagicNumber") // Bench cushion & steel frame lighting ratios.
 private fun DrawScope.drawRepBench(
     bench: RepBench,
     floorY: Float,
@@ -446,7 +579,26 @@ private fun DrawScope.drawRepBench(
         BodyProportions.BENCH_LEG * scale,
         StrokeCap.Round,
     )
-    drawLine(color, left, right, topThick, StrokeCap.Round)
+    // Grounded rubber foot caps on bench legs.
+    val footHalf = BodyProportions.BENCH_LEG * 1.15f * scale
+    val footStroke = BENCH_FOOT_STROKE * scale
+    drawLine(color, Offset(leftLeg - footHalf, floorY), Offset(leftLeg + footHalf, floorY), footStroke, StrokeCap.Round)
+    drawLine(
+        color,
+        Offset(rightLeg - footHalf, floorY),
+        Offset(rightLeg + footHalf, floorY),
+        footStroke,
+        StrokeCap.Round,
+    )
+
+    val padBrush = Brush.verticalGradient(
+        0f to lerp(color, Color.White, 0.14f),
+        0.55f to color,
+        1f to lerp(color, Color.Black, 0.22f),
+        startY = top - topThick * HALF,
+        endY = top + topThick * HALF,
+    )
+    drawLine(padBrush, left, right, topThick, StrokeCap.Round)
     val inset = BENCH_HIGHLIGHT_INSET * scale
     val lift = BENCH_HIGHLIGHT_LIFT * scale
     drawLine(
@@ -458,6 +610,7 @@ private fun DrawScope.drawRepBench(
     )
 }
 
+@Suppress("detekt.MagicNumber") // Wall backing fade gradient.
 private fun DrawScope.drawRepWall(
     wall: RepWall,
     floorY: Float,
@@ -469,7 +622,22 @@ private fun DrawScope.drawRepWall(
     val x = place(Offset(wall.x, 0f)).x
     val backW = WALL_BACKING_WIDTH * scale
     val backingLeft = if (wall.x < 0f) x - backW else x
-    drawRect(color.copy(alpha = WALL_BACKING_ALPHA), Offset(backingLeft, topY), Size(backW, floorY - topY))
+    val fadeBrush = if (wall.x < 0f) {
+        Brush.horizontalGradient(
+            0f to Color.Transparent,
+            1f to color.copy(alpha = WALL_BACKING_ALPHA),
+            startX = backingLeft,
+            endX = x,
+        )
+    } else {
+        Brush.horizontalGradient(
+            0f to color.copy(alpha = WALL_BACKING_ALPHA),
+            1f to Color.Transparent,
+            startX = x,
+            endX = x + backW,
+        )
+    }
+    drawRect(fadeBrush, Offset(backingLeft, topY), Size(backW, floorY - topY))
     drawLine(color, Offset(x, floorY), Offset(x, topY), BodyProportions.WALL * scale, StrokeCap.Round)
 }
 
@@ -479,34 +647,40 @@ private const val MIN_BAND_PX = 1f
 private const val OVERHEAD_RAIL_Y = 0.6f
 
 private const val BELL_HANDLE_HALF = 0.036f
-private const val BELL_SHOULDER_HALF = 0.046f
+private const val BELL_SHOULDER_HALF = 0.048f
 private const val BELL_HANDLE_SIDES = 0.048f
 private const val BELL_HANDLE_CORNER = 0.018f
 private const val BELL_HANDLE_STROKE = 0.020f
+private const val HANDLE_SHEEN_ALPHA = 0.28f
+private const val HANDLE_SHEEN_STROKE = 0.0045f
 private const val BASE_HALF_DEGREES = 32f
-private const val BELL_DETAIL_RATIO = 0.72f
-private const val BELL_SHADE_ALPHA = 0.18f
-private const val BELL_SHADE_STROKE = 0.011f
-private const val BELL_SHADE_START = 20f
-private const val BELL_SHADE_SWEEP = 140f
-private const val BELL_HIGHLIGHT_ALPHA = 0.34f
-private const val BELL_HIGHLIGHT_STROKE = 0.009f
-private const val BELL_HIGHLIGHT_START = 205f
+private const val BELL_LIT_MIX = 0.34f
+private const val BELL_SHADE_MIX = 0.28f
+private const val BELL_EDGE_MIX = 0.36f
+private const val BELL_LIGHT_OFFSET = 0.36f
+private const val BELL_LIGHT_REACH = 1.45f
+private const val BELL_BASE_CHAMFER_ALPHA = 0.22f
+private const val BELL_CHAMFER_INSET = 0.005f
+private const val BELL_CHAMFER_STROKE = 0.0055f
+private const val BELL_DETAIL_RATIO = 0.74f
+private const val BELL_HIGHLIGHT_ALPHA = 0.36f
+private const val BELL_HIGHLIGHT_STROKE = 0.008f
+private const val BELL_HIGHLIGHT_START = 235f
 private const val BELL_HIGHLIGHT_SWEEP = 75f
 
-private const val PLATE_FILL_ALPHA = 0.14f
+private const val PLATE_FILL_ALPHA = 0.16f
+private const val PLATE_RIM_SHEEN_ALPHA = 0.28f
 private const val PLATE_INNER_RATIO = 0.45f
 private const val PLATE_INNER_STROKE = 0.007f
-private const val PLATE_INNER_ALPHA = 0.42f
+private const val PLATE_INNER_ALPHA = 0.44f
 private const val PLATE_AXLE_RADIUS = 0.0084f
-private const val PLATE_AXLE_ALPHA = 0.7f
+private const val PLATE_AXLE_ALPHA = 0.75f
 
-private const val GLOW_STEPS = 16
-private const val GLOW_BELL_REACH = 2.3f
-private const val GLOW_PLATE_REACH = 1.35f
+private const val GLOW_BELL_REACH = 2.35f
+private const val GLOW_PLATE_REACH = 1.4f
 private const val GLOW_FLARE = 0.35f
-private const val GLOW_ALPHA = 0.16f
-private const val GLOW_PULSE_ALPHA = 0.2f
+private const val GLOW_ALPHA = 0.18f
+private const val GLOW_PULSE_ALPHA = 0.22f
 
 private const val TRAIL_TAIL = 0.004f
 private const val TRAIL_HEAD = 0.030f
@@ -517,19 +691,24 @@ private const val TRAIL_CORE_ALPHA = 0.55f
 private const val FLOOR_STROKE = 0.005f
 private const val MAT_FILL_ALPHA = 0.16f
 private const val MAT_EDGE_ALPHA = 0.7f
-private const val SHADOW_SPAN_RATIO = 0.9f
-private const val SHADOW_PADDING = 0.116f
-private const val SHADOW_MIN_WIDTH = 0.296f
-private const val SHADOW_MAX_WIDTH = 0.90f
+private const val MAT_HIGHLIGHT_ALPHA = 0.24f
+private const val SHADOW_SPAN_RATIO = 0.92f
+private const val SHADOW_PADDING = 0.13f
+private const val SHADOW_MIN_WIDTH = 0.31f
+private const val SHADOW_MAX_WIDTH = 0.94f
 private const val SHADOW_FADE_HEIGHT = 0.58f
 private const val SHADOW_SPREAD_HEIGHT = 1.16f
-private const val SHADOW_MIN_ALPHA_FACTOR = 0.25f
-private const val SHADOW_HEIGHT = 0.039f
-private const val SHADOW_DROP = 0.013f
-private const val SHADOW_CORE_RATIO = 0.62f
-private const val SHADOW_CORE_HEIGHT_RATIO = 0.6f
-private const val SHADOW_OUTER_ALPHA = 0.38f
-private const val SHADOW_INNER_ALPHA = 0.68f
+private const val SHADOW_MIN_ALPHA_FACTOR = 0.22f
+private const val SHADOW_HEIGHT = 0.048f
+private const val SHADOW_DROP = 0.011f
+private const val SHADOW_OUTER_ALPHA = 0.56f
+private const val CONTACT_MAX_GAP = 0.06f
+private const val CONTACT_DROP = 0.005f
+private const val CONTACT_HEIGHT = 0.022f
+private const val CONTACT_ALPHA = 0.72f
+private const val CONTACT_FOOT_WIDTH = 0.22f
+private const val CONTACT_JOINT_WIDTH = 0.14f
+private const val CONTACT_HIP_WIDTH = 0.24f
 
 private const val BAND_STRAND_OFFSET = 0.010f
 private const val BAND_TWIN_ALPHA = 0.5f
@@ -544,13 +723,14 @@ private const val BENCH_FRAME_DROP = 0.7f
 private const val BENCH_FRAME_ALPHA = 0.55f
 private const val BENCH_FRAME_STROKE = 0.011f
 private const val BENCH_LEG_ALPHA = 0.8f
-private const val BENCH_HIGHLIGHT_ALPHA = 0.16f
+private const val BENCH_FOOT_STROKE = 0.009f
+private const val BENCH_HIGHLIGHT_ALPHA = 0.22f
 private const val BENCH_HIGHLIGHT_INSET = 0.013f
 private const val BENCH_HIGHLIGHT_LIFT = 0.006f
-private const val BENCH_HIGHLIGHT_STROKE = 0.0065f
-private const val WALL_BACKING_WIDTH = 0.045f
-private const val WALL_BACKING_ALPHA = 0.18f
-private const val RAIL_FILL_ALPHA = 0.55f
+private const val BENCH_HIGHLIGHT_STROKE = 0.006f
+private const val WALL_BACKING_WIDTH = 0.052f
+private const val WALL_BACKING_ALPHA = 0.20f
+private const val RAIL_FILL_ALPHA = 0.58f
 private const val RAIL_STAND_ALPHA = 0.7f
 private const val RAIL_RIM_STROKE = 0.0084f
 private const val RAIL_CORE_RADIUS = 0.0077f
