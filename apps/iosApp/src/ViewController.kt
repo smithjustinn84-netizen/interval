@@ -16,7 +16,7 @@ fun ViewController() = StatusBarHost(ComposeUIViewController { App(shortcut, onS
 
 /**
  * Opens the quick action whose type is [type], a [Shortcut.id] (`UIApplicationShortcutItems` in Info.plist), as
- * Android's `MainActivity` opens a launcher shortcut: at launch or with the app running. Called by the scene
+ * Android's `AppActivity` opens a launcher shortcut: at launch or with the app running. Called by the scene
  * delegate on the main thread. False for a type this version doesn't know.
  */
 fun openShortcut(type: String): Boolean {

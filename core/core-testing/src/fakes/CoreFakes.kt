@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.fakes
 
+import dev.justinsmith.interval.platform.AppIcon
+import dev.justinsmith.interval.platform.AppIconSwitcher
 import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.FileOpener
 import dev.justinsmith.interval.platform.HealthStatus
@@ -19,6 +21,7 @@ import dev.justinsmith.interval.timer.MINUTES_PER_HOUR
 import dev.justinsmith.interval.timer.dateOfEpochDay
 import dev.justinsmith.interval.timer.epochDayOf
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import org.koin.core.module.Module
 import org.koin.dsl.module
@@ -145,10 +148,27 @@ class RecordingSpeaker : Speaker {
 }
 
 /**
+ * An [AppIconSwitcher] that keeps what was picked; [start] null is a platform with one icon, which offers none,
+ * and [closesApp] one that closes the app as it switches, as Android does.
+ */
+class RecordingAppIconSwitcher(
+    start: AppIcon? = AppIcon.Kettlebell,
+    override val closesApp: Boolean = false,
+) : AppIconSwitcher {
+    private val chosen = MutableStateFlow(start)
+
+    override val icon: StateFlow<AppIcon?> = chosen
+
+    override fun choose(icon: AppIcon) {
+        if (chosen.value != null) chosen.value = icon
+    }
+}
+
+/**
  * Stands in for core's `corePlatformModule`: a [clock] standing at 0 unless a test moves it, real monotonic
  * time unless a test passes a `TestTimeSource` as [timeSource], the [FixedTimestampFormatter], [FakeAppInfo], a
  * [sharer] that records, a [health] store and a [speaker] that do too, random [ids] unless a test passes
- * [SequentialIds], and [tones] that play nothing.
+ * [SequentialIds], [tones] that play nothing, and [appIcons] that keep the icon picked.
  */
 fun fakeCorePlatformModule(
     clock: WallClock = WallClock { 0L },
@@ -160,6 +180,7 @@ fun fakeCorePlatformModule(
     speaker: Speaker = RecordingSpeaker(),
     tones: TonePlayer = NoTones,
     liveHeartRate: LiveHeartRate = FakeLiveHeartRate(),
+    appIcons: AppIconSwitcher = RecordingAppIconSwitcher(),
 ): Module = module {
     single { clock }
     single { timeSource }
@@ -171,4 +192,5 @@ fun fakeCorePlatformModule(
     single { speaker }
     single<TonePlayer> { tones }
     single { liveHeartRate }
+    single { appIcons }
 }

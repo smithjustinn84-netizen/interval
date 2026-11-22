@@ -13,9 +13,9 @@
     <action>Tap "Start a workout"</action>
     <action>Verify that the workout screen shows "Get ready" and "Round 1 of 8"</action>
     <action>Pull down the shade and tap the workout's notification</action>
-    <action>Verify that the same workout is shown, and that adb shell dumpsys activity activities lists one MainActivity</action>
+    <action>Verify that the same workout is shown, and that adb shell dumpsys activity activities lists one activity of the app (named `.AppActivity`, or by the launcher entry its task was opened through, `.MainActivity` or `.MainActivityRing`)</action>
     <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>
-    <action>Verify that the same workout is shown, still counting, and that adb shell dumpsys activity activities lists one MainActivity</action>
+    <action>Verify that the same workout is shown, still counting, and that adb shell dumpsys activity activities lists one activity of the app (named `.AppActivity`, or by the launcher entry its task was opened through, `.MainActivity` or `.MainActivityRing`)</action>
     <action>Press the system back button and tap "End workout" in the dialog; if a round had finished by then, the summary shows first: tap "Close"</action>
     <action>Verify that the Timer is shown with a "Start workout" button</action>
     <action>Press Home, long-press the app's icon and tap "Start a Lift session"</action>

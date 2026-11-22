@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The launcher's shortcuts (a long-press on the icon, or pinned). Each starts ShortcutActivity, which hands its
-     extra, a Shortcut's id (apps/app/src/nav/Shortcut.kt), to MainActivity without clearing the app's task. -->
+     extra, a Shortcut's id (apps/app/src/nav/Shortcut.kt), to AppActivity without clearing the app's task. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
             android:enabled="true"

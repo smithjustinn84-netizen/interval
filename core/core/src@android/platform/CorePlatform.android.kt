@@ -6,7 +6,8 @@ import android.os.Build
 import org.koin.core.module.Module
 
 /**
- * What both sides take from Android (Health Connect, the text-to-speech engine, the tones' audio tracks), over the application's [context]
+ * What both sides take from Android (Health Connect, the text-to-speech engine, the tones' audio tracks, the
+ * launcher's aliases an app icon is picked by), over the application's [context]
  * (any context is narrowed to it).
  */
 fun corePlatformModule(context: Context): Module = context.applicationContext.let { app ->
@@ -16,6 +17,7 @@ fun corePlatformModule(context: Context): Module = context.applicationContext.le
         health = { HealthConnectStore(app) },
         speaker = { AndroidSpeaker(app) },
         tones = { AndroidTonePlayer() },
+        appIcons = { AndroidAppIconSwitcher(app) },
     )
 }
 

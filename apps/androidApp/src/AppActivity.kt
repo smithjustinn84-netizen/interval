@@ -12,7 +12,12 @@ import androidx.compose.runtime.setValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import dev.justinsmith.interval.nav.Shortcut
 
-class MainActivity : ComponentActivity() {
+/**
+ * The app's one screen. The launcher reaches it through an `<activity-alias>` an app icon (the manifest's
+ * `.MainActivity`, the name this had, and `.MainActivityRing`), so nothing starts it by a launcher's name: the
+ * shortcuts and the notifications name this.
+ */
+class AppActivity : ComponentActivity() {
     /** A launcher shortcut to open, from [ShortcutActivity]; null once the app has opened it. */
     private var shortcut by mutableStateOf<Shortcut?>(null)
 

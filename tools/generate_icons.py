@@ -2,9 +2,9 @@
 
     uv run --with pillow tools/generate_icons.py
 
-Every icon but iOS's app icon and the foreground of Android's launcher icon, which `tools/render_icon_3d.py`
-renders in Blender (`--flat-ios-icon` here writes the flat mark over iOS's; Android's `ic_launcher_foreground.xml`
-is still written, for the splash screen).
+Every icon but iOS's primary app icon and the foreground of Android's launcher icon, which
+`tools/render_icon_3d.py` renders in Blender. The flat mark is each platform's other icon, picked in Settings: iOS's
+alternate icon set (`AppIconRing`) and Android's `ic_launcher_ring`, whose foreground is the splash screen's too.
 
 The mark is the workout's phase ring: three round-capped arcs in the phase colours (Get ready, Work,
 Rest), with a clock hand pointing up through the gap at the top. Its geometry lives here and in
@@ -13,7 +13,6 @@ in step. Everything is laid out on Android's 108-unit adaptive-icon canvas.
 """
 
 import math
-import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -228,12 +227,11 @@ def main():
 
     write(ROOT / "apps/app/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
 
-    # iOS's app icon is the rendered bell, `tools/render_icon_3d.py`'s, so this leaves it alone unless asked for
-    # the flat mark (`--flat-ios-icon`). iOS draws icons full bleed and rounds the corners itself, so the mark
+    # iOS's app icon is the rendered bell, `tools/render_icon_3d.py`'s; the flat mark is its alternate icon, the
+    # one Settings' "App icon" calls Ring. iOS draws icons full bleed and rounds the corners itself, so the mark
     # can sit larger than on Android, whose launchers crop the 108 canvas to its middle 72.
-    if "--flat-ios-icon" in sys.argv:
-        ios_scale = 1.3
-        ios_icons(ROOT / "apps/iosApp/src/Assets.xcassets", ios_scale, draw_mark)
+    ios_scale = 1.3
+    ios_icons(ROOT / "apps/iosApp/src/Assets.xcassets", ios_scale, draw_mark)
 
     # The launch screen's mark, matching the first frame of the intro: the 108 canvas at 288 pt,
     # as Android's splash screen draws its icon.
@@ -244,8 +242,10 @@ def main():
 
 
 def ios_icons(catalog, scale, draw):
-    """The light, dark and tinted 1024 px app icons into [catalog]'s AppIcon set."""
-    icons = catalog / "AppIcon.appiconset"
+    """The light, dark and tinted 1024 px app icons into [catalog]'s AppIconRing set, the alternate icon."""
+    icons = catalog / "AppIconRing.appiconset"
+    # The same three slots as the primary icon's set, which names its files the same.
+    write(icons / "Contents.json", (catalog / "AppIcon.appiconset/Contents.json").read_text())
     # The App Store rejects an icon with an alpha channel.
     save(icons / "app-icon-1024.png", render(1024, scale, draw=draw).convert("RGB"))
     save(icons / "app-icon-1024-dark.png", render(1024, scale, background=False, draw=draw))

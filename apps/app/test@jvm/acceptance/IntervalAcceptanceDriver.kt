@@ -26,6 +26,7 @@ import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.interval.platform.AppIconSwitcher
 import dev.justinsmith.interval.platform.CuePlayer
 import dev.justinsmith.interval.platform.HealthSegment
 import dev.justinsmith.interval.platform.HealthStatus
@@ -783,6 +784,19 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     fun pickTheme(name: String) {
         scrollTo("Theme")
         tap(name)
+    }
+
+    /** Picks [name] ("Kettlebell" or "Ring") as the app's icon. */
+    fun pickAppIcon(name: String) {
+        scrollTo("App icon")
+        tap(name)
+    }
+
+    /** The platform was handed the icon called [name], and Settings shows it picked. */
+    fun seeAppIcon(name: String) {
+        waitFor("the $name icon") { app.koin.koin.get<AppIconSwitcher>().icon.value?.name == name }
+        scrollTo("App icon")
+        ui.onNode(hasText(name) and hasClickAction()).assertIsSelected()
     }
 
     // Health Connect

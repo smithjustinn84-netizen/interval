@@ -16,6 +16,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.AppIcon
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.LOW_SENSOR_BATTERY
@@ -29,6 +30,10 @@ import dev.justinsmith.interval.settings.resources.effort_max
 import dev.justinsmith.interval.settings.resources.effort_steady
 import dev.justinsmith.interval.settings.resources.settings_about_app
 import dev.justinsmith.interval.settings.resources.settings_about_app_hint
+import dev.justinsmith.interval.settings.resources.settings_app_icon
+import dev.justinsmith.interval.settings.resources.settings_app_icon_hint
+import dev.justinsmith.interval.settings.resources.settings_app_icon_kettlebell
+import dev.justinsmith.interval.settings.resources.settings_app_icon_ring
 import dev.justinsmith.interval.settings.resources.settings_appearance
 import dev.justinsmith.interval.settings.resources.settings_calories
 import dev.justinsmith.interval.settings.resources.settings_clear_log
@@ -143,9 +148,19 @@ class SensorRow(
 )
 
 /**
+ * The app icon's row: the [icon] worn on the Home Screen, what picking another does, and whether the platform
+ * [closesApp] as it switches, which the screen asks about first. No icon, as it is by default, shows no row.
+ */
+class AppIconRow(
+    val icon: AppIcon? = null,
+    val closesApp: Boolean = false,
+    val onPick: (AppIcon) -> Unit = {},
+)
+
+/**
  * The groups in order: cues, the workout, calories, the health store where there is one, the heart-rate sensor
- * where the platform has one, the plan's goal and
- * reminder, appearance, your data and, at the foot with no label, the way to About.
+ * where the platform has one, the plan's goal and reminder, appearance (the theme, and the app's icon where the
+ * platform has more than one), your data and, at the foot with no label, the way to About.
  */
 @Suppress("detekt.LongParameterList") // One callback per setting, as the screen takes them.
 internal fun settingsGroups(
@@ -158,6 +173,8 @@ internal fun settingsGroups(
     onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
+    appIcon: AppIcon?,
+    onSetAppIcon: (AppIcon) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
     onClearLog: () -> Unit,
@@ -200,16 +217,7 @@ internal fun settingsGroups(
     },
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
-        ListCard {
-            ChoiceRow(
-                stringResource(Res.string.settings_theme),
-                stringResource(Res.string.settings_theme_hint),
-                ThemeMode.entries,
-                state.app.theme,
-                label = { stringResource(it.labelRes) },
-                onSelect = onSetTheme,
-            )
-        }
+        AppearanceCard(state.app.theme, onSetTheme, appIcon, onSetAppIcon)
     },
     SettingsGroup("data") {
         GroupLabel(stringResource(Res.string.settings_data))
@@ -451,6 +459,38 @@ private fun PlanCard(
     }
 }
 
+/** How the app looks: its theme, and under it the icon it wears where the platform has more than one. */
+@Composable
+private fun AppearanceCard(
+    theme: ThemeMode,
+    onSetTheme: (ThemeMode) -> Unit,
+    appIcon: AppIcon?,
+    onSetAppIcon: (AppIcon) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ListCard(modifier) {
+        ChoiceRow(
+            stringResource(Res.string.settings_theme),
+            stringResource(Res.string.settings_theme_hint),
+            ThemeMode.entries,
+            theme,
+            label = { stringResource(it.labelRes) },
+            onSelect = onSetTheme,
+        )
+        if (appIcon != null) {
+            RowDivider()
+            ChoiceRow(
+                stringResource(Res.string.settings_app_icon),
+                stringResource(Res.string.settings_app_icon_hint),
+                AppIcon.entries,
+                appIcon,
+                label = { stringResource(it.labelRes) },
+                onSelect = onSetAppIcon,
+            )
+        }
+    }
+}
+
 /**
  * A setting picked from a few, as a card's row: its [title] and [hint] over a [SegmentedPicker] of the [options].
  * The picker's group takes the title as its name, so a screen reader says what the options are options of.
@@ -565,6 +605,12 @@ private val Effort.labelRes: StringResource
     }
 
 /** How the theme picker names each mode; [ThemeMode.name] is what is stored. */
+private val AppIcon.labelRes: StringResource
+    get() = when (this) {
+        AppIcon.Kettlebell -> Res.string.settings_app_icon_kettlebell
+        AppIcon.Ring -> Res.string.settings_app_icon_ring
+    }
+
 private val ThemeMode.labelRes: StringResource
     get() = when (this) {
         ThemeMode.System -> Res.string.theme_system

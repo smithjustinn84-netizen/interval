@@ -20,6 +20,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.AppIcon
+import dev.justinsmith.interval.platform.AppIconSwitcher
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorFailure
@@ -32,6 +34,9 @@ import dev.justinsmith.interval.settings.resources.import_failed
 import dev.justinsmith.interval.settings.resources.notice_sensor_failed
 import dev.justinsmith.interval.settings.resources.notice_sensor_no_access
 import dev.justinsmith.interval.settings.resources.notice_sensor_none_nearby
+import dev.justinsmith.interval.settings.resources.settings_app_icon_confirm
+import dev.justinsmith.interval.settings.resources.settings_app_icon_confirm_text
+import dev.justinsmith.interval.settings.resources.settings_app_icon_confirm_title
 import dev.justinsmith.interval.settings.resources.settings_cancel
 import dev.justinsmith.interval.settings.resources.settings_clear_log_confirm
 import dev.justinsmith.interval.settings.resources.settings_clear_log_text
@@ -87,6 +92,8 @@ fun SettingsRoute(
     val sensors = koinViewModel<SensorSettingsViewModel>()
     val sensor by sensors.state.collectAsStateWithLifecycle()
     val bluetooth = rememberBluetoothAccess()
+    val icons = koinInject<AppIconSwitcher>()
+    val appIcon by icons.icon.collectAsStateWithLifecycle()
     val notices = LocalNotices.current
     val failures by rememberUpdatedState(SensorFailure.entries.associateWith { stringResource(it.words) })
     LaunchedEffect(sensors, notices) { sensors.failures.collect { notices.show(failures.getValue(it)) } }
@@ -100,6 +107,7 @@ fun SettingsRoute(
         onSetTheme = viewModel::setTheme,
         onShowAbout = onShowAbout,
         modifier = modifier,
+        appIcon = AppIconRow(appIcon, icons.closesApp, icons::choose),
         inPane = inPane,
         onShowPlan = onShowPlan,
         onShowSetup = onShowSetup,
@@ -142,7 +150,8 @@ fun SettingsRoute(
 /**
  * The set-once preferences, out of the way of the workout itself, the plan's goal and reminder as they stand
  * ([onShowPlan] leads to where they are changed, [onShowSetup] to Set up), your data and the way to About.
- * [inPane] when it sits beside the Timer on a wide window: there it closes rather than going back.
+ * [inPane] when it sits beside the Timer on a wide window: there it closes rather than going back. [appIcon] is
+ * the icon the app wears on the Home Screen, picked under the theme where the platform has more than one.
  */
 @Composable
 fun SettingsScreen(
@@ -156,6 +165,7 @@ fun SettingsScreen(
     onShowAbout: () -> Unit,
     modifier: Modifier = Modifier,
     inPane: Boolean = false,
+    appIcon: AppIconRow = AppIconRow(),
     onShowPlan: () -> Unit = {},
     onShowSetup: () -> Unit = {},
     onSetWeight: (Int) -> Unit = {},
@@ -180,8 +190,11 @@ fun SettingsScreen(
     var editingRestingHeartRate by rememberSaveable { mutableStateOf(false) }
     var clearingLog by rememberSaveable { mutableStateOf(false) }
     var forgettingSensor by rememberSaveable { mutableStateOf(false) }
+    // Where the platform closes the app to change its icon, the pick waits here until that is agreed to.
+    var changingIcon by rememberSaveable { mutableStateOf<AppIcon?>(null) }
     // A sensor with a class on it is forgotten only once that is confirmed: forgotten, the class can't be synced.
     val sensorRow = sensor.askingFirst { forgettingSensor = true }
+    val pickIcon = { icon: AppIcon -> if (appIcon.closesApp) changingIcon = icon else appIcon.onPick(icon) }
     val groups = settingsGroups(
         state,
         onToggle,
@@ -192,6 +205,8 @@ fun SettingsScreen(
         onEditRestingHeartRate = { editingRestingHeartRate = true },
         onSetEffort,
         onSetTheme,
+        appIcon.icon,
+        pickIcon,
         onExport,
         imports.onPick,
         onClearLog = { clearingLog = true },
@@ -230,6 +245,7 @@ fun SettingsScreen(
     ImportProgress(importStep, imports)
     if (clearingLog) ClearLogDialog(onClearLog) { clearingLog = false }
     if (forgettingSensor) ForgetSensorDialog(sensor.onForget) { forgettingSensor = false }
+    changingIcon?.let { icon -> ChangeIconDialog(onChange = { appIcon.onPick(icon) }) { changingIcon = null } }
     if (sensor.choices.isNotEmpty()) SensorChoiceSheet(sensor.choices, sensor.onChoose)
     if (editingWeight) {
         WeightSheet(
@@ -243,15 +259,11 @@ fun SettingsScreen(
             onUseHealthWeight,
         )
     }
-    when {
-        editingMaxHeartRate ->
-            MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
-
-        editingRestingHeartRate -> RestingHeartRateSheet(
-            state.body.restingHeartRate,
-            onSetRestingHeartRate,
-            onDismiss = { editingRestingHeartRate = false },
-        )
+    if (editingMaxHeartRate) {
+        MaxHeartRateSheet(state.body.maxHeartRate, onSetMaxHeartRate, onDismiss = { editingMaxHeartRate = false })
+    }
+    if (editingRestingHeartRate) {
+        RestingHeartRateSheet(state.body.restingHeartRate, onSetRestingHeartRate) { editingRestingHeartRate = false }
     }
 }
 
@@ -280,6 +292,23 @@ private fun ClearLogDialog(onClear: () -> Unit, onDismiss: () -> Unit) {
         },
         onDismiss = onDismiss,
         destructive = true,
+    )
+}
+
+/** Asks before the app's icon is changed where the app closes to change it, as Android's does. */
+@Composable
+private fun ChangeIconDialog(onChange: () -> Unit, onDismiss: () -> Unit) {
+    ConfirmDialog(
+        title = stringResource(Res.string.settings_app_icon_confirm_title),
+        text = stringResource(Res.string.settings_app_icon_confirm_text),
+        confirm = stringResource(Res.string.settings_app_icon_confirm),
+        dismiss = stringResource(Res.string.settings_cancel),
+        onConfirm = {
+            // Away first: the app may be gone before another frame.
+            onDismiss()
+            onChange()
+        },
+        onDismiss = onDismiss,
     )
 }
 

@@ -30,6 +30,13 @@
     <string name="settings_appearance">Appearance</string>
     <string name="settings_theme">Theme</string>
     <string name="settings_theme_hint">System follows your device</string>
+    <string name="settings_app_icon">App icon</string>
+    <string name="settings_app_icon_hint">The one on your Home Screen</string>
+    <string name="settings_app_icon_kettlebell">Kettlebell</string>
+    <string name="settings_app_icon_ring">Ring</string>
+    <string name="settings_app_icon_confirm_title">Change the app icon?</string>
+    <string name="settings_app_icon_confirm_text">Interval closes to change it. Open it again from its new icon.</string>
+    <string name="settings_app_icon_confirm">Change</string>
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>

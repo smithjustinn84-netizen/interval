@@ -53,6 +53,16 @@ class SettingsAcceptanceTest {
     }
 
     @Test
+    fun `the app icon picked in settings is the one put on the home screen`() = acceptanceScenario {
+        openSettings()
+        seeAppIcon("Kettlebell")
+        pickAppIcon("Ring")
+        seeAppIcon("Ring")
+        pickAppIcon("Kettlebell")
+        seeAppIcon("Kettlebell")
+    }
+
+    @Test
     fun `a cue and the theme changed in settings are kept after a restart`() {
         val storage = FakeStorage()
         acceptanceScenario(storage = storage) {

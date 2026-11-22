@@ -61,19 +61,47 @@
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
             android:theme="@style/Theme.Interval.Starting">
+        <!-- The app's one screen. Only the app starts it by name (the shortcuts, the notifications); the launcher
+             comes through the aliases below. -->
         <activity
+                android:exported="false"
+                android:name=".AppActivity"
+                android:windowSoftInputMode="adjustResize"/>
+
+        <!-- The launcher's entries, one an app icon: Settings' "App icon" enables the one picked and disables the
+             other (AndroidAppIconSwitcher, in core-platform, which names them). The kettlebell's keeps the name
+             the activity had, so an icon already on a Home Screen stays there through the update. Each carries
+             the shortcuts, which a launcher reads off its entry. -->
+        <activity-alias
+                android:enabled="true"
                 android:exported="true"
+                android:icon="@mipmap/ic_launcher"
                 android:name=".MainActivity"
-                android:windowSoftInputMode="adjustResize">
+                android:roundIcon="@mipmap/ic_launcher_round"
+                android:targetActivity=".AppActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
             <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
-        </activity>
+        </activity-alias>
+        <activity-alias
+                android:enabled="false"
+                android:exported="true"
+                android:icon="@mipmap/ic_launcher_ring"
+                android:name=".MainActivityRing"
+                android:roundIcon="@mipmap/ic_launcher_ring_round"
+                android:targetActivity=".AppActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
 
-        <!-- The launcher shortcuts' target: invisible, in a task of its own, it hands the shortcut to MainActivity
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <meta-data android:name="android.app.shortcuts" android:resource="@xml/shortcuts"/>
+        </activity-alias>
+
+        <!-- The launcher shortcuts' target: invisible, in a task of its own, it hands the shortcut to AppActivity
              without the task clear a static shortcut always asks for, which would end a running workout. -->
         <activity
                 android:excludeFromRecents="true"

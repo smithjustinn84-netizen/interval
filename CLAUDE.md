@@ -102,7 +102,8 @@ core/
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
-                     `AppInfo`, `Sharer`, `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
+                     `AppInfo`, `Sharer`, `AppIconSwitcher` (`AppIcon.kt`: which icon the app wears, the kettlebell
+                     or the ring, and each platform's way to change it), `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
                      iOS's Lock Screen and Dynamic Island, worded and timed, and the `LiveActivityRelay` iosApp points
                      at Swift's), `Speaker` (the device's voice, both sides', and `SpokenLines`, which
                      words a side's lines one at a time), `ToneSynth` and `TonePlayer` (the app's six tones,
@@ -267,7 +268,8 @@ apps/
                      (Set up, the one page that writes both sides' stores, so the one feature the app holds),
                      `app_name` and `app_icon`. What `androidApp`, `iosApp` and `desktopApp` depend on
   androidApp         Android host application: `IntervalApplication` (starts the container, and keeps the widget
-                     drawn), AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore, `ShortcutActivity`,
+                     drawn), `AppActivity` (the one screen, behind the launcher's two aliases, one an app icon),
+                     AndroidManifest.xml, res/, launch theme, ProGuard rules, keystore, `ShortcutActivity`,
                      and the home-screen widget (`widget/`: Glance's `WeekWidget` and its receiver, the ring drawn
                      on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn, `WidgetPreview`
                      publishing the picker's preview once a version on Android 15+; its words in
@@ -513,7 +515,18 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   rendered: `tools/render_icon_3d.py` models a kettlebell with the mark's ring on its face in Blender (the mark's
   arcs, hand and hub, `PhaseColors`' colours) and composes the light, dark and tinted icons, and the foreground of
   Android's adaptive icon (`mipmap-*/ic_launcher_foreground_3d.png`, inside the safe circle; its 1024 px master in
-  `tools/icon3d/`). Android's background, monochrome layer and splash mark stay the flat mark's. The animated intro
+  `tools/icon3d/`). Android's background, monochrome layer and splash mark stay the flat mark's.
+  The flat mark is the app's other icon, picked in Settings' Appearance group ("App icon": Kettlebell or Ring)
+  through `AppIconSwitcher` (`core-platform`, bound in `corePlatformModule`; its `icon` null, as on the desktop,
+  shows no row; nothing of the choice is stored, the platform keeps it). iOS's is an alternate icon set,
+  `AppIconRing.appiconset` (`generate_icons.py`'s, listed in the Xcode project's
+  `ASSETCATALOG_COMPILER_ALTERNATE_APPICON_NAMES`), set with `setAlternateIconName`, which iOS says in an alert of its
+  own. Android's is which launcher `<activity-alias>` is enabled: `.MainActivity` (the kettlebell, enabled as
+  installed, the name the activity had so a pinned icon survives the update) and `.MainActivityRing`
+  (`ic_launcher_ring`), both over `AppActivity`, which only the app starts by name. Disabling the alias the task was
+  opened through ends the task, so the app closes a moment after a pick (`closesApp`, which Settings asks about
+  first); the process lives on. So nothing may hold a launcher entry's name: `openAppIntent` names the activity
+  behind it, as `ShortcutActivity` does. A third icon is an `AppIcon`, an alias, an icon set and a label. The animated intro
   (`interval/interval-ui/src/splash/`) draws the same mark in code (`IntervalMark.kt`, keep its numbers in step) and
   opens on exactly Android's splash and iOS's launch screen, so the hand-off is seamless.
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin

@@ -1,5 +1,5 @@
 <resources>
-    <!-- The launch theme. installSplashScreen() in MainActivity switches to postSplashScreenTheme.
+    <!-- The launch theme. installSplashScreen() in AppActivity switches to postSplashScreenTheme.
          The icon on ground is the intro's first frame (interval/interval-ui/src/splash/), which takes over seamlessly. -->
     <style name="Theme.Interval.Starting" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/ground</item>

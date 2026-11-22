@@ -6,7 +6,8 @@ import platform.Foundation.NSBundle
 
 /**
  * What both sides take from iOS: Apple Health is the health store, the speech synthesizer the voice, AVAudio the
- * tones. The Live Activities are a [LiveActivityRelay] the app points at Swift's once it starts (`WidgetFeed.kt`).
+ * tones, its alternate icons the app icon's choice. The Live Activities are a [LiveActivityRelay] the app points
+ * at Swift's once it starts (`WidgetFeed.kt`).
  */
 fun corePlatformModule(): Module = module {
     includes(
@@ -16,6 +17,7 @@ fun corePlatformModule(): Module = module {
             health = { HealthKitStore() },
             speaker = { IosSpeaker() },
             tones = { IosTonePlayer() },
+            appIcons = { IosAppIconSwitcher() },
         ),
     )
     single { LiveActivityRelay() }

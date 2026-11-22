@@ -28,6 +28,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
 import dev.justinsmith.interval.model.ThemeMode
+import dev.justinsmith.interval.platform.AppIcon
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.NearbySensor
 import dev.justinsmith.interval.platform.SensorStatus
@@ -60,6 +61,8 @@ class SettingsScreenTest {
         inPane: Boolean = false,
         sensor: SensorStatus = SensorStatus.Unavailable,
         choices: List<NearbySensor> = emptyList(),
+        appIcon: AppIcon? = null,
+        iconClosesApp: Boolean = false,
     ) {
         SettingsScreen(
             state = state,
@@ -71,6 +74,7 @@ class SettingsScreenTest {
             onSetTheme = { calls += it },
             onShowAbout = { calls += "about" },
             inPane = inPane,
+            appIcon = AppIconRow(appIcon, iconClosesApp, onPick = { calls += it }),
             onShowPlan = { calls += "plan" },
             onShowSetup = { calls += "set up" },
             onSetWeight = { calls += "weight $it" },
@@ -285,6 +289,39 @@ class SettingsScreenTest {
         onNodeWithText("Dark").assertIsSelected()
         onNodeWithText("Light").performScrollTo().performClick()
         assertEquals(listOf<Any>(ThemeMode.Light), calls)
+    }
+
+    @Test
+    fun `the app icon picker shows the icon worn and picks another`() = runUiTest {
+        setThemedContent { Screen(appIcon = AppIcon.Kettlebell) }
+        scrollToText("App icon")
+        onNodeWithText("Kettlebell").assertIsSelected()
+        onNodeWithText("Ring").performScrollTo().performClick()
+        assertEquals(listOf<Any>(AppIcon.Ring), calls)
+    }
+
+    @Test
+    fun `where the app closes to change its icon the pick is asked about first`() = runUiTest {
+        setThemedContent { Screen(appIcon = AppIcon.Kettlebell, iconClosesApp = true) }
+        scrollToText("App icon")
+        onNodeWithText("Ring").performScrollTo().performClick()
+        onNodeWithText("Change the app icon?").assertExists()
+        onNodeWithText("Cancel").performClick()
+        assertEquals(emptyList<Any>(), calls)
+
+        onNodeWithText("Ring").performScrollTo().performClick()
+        onNodeWithText("Change").performClick()
+        waitForIdle()
+        assertEquals(listOf<Any>(AppIcon.Ring), calls)
+        onAllNodesWithText("Change the app icon?").assertCountEquals(0)
+    }
+
+    @Test
+    fun `no app icon is offered where the platform has one`() = runUiTest {
+        setThemedContent { Screen() }
+        scrollToText("Theme")
+        onAllNodesWithText("App icon").assertCountEquals(0)
+        onAllNodesWithText("Kettlebell").assertCountEquals(0)
     }
 
     @Test
