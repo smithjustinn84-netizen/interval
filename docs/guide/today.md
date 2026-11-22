@@ -8,12 +8,16 @@ coach would.
 ## From the top
 
 - **The day and its kind** over the title (a strength day, a sport's day, a rest day…), in that kind's colour.
-- **A coach's line**, only when there's something worth saying: a taxed day and why, a sport's day, done for
-  today, a rest day.
-- **The week**: a block a day, filled as you train, against your weekly goal.
+- **A coach's line**, led by an icon, only when there's something worth saying: a taxed day and why, a sport's
+  day, done for today, a rest day.
+- **The week**: a block a day, filled as you train, and a small ring beside *This week*, a segment a day toward
+  your weekly goal.
 - **The day in order**, on one card.
 
 ## The day in order
+
+The card opens on a picture of the day's kind: a strength day, conditioning, mobility, BJJ, climbing, running,
+another sport, rest, done, or nothing planned. With large text it's left out, so Start stays in view.
 
 Each step is a row. What is done is ticked. The first step still to do is numbered **01** and sits over the
 tab's one raised **Start**, which says how long it runs (or **Log it**, for a sport). The steps after it have

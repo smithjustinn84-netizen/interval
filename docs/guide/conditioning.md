@@ -57,8 +57,8 @@ of **Pause** and **+10s** at the top. In an interval's last seconds the clock pu
 
 It keeps running with the screen off and the app away. On Android 16 it's a Live Update in the status bar with
 Pause and End; on iOS a Live Activity on the Lock Screen and in the Dynamic Island with Pause or Resume and End,
-plus a notification at each change ahead. With a heart-rate sensor in use, a card under the ring shows your live
-beats, zone bars and — at a tap — your heart rate so far drawn over the zones (see
+plus a notification at each change ahead. With a heart-rate sensor in use, the ring's ticks take your zone's colour
+and a card under it shows your live beats, zone bars and — at a tap — your heart rate so far drawn over the zones (see
 [Health & sensors](health-and-sensors.md)).
 
 ## The summary

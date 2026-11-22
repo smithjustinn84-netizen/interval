@@ -28,5 +28,5 @@ New here? Start with [Getting started](getting-started.md).
 | [Conditioning & the Timer](conditioning.md) | Work and rest, sets, ladders, sequences, time caps, presets, cues |
 | [Mobility](mobility.md) | The nine flows and building your own |
 | [The Log & the plan](log-and-plan.md) | The week, the calendar, sport days, logging after the fact, moving a plan, reminders |
-| [Health & sensors](health-and-sensors.md) | Health Connect, Apple Health, heart rate, a Polar sensor for a class |
+| [Health & sensors](health-and-sensors.md) | Health Connect, Apple Health, a heart-rate strap, a Polar sensor for a class |
 | [Your data](your-data.md) | Export, import, backup, widgets and shortcuts |

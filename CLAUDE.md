@@ -196,7 +196,8 @@ interval/            the interval timer
   interval-today     Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`, named Home since Lift's tab is
                      `TodayRoute`; `todayModule`, di/): the week, what is up next and the presets that fit a few
                      minutes, with the flow that does (`QuickPicks.kt`), over History's log (`history/UpNext.kt`,
-                     `TodayAgenda.kt`), so the one feature over `interval-history`; and the card that records a
+                     `TodayAgenda.kt`), so the one feature over `interval-history`; the plate at the top of its
+                     card (`DayHeroArt.kt`, the JPEGs in its `composeResources/drawable/`); and the card that records a
                      class on a sensor (`sensor/`: `ClassSensorCard`, `ClassSensorViewModel`)
 
 lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
@@ -257,7 +258,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      unified exercise animation every built-in is shown by (`demo/`: built on `core`'s `BodyPose` /
                      `BodyFrame` / `ExerciseRep` kinematics and organic-silhouette `ExerciseDemoCanvas` / `ExerciseDiagram`
                      renderer — contoured torso, limbs, sculpted kettlebell/barbell shading, ground shadow, breathing,
-                     drive glow, tapered trail, cutaway halos, no joint dots, and `DemoDisplayMode.Detail` plumb line &
+                     drive glow, tapered trail, a soft cast shadow where a far limb passes behind, no joint dots (core's
+                     `BodySilhouette`/`BodyLimbs`/`BodyFront` the anatomy, `BodyShading` the studio light, `BodyProps`
+                     the gear), and `DemoDisplayMode.Detail` plumb line &
                      dashed trajectory; `Exercise.rep` in `ExerciseReps.kt`, `CustomExercise.figure` for user exercises,
                      `RepFacing.Side` / `Front` / `Above` in `FrontDemos.kt`, `RepSetUp`, `RepProp` benches/walls/rails/bands,
                      `RepPlayer`, `PhaseTrack`, `Celebration` raised bell or bow on record sets, and `follows`/`crop` framing),
@@ -469,11 +472,16 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   flow to do before the sport (`UpNextItem.Flow`, which `upNext` adds until mobility is done that day and History
   leaves out), then the sport. Today lays that out as a coach would (`today/TodayPlan.kt`, pure: `todayPlan` of the
   agenda and what is done today, `DoneStep`s from the log's day): over the title the day and its kind (`DayCaption`,
-  `TabGrid`'s `eyebrow`), under it the one thing worth saying of it (`CoachLine`, from `TodayPlan.note`: a taxed day
+  `TabGrid`'s `eyebrow`), under it the one thing worth saying of it (`CoachLine`, led by an icon in a tinted disc, `CoachBadge`, from `TodayPlan.note`: a taxed day
   and why, a sport's day, done, a rest day; on a plain training day where today takes the week while the goal is
   short, else how much the day holds, so the cards under it never move up a line), the week as a block a day
   (`WeekDots`, today's ticked only once its steps are done; each state its own shape: a check, a dashed ring, a
-  slash, and a rest day no block at all), then the day in order on one card (`today/DayCard.kt`, a row a step with a hairline between: what is
+  slash, and a rest day no block at all; the goal as a ring of a segment a day beside "This week", `WeekMiniGoalRing`),
+  then the day in order on one card (`today/DayCard.kt`, a row a step with a hairline between, under a plate of the
+  day's kind, `DayHeroBand` of `DayKind.art`, a `DayArt` each for strength, conditioning, mobility, BJJ, climbing,
+  running, another sport, rest, done and nothing planned, which `DoneCard`, `RestCard` and the empty cards wear too:
+  in dark it dissolves into the card, in light it is a framed pine plate over a hairline, and under large text it
+  is left out so Start stays in view; nothing in it is read, the words carry the day: what is
   done ticked, the first step numbered "01" over the tab's one raised Start, which says how long it runs, or Log it,
   the steps after it behind quiet buttons of one width, the program's day stood back behind a class under "If there
   is time"). The day goes by a colour, its kind's tone (`DayKind.tone`, pure: the accent for strength, a sport's day

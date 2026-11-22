@@ -7,6 +7,13 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Live heart rate on iPhone too. Any Bluetooth heart-rate strap or armband pairs in Settings and shows your heart
+  rate in workouts and Lift sessions as it does on Android, while the app is on screen; locked, it lets go and
+  connects again when you come back. It records no class.
+- Your heart on the ring. With a heart-rate strap streaming, the workout's ring and the rings of Lift's EMOM and
+  density pages take your zone's colour in their ticks, and a bezel of marks grows outside the band, bolder and
+  longer the higher the zone. The time left stays on the arc and the clock, so one look says both. It fades in when
+  the strap first reads a heart and out when it stops; the number stays under the ring, or on the badge in Lift.
 - The log as a spreadsheet, and a nudge to back it up. Settings' Export a spreadsheet writes a CSV with a row for
   each workout, sport day, Lift session and set (date and time, name, lift, side, weight in your unit, reps,
   minutes, effort, note, heart rate), to open in a spreadsheet or send to a coach; it isn't for importing. Export
@@ -52,7 +59,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   that classes on the mat will tune. The class's row in the Log says its rounds and opens it again; its page
   deletes the recording and leaves the day logged. Classes go in the export (schema 14) and stay on the device.
   Run against a Verity Sense on a Pixel for a few minutes (pairing, recording, sync), not yet through a class.
-  iOS offers no sensor yet.
+  iOS records no class.
 - A time cap on the Timer: as many rounds as you can in so many minutes. Work's sheet makes the workout one, and
   the editor makes any block of a sequence one ("10 min cap, 2 min rest, 10 min cap"). It runs as one countdown
   with a big Round done under the ring, which counts the rounds as you tap it, with the best of the same workout
@@ -321,6 +328,19 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   is finished and empties at Monday's midnight without the app.
 
 ### Changed
+- Today has a picture at the top of its card for the kind of day it is: a strength day, conditioning, mobility,
+  BJJ, climbing, running, another sport, a rest day, a day done, or nothing planned. In dark mode it fades into the
+  card; in light it is a dark plate over the card. It's left out with large text, so Start stays in view. The week
+  has a small ring beside "This week", a segment a day toward your goal, and the coach's line starts with an icon.
+- The exercise figure is redrawn: a sculpted, shaded athlete in place of the rounded outline, lit from above and in
+  front, with a cast-iron bell, a shadow on the floor, and a soft shadow where a far arm or leg passes behind. It is
+  the same figure everywhere, from an exercise's page to a list's thumbnail and a share card.
+- A record, a set that tops a ladder and an EMOM's last set land with a shockwave: one sharp ring out from the
+  moment, ahead of the record's burst. Dragging along a rep's track under an exercise's figure clicks under your
+  thumb at each point where one part of the rep turns into the next.
+- Settings' App icon shows the two icons as cards, as your Home Screen would, the one you wear ringed and ticked.
+  Each leans under your finger with light sliding over it. On Android, where changing the icon closes the app, a
+  note under them says so before you pick.
 - The desktop is no longer offered as a platform. Its window stays as the developer harness for Compose
   Hot Reload and UI checks; Android and iOS are the apps.
 - A new look: Track & Chalk. Dark mode is the pine of a track's infield after dark, light mode chalk, with a

@@ -536,11 +536,16 @@ The visual identity is defined in `core/core/src/ui/`:
     beats under the thumb, and the next lift's figure on the session card raising what it holds or taking a bow,
     a one-rep `ExerciseDemo` built from where it stood by lift-ui's `Celebration`), `rememberCountdownPulse` (an interval's last seconds: the clock pops and the ring's
     stroke swells with each beep, a `Haptic.Countdown` tick with them; Lift's rest band the same; before them the
-    ring's dial heats over the interval's last ten seconds, `RingDial`, its band drawn by a shader, `RingShader.kt`), a `Burst`
+    ring's dial heats over the interval's last ten seconds, `RingDial`, its band drawn by a shader, `RingShader.kt`;
+    with a strap streaming its ticks and a bezel outside it take the zone's colour, `RingZone`, on the workout's
+    ring and Lift's EMOM and density rings), a `Shockwave` (one hard front out from a record's row, a set that tops
+    a ladder or an EMOM's last set, `SHOCKWAVE_SKSL`, ahead of the record's `Burst`), a `Burst`
     of the new phase's colour from the clock on each change of interval, `countUp` for both summaries' numbers,
     `FinishHaptic` as a summary lands (firmer for a record or the week's goal), `StreakBadge` rolling up a week
     as the streak grows, Today's week dots drawing a day on as it turns done, and the Log's goal ring igniting
     in the three phase colours with a `popOnce` as it closes on the goal.
+  - Touch: a card that leans under the finger with a sheen sliding over it (`Tilt.kt`'s `tilting` and `sheen`,
+    `SHEEN_SKSL`; Settings' app icon cards), and a rep's `PhaseTrack` that clicks at each checkpoint as it is dragged.
   - Accessibility: `prefersReducedMotion()` is respected for all looping animations and particle effects; the
     one-shot moments snap or fade under it, and haptics are untouched by it.
 - **Assets & Icons**:

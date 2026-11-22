@@ -21,13 +21,15 @@ Interval reads two things, each only if you allow it:
 Turn it off in Settings, or take the permission back, and nothing more is written; what was written stays.
 On iOS, refusing on Apple Health's sheet sends you to the Health app to change it.
 
-## Live heart rate (Android)
+## Live heart rate
 
-With a Polar sensor paired, a live pulse badge sits beside the gear on every tab (tap it for the sensor's sheet,
-battery and Forget). During a workout your heart rate shows on a card under the ring: a dot beating in your
+Any Bluetooth heart-rate strap or armband pairs in Settings, on Android and on iPhone (where it reads while the
+app is on screen, and connects again when you come back to it). With one paired, a live pulse badge sits beside
+the gear on every tab (tap it for the sensor's sheet, battery and Forget). During a workout your heart rate shows on a card under the ring: a dot beating in your
 zone's colour, the beats a minute, the zone by number and name, and the five zones as bars in their colours, the
-one you are in lit. A Lift session shows it as a badge in its title bar and on its EMOM and density clocks, and
-its summary draws the session's heart rate and the time in each zone. The zones are worked out from the max heart
+one you are in lit. The ring says it too: its ticks take your zone's colour and a bezel of marks grows outside it,
+bolder the higher the zone, while the arc and the clock keep the time. A Lift session shows it as a badge in its
+title bar and on its EMOM and density clocks, whose rings wear the same bezel, and its summary draws the session's heart rate and the time in each zone. The zones are worked out from the max heart
 rate set in Settings, the same on both.
 
 Tap the card and the bars turn into your heart rate so far, drawn over the zones with each work interval shaded;
@@ -54,9 +56,9 @@ stays in place unlit with the last reading) and the sensor is tried again until 
 
 ## A class on a sensor (Android 12+)
 
-Any heart-rate chest strap or armband that speaks Bluetooth's standard heart-rate service (Polar's, Garmin's,
-Wahoo's and most others) pairs in Settings and shows your heart rate live in workouts and Lift sessions. A **Polar
-Verity Sense** or a **Polar H10** also records a whole class with the phone in your bag. One is paired at a time:
+Any strap that speaks Bluetooth's standard heart-rate service (Polar's, Garmin's, Wahoo's and most others) shows
+your heart rate live, as above. On Android a **Polar Verity Sense** or a **Polar H10** also records a whole class
+with the phone in your bag. One is paired at a time:
 
 1. **Pair** it in Settings, under *Body and heart rate*. The app asks for leave to reach nearby devices; it never
    asks for your location.
@@ -71,5 +73,5 @@ Deleting the recording leaves the day logged.
 
 !!! note
     Tried on a real Verity Sense for pairing, recording and syncing, not yet through a whole class. An H10 has paired and shown the heart rate live through a workout; its class
-    recording is not yet tried. iOS doesn't
-    offer a sensor yet.
+    recording is not yet tried. On iPhone a strap shows the
+    heart rate live but records no class.

@@ -97,6 +97,6 @@ on Android and iOS.** Everything stays on your device: no account, no analytics,
 | Platform | What you get |
 |---|---|
 | **Android** | The whole app, Health Connect, Live Updates on Android 16, a home-screen widget, shortcuts, a Polar heart-rate sensor (Android 12+) |
-| **iOS** | The whole app, Apple Health, Live Activities on the Lock Screen and in the Dynamic Island, Home Screen and Lock Screen widgets, quick actions |
+| **iOS** | The whole app, Apple Health, Live Activities on the Lock Screen and in the Dynamic Island, Home Screen and Lock Screen widgets, quick actions, a heart-rate strap's live reading |
 
 Building it yourself? See [Developers](developers/index.md).

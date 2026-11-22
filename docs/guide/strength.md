@@ -41,7 +41,7 @@ sets, each lift's pace and your rest between sets.
 ## A session
 
 Log each set's load (a visual kettlebell rack for one bell or two, a barbell plate loader, bodyweight plus a load,
-or a band) and reps; the rest timer starts on its own. With a Polar sensor paired on Android, a live heart-rate
+or a band) and reps; the rest timer starts on its own. With a heart-rate strap paired, a live heart-rate
 card sits under the session's numbers and rests read whether your heart is *high*, *easing* or *ready*. A block
 can be:
 
