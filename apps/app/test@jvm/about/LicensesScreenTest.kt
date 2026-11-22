@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.waitUntilExactlyOneExists
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.runUiTest
@@ -32,5 +33,14 @@ class LicensesScreenTest {
         onNodeWithText("Barlow").assertHasClickAction().performClick()
         waitUntilExactlyOneExists(ofl)
         onNodeWithText("SQLite").assertHasNoClickAction()
+    }
+
+    @Test
+    fun `the heart-rate sensor's SDK opens to Polar's licence agreement`() = runUiTest {
+        setThemedContent { LicensesScreen(onBack = {}) }
+        onNodeWithText("Polar BLE SDK").performScrollTo()
+        onNodeWithText("Polar SDK License Agreement · Polar Electro Oy").assertIsDisplayed()
+        onNodeWithText("Polar BLE SDK").performClick()
+        waitUntilExactlyOneExists(hasText("SOFTWARE DEVELOPMENT KIT LIMITED LICENSE AGREEMENT", substring = true))
     }
 }

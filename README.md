@@ -116,7 +116,7 @@ Built with **Compose Multiplatform** for **Android** and **iOS**, powered by the
 ### 🔒 Privacy-First & Offline
 - **Zero Tracking**: No accounts, no sign-ups, no ads, and zero analytics or telemetry.
 - **Local SQLite Storage**: Encapsulated Room multiplatform databases running locally on device storage with atomic transactions and foreign-key integrity.
-- **Full Data Ownership & Portability**: Export your entire workout history, sport days, presets, sequences, routines, settings, Lift sessions, programs, exercises, gear, your own flows, and recorded classes to versioned JSON (schema 15), and import files from schemas 1–15 safely with duplicate prevention and domain range validation.
+- **Full Data Ownership & Portability**: Export your entire workout history, sport days, presets, sequences, routines, settings, Lift sessions, programs, exercises, gear, your own flows, and recorded classes to versioned JSON (schema 16), and import files from schemas 1–16 safely with duplicate prevention and domain range validation.
 - **Android Backup Support**: Native integration with Android system backup and device-to-device migration.
 - **Accessibility**: Semantic headings, full TalkBack and VoiceOver navigation, and reduced-motion mode.
 
@@ -160,7 +160,7 @@ interval/
 ├── lift/                # Lift, the strength side (code in dev.justinsmith.lift)
 │   ├── lift-domain/     # Exercises, programs, estimates, starter program, clocks, PRs, grip, readiness & challenges
 │   ├── lift-api/        # The ports between sides (LiftActivity, IntervalActivity)
-│   ├── lift-data/       # Room database (LiftDatabase v18), per-store repositories
+│   ├── lift-data/       # Room database (LiftDatabase v19), per-store repositories
 │   ├── lift-platform-api/ # What Lift's features ask of the platform: Beeper, LiftVoice, SessionKeepAlive
 │   ├── lift-platform/   # ToneBeeper, TimerService keep-alive, platform Koin module
 │   ├── lift-ui/         # Lift widgets, exercise formatters, BalanceBars, cues mapping

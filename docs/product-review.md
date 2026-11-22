@@ -27,6 +27,7 @@ Fix these before tagging `v0.6.0` or uploading to Play.
 - **Where**: `apps/app/src/about/Credits.kt`
 - **Issue**: `interval/interval-platform/module.yaml` pulls `com.github.polarofficial:polar-ble-sdk:8.6.0` (along with transitive RxJava, Retrofit, and Protobuf), and `apps/androidApp` / `core/core-platform` ship AndroidX Glance and Health Connect—none of which are listed in `libraryCredits` or bundled license texts.
 - **Fix**: Audit shipped runtime artifacts across Android and iOS, add Polar BLE SDK (and any required transitive notices) plus Glance and Health Connect to `Credits.kt`, and include required license files in `apps/app/composeResources/files/`.
+- **Done (2026-11-22)**: audited from `./kotlin show dependencies -m androidApp` and each artifact's POM (iOS ships a subset of the same). `libraryCredits` now has Glance, WorkManager and Health Connect beside Jetpack's, and Polar's SDK and what it brings: Protocol Buffers (BSD 3-Clause, also inside DataStore, Glance and Health Connect), RxJava, Reactive Streams (CC0), Retrofit and OkHttp, Gson and FlatBuffers, Apache Commons IO (with its NOTICE), Guava and the Checker Framework qualifiers (MIT), and the annotation jars. Polar's own agreement asks for its notice in every copy, so its text ships whole (`files/polar-sdk-license.txt`, taken from the SDK's 8.6.0 tag), as do Protobuf's, Checker's and Commons IO's. A credit whose licence text opens with its holder's copyright names its own file (`Credit.file`).
 
 ### B2. Unreleased changelog pile-up
 - **Where**: `CHANGELOG.md`, `docs/sprint-0.6.md`
@@ -45,6 +46,7 @@ Fix these before tagging `v0.6.0` or uploading to Play.
   - `LiftDatabase` is documented as **v18** in `README.md`, but `LiftDatabase` is **v19** (`lift/lift-data/src/data/LiftDatabase.kt`).
   - Built-in programs are documented as **27** in `README.md` and `docs/index.md`, while `BuiltInPrograms.kt` defines **34** `ProgramId`s (**29** active after filtering the 5 `retiredPrograms`).
 - **Fix**: Sync counts across `README.md` and `docs/index.md`, or avoid repeating volatile counts in prose where a single source of truth suffices.
+- **Done (2026-11-22)**: the programs read 17 offered since **C3**; `README.md` now says export schema 16 and `LiftDatabase` v19.
 
 ---
 
@@ -106,11 +108,13 @@ Targeted fixes for the sharpest daily user friction.
 - **Where**: `apps/app/src/weeksetup/BuiltWeek.kt`, `WeekSetupScreen.kt`, `lift/lift-domain/src/domain/StarterProgram.kt`
 - **Issue**: `BuiltWeek.kt` returns `program = null` whenever `answers.bells.isEmpty()`, leaving bodyweight, barbell, band, and conditioning-only users with no starter program even though the app already ships those programs. Climbing and Running also fall back to generic beginner KB programs.
 - **Improvement**: Ask what equipment the user has (Kettlebells, Barbell, Bands, Pull-up bar, Bodyweight / Floor, Conditioning only) and pair Climbing and Running with tailored starter tracks.
+- **Done (2026-11-22)**: built in `3992a313` (Set up asks the equipment, and Climbing and Running have tracks of their own).
 
 ### P3. Post-workout editing & Log search/filtering
 - **Where**: `interval/interval-history/src/history/WorkoutDetailViewModel.kt`, `lift/lift-session/src/history/LiftDetailViewModel.kt`, `HistoryScreen.kt`
 - **Issue**: Once a workout or Lift session is saved, users cannot edit the effort rating, note, or correct a mistyped set/rep on the detail page. The Log's *All time* view also has no search or kind filter once months of entries accumulate.
 - **Improvement**: Add inline editing for effort, notes, and logged sets on detail pages, plus a compact filter bar (Strength / Conditioning / Mobility / Sport / PRs) and text search in Log.
+- **Done (2026-11-22)**: built in `169bdd11` (editing on both sides' detail pages, and the All-time Log's search and filters).
 
 ### P4. Warm-up set tagging in Lift
 - **Where**: `lift/lift-domain/src/domain/`, `lift/lift-session/src/session/LogSheet.kt`

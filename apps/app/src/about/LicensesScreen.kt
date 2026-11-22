@@ -98,7 +98,7 @@ private fun CreditList(credits: List<Credit>, modifier: Modifier = Modifier) {
 private fun CreditRow(credit: Credit, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     var expanded by rememberSaveable { mutableStateOf(false) }
-    val file = credit.license.file
+    val file = credit.file
     val licenseName = stringResource(credit.license.nameRes)
     val line = credit.holder?.let { stringResource(Res.string.common_joined, licenseName, it) } ?: licenseName
     val turn by animateFloatAsState(if (expanded) CHEVRON_OPEN_DEGREES else 0f, settleSpring(), label = "chevron")

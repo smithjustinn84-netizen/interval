@@ -19,8 +19,15 @@ class CreditsTest {
 
     @Test
     fun `every credit with a license text names a file under files`() {
-        val files = (fontCredits + libraryCredits).mapNotNull { it.license.file }
+        val files = (fontCredits + libraryCredits).mapNotNull { it.file }
         assertTrue(files.isNotEmpty())
         files.forEach { assertTrue(it.startsWith("files/") && it.endsWith(".txt"), it) }
+    }
+
+    @Test
+    fun `a licence whose text names its holder takes the credit's own file`() {
+        (fontCredits + libraryCredits)
+            .filter { it.license == License.Mit || it.license == License.Bsd3 }
+            .forEach { assertTrue(it.file != null, it.name) }
     }
 }

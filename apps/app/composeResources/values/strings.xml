@@ -58,6 +58,9 @@
     <string name="license_ofl">SIL Open Font License 1.1</string>
     <string name="license_apache">Apache License 2.0</string>
     <string name="license_mit">MIT License</string>
+    <string name="license_bsd3">BSD 3-Clause License</string>
+    <string name="license_polar">Polar SDK License Agreement</string>
+    <string name="license_cc0">CC0 1.0 Universal</string>
     <string name="license_public_domain">Public domain</string>
 
 
