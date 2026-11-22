@@ -75,6 +75,22 @@ class ThemeContrastTest {
     }
 
     @Test
+    fun `an exercise demo's figure and bell stand out and its reference lines stay behind them`() {
+        palettes.forEach { (theme, p) ->
+            val demo = ExerciseDemoColors.of(p)
+            listOf(p.background, p.surface, p.surfaceVariant).forEach { ground ->
+                assertContrast(4.5, demo.body, ground, "$theme demo body on $ground")
+                assertContrast(3.0, demo.bell, ground, "$theme demo bell on $ground")
+                assertTrue(
+                    contrast(demo.reference, ground) < contrast(demo.bell, ground),
+                    "$theme demo reference lines are louder than the bell on $ground",
+                )
+            }
+            assertContrast(3.0, demo.joint, demo.body, "$theme demo joint on the body")
+        }
+    }
+
+    @Test
     fun `workout text reads where the system says it does`() {
         mapOf("light" to lightWorkoutColors, "dark" to darkWorkoutColors).forEach { (theme, w) ->
             listOf(w.ground, w.control).forEach { ground ->

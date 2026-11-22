@@ -186,6 +186,15 @@ object Sizes {
     val figureThumbWidth = 64.dp
     val figureThumbHeight = 48.dp
 
+    /**
+     * An [ExerciseDemoCanvas]'s telemetry: the dashes of its plumb line and of the bell's path, that path's stroke,
+     * and the stroke of the stretch the bell has just come along. The figure itself is sized by its canvas.
+     */
+    val demoDash = 3.dp
+    val demoDashGap = 5.dp
+    val demoPath = 1.5.dp
+    val demoTrail = 3.dp
+
     /** How tall the fade at the foot of a summary's scrolling column is while more of it lies below. */
     val summaryFade = 48.dp
 

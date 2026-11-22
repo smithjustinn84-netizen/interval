@@ -1,5 +1,7 @@
 package dev.justinsmith.interval.ui
 
+import kotlin.math.PI
+
 /** Angles in degrees, as Compose's arcs and rotations take them. */
 object Angles {
     const val FULL_TURN = 360f
@@ -8,4 +10,10 @@ object Angles {
 
     /** Where a dial starts: arcs measure from three o'clock, so twelve is a quarter turn back. */
     const val TWELVE_O_CLOCK = -QUARTER_TURN
+
+    /** [degrees] in radians, as `sin` and `cos` take them. */
+    fun radians(degrees: Float): Float = degrees * (PI / HALF_TURN).toFloat()
+
+    /** [radians] in degrees. */
+    fun degrees(radians: Float): Float = radians * (HALF_TURN / PI).toFloat()
 }
