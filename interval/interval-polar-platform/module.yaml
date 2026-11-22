@@ -1,0 +1,28 @@
+# Android's heart-rate sensor, through Polar's SDK: a Verity Sense or H10 a class is recorded on (its offline
+# recording, synced after) and the heart rate live from it for a workout or a session (`PolarClassSensor`, the
+# `ClassSensor` and `LiveHeartRate` the app binds on Android, `polarSensorModule`). Apart from `interval-platform` so
+# the SDK, and what it brings (RxJava, Retrofit, Protobuf), is held to one module: only the app's Android side
+# depends on it, and the other platforms bind `NoClassSensor`.
+description: "Android's heart-rate sensor through Polar's SDK: a class recorded on it, and the live heart rate"
+product:
+  type: kmp/lib
+  platforms: [android]
+
+apply:
+  - //templates/lib.module-template.yaml
+
+dependencies:
+  # `ClassSensor` and the `ClassRecording` a sync hands over, and the samples it is reduced to.
+  - //interval/interval-platform-api
+  # `LiveHeartRate`, the clock, and `catchingFailures`.
+  - //core/core-platform
+  - $libs.koin.core
+  - $libs.kermit
+  # ContextCompat and SharedPreferences' edit, for the Bluetooth permissions and the paired sensor.
+  - $libs.androidx.core.ktx
+  # Polar's SDK: pairing, the live stream, the Verity's offline recording and the H10's exercise.
+  - $libs.polar.ble.sdk
+
+# Polar publishes its SDK on JitPack alone.
+repositories:
+  - https://jitpack.io

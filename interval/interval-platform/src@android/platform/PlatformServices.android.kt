@@ -27,11 +27,6 @@ fun platformModule(context: Context): Module = context.applicationContext.let { 
             onClose { it?.release() }
         }
         single<BackgroundWorkout> { AndroidBackgroundWorkout(app) }
-        single { PolarClassSensor(app, get()) }.withOptions {
-            onClose { it?.close() }
-        }
-        single<ClassSensor> { get<PolarClassSensor>() }
-        single<LiveHeartRate> { get<PolarClassSensor>() }
         // One record of the alarms per process: DataStore's rule of one instance per file.
         single { PlanAlarms(app, planAlarmStore(app), get()) }
         single<PlanReminders> { AndroidPlanReminders(get()) }

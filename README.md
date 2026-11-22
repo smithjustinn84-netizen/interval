@@ -145,7 +145,8 @@ interval/
 │   ├── interval-domain/       # Timer engine, multi-block courses, mobility flows, sport days, calories, parsers
 │   ├── interval-data/         # Room database (AppDatabase v20), DataStore settings, per-store repositories
 │   ├── interval-platform-api/ # What features ask of the platform: cue player, workout off screen, reminders
-│   ├── interval-platform/     # Audio/speech cues, Android Foreground Service, iOS notifications, the Polar sensor
+│   ├── interval-platform/     # Audio/speech cues, Android Foreground Service, iOS notifications
+│   ├── interval-polar-platform/ # Android's Polar heart-rate sensor, the one module with Polar's SDK
 │   ├── interval-ui/           # Shared workout widgets, Timeline, PhaseColors, animated Splash
 │   ├── interval-testing/      # FakeStorage, RecordingCuePlayer, fake DAOs, in-memory stores
 │   ├── interval-timer/        # Precision Timer page, time caps and sequences

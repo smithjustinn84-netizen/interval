@@ -73,6 +73,8 @@ test-dependencies@jvm:
 # in release builds too; R8 strips what the app never calls.
 dependencies@android:
   - $compose.uiTooling
+  # The heart-rate sensor, Polar's: the one module that carries Polar's SDK, bound on Android alone.
+  - //interval/interval-polar-platform
 
 settings:
   compose:

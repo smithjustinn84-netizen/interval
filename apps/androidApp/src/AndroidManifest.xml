@@ -27,7 +27,7 @@
     <uses-permission android:name="android.permission.health.WRITE_TOTAL_CALORIES_BURNED"/>
     <uses-permission android:name="android.permission.health.READ_WEIGHT"/>
     <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
-    <!-- The heart-rate sensor a class is recorded on (PolarClassSensor, in interval-platform), found and reached
+    <!-- The heart-rate sensor a class is recorded on (PolarClassSensor, in interval-polar-platform), found and reached
          over Bluetooth to set it recording and to sync it. Android 12's permissions, asked at runtime before a
          sensor is paired, set recording or synced; nothing is worked out from what a scan finds, so no location. Below Android 12 Bluetooth would
          need location, and the sensor is not offered. -->

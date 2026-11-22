@@ -57,6 +57,7 @@ graph TD
 
     subgraph platformServices ["Platform services"]
         intervalPlatform["interval-platform"]
+        intervalPolarPlatform["interval-polar-platform"]
         liftPlatform["lift-platform"]
     end
 
@@ -89,6 +90,7 @@ graph TD
     app --> intervalWorkout
     app --> liftNav
     app --> intervalPlatform
+    app --> intervalPolarPlatform
     app --> liftPlatform
 
     intervalHistory --> intervalUi
@@ -125,6 +127,8 @@ graph TD
 
     intervalPlatform --> intervalData
     intervalPlatform --> intervalPlatformApi
+    intervalPolarPlatform --> intervalPlatformApi
+    intervalPolarPlatform --> corePlatform
     liftPlatform --> liftData
     liftPlatform --> liftPlatformApi
 
@@ -480,7 +484,7 @@ flowchart TD
   as a number (`HeartLoad`, `heavyHeartDay`), since `lift-domain` depends on nothing: the app's
   `IntervalActivity` works out the interval side's, `lift-data`'s `heartLoads` Lift's own. CLAUDE.md has the detail.
 - **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the armband a class is recorded on. Android's
-  `PolarClassSensor` (`interval-platform`) drives a Polar Verity Sense's offline recording, or an H10's exercise recording (the heart rate alone), through
+  `PolarClassSensor` (`interval-polar-platform`) drives a Polar Verity Sense's offline recording, or an H10's exercise recording (the heart rate alone), through
   Polar's SDK;
   iOS and desktop bind `NoClassSensor`. A sync hands a `ClassRecording` of five-second `ClassSample`s to its
   `keep`, which stores it with `HistoryStore.keepClass` (`sport_class`, the one write that is waited on) before the

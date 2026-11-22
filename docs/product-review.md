@@ -88,6 +88,7 @@ Reduce maintenance drag before it calcifies after `1.0`.
 - **Where**: `interval/interval-platform/module.yaml`
 - **Issue**: `polar-ble-sdk` on JitPack brings RxJava, Retrofit, and Protobuf into `androidApp`, supports only two Polar models, and has no iOS implementation.
 - **Action**: Decouple live heart-rate streaming onto standard BLE GATT (`0x180D`, see **F1**) so live HR has zero third-party SDK overhead on both Android and iOS, leaving the Polar SDK scoped strictly to on-sensor class recording (or an optional flavor/module).
+- **Done (2026-11-22), the module half**: Polar's SDK is held to `interval-polar-platform`, an Android-only module of `PolarClassSensor`, `PolarHeartStream`, `PolarRecorders` and `polarSensorModule`, which the app folds into the interval platform's on Android alone; `interval-platform` no longer carries the SDK or names JitPack. Nothing behaves differently. The SDK still ships in `androidApp`, since class recording needs it. Live heart rate over GATT `0x180D` is left to **F1**, with pairing for any strap, the iOS side and the hardware testing it needs.
 
 ---
 

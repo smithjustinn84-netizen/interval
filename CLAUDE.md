@@ -149,8 +149,13 @@ interval/            the interval timer
                      `ClassSensor` (the heart-rate sensor a class is recorded on: pair, record, sync)
   interval-platform  implements it: `reminderWords`, `SpeechQueue`, `StatusBar`, and each platform's
                      `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
-                     (android), and Android's `PolarClassSensor` (Polar's SDK, from JitPack, which the module
-                     names as a repository). Over `core-platform`, not `core`; only `app` depends on it
+                     (android). Over `core-platform`, not `core`; only `app` depends on it
+  interval-polar-platform  Android's heart-rate sensor, Android alone: `PolarClassSensor` (`ClassSensor` and
+                     `LiveHeartRate`), `PolarHeartStream`, `PolarRecorders` and `polarSensorModule`, over Polar's SDK
+                     (from JitPack, which the module names as a repository), so the SDK and what it brings (RxJava,
+                     Retrofit, Protobuf) are held to one module. Only `app`'s Android side depends on it, folding
+                     `polarSensorModule` into the interval platform's (`AppKoin.android.kt`); the other platforms bind
+                     `NoClassSensor` in their `platformModule`
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`, `SnatchQuestion`:
                      "About how many snatches a set?", the summary's and the Log page's, over `lift-domain`'s bell
@@ -373,8 +378,8 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   (`appModules`) from each side's modules: `storageModule`/`dataModule` in `interval/interval-data/src/di/`,
   `historyModule` in `interval/interval-history/src/di/` (and each feature's own, as `todayModule`), `liftModules` in `lift/lift-data/src/di/`, and the three
   platform modules: core's `corePlatformModule` (what both sides take: the clock, ids, formatter, `AppInfo`, `Sharer`),
-  `interval-platform`'s `platformModule` and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a
-  `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
+  `interval-platform`'s `platformModule` (on Android with `interval-polar-platform`'s `polarSensorModule` folded
+  in) and `lift-platform`'s `liftPlatformModule`, plain functions (Android's of a `Context`). `initAppKoin` starts it (`startKoin`, once): Android's `IntervalApplication.onCreate`, desktop's
   `main` (which drains both repositories and stops it as the window closes), iOS's `AppDelegate` at launch
   (through `startWidgetFeed`, the widget's feed; the first `App()` otherwise, as Hot Reload's entry point has it). It is never
   closed on Android or iOS, so services and receivers can reach it. Only `apps/` may import `startKoin`,
@@ -686,7 +691,7 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
 - **A class on a heart-rate sensor**: `ClassSensor` (`interval-platform-api`) is the port: `status` (Unavailable,
   Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync(keep)`, each reaching the sensor for as
   long as it takes and letting it go. A sync hands the recording to `keep` and clears the sensor only once that
-  returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-platform`, a Polar Verity Sense
+  returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-polar-platform`, a Polar Verity Sense
   or H10, one paired at a time and told apart by its name, with both in reach the one picked on Settings' "Which sensor?" sheet (`pair(choose)`, the scan going on a few seconds past the first heard), through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`, the live stream giving
   way to a recording's start or its sync: the Verity's offline
   recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart

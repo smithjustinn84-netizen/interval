@@ -137,7 +137,7 @@ To change one later (a new password, say), run its command again: `gh secret set
    review.
    The heart-rate sensor adds `BLUETOOTH_SCAN` (flagged `neverForLocation`) and `BLUETOOTH_CONNECT`, runtime
    permissions with no Play declaration of their own; the Data safety form's answer stays "no data collected or
-   shared", since a class's heart rate never leaves the device. Polar's SDK (`interval-platform`, from JitPack)
+   shared", since a class's heart rate never leaves the device. Polar's SDK (`interval-polar-platform`, from JitPack)
    brings protobuf, Retrofit and RxJava with it and ships its own consumer rules: run the R8 smoke test on a
    release build with a sensor paired before the first release that carries it.
 5. **Tag and upload.** `git tag v<version> && git push origin v<version>` (jj has no tags). The tag must be `v` +

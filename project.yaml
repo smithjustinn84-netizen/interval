@@ -21,6 +21,7 @@ modules:
   - interval/interval-mobility
   - interval/interval-platform
   - interval/interval-platform-api
+  - interval/interval-polar-platform
   - interval/interval-presets
   - interval/interval-settings
   - interval/interval-testing
