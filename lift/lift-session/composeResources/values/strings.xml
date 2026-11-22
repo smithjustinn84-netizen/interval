@@ -52,6 +52,8 @@
     <string name="log_fewer_reps">Fewer reps</string>
     <string name="log_more_reps">More reps</string>
     <string name="summary_done">Done</string>
+    <!-- The summary's way out, under its title "Done": a second Done would say nothing new. -->
+    <string name="summary_close">Close</string>
     <string name="summary_how_was_it">How was it?</string>
     <string name="session_easier_title">Easier today</string>
     <string name="session_easier_hard">Your last session felt very hard, and it was a day and a half ago at most</string>

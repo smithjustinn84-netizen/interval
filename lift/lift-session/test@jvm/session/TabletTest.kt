@@ -5,8 +5,6 @@ package dev.justinsmith.lift.session
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.unit.dp
@@ -59,12 +57,12 @@ class TabletTest {
     }
 
     @Test
-    fun `the summary shows Done without scrolling on a tablet either way up`() {
+    fun `the summary shows Close without scrolling on a tablet either way up`() {
         val finished = Finished(LiftSession("s", 0, 60_000, "Day 1", emptyList()), emptyList())
         for (window in listOf(Window.Tablet, Window.TabletPortrait)) {
             runUiTest(window) {
                 setThemedContent(dark = true) { SummaryScreen(finished, onDone = {}) }
-                onAllNodesWithText("Done").onLast().assertIsDisplayed()
+                onNodeWithText("Close").assertIsDisplayed()
                 onNodeWithText("Day 1").assertIsDisplayed()
             }
         }

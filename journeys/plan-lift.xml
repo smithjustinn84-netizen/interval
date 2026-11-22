@@ -17,7 +17,7 @@
     <action>Tap "Start"</action>
     <action>Tap "Log set"</action>
     <action>Tap "Finish"</action>
-    <action>Tap "Done"</action>
+    <action>Tap "Close"</action>
     <action>Tap the "Log" tab</action>
     <action>Tap today on the week strip</action>
     <action>Verify that the day sheet shows "Any lift session" reading "Done · Every" and today's weekday</action>

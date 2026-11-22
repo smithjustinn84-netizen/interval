@@ -242,7 +242,7 @@ class SessionFlowTest {
         onNodeWithText("New records").assertExists()
         onNodeWithText("1:30").assertExists()
         assertTrue(app.storage.sessions.sessions.value.single().finishedAtEpochMillis != null)
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         waitForText("Last session")
         onNodeWithText("Two-hand swing").assertExists()
     }

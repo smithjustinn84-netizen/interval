@@ -14,6 +14,6 @@
     <action>Pull down the notification shade and verify that the workout's notification reads "Work · 2 rounds done" under the clock</action>
     <action>Lock the screen and wait for the cap to end, about five minutes; verify that "Time. 2 rounds. Done. Nice work" is heard</action>
     <action>Unlock and verify that the summary reads "2 rounds in 5 min" with a line of the average, fastest and slowest round, and "Saved to your log"</action>
-    <action>Tap "Done", go back to the presets, open the "Log" tab and verify that the workout's row says "2 rounds"; tap it and verify "Rounds in 5 min" reads 2 with "A round" beside it</action>
+    <action>Tap "Close", go back to the presets, open the "Log" tab and verify that the workout's row says "2 rounds"; tap it and verify "Rounds in 5 min" reads 2 with "A round" beside it</action>
   </actions>
 </journey>

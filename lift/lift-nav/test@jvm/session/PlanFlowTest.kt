@@ -151,7 +151,7 @@ class PlanFlowTest {
         assertEquals("Goblet squat and row (yours)", saved.name)
         assertTrue(saved.days.contains("\"kg\":28.0"))
         assertEquals(1, app.storage.following.row.value?.daysBefore)
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         waitForText("Start day 2")
         onNodeWithText("Goblet squat and row (yours)", substring = true).assertExists()
     }
@@ -171,11 +171,11 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Done with the changes undecided asks and Drop leaves the program as it was`() = liftAppTest(
+    fun `Close with the changes undecided asks and Drop leaves the program as it was`() = liftAppTest(
         followed(),
     ) { app ->
         finishChanged()
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         waitForText("Keep saves them as the card has them. Drop leaves the program as it was.")
         onNodeWithText("Drop").performClick()
         waitForText("Start day 2")
@@ -198,10 +198,10 @@ class PlanFlowTest {
     }
 
     @Test
-    fun `Done after Today only asks nothing`() = liftAppTest(followed()) { app ->
+    fun `Close after Today only asks nothing`() = liftAppTest(followed()) { app ->
         finishChanged()
         onNodeWithText("Today only").performScrollTo().performClick()
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         waitForText("Start day 2")
         assertTrue(app.storage.programs.rows.value.isEmpty())
     }

@@ -44,7 +44,7 @@
     <action>Tap "Add set or EMOM" in the title bar, then "Change" on the exercise card, then clear the search and type "Turkish sit-up"</action>
     <action>Tap "Add “Turkish sit-up” as an exercise": the same sheet turns into the new exercise's form. Tap "Save exercise"</action>
     <action>Verify that the sheet is back with its exercise card reading "Turkish sit-up" over "Bodyweight · Reps · Full body"</action>
-    <action>Swipe the sheet down, tap "Finish", then "Done"</action>
+    <action>Swipe the sheet down, tap "Finish", then "Close"</action>
     <action>Tap the "Exercises" card, type "copenhagen", tap "Copenhagen plank"</action>
     <action>Verify that its page shows "Done 1 time · last" with today's date, "Your best" with "Longest 0:30", and a card with "0:30 · Left"; then tap "Edit"</action>
     <action>Verify that the sheet says "Sets of it are logged, so its equipment and measure stay as they are." and shows no "Kettlebell" chip</action>

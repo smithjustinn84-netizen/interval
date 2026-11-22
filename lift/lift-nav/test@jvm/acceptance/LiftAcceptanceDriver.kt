@@ -388,7 +388,7 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see(record)
     }
 
-    fun closeSummary() = tap("Done")
+    fun closeSummary() = tap("Close")
 
     /** Before the first set of a taxed day: the easier day offered, and why. */
     fun seeEasierDay(why: String) {

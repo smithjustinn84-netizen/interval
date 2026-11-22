@@ -426,7 +426,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         see("Saved to your log")
     }
 
-    fun closeSummary() = tap("Done")
+    fun closeSummary() = tap("Close")
 
     // A save that fails
 
@@ -606,7 +606,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         app.clock.set(90_000)
         tap("Finish")
         see("Counts toward your week and your goal")
-        tap("Done")
+        tap("Close")
         waitFor("the session finished") { app.lift.sessions.sessions.value.any { it.finishedAtEpochMillis != null } }
     }
 

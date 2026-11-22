@@ -20,7 +20,7 @@
     <action>Tap "+10s" and verify that the clock gains ten seconds; tap "Back" and verify that the side starts again from its full time</action>
     <action>Turn the screen off for twenty seconds, turn it on, and verify that the notification names the move ("Finger pulls · Right side · Move 4 of 5" or the one it has reached) and that the workout is as far on as the time gone</action>
     <action>Tap "Skip" until the summary shows</action>
-    <action>Verify that it says "Done", "5 moves" with the total, "Wrists and fingers · Mobility · 5 moves" and "Saved to your log", with "Moves" 5/5 and no "Save as preset"; tap "Done"</action>
+    <action>Verify that it says "Done", "5 moves" with the total, "Wrists and fingers · Mobility · 5 moves" and "Saved to your log", with "Moves" 5/5 and no "Save as preset"; tap "Close"</action>
     <action>Verify that Train is shown again on "Mobility"</action>
     <action>Tap the "Train" tab's "Conditioning" pillar, then "Timer", and verify that the Timer's settings are as they were (0:30 work, 0:15 rest, 8 rounds); go back</action>
     <action>Tap the "Today" tab and verify that the week says "1 day trained" and "1 mobility", with today marked done</action>

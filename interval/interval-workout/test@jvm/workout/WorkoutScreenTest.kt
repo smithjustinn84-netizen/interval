@@ -11,7 +11,6 @@ import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -313,7 +312,7 @@ class WorkoutScreenTest {
         onNodeWithText("8 rounds · 5:55 total").assertExists()
         onNodeWithText("Custom · 30s on · 15s off · ×8").assertExists()
         onNodeWithText("Repeat").performClick()
-        onNode(hasText("Done") and hasClickAction()).performClick()
+        onNodeWithText("Close").performClick()
         onNodeWithText("Save as preset").performClick()
         // The editor's name field, over the summary's note.
         onAllNodes(hasSetTextAction()).onLast().performTextInput("Classic")
@@ -341,9 +340,9 @@ class WorkoutScreenTest {
     fun `the summary shows calories only when there is an estimate`() = runUiTest {
         var state by mutableStateOf(done.toUiState(running = false))
         setThemedContent { Screen(state) }
-        onNodeWithText("kcal").assertDoesNotExist()
+        onNodeWithText("Calories").assertDoesNotExist()
         state = done.toUiState(running = false, calories = 64)
-        onNodeWithText("kcal").assertExists()
+        onNodeWithText("Calories").assertExists()
         onNodeWithText("64").assertExists()
     }
 
@@ -360,7 +359,7 @@ class WorkoutScreenTest {
     fun `the summary says where the week stands`() = runUiTest {
         var state by mutableStateOf(done.toUiState(running = false, week = WeekStanding(3, goal = 4, streak = 0)))
         setThemedContent { Screen(state) }
-        onNodeWithText("3 of 4 this week").assertExists()
+        onNodeWithText("3 of 4 days this week").assertExists()
         state = done.toUiState(running = false, week = WeekStanding(4, goal = 4, streak = 2))
         onNodeWithText("Goal met this week").assertExists()
         // The streak grew with this workout: its badge arrives a week short and rolls up.

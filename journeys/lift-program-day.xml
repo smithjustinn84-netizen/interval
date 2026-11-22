@@ -15,7 +15,7 @@
     <action>Verify that the sheet is titled "Your first 100 swings", with "All programs" above "Day 1", "Day 2" and "Day 3", each over "Deadlift · Two-hand swing" and about how long it takes, and that none is marked "Next"</action>
     <action>Tap "Day 2"</action>
     <action>Verify that the session shows "Up next · 1 of 12 sets" with a figure doing the deadlift over "Deadlift", "Today's plan", and neither "Next set" nor "Do a program day"</action>
-    <action>Tap "Log set", then "Finish", then "Done"</action>
+    <action>Tap "Log set", then "Finish", then "Close"</action>
     <action>Verify that Strength still shows "Follow a program": the day done was of no program followed</action>
     <action>Tap "Follow a program", scroll to "Your first 100 swings", tap it, then tap "Follow this program"</action>
     <action>Verify that Strength shows "Day 1 of 12 · week 1"; scroll to "Free session" under "On your own" and tap it</action>
@@ -23,7 +23,7 @@
     <action>Verify that the sheet lists "Your first 100 swings" under "Following", above "Built-in"</action>
     <action>Tap "Your first 100 swings" on the sheet and verify that "Day 1" is marked "Next"</action>
     <action>Tap "Day 1"</action>
-    <action>Verify that "Up next · 1 of 12 sets" is shown; tap "Log set", then "Finish", then "Done"</action>
+    <action>Verify that "Up next · 1 of 12 sets" is shown; tap "Log set", then "Finish", then "Close"</action>
     <action>Verify that Strength shows "Day 2 of 12 · week 1"</action>
   </actions>
 </journey>

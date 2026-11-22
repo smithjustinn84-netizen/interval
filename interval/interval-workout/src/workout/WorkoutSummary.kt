@@ -74,7 +74,6 @@ import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.interval.workout.resources.Res
-import dev.justinsmith.interval.workout.resources.common_done
 import dev.justinsmith.interval.workout.resources.common_joined
 import dev.justinsmith.interval.workout.resources.effort_all_out
 import dev.justinsmith.interval.workout.resources.effort_easy
@@ -87,6 +86,7 @@ import dev.justinsmith.interval.workout.resources.summary_how_was_it
 import dev.justinsmith.interval.workout.resources.summary_note_placeholder
 import dev.justinsmith.interval.workout.resources.summary_week_count
 import dev.justinsmith.interval.workout.resources.summary_week_of_goal
+import dev.justinsmith.interval.workout.resources.workout_close
 import dev.justinsmith.interval.workout.resources.workout_done
 import dev.justinsmith.interval.workout.resources.workout_ended
 import dev.justinsmith.interval.workout.resources.workout_heart_load
@@ -242,7 +242,7 @@ private fun SummaryActions(
                 }
             }
             BigButton(
-                stringResource(Res.string.common_done),
+                stringResource(Res.string.workout_close),
                 onExit,
                 Modifier.fillMaxWidth().heightIn(min = Sizes.control),
                 // The ring and its word take the done colour as marks; the button fills with the accent's fill.
@@ -513,7 +513,7 @@ private fun WeekLine(week: WeekStanding, modifier: Modifier = Modifier) {
     }
 }
 
-/** "3 of 4 this week", "Goal met this week", or with no goal set, the count. */
+/** "3 of 4 days this week", "Goal met this week", or with no goal set, the count. */
 @Composable
 private fun weekText(week: WeekStanding): String {
     val goal = week.goal

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="common_done">Done</string>
     <string name="common_joined">%1$s · %2$s</string>
     <string name="summary_goal_met">Goal met this week</string>
     <plurals name="history_streak">
@@ -114,7 +113,7 @@
     <string name="workout_stat_moves">Moves</string>
     <string name="workout_stat_time">Time</string>
     <string name="workout_stat_rounds">Rounds</string>
-    <string name="workout_stat_calories">kcal</string>
+    <string name="workout_stat_calories">Calories</string>
     <string name="workout_heart_rate">Heart rate %1$d avg · %2$d peak</string>
     <string name="workout_heart_recovery">Down %1$d in %2$d s after work</string>
     <string name="workout_heart_load">Heart load %1$d</string>
@@ -131,12 +130,14 @@
     <string name="effort_hard">Hard</string>
     <string name="effort_very_hard">Very hard</string>
     <string name="effort_all_out">All out</string>
-    <string name="summary_week_of_goal">%1$d of %2$d this week</string>
+    <string name="summary_week_of_goal">%1$d of %2$d days this week</string>
     <plurals name="summary_week_count">
         <item quantity="one">%1$d day trained this week</item>
         <item quantity="other">%1$d days trained this week</item>
     </plurals>
     <string name="workout_repeat">Repeat</string>
+    <!-- The summary's way out, under its title "Done": a second Done would say nothing new. -->
+    <string name="workout_close">Close</string>
     <string name="workout_share">Share</string>
     <string name="share_workout">%1$s\n%2$s</string>
     <string name="share_workout_figures">%1$s rounds · %2$s</string>

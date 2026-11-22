@@ -372,7 +372,7 @@ private fun PortraitWorkout(
     }
 }
 
-/** Sideways: End and Back on the left rail, Skip, +10s and Pause on the right, the ring between. */
+/** Sideways: End and Back on the left rail, +10s at the top of the right and Skip over Pause, the ring between. */
 @Composable
 private fun LandscapeWorkout(
     state: WorkoutUiState,
@@ -424,13 +424,11 @@ private fun LandscapeWorkout(
             Modifier.width(IntervalSizes.rail).fillMaxHeight(),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            SkipPill(actions.onSkip, Modifier.fillMaxWidth())
+            val inCap = state.cap?.live == true
+            if (!inCap) AddTimePill(actions.onAddTime, Modifier.fillMaxWidth())
             Spacer(Modifier.weight(1f))
-            if (state.cap?.live == true) {
-                RoundDoneButton(state, primaryFill, actions.onFinishRound, Modifier.fillMaxWidth())
-            } else {
-                AddTimeButton(actions.onAddTime, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
-            }
+            if (inCap) RoundDoneButton(state, primaryFill, actions.onFinishRound, Modifier.fillMaxWidth())
+            SkipButton(actions.onSkip, Modifier.fillMaxWidth().heightIn(min = Sizes.control))
             PrimaryButton(
                 state,
                 primaryFill,
@@ -472,7 +470,7 @@ private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit
 }
 
 /**
- * End and Skip with where the workout stands between them, or with large text under them, the whole width: squeezed
+ * End and +10s with where the workout stands between them, or with large text under them, the whole width: squeezed
  * between the two it takes three lines and more ("Round 1 of / 8 · 5:33 / left").
  */
 @Composable
@@ -486,7 +484,12 @@ private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {
         ) {
             EndPill(actions.onEnd)
             if (!under) RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
-            SkipPill(actions.onSkip)
+            // A time cap runs as it was set, so it has no time to add; the room is kept so the line stays centred.
+            if (state.cap?.live == true) {
+                Spacer(Modifier.width(Sizes.pillWidth))
+            } else {
+                AddTimePill(actions.onAddTime)
+            }
         }
         if (under) RoundStatus(state, Modifier.fillMaxWidth())
     }

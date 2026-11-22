@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -19,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -27,11 +30,13 @@ import androidx.compose.ui.text.TextStyle
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.fadeThroughContent
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.workout_add_time
@@ -57,36 +62,79 @@ internal fun EndPill(onEnd: () -> Unit, modifier: Modifier = Modifier) {
     )
 }
 
+/** Skip goes on to the next interval: at the foot, opposite Back, its arrow pointing on. */
 @Composable
-internal fun SkipPill(onSkip: () -> Unit, modifier: Modifier = Modifier) {
-    PillButton(
-        text = stringResource(Res.string.workout_skip),
-        onClick = onSkip,
-        description = stringResource(Res.string.workout_skip_cd),
-        modifier = modifier,
-        haptic = HapticFeedbackType.SegmentTick,
+internal fun SkipButton(onSkip: () -> Unit, modifier: Modifier = Modifier) {
+    StepButton(
+        stringResource(Res.string.workout_skip),
+        IntervalIcons.Chevron,
+        iconFirst = false,
+        onSkip,
+        stringResource(Res.string.workout_skip_cd),
+        modifier,
     )
 }
 
-/** Back restarts the interval, or goes to the one before near its start (see [WorkoutEngine.back]). */
+/**
+ * Back restarts the interval, or goes to the one before near its start (see [WorkoutEngine.back]). Its arrow points
+ * back along the workout, beside Pause and opposite Skip, so it never reads as leaving the workout.
+ */
 @Composable
 internal fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
-    BigButton(
+    StepButton(
         stringResource(Res.string.workout_back),
+        IntervalIcons.ChevronBack,
+        iconFirst = true,
         onBack,
+        stringResource(Res.string.workout_back_cd),
         modifier,
-        description = stringResource(Res.string.workout_back_cd),
-        haptic = HapticFeedbackType.SegmentTick,
     )
 }
 
+/**
+ * Back or Skip: a [BigButton] with its arrow before or after its word, or with large text its arrow alone, larger,
+ * so Pause between them keeps its word whole ("Pau / se"). Its [description] says it either way.
+ */
 @Composable
-internal fun AddTimeButton(onAddTime: () -> Unit, modifier: Modifier = Modifier) {
+private fun StepButton(
+    text: String,
+    icon: ImageVector,
+    iconFirst: Boolean,
+    onClick: () -> Unit,
+    description: String,
+    modifier: Modifier = Modifier,
+) {
+    val ink = IntervalTheme.workout.onGround
     BigButton(
-        stringResource(Res.string.workout_add_time, WorkoutEngine.ADD_TIME_MILLIS / MILLIS_PER_SECOND),
-        onAddTime,
-        modifier,
+        onClick,
+        modifier.semantics { contentDescription = description },
+        haptic = HapticFeedbackType.SegmentTick,
+    ) {
+        Row(
+            Modifier.clearAndSetSemantics {},
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space4),
+        ) {
+            if (isLargeText()) {
+                Icon(icon, null, tint = ink, modifier = Modifier.size(Sizes.icon))
+            } else {
+                val arrow = @Composable { Icon(icon, null, tint = ink, modifier = Modifier.size(Sizes.chipIcon)) }
+                if (iconFirst) arrow()
+                Text(text, style = IntervalTheme.type.control, color = ink)
+                if (!iconFirst) arrow()
+            }
+        }
+    }
+}
+
+/** Ten seconds more for the interval under way: a pill at the top, as End is, away from the controls at the foot. */
+@Composable
+internal fun AddTimePill(onAddTime: () -> Unit, modifier: Modifier = Modifier) {
+    PillButton(
+        text = stringResource(Res.string.workout_add_time, WorkoutEngine.ADD_TIME_MILLIS / MILLIS_PER_SECOND),
+        onClick = onAddTime,
         description = stringResource(Res.string.workout_add_time_cd),
+        modifier = modifier,
         haptic = HapticFeedbackType.SegmentTick,
     )
 }
@@ -99,16 +147,16 @@ internal fun BottomControls(
 ) {
     val height = Sizes.control
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        // A time cap runs as it was set: Undo takes Back's place, and there is no time to add.
-        // While running a cap, Round done is the sole phase-coloured primary button; Pause steps back to a secondary
-        // control fill so tired thumbs never confuse the two.
+        // Back and Skip either side of Pause, the way through the workout under the thumb; a time cap runs as it was
+        // set, so Undo takes Back's place. While running a cap, Round done is the sole phase-coloured primary button;
+        // Pause steps back to a secondary control fill so tired thumbs never confuse the two.
         val side = Modifier.widthIn(min = Sizes.controlSide).heightIn(min = height)
         val inCap = state.cap?.live == true
         val secondaryFill = IntervalTheme.workout.control
         val pauseFill = if (inCap && state.running) ({ secondaryFill }) else primaryFill
         if (inCap) UndoRoundButton(actions.onUndoRound, side) else BackButton(actions.onBack, side)
         PrimaryButton(state, pauseFill, actions.onTogglePause, Modifier.weight(1f).heightIn(min = height))
-        if (!inCap) AddTimeButton(actions.onAddTime, side)
+        SkipButton(actions.onSkip, side)
     }
 }
 

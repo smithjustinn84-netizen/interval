@@ -29,7 +29,7 @@
     <action>Tap "Finish"</action>
     <action>Verify that the summary lists "Back squat" with "Heaviest 20 kg × 5" and "Power clean" with "Heaviest 62.5 kg × 5" under "New records"</action>
     <action>Scroll to "How was it?", tap "Hard" and type "Grip went" in the note field</action>
-    <action>Tap "Done"</action>
+    <action>Tap "Close"</action>
     <action>Verify that Lift shows "Day 2 of 36 · week 1" with "Back squat", "Overhead press" and "Barbell deadlift"</action>
   </actions>
 </journey>

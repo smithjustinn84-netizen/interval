@@ -35,7 +35,7 @@ class LiftFlowTest {
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
         waitForText("New records")
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         // Back on Train with no session in progress: the first card's Start, the last session's card below the fold.
         waitForText("Start session")
 

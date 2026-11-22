@@ -25,7 +25,7 @@
     <action>Tap "Undo"</action>
     <action>Verify that "Before class" leads again with "BJJ class" and its "Log it" as the step after it, and today's dot is the plain one again</action>
     <action>Tap "Start" and verify that the workout shows "Get ready" with "Hip escape" and "Move 1 of 6"</action>
-    <action>Tap "Skip" until the summary shows "6 moves", then tap "Done"</action>
+    <action>Tap "Skip" until the summary shows "6 moves", then tap "Close"</action>
     <action>Verify that Today's card now shows "Before rolling" ticked, then "Up next · Today" with "BJJ class" and "Counts toward your week" over a "Log it" button, with no "Before class", and the week counts "1 day trained"</action>
     <action>Tap the "Log" tab</action>
     <action>Verify that the week card counts "1 day trained" with a "Mobility" row reading "1 of 1"</action>

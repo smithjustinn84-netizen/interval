@@ -3,8 +3,6 @@
 package dev.justinsmith.lift.session
 
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.onAllNodesWithText
-import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import dev.justinsmith.interval.ui.performClick
@@ -42,7 +40,7 @@ class ShareFlowTest {
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
         waitForText("Counts toward your week and your goal")
-        onAllNodesWithText("Done").onLast().performClick()
+        onNodeWithText("Close").performClick()
         waitForText("Last session")
         onNodeWithText("Last session").performClick()
         waitForText("Moved")

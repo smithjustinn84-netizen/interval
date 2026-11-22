@@ -34,13 +34,13 @@
     <action>Verify that "Keep today's changes?" shows "Goblet squat" with "3 × 10 (10–15) → 3 × 10 (10–15) · 24 kg", "This day" and "Every day", and "Save as Goblet squat and row (yours)"</action>
     <action>Tap "Every day", then "Save as Goblet squat and row (yours)"</action>
     <action>Verify that "Saved as Goblet squat and row (yours). You follow it from day 2." is shown</action>
-    <action>Tap "Done"</action>
+    <action>Tap "Close"</action>
     <action>Verify that Lift shows "Day 2 of 8 · week 1", "Goblet squat and row (yours)", "Goblet squat" "3 × 10 (10–15)" with "24 kg", and "Start day 2"</action>
     <action>Tap "Start day 2", then "Log set" until "Up next" is gone (9 sets), then "Finish"</action>
     <action>Verify that "Next time" lists "Goblet squat" and "Row" a rep more, both switched on, and "Save to Goblet squat and row (yours)" is offered</action>
     <action>Under "How was it?" tap "All out"</action>
     <action>Verify that "It felt very hard: these wait until you turn them on." shows under "Next time", both switches are off, and no Save is offered</action>
-    <action>Tap "Done"</action>
+    <action>Tap "Close"</action>
     <action>Verify that no "Keep today's changes?" question is asked, and Lift shows "Day 3 of 8 · week 2" with "Goblet squat" still "3 × 10 (10–15)"</action>
     <action>Tap "All programs", find "20 minutes beside BJJ", tap it, then "Follow this program" and "Switch"</action>
     <action>Tap "Start day 1" and verify that the session's foot offers "Start EMOM"</action>

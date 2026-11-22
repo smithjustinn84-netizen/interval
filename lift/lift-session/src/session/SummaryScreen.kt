@@ -61,6 +61,7 @@ import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.detail_muscles_worked
+import dev.justinsmith.lift.session.resources.summary_close
 import dev.justinsmith.lift.session.resources.summary_done
 import dev.justinsmith.lift.session.resources.summary_hand_care
 import dev.justinsmith.lift.session.resources.summary_heavy_grip
@@ -370,7 +371,7 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () ->
             modifier = Modifier.fillMaxWidth(),
         )
         QuietTextButton(stringResource(Res.string.summary_share), onShare, Modifier.align(Alignment.CenterHorizontally))
-        AccentButton(stringResource(Res.string.summary_done), onDone, Modifier.fillMaxWidth())
+        AccentButton(stringResource(Res.string.summary_close), onDone, Modifier.fillMaxWidth())
     }
 }
 
