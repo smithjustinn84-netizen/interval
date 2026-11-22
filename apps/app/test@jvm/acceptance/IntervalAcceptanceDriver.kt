@@ -843,8 +843,8 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
     /** A finished workout's page shows its heart rate, average and peak, and History has kept it. */
     fun seeWorkoutHeartRate(average: Int, peak: Int) {
         waitFor("a heart rate kept in History") { app.repository.history.history.value.single().averageBpm == average }
-        see("$average bpm")
-        see("$peak bpm")
+        see(hasContentDescription("$average beats per minute", substring = true))
+        see("Average · $peak peak")
     }
 
     /** Opens the body weight's sheet, takes Health Connect's [weight] from its button, and closes it with Done. */

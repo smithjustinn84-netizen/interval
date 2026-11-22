@@ -25,8 +25,6 @@ import dev.justinsmith.interval.history.resources.class_detail_delete_title
 import dev.justinsmith.interval.history.resources.class_detail_length
 import dev.justinsmith.interval.history.resources.class_detail_no_rounds
 import dev.justinsmith.interval.history.resources.class_detail_rounds
-import dev.justinsmith.interval.history.resources.class_heart_average_peak
-import dev.justinsmith.interval.history.resources.class_heart_load
 import dev.justinsmith.interval.history.resources.class_round
 import dev.justinsmith.interval.history.resources.class_round_drop
 import dev.justinsmith.interval.history.resources.class_round_figures
@@ -48,7 +46,6 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
-import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.LocalRestingHeartRate
@@ -193,21 +190,7 @@ private fun ColumnScope.ClassFigures(recorded: RecordedClass) {
         HeartRateChart(recorded.samples, maxBpm = recorded.maxHeartRate, marks = recorded.marks)
         ZoneBreakdown(recorded.samples, maxBpm = recorded.maxHeartRate)
     }
-    val peakWords = peak?.let { stringResource(Res.string.class_heart_average_peak, it) }
-    val loadWords = recorded.heartLoad?.let { stringResource(Res.string.class_heart_load, it) }
-    val read = if (peakWords != null && loadWords != null) {
-        stringResource(Res.string.common_joined, peakWords, loadWords)
-    } else {
-        peakWords ?: loadWords
-    }
-    if (read != null) {
-        JoinedText(
-            read,
-            style = IntervalTheme.type.meta,
-            color = palette.textDim,
-            modifier = Modifier.padding(horizontal = Spacing.space4),
-        )
-    }
+    HeartInsights(peak = peak, recovery = null, load = recorded.heartLoad)
 }
 
 /** A row a round, or a line saying none was found. */

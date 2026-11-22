@@ -25,8 +25,6 @@ import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
-import dev.justinsmith.interval.history.resources.detail_average_heart_rate
-import dev.justinsmith.interval.history.resources.detail_bpm_value
 import dev.justinsmith.interval.history.resources.detail_cap_block
 import dev.justinsmith.interval.history.resources.detail_cap_pace
 import dev.justinsmith.interval.history.resources.detail_cap_rounds
@@ -37,7 +35,6 @@ import dev.justinsmith.interval.history.resources.detail_delete_menu
 import dev.justinsmith.interval.history.resources.detail_delete_text
 import dev.justinsmith.interval.history.resources.detail_delete_title
 import dev.justinsmith.interval.history.resources.detail_how_it_went
-import dev.justinsmith.interval.history.resources.detail_peak_heart_rate
 import dev.justinsmith.interval.history.resources.detail_plan_again
 import dev.justinsmith.interval.history.resources.detail_planned_done
 import dev.justinsmith.interval.history.resources.detail_repeat
@@ -58,6 +55,7 @@ import dev.justinsmith.interval.plan.DayChoice
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.Sharer
+import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.timer.MILLIS_PER_SECOND
 import dev.justinsmith.interval.timer.SECONDS_PER_MINUTE
 import dev.justinsmith.interval.timer.builtInPresets
@@ -68,12 +66,14 @@ import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.HeartRateChart
+import dev.justinsmith.interval.ui.HeartReading
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
@@ -269,29 +269,25 @@ private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
             workout.calories?.let { Stat(stringResource(Res.string.history_calories), it.toString()) }
         }
         workout.caps.forEach { cap -> CapFigures(cap, block = cap.block.takeIf { workout.config.isSequence }) }
-        workout.heartRate?.let { heartRate ->
+    }
+    workout.heartRate?.let { heartRate ->
+        // As a workout's summary reads it: the average on a card of its own, its dot held still, with the heart
+        // rate drawn and its time in each zone; under the card the peak, the recovery and the load.
+        SummaryCard {
+            HeartReading(
+                heartRate.averageBpm,
+                heartRateZone(heartRate.averageBpm, workout.maxHeartRate, LocalRestingHeartRate.current),
+                onWorkoutGround = false,
+                beating = false,
+            )
             val samples = workout.heartRateSamples
             if (!samples.isNullOrEmpty()) {
-                HeartRateChart(samples, Modifier.padding(vertical = Spacing.space8), maxBpm = workout.maxHeartRate)
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                Stat(
-                    stringResource(Res.string.detail_average_heart_rate),
-                    stringResource(Res.string.detail_bpm_value, heartRate.averageBpm),
-                )
-                Stat(
-                    stringResource(Res.string.detail_peak_heart_rate),
-                    stringResource(Res.string.detail_bpm_value, heartRate.peakBpm),
-                )
-            }
-            if (!samples.isNullOrEmpty()) {
-                ZoneBreakdown(samples, Modifier.padding(top = Spacing.space8), maxBpm = workout.maxHeartRate)
-            }
-            HeartInsights(workout.recovery, workout.heartLoad, Modifier.padding(top = Spacing.space8))
-            workout.peakAboveMax?.let { peak ->
-                MaxNudge(peak, workout.maxHeartRate, onUse = { onUseMax(peak) }, Modifier.padding(top = Spacing.space8))
+                HeartRateChart(samples, maxBpm = workout.maxHeartRate)
+                ZoneBreakdown(samples, maxBpm = workout.maxHeartRate)
             }
         }
+        HeartInsights(heartRate.peakBpm, workout.recovery, workout.heartLoad)
+        workout.peakAboveMax?.let { peak -> MaxNudge(peak, workout.maxHeartRate, onUse = { onUseMax(peak) }) }
     }
     if (workout.effort != null || workout.note != null) {
         SummaryCard {

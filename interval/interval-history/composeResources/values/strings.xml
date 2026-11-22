@@ -181,11 +181,10 @@
     <string name="detail_cap_pace">A round</string>
     <string name="detail_cap_splits">Fastest %1$s · slowest %2$s</string>
     <string name="detail_cap_block">Block %1$d</string>
-    <string name="detail_average_heart_rate">Avg heart rate</string>
-    <string name="detail_peak_heart_rate">Peak heart rate</string>
-    <string name="detail_bpm_value">%1$d bpm</string>
-    <string name="detail_recovery_in">Recovery in %1$d s</string>
-    <string name="detail_heart_load">Heart load</string>
+    <!-- Under a finished workout's or a class's heart card, whose number is its average. -->
+    <string name="detail_heart_average_peak">Average · %1$d peak</string>
+    <string name="detail_heart_recovery">Down %1$d in %2$d s after work</string>
+    <string name="detail_heart_load_value">Heart load %1$d</string>
     <string name="detail_recovery_holding">The heart came down as far after the last round as the first.</string>
     <string name="detail_recovery_fading">Down %1$d after the first round, %2$d after the last: fatigue showing.</string>
     <string name="detail_max_nudge">Peaked at %1$d, above your max of %2$d.</string>
@@ -243,9 +242,6 @@
         <item quantity="other">%1$d rounds</item>
     </plurals>
     <string name="class_detail_length">Length</string>
-    <!-- Under a class's heart card, whose number is the class's average. -->
-    <string name="class_heart_average_peak">Average · %1$d peak</string>
-    <string name="class_heart_load">Heart load %1$d</string>
     <string name="class_detail_rounds">Rounds</string>
     <string name="class_detail_no_rounds">No rounds found: the heart rate never stood out for two minutes.</string>
     <string name="class_round">Round %1$d</string>

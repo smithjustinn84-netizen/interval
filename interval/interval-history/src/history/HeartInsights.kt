@@ -12,40 +12,47 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import dev.justinsmith.interval.history.resources.Res
-import dev.justinsmith.interval.history.resources.detail_bpm_value
-import dev.justinsmith.interval.history.resources.detail_heart_load
+import dev.justinsmith.interval.history.resources.common_joined
+import dev.justinsmith.interval.history.resources.detail_heart_average_peak
+import dev.justinsmith.interval.history.resources.detail_heart_load_value
+import dev.justinsmith.interval.history.resources.detail_heart_recovery
 import dev.justinsmith.interval.history.resources.detail_max_nudge
 import dev.justinsmith.interval.history.resources.detail_max_use
 import dev.justinsmith.interval.history.resources.detail_recovery_fading
 import dev.justinsmith.interval.history.resources.detail_recovery_holding
-import dev.justinsmith.interval.history.resources.detail_recovery_in
 import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.RecoveryTrend
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Spacing
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * What the heart rate says of a workout beyond its average and peak: how far it came down in the rests
- * ([recovery], with a line when the last rest stood apart from the first) and what the whole cost ([load],
- * minutes in each zone weighed by the zone). Each is left out when the workout has none.
+ * What the heart rate says beyond the average a heart card reads out, as a line under the card: the [peak], how
+ * far it came down in the rests ([recovery]) and what the whole cost ([load], minutes in each zone weighed by the
+ * zone), each left out when there is none; then, when the last rest stood apart from the first, a line saying so.
  */
 @Composable
-internal fun HeartInsights(recovery: Recovery?, load: Int?, modifier: Modifier = Modifier) {
-    if (recovery == null && load == null) return
-    Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            recovery?.let {
-                Stat(
-                    stringResource(Res.string.detail_recovery_in, it.seconds),
-                    stringResource(Res.string.detail_bpm_value, it.average),
-                )
-            }
-            load?.let { Stat(stringResource(Res.string.detail_heart_load), it.toString()) }
-        }
+internal fun HeartInsights(peak: Int?, recovery: Recovery?, load: Int?, modifier: Modifier = Modifier) {
+    val parts = listOfNotNull(
+        peak?.let { stringResource(Res.string.detail_heart_average_peak, it) },
+        recovery?.let { stringResource(Res.string.detail_heart_recovery, it.average, it.seconds) },
+        load?.let { stringResource(Res.string.detail_heart_load_value, it) },
+    )
+    if (parts.isEmpty()) return
+    val palette = IntervalTheme.palette
+    Column(
+        modifier.fillMaxWidth().padding(horizontal = Spacing.space4),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        JoinedText(
+            parts.reduce { line, part -> stringResource(Res.string.common_joined, line, part) },
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+        )
         recovery?.trend?.let { trend ->
             Text(
                 when (trend) {
@@ -58,7 +65,7 @@ internal fun HeartInsights(recovery: Recovery?, load: Int?, modifier: Modifier =
                     )
                 },
                 style = IntervalTheme.type.meta,
-                color = IntervalTheme.palette.textDim,
+                color = palette.textDim,
             )
         }
     }
@@ -100,8 +107,8 @@ private fun HeartInsightsPreview() {
             Modifier.background(IntervalTheme.palette.surface).padding(Spacing.space16),
             verticalArrangement = Arrangement.spacedBy(Spacing.space16),
         ) {
-            HeartInsights(holding, load = 86)
-            HeartInsights(fading, load = 112)
+            HeartInsights(peak = 171, recovery = holding, load = 86)
+            HeartInsights(peak = 182, recovery = fading, load = 112)
             MaxNudge(peak = 194, max = 190, onUse = {})
         }
     }
