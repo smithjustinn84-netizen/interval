@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRateSampler
 import dev.justinsmith.interval.platform.LiveHeartRate
-import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.NoLiveHeartRate
 import dev.justinsmith.interval.platform.NoTones
 import dev.justinsmith.interval.platform.TimestampFormatter
@@ -291,14 +290,14 @@ class SessionViewModel(
             combine(intervals.maxHeartRate, intervals.restingHeartRate, ::Pair).drop(1)
                 .collect { zoneTracker = zoneTracker() }
         }
-        viewModelScope.launch { liveHeartRate.reading.collect(::onHeartRate) }
+        viewModelScope.launch { liveHeartRate.readings.collect(::onHeartRate) }
     }
 
     /** Keeps a reading taken in the session, and chimes a change of zone while the alerts are on. */
-    private fun onHeartRate(reading: LiveHeartRateState) {
-        if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return
+    private fun onHeartRate(bpm: Int) {
+        if (sessionStore.active.value == null) return
         val now = clock.nowMillis()
-        sampler.add(reading.bpm, now)
+        sampler.add(bpm, now)
         // The card's line takes a sample as each begins: every five seconds, not every reading. Every half minute
         // the session keeps them, so a process killed in it loses at most that much of the trace.
         if (sampler.size != liveSamples.value.size) {
@@ -308,7 +307,7 @@ class SessionViewModel(
                 setStore.saveLiveSamples(kept)
             }
         }
-        val tone = when (zoneTracker.record(reading.bpm, now)) {
+        val tone = when (zoneTracker.record(bpm, now)) {
             ZoneTransition.EnteredHigh -> ToneSynth.zoneUp
             ZoneTransition.EnteredRecovery -> ToneSynth.zoneDown
             null -> return

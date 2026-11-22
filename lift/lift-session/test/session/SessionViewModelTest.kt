@@ -816,6 +816,19 @@ class SessionViewModelTest {
     }
 
     @Test
+    fun `a steady heart rate fills every sample`() {
+        viewModel().use {
+            // The same number a second for fifteen seconds: a sensor reads it each time, though nothing changed.
+            repeat(15) {
+                live.emitBpm(120)
+                now += 1_000L
+            }
+
+            assertEquals(listOf(120, 120, 120), clocks.value.liveSamples)
+        }
+    }
+
+    @Test
     fun `a rest says ready once the heart is back in an easy zone`() {
         assertEquals(RestHeart.Standing.Ready, restHeart(LiveHeartRateState.Reading(110), 190)?.standing)
         assertEquals(RestHeart.Standing.ComingDown, restHeart(LiveHeartRateState.Reading(140), 190)?.standing)

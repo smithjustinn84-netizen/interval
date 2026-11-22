@@ -11,8 +11,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
@@ -56,6 +59,11 @@ internal class PolarHeartStream(
 
     private val _reading = MutableStateFlow(idle())
     val reading: StateFlow<LiveHeartRateState> = _reading.asStateFlow()
+
+    private val _readings = MutableSharedFlow<Int>(extraBufferCapacity = READINGS_BUFFER)
+
+    /** Each heart rate read with contact, a number the same as the last too. */
+    val readings: Flow<Int> = _readings.asSharedFlow()
 
     fun start(user: Any) = synchronized(lock) {
         users += user
@@ -155,7 +163,10 @@ internal class PolarHeartStream(
             val sample = data.samples.lastOrNull() ?: return@collect
             // A strap off the chest reads 0, and says so where it can tell: shown as no signal, never as a number.
             val contact = sample.hr in HeartRate.BPM_RANGE && (sample.contactStatus || !sample.contactStatusSupported)
-            if (contact) read = true
+            if (contact) {
+                read = true
+                _readings.tryEmit(sample.hr)
+            }
             _reading.value = LiveHeartRateState.Reading(bpm = if (contact) sample.hr else 0, contact = contact)
         }
         return read
@@ -170,5 +181,8 @@ internal class PolarHeartStream(
 
         /** How long a stopped stream's connection is waited on to be gone before the work goes ahead anyway. */
         const val DISCONNECT_MILLIS = 5_000L
+
+        /** Readings held for a collector that is behind: a minute of a reading a second. */
+        const val READINGS_BUFFER = 64
     }
 }

@@ -1,7 +1,9 @@
 package dev.justinsmith.interval.platform
 
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlin.math.roundToInt
 
 /**
@@ -51,7 +53,14 @@ sealed interface LiveHeartRateState {
  * offline class recording, while iOS and desktop bind [NoLiveHeartRate].
  */
 interface LiveHeartRate {
+    /** Where the stream stands, for showing: a number the same as the last is no change here. */
     val reading: StateFlow<LiveHeartRateState>
+
+    /**
+     * Every heart rate the sensor reads with contact, in beats a minute, as it reads it: a number the same as the
+     * last too, which [reading] passes over. What is sampled and zoned, so a heart held steady still fills its time.
+     */
+    val readings: Flow<Int>
 
     /**
      * [user] wants the heart rate live: streaming begins from the paired sensor, unless it already runs for
@@ -66,6 +75,7 @@ interface LiveHeartRate {
 /** No live heart-rate sensor on this platform. */
 object NoLiveHeartRate : LiveHeartRate {
     override val reading: StateFlow<LiveHeartRateState> = MutableStateFlow(LiveHeartRateState.Unavailable)
+    override val readings: Flow<Int> = emptyFlow()
 
     override fun start(user: Any) = Unit
 

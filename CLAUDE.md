@@ -730,7 +730,8 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   (`sportLines`, `ClassRow`); deleting the recording leaves the day logged.
 - **The heart rate, read**: what a sensor's samples say is worked out, never stored. A workout's and a session's
   are five-second averages from the moment it began (`HeartRateSampler.restore(origin, kept)`: a sample's place
-  says when it was, 0 until the sensor first read), kept on the run as they come (`WorkoutRun.liveSamples`, saved
+  says when it was, 0 until the sensor first read) of every reading the sensor sends (`LiveHeartRate.readings`,
+  a number the same as the last too, which `reading`, a `StateFlow` for showing, passes over), kept on the run as they come (`WorkoutRun.liveSamples`, saved
   in `WorkoutProgress.heartRateSamples` at each change of course, so a restored workout goes on from them;
   `SessionClocks.liveSamples` for Lift, kept on the session in progress every half minute, `SetStore.saveLiveSamples`
   into its `heart_rate_samples`, and gone on from as its page opens again). The zones are a share of the max heart

@@ -330,20 +330,20 @@ class WorkoutSession(
         zoneTracker = ZoneTracker(maxBpm = of.maxHeartRate, restingBpm = of.body.restingHeartRate)
         heartRateJob?.cancel()
         liveHeartRate.start(this)
-        heartRateJob = heartRateScope.launch { liveHeartRate.reading.collect { onHeartRate(it) } }
+        heartRateJob = heartRateScope.launch { liveHeartRate.readings.collect { onHeartRate(it) } }
     }
 
-    /** Keeps a reading taken while the workout runs, and says a change of zone when the alerts are on. */
-    private fun onHeartRate(state: LiveHeartRateState) {
+    /** Keeps a reading of [bpm] taken while the workout runs, and says a change of zone when the alerts are on. */
+    private fun onHeartRate(bpm: Int) {
         val current = run ?: return
-        if (state !is LiveHeartRateState.Reading || !current.running || current.over) return
+        if (!current.running || current.over) return
         val now = clock.nowMillis()
-        sampler.add(state.bpm, now)
+        sampler.add(bpm, now)
         // The trace takes a sample as each begins: every five seconds, not every reading.
         if (sampler.size != current.liveSamples.size) run = current.copy(liveSamples = sampler.samples())
         val cues = settingsStore.cueSettings.value
         if (!cues.heartRateAlerts) return
-        val beep = when (zoneTracker.record(state.bpm, now)) {
+        val beep = when (zoneTracker.record(bpm, now)) {
             ZoneTransition.EnteredHigh -> Beep.ZoneUp
             ZoneTransition.EnteredRecovery -> Beep.ZoneDown
             null -> return

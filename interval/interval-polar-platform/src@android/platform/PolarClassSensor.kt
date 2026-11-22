@@ -21,6 +21,7 @@ import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.storage.catchingFailures
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,6 +115,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         idle = { if (stored() is SensorStatus.Paired) LiveHeartRateState.Idle else LiveHeartRateState.Unavailable },
     )
     override val reading: StateFlow<LiveHeartRateState> get() = stream.reading
+    override val readings: Flow<Int> get() = stream.readings
 
     private val supported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&

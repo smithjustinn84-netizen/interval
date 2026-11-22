@@ -134,6 +134,22 @@ class WorkoutSessionHeartRateTest : MainDispatcherTest(StandardTestDispatcher())
     }
 
     @Test
+    fun `a steady heart rate fills every sample`() = runTest {
+        val session = newSession()
+        session.open(1L)
+        runCurrent()
+
+        // The same number a second for ten seconds: a sensor reads it each time, though nothing changed.
+        repeat(10) {
+            liveHr.emitBpm(120)
+            runCurrent()
+            now += 1_000L
+        }
+
+        assertEquals(listOf(120, 120), session.state.value?.liveSamples)
+    }
+
+    @Test
     fun `a sensor that reads late leaves the time before it empty`() = runTest {
         val session = newSession()
         session.open(1L)
