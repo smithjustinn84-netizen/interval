@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
@@ -9,6 +10,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.constrainHeight
 import androidx.compose.ui.unit.constrainWidth
@@ -23,6 +25,21 @@ const val LARGE_FONT_SCALE = 1.35f
 /** Whether the system's text is large enough, past [LARGE_FONT_SCALE], that a crowded row should give way. */
 @Composable
 fun isLargeText(): Boolean = LocalDensity.current.fontScale > LARGE_FONT_SCALE
+
+/**
+ * [content] with the system's text growing no further than [max]: for words held in a shape of a fixed size, such as
+ * a ring, that would run over it past that. Text the reader needs whole goes elsewhere at full size; this is for
+ * what a shape frames, which says it again beside it or reads it aloud whole all the same.
+ */
+@Composable
+fun TextScaleAtMost(max: Float, content: @Composable () -> Unit) {
+    val density = LocalDensity.current
+    if (density.fontScale <= max) {
+        content()
+    } else {
+        CompositionLocalProvider(LocalDensity provides Density(density.density, max), content = content)
+    }
+}
 
 /**
  * [main] with [trailing] at its end, or under it when beside it [main]'s longest word would not fit: text squeezed

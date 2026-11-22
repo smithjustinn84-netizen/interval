@@ -65,6 +65,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.interval.ui.fadeWhenMoreBelow
@@ -551,7 +552,9 @@ private fun ColumnScope.SummaryTitle(state: WorkoutUiState, entrance: MutableTra
         }
         Box(Modifier.size(IntervalSizes.summaryRing), contentAlignment = Alignment.Center) {
             ProgressRing({ sweep.value }, { done }, Modifier.fillMaxSize(), glide = false)
-            Column { AnimatedVisibility(entrance, enter = risingEnter()) { title() } }
+            // The word is the ring's to frame, at the size it is drawn for: larger it runs over the ring ("Do"),
+            // and it is read aloud whole all the same.
+            Column { AnimatedVisibility(entrance, enter = risingEnter()) { TextScaleAtMost(1f) { title() } } }
         }
     } else {
         AnimatedVisibility(entrance, enter = risingEnter()) {

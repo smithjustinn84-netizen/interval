@@ -23,6 +23,7 @@
     <!-- The live zone scale's readout: its unit, and the zone by number and name. -->
     <string name="heart_rate_unit_caps">BPM</string>
     <string name="heart_rate_zone_named">Zone %1$d · %2$s</string>
+    <string name="heart_rate_zone_number">Zone %1$d</string>
     <string name="heart_rate_last">Last %1$d bpm</string>
     <string name="heart_rate_scale_cd">%1$d beats per minute, Zone %2$d, %3$s</string>
     <string name="heart_rate_chart_cd">Heart rate over the workout</string>

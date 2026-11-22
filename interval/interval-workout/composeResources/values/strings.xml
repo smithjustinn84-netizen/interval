@@ -91,6 +91,8 @@
     </plurals>
     <string name="workout_end_nothing">No round is finished yet, so nothing is saved.</string>
     <string name="workout_end_confirm">End workout</string>
+    <!-- The End dialog's way back for a workout that was paused already: it stays paused. -->
+    <string name="workout_keep_paused">Keep paused</string>
     <string name="workout_done">Done</string>
     <string name="workout_ended">Ended</string>
     <plurals name="workout_summary_finished">

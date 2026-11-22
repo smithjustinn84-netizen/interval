@@ -18,7 +18,8 @@ import kotlinx.coroutines.flow.drop
 /**
  * "How was it?" at a finish, the same on both sides: how hard it felt, one of [efforts] (none until picked), and a
  * one-line note. Each change goes out as it is made ([onEffortChange], [onNoteChange]), so leaving loses nothing.
- * The words are the caller's: [title], each effort's [effortLabel], and the note's [notePlaceholder].
+ * The words are the caller's: [title], each effort's [effortLabel], and the note's [notePlaceholder]. With large
+ * text the efforts take two rows, so each word stays whole ("Steady", not "Stea").
  */
 @Composable
 fun <T> HowWasIt(
@@ -46,7 +47,14 @@ fun <T> HowWasIt(
             color = IntervalTheme.palette.textDim,
             modifier = Modifier.semantics { heading() },
         )
-        SegmentedPicker(efforts, effort, effortLabel, onEffortChange, check = false, maxLines = 2)
+        if (isLargeText()) {
+            // One choice across both rows: a row without the one picked shows none picked.
+            efforts.chunked((efforts.size + 1) / 2).forEach { row ->
+                SegmentedPicker(row, effort, effortLabel, onEffortChange, check = false, maxLines = 2)
+            }
+        } else {
+            SegmentedPicker(efforts, effort, effortLabel, onEffortChange, check = false, maxLines = 2)
+        }
         NameField(noteState, placeholder = notePlaceholder, label = notePlaceholder, maxLength = noteMaxLength)
     }
 }

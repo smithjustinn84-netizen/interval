@@ -59,7 +59,6 @@ import dev.justinsmith.interval.platform.inUse
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.WorkoutEngine
-import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalSizes
@@ -73,19 +72,13 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.WorkoutLanes
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.laneRing
 import dev.justinsmith.interval.ui.of
 import dev.justinsmith.interval.ui.rememberLaneAnchor
 import dev.justinsmith.interval.workout.resources.Res
-import dev.justinsmith.interval.workout.resources.workout_end_confirm
-import dev.justinsmith.interval.workout.resources.workout_end_nothing
-import dev.justinsmith.interval.workout.resources.workout_end_progress
-import dev.justinsmith.interval.workout.resources.workout_end_progress_cap
-import dev.justinsmith.interval.workout.resources.workout_end_progress_moves
-import dev.justinsmith.interval.workout.resources.workout_end_title
 import dev.justinsmith.interval.workout.resources.workout_pause
 import dev.justinsmith.interval.workout.resources.workout_resume
-import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
@@ -160,8 +153,8 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
  * a room; tapping anywhere in the middle pauses or resumes. Wider-than-tall windows move the
  * controls into side rails at thumb reach, which leaves the middle for a much bigger clock.
  *
- * End, or the system back gesture, pauses and asks first. A workout that ends, early or not, turns
- * into its summary.
+ * End, or the system back gesture, pauses and asks first; backing out resumes it, or leaves it paused if it was
+ * paused already. A workout that ends, early or not, turns into its summary.
  *
  * With a keyboard (desktop, a Chromebook, a tablet's keyboard cover): Space or Enter pauses and
  * resumes, the arrow keys go back and skip, and Escape ends, the same as the End button. In a time cap, Enter is a
@@ -190,9 +183,12 @@ fun WorkoutScreen(
     onToggleHeart: () -> Unit = {},
 ) {
     var confirmingEnd by rememberSaveable { mutableStateOf(false) }
+    // Whether End paused the workout to ask, so backing out resumes only what it paused: one paused already stays so.
+    var pausedToAsk by rememberSaveable { mutableStateOf(false) }
     // A flow's move read on its page while the workout runs on.
     var readingMove by rememberSaveable { mutableStateOf(false) }
     val requestEnd = {
+        pausedToAsk = state.running
         if (state.running) onTogglePause()
         confirmingEnd = true
     }
@@ -243,24 +239,17 @@ fun WorkoutScreen(
         }
     }
     if (confirmingEnd && !state.isDone) {
-        ConfirmDialog(
-            title = stringResource(Res.string.workout_end_title),
-            text = if (state.hasProgress) {
-                endProgressText(state)
-            } else {
-                stringResource(Res.string.workout_end_nothing)
-            },
-            confirm = stringResource(Res.string.workout_end_confirm),
-            dismiss = stringResource(Res.string.workout_resume),
-            onConfirm = {
+        EndDialog(
+            state,
+            pausedToAsk,
+            onEnd = {
                 confirmingEnd = false
                 if (state.hasProgress) onEndEarly() else onExit()
             },
             onDismiss = {
                 confirmingEnd = false
-                if (state.paused) onTogglePause()
+                if (pausedToAsk && state.paused) onTogglePause()
             },
-            destructive = true,
         )
     }
     if (readingMove && !state.isDone) MoveReading(state, onClose = { readingMove = false })
@@ -274,21 +263,6 @@ private fun MoveReading(state: WorkoutUiState, onClose: () -> Unit) {
     IntervalSheet(title = step.move.name, onDismiss = onClose) { hide ->
         MoveDetail(step.move, number = step.number, of = flow.of, onBack = hide)
     }
-}
-
-/** How far the workout got, as the End dialog says it: its rounds, a time cap's rounds done, or a flow's moves. */
-@Composable
-private fun endProgressText(state: WorkoutUiState): String = when {
-    state.flow != null ->
-        pluralStringResource(Res.plurals.workout_end_progress_moves, state.flow.of, state.flow.done, state.flow.of)
-
-    state.caps.isNotEmpty() -> pluralStringResource(
-        Res.plurals.workout_end_progress_cap,
-        state.capRounds,
-        state.capRounds,
-    )
-
-    else -> pluralStringResource(Res.plurals.workout_end_progress, state.rounds, state.completedRounds, state.rounds)
 }
 
 /**
@@ -497,16 +471,24 @@ private fun Modifier.tapToPause(state: WorkoutUiState, onTogglePause: () -> Unit
     )
 }
 
+/**
+ * End and Skip with where the workout stands between them, or with large text under them, the whole width: squeezed
+ * between the two it takes three lines and more ("Round 1 of / 8 · 5:33 / left").
+ */
 @Composable
 private fun TopBar(state: WorkoutUiState, actions: WorkoutActions) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        EndPill(actions.onEnd)
-        RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
-        SkipPill(actions.onSkip)
+    val under = isLargeText()
+    Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            EndPill(actions.onEnd)
+            if (!under) RoundStatus(state, Modifier.weight(1f).padding(horizontal = Spacing.space8))
+            SkipPill(actions.onSkip)
+        }
+        if (under) RoundStatus(state, Modifier.fillMaxWidth())
     }
 }
 

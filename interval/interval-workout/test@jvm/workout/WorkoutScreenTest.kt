@@ -3,10 +3,12 @@
 package dev.justinsmith.interval.workout
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
@@ -14,6 +16,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -22,6 +25,7 @@ import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.pressKey
+import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
@@ -112,6 +116,20 @@ class WorkoutScreenTest {
         state = state.copy(effort = PerceivedEffort.Hard, note = "Felt strong")
         waitForIdle()
         assertEquals("Hard · Felt strong", healthNotes.last())
+    }
+
+    @Test
+    fun `with large text the summary's efforts take two rows and each is picked whole`() = runUiTest {
+        setThemedContent {
+            val density = LocalDensity.current
+            CompositionLocalProvider(LocalDensity provides Density(density.density, fontScale = 2f)) {
+                Screen(done.toUiState(running = false))
+            }
+        }
+        onNode(hasText("Done") and isHeading()).assertExists()
+        onNodeWithText("Steady").performScrollTo()
+        onNodeWithText("All out").performScrollTo().performClick()
+        assertEquals(listOf("effort AllOut"), calls)
     }
 
     @Test
@@ -233,6 +251,31 @@ class WorkoutScreenTest {
         onNode(hasText("Resume") and hasAnyAncestor(isDialog())).performClick()
         onNodeWithText("End workout?").assertDoesNotExist()
         assertTrue(running, "Resume carries on")
+        assertEquals(emptyList(), calls)
+    }
+
+    @Test
+    fun `a workout paused before end stays paused when the dialog is dismissed`() = runUiTest {
+        val secondRound = states.first { it.phase == Phase.Work && it.round == 2 }
+        var running by mutableStateOf(false)
+        setThemedContent {
+            WorkoutScreen(
+                state = secondRound.toUiState(running = running),
+                onTogglePause = { running = !running },
+                onSkip = {},
+                onBack = {},
+                onAddTime = {},
+                onRestart = {},
+                onEndEarly = { calls += "end early" },
+                onSavePreset = {},
+                onExit = { calls += "exit" },
+            )
+        }
+        onNodeWithContentDescription("End workout").performClick()
+        onNode(hasText("Resume") and hasAnyAncestor(isDialog())).assertDoesNotExist()
+        onNode(hasText("Keep paused") and hasAnyAncestor(isDialog())).performClick()
+        onNodeWithText("End workout?").assertDoesNotExist()
+        assertFalse(running, "Paused by hand, it stays paused")
         assertEquals(emptyList(), calls)
     }
 

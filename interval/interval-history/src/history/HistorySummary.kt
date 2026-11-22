@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,13 +37,11 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.history.resources.Res
 import dev.justinsmith.interval.history.resources.history_best_streak
 import dev.justinsmith.interval.history.resources.history_calories
@@ -97,6 +94,7 @@ import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.popOnce
@@ -390,10 +388,7 @@ private fun GoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
     ) {
         // Inside the ring the figure grows no further than large text begins: past that it would spill over the
         // ring, and the line beside it ("1 to go") says it at the full size, as the ring's description does.
-        val density = LocalDensity.current
-        CompositionLocalProvider(
-            LocalDensity provides Density(density.density, density.fontScale.coerceAtMost(LARGE_FONT_SCALE)),
-        ) {
+        TextScaleAtMost(LARGE_FONT_SCALE) {
             RollingText(
                 stringResource(Res.string.history_goal_ring, count, goal),
                 rising = rememberRising(count),

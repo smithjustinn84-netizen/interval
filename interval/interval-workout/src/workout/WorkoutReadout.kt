@@ -57,6 +57,7 @@ import dev.justinsmith.interval.ui.RingLaps
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.of
 import dev.justinsmith.interval.ui.rememberCountdownPulse
 import dev.justinsmith.interval.ui.ringClockSize
@@ -214,18 +215,22 @@ internal fun RingReadout(
             strokeScale = ringSwell(state),
             laps = { ringLaps(state) },
         )
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            PhaseLabel(state, accent)
-            Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
-            val nextText = nextText(state)
-            if (nextText.isNotEmpty()) {
-                Text(
-                    nextText,
-                    style = IntervalTheme.type.label,
-                    color = IntervalTheme.workout.onGroundDim,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
-                )
+        // Inside the ring its words keep the size the ring is drawn for, as the clock does, sized by the ring alone:
+        // the clock fills it, so larger they run into the ring. Over the ring the round line says it at full size.
+        TextScaleAtMost(1f) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                PhaseLabel(state, accent)
+                Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
+                val nextText = nextText(state)
+                if (nextText.isNotEmpty()) {
+                    Text(
+                        nextText,
+                        style = IntervalTheme.type.label,
+                        color = IntervalTheme.workout.onGroundDim,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
+                    )
+                }
             }
         }
     }

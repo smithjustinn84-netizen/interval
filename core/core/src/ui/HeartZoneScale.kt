@@ -38,6 +38,7 @@ import dev.justinsmith.core.resources.heart_rate_last
 import dev.justinsmith.core.resources.heart_rate_scale_cd
 import dev.justinsmith.core.resources.heart_rate_unit_caps
 import dev.justinsmith.core.resources.heart_rate_zone_named
+import dev.justinsmith.core.resources.heart_rate_zone_number
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
@@ -90,11 +91,16 @@ internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
     val scale = rememberHeartPulseScale(bpm)
     val name = heartRateZoneName(zone)
     val description = stringResource(Res.string.heart_rate_scale_cd, bpm, zone.number, name)
-    Row(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // The zone by number and name, or with large text by number alone ("Zone 4"), and the row's words growing no
+    // further than large text begins: the card keeps its height so the ring over it never moves, and squeezed they
+    // break mid-word ("Zon / e 4"). The bars and the description say the zone in full.
+    val large = isLargeText()
+    val zoneWords = if (large) {
+        stringResource(Res.string.heart_rate_zone_number, zone.number)
+    } else {
+        stringResource(Res.string.heart_rate_zone_named, zone.number, name)
+    }
+    val reading = @Composable {
         Row(
             horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
             verticalAlignment = Alignment.CenterVertically,
@@ -120,38 +126,46 @@ internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
                 )
             }
         }
-        JoinedText(
-            stringResource(Res.string.heart_rate_zone_named, zone.number, name),
-            style = IntervalTheme.type.body,
-            color = colors.onGroundDim,
-        )
+    }
+    TextScaleAtMost(LARGE_FONT_SCALE) {
+        Row(
+            Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            reading()
+            JoinedText(zoneWords, style = IntervalTheme.type.body, color = colors.onGroundDim)
+        }
     }
 }
 
 /** Why there is no reading, and the last there was once the signal is lost. */
 @Composable
 internal fun StatusRow(connecting: Boolean, lastBpm: Int?) {
-    val dim = IntervalTheme.workout.onGroundDim
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
+    // As the reading's row: the card keeps its height.
+    TextScaleAtMost(LARGE_FONT_SCALE) {
+        val dim = IntervalTheme.workout.onGroundDim
         Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box(Modifier.size(Sizes.zoneScaleDot).clip(Corners.full).background(dim))
-            Text(
-                stringResource(
-                    if (connecting) Res.string.heart_rate_connecting else Res.string.heart_rate_disconnected,
-                ),
-                style = IntervalTheme.type.section,
-                color = dim,
-            )
-        }
-        if (!connecting && lastBpm != null) {
-            Text(stringResource(Res.string.heart_rate_last, lastBpm), style = IntervalTheme.type.meta, color = dim)
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Box(Modifier.size(Sizes.zoneScaleDot).clip(Corners.full).background(dim))
+                Text(
+                    stringResource(
+                        if (connecting) Res.string.heart_rate_connecting else Res.string.heart_rate_disconnected,
+                    ),
+                    style = IntervalTheme.type.section,
+                    color = dim,
+                )
+            }
+            if (!connecting && lastBpm != null) {
+                Text(stringResource(Res.string.heart_rate_last, lastBpm), style = IntervalTheme.type.meta, color = dim)
+            }
         }
     }
 }
