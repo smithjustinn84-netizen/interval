@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.FirstBaseline
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -34,6 +35,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -45,6 +47,10 @@ import androidx.compose.ui.unit.dp
  * instead of under the band of ascent the font keeps above them. The icon glyphs are drawn level
  * with the capitals, near the top of their 48dp touch targets, so the row's spare height falls
  * below the title rather than above it.
+ *
+ * A title with a word too wide to fit beside the actions (with large text, say, beside a wide one such as a
+ * session's heart rate) takes a line of its own under them, the whole width, rather than breaking a letter or
+ * two a line. One that only wraps between words wraps beside them, as it always has.
  */
 @Composable
 fun TitleBar(
@@ -59,24 +65,50 @@ fun TitleBar(
     // From the touch target's centre to the capitals' centre: negative, so the glyphs move up.
     val glyphShift = capTop + capHeight / 2 - Sizes.iconButton / 2
     CompositionLocalProvider(LocalTitleBarGlyphShift provides glyphShift) {
-        Row(
-            modifier
+        Layout(
+            contents = listOf(
+                { Box { navigation() } },
+                {
+                    Text(
+                        title,
+                        style = style,
+                        color = IntervalTheme.palette.text,
+                        modifier = Modifier
+                            .padding(start = Spacing.space12)
+                            .capTopAt(capTop, capHeight)
+                            .semantics { heading() },
+                    )
+                },
+                { Row(verticalAlignment = Alignment.Top, content = actions) },
+            ),
+            modifier = modifier
                 .fillMaxWidth()
                 .padding(start = Spacing.space4, end = Spacing.space8, bottom = Spacing.space4),
-            verticalAlignment = Alignment.Top,
-        ) {
-            navigation()
-            Text(
-                title,
-                style = style,
-                color = IntervalTheme.palette.text,
-                modifier = Modifier
-                    .weight(1f)
-                    .padding(start = Spacing.space12)
-                    .capTopAt(capTop, capHeight)
-                    .semantics { heading() },
-            )
-            actions()
+        ) { (navigations, titles, actionRows), constraints ->
+            val loose = constraints.copy(minWidth = 0, minHeight = 0)
+            val nav = navigations.single().measure(loose)
+            val acts = actionRows.single().measure(loose.copy(maxWidth = (loose.maxWidth - nav.width).coerceAtLeast(0)))
+            val text = titles.single()
+            val beside = (constraints.maxWidth - nav.width - acts.width).coerceAtLeast(0)
+            // Its longest word, which is the least it can be drawn in without breaking one.
+            val fits = text.minIntrinsicWidth(Constraints.Infinity) <= beside
+            val head = maxOf(nav.height, acts.height)
+            if (fits) {
+                val placed = text.measure(Constraints(minWidth = beside, maxWidth = beside))
+                val height = maxOf(head, placed.height)
+                layout(constraints.maxWidth, height) {
+                    nav.place(0, 0)
+                    placed.place(nav.width, 0)
+                    acts.place(constraints.maxWidth - acts.width, 0)
+                }
+            } else {
+                val placed = text.measure(Constraints(maxWidth = constraints.maxWidth))
+                layout(constraints.maxWidth, head + placed.height) {
+                    nav.place(0, 0)
+                    acts.place(constraints.maxWidth - acts.width, 0)
+                    placed.place(0, head)
+                }
+            }
         }
     }
 }
