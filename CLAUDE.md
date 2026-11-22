@@ -33,6 +33,8 @@ what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md); the 2026-
                                     # Draws the `@Preview`s whose name has that in it (`all`: every one) to
                                     # build/previews/*.png. Also -Dpreviews.window=Tablet|all, -Dpreviews.dark=true,
                                     # -Dpreviews.fontScale=2 (the system's large text)
+tools/run_android.sh [serial]       # Build the debug APK, install it (data kept) and open the app: the one phone
+                                    # on USB, else the one device attached; a serial or ANDROID_SERIAL names another
 ./kotlin package -m androidApp -f aab   # Release bundle (R8 on; rules in apps/androidApp/proguard-rules.pro).
                                         # Unsigned until a keystore is set up (`./kotlin tool generate-keystore`)
 python3 tools/check_versions.py         # Verify Android and iOS version parity (run in CI)
