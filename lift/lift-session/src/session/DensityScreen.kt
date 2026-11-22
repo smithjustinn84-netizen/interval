@@ -13,7 +13,9 @@ import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RingDial
+import dev.justinsmith.interval.ui.RingZone
 import dev.justinsmith.interval.ui.RollingText
+import dev.justinsmith.interval.ui.rememberRingZone
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DensityPhase
 import dev.justinsmith.lift.domain.DensityState
@@ -51,6 +53,7 @@ fun DensityScreen(
     modifier: Modifier = Modifier,
     progress: () -> Float = { state.progress },
     heart: @Composable () -> Unit = {},
+    zone: RingZone? = null,
 ) {
     val colors = IntervalTheme.workout
     val block = TimedBlock(
@@ -92,6 +95,7 @@ fun DensityScreen(
         heart,
         tally = { Rounds(run, state, it) },
         figure = { BlockFigure(run.exercise, run.double, still = block.over, it) },
+        zone = zone,
     )
 }
 
@@ -165,6 +169,7 @@ private fun DensityScreenHeartPreview() {
             onFinishRound = {},
             onStop = {},
             heart = { HeartBeatBadge(LiveHeartRateState.Reading(bpm = 164)) },
+            zone = rememberRingZone(LiveHeartRateState.Reading(bpm = 164)),
         )
     }
 }

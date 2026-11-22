@@ -5,17 +5,25 @@ package dev.justinsmith.lift.session
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.toPixelMap
+import androidx.compose.ui.test.ComposeUiTest
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.interval.ui.rememberRingZone
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
@@ -36,6 +44,10 @@ private val snatches = DensityRun(
     startedAtMillis = 0,
     best = 14,
 )
+
+/** How far a pixel's blue stands over its red and its green to count as blue: zone 1's, on the workout's ground. */
+private const val BLUE_OVER_RED = 0.12f
+private const val BLUE_OVER_GREEN = 0.04f
 
 /** A density block's page over fixed state. A whole block in a session is lift-nav's `DensityAcceptanceTest`. */
 class DensityScreenTest {
@@ -67,6 +79,45 @@ class DensityScreenTest {
         onNodeWithText("Done").assertExists()
         onNodeWithText("15 rounds").assertExists()
         onNodeWithText("Round done").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `a heart read by the sensor rings the cap's dial in its zone's colour`() = runUiTest { ringsTheDial() }
+
+    @Test
+    fun `sideways the dial is ringed in the zone's colour too`() = runUiTest(Window.PhoneSideways) { ringsTheDial() }
+
+    /**
+     * The page with no heart read has nothing blue on it; a reading in zone 1, whose colour is blue, puts the bezel
+     * round the ring, and a sensor lost takes it off. The scaffold's ring is an EMOM's too.
+     */
+    private fun DesktopComposeUiTest.ringsTheDial() {
+        var live by mutableStateOf<LiveHeartRateState>(LiveHeartRateState.Unavailable)
+        val state = DensityState(DensityPhase.Work, 545, 9, 20, 0.55f)
+        setThemedContent(dark = true) {
+            DensityScreen(snatches, state, {}, {}, zone = rememberRingZone(live, maxBpm = 190))
+        }
+        assertEquals(0, bluePixels(), "nothing of the page's own is blue")
+
+        live = LiveHeartRateState.Reading(bpm = 100)
+        waitForIdle()
+        assertTrue(bluePixels() > 0, "the bezel is drawn in the zone's colour")
+
+        live = LiveHeartRateState.Disconnected
+        waitForIdle()
+        assertEquals(0, bluePixels(), "a sensor lost leaves no bezel")
+    }
+
+    private fun ComposeUiTest.bluePixels(): Int {
+        val pixels = onRoot().captureToImage().toPixelMap()
+        var blue = 0
+        for (y in 0 until pixels.height) {
+            for (x in 0 until pixels.width) {
+                val color = pixels[x, y]
+                if (color.blue > color.red + BLUE_OVER_RED && color.blue > color.green + BLUE_OVER_GREEN) blue++
+            }
+        }
+        return blue
     }
 
     @Test

@@ -21,7 +21,9 @@ import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.RingZone
 import dev.justinsmith.interval.ui.fadeThrough
+import dev.justinsmith.interval.ui.rememberRingZone
 import dev.justinsmith.lift.data.ExerciseFilterStore
 import dev.justinsmith.lift.data.SetStore
 import dev.justinsmith.lift.domain.testOf
@@ -93,6 +95,7 @@ fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
         }
     // Computed, so the clocks' ticks reach this page only when the face up changes or what it says does.
     val page by remember { computedStateOf(structuralEqualityPolicy()) { sessionPage(state, clocks.value) } }
+    val zone = rememberTimerZone(readClocks)
     // The session, its EMOM or density block, and its summary take one another's place with a fade through, as
     // pages do.
     AnimatedContent(
@@ -116,6 +119,7 @@ fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
                 onStop = timers::stopEmom,
                 progress = remember(clocks) { heldShare { clocks.value.emomState?.minuteProgress } },
                 heart = { TimerHeart(readClocks) },
+                zone = zone,
             )
 
             is SessionPage.Density -> DensityScreen(
@@ -125,6 +129,7 @@ fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
                 onStop = timers::stopDensity,
                 progress = remember(clocks) { heldShare { clocks.value.densityState?.progress } },
                 heart = { TimerHeart(readClocks) },
+                zone = zone,
             )
 
             SessionPage.Logging -> SessionScreen(state, readClocks, actions)
@@ -258,4 +263,16 @@ private fun SessionSummary(finished: Finished, summary: FinishSession, onDone: (
 private fun TimerHeart(clocks: () -> SessionClocks) {
     val now = clocks()
     HeartBeatBadge(now.liveHeartRate, maxBpm = now.maxHeartRate)
+}
+
+/**
+ * The live heart rate's zone as a timer's ring wears it, a bezel round its dial. Computed, so of the [clocks]'
+ * ticks only a change in what the sensor reads reaches whoever holds it.
+ */
+@Composable
+private fun rememberTimerZone(clocks: () -> SessionClocks): RingZone {
+    val heart by remember(clocks) {
+        computedStateOf(structuralEqualityPolicy()) { clocks().run { liveHeartRate to maxHeartRate } }
+    }
+    return rememberRingZone(heart.first, heart.second)
 }

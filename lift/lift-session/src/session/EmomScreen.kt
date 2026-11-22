@@ -7,6 +7,8 @@ import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RingDial
+import dev.justinsmith.interval.ui.RingZone
+import dev.justinsmith.interval.ui.rememberRingZone
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.EmomClock
 import dev.justinsmith.lift.domain.EmomPhase
@@ -42,6 +44,7 @@ fun EmomScreen(
     modifier: Modifier = Modifier,
     progress: () -> Float = { state.minuteProgress },
     heart: @Composable () -> Unit = {},
+    zone: RingZone? = null,
 ) {
     val colors = IntervalTheme.workout
     val block = TimedBlock(
@@ -83,6 +86,7 @@ fun EmomScreen(
         modifier,
         heart,
         figure = { BlockFigure(run.exercise, run.double, still = block.over, it) },
+        zone = zone,
     )
 }
 
@@ -130,6 +134,7 @@ private fun EmomScreenHeartPreview() {
             onFinishSet = {},
             onStop = {},
             heart = { HeartBeatBadge(LiveHeartRateState.Reading(bpm = 156)) },
+            zone = rememberRingZone(LiveHeartRateState.Reading(bpm = 156)),
         )
     }
 }

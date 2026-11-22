@@ -65,6 +65,7 @@ import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.RingDial
+import dev.justinsmith.interval.ui.RingZone
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -135,7 +136,8 @@ internal fun taskWords(name: String, task: String, next: Boolean = false): TaskW
  * the action while it is live, Escape asks to stop, as Stop does until the block is over. A haptic marks each
  * [TimedBlock.beat]; the beeps come from the session's timers. [heart] is the live heart rate, at the end of the
  * top row while a sensor is in use; [tally] is drawn under the ring (beside it, sideways), as a density block's
- * rounds are, and [figure] before it on the same line: the block's lift, done by a ghost ([BlockFigure]).
+ * rounds are, and [figure] before it on the same line: the block's lift, done by a ghost ([BlockFigure]). [zone]
+ * is the heart rate's zone, which the ring wears as a bezel round its dial.
  */
 @Composable
 internal fun TimedBlockScaffold(
@@ -147,6 +149,7 @@ internal fun TimedBlockScaffold(
     heart: @Composable () -> Unit = {},
     tally: @Composable (Modifier) -> Unit = {},
     figure: @Composable (Modifier) -> Unit = {},
+    zone: RingZone? = null,
 ) {
     val colors = IntervalTheme.workout
     // Read where it is drawn or written, so a crossfade's frames recompose only what shows it.
@@ -181,9 +184,9 @@ internal fun TimedBlockScaffold(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeBlock(block, color, progress, sideWidth, onAction, requestStop, heart, tally, figure)
+            LandscapeBlock(block, color, progress, sideWidth, onAction, requestStop, heart, tally, figure, zone)
         } else {
-            PortraitBlock(block, color, progress, onAction, requestStop, roomy, heart, tally, figure)
+            PortraitBlock(block, color, progress, onAction, requestStop, roomy, heart, tally, figure, zone)
         }
     }
     if (confirmingStop && !block.over) {
@@ -242,6 +245,7 @@ private fun PortraitBlock(
     heart: @Composable () -> Unit,
     tally: @Composable (Modifier) -> Unit,
     figure: @Composable (Modifier) -> Unit,
+    zone: RingZone?,
 ) {
     Column(
         Modifier.widthIn(max = Sizes.contentWide).fillMaxSize().safeDrawingPadding()
@@ -252,7 +256,7 @@ private fun PortraitBlock(
         TopRow(block, onStop, heart, Modifier.fillMaxWidth().padding(top = Spacing.space8))
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
-            Ring(block, color, progress, diameter) { heat ->
+            Ring(block, color, progress, diameter, zone) { heat ->
                 // The ring's words keep the size it is drawn for, as the clock does, sized by the ring alone:
                 // larger, the word sits on the stroke and the line under the clock is cut ("24 kg × 10").
                 TextScaleAtMost(1f) {
@@ -291,6 +295,7 @@ private fun LandscapeBlock(
     heart: @Composable () -> Unit,
     tally: @Composable (Modifier) -> Unit,
     figure: @Composable (Modifier) -> Unit,
+    zone: RingZone?,
 ) {
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -312,7 +317,7 @@ private fun LandscapeBlock(
         ) {
             BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
-                Ring(block, color, progress, diameter) { heat ->
+                Ring(block, color, progress, diameter, zone) { heat ->
                     ClockText(block, color, diameter, IntervalTheme.type.clock, heat)
                 }
             }
@@ -389,13 +394,17 @@ private fun TopRow(
     }
 }
 
-/** The ring, a [diameter] across, filling as [progress] goes, with [content] inside handed the dial's heat. */
+/**
+ * The ring, a [diameter] across, filling as [progress] goes, with [content] inside handed the dial's heat; with a
+ * [zone] its dial is a bezel of the live heart rate, as the interval workout's is.
+ */
 @Composable
 private fun Ring(
     block: TimedBlock,
     color: () -> Color,
     progress: () -> Float,
     diameter: Dp,
+    zone: RingZone?,
     content: @Composable (heat: () -> Float) -> Unit,
 ) {
     Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
@@ -406,6 +415,7 @@ private fun Ring(
             Modifier.fillMaxSize(),
             glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
             dial = dial,
+            zone = zone,
         )
         content { dial?.heat(progress()) ?: 0f }
     }
