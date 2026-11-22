@@ -5,6 +5,7 @@
     <string name="session_since_last">Since last set</string>
     <string name="session_rest">Rest</string>
     <string name="session_rest_skip">Skip</string>
+    <string name="session_rest_next">Next</string>
     <string name="session_rest_heart_down">easing</string>
     <string name="session_rest_heart_ready">ready</string>
     <string name="session_rest_heart_high">high</string>

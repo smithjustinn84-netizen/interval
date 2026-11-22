@@ -12,6 +12,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -27,6 +28,7 @@ import dev.justinsmith.lift.domain.EmomState
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.PlanChanges
+import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.builtInPrograms
 import kotlin.test.Test
@@ -46,9 +48,18 @@ class SidewaysTest {
         onNodeWithText("Two-hand swing · 24 kg × 10").assertIsDisplayed()
         onNodeWithText("End").assertIsDisplayed()
         onNodeWithText("Set done").assertIsDisplayed().assertIsEnabled()
+        onNodeWithContentDescription("A figure doing Two-hand swing").assertIsDisplayed()
         // Beside the ring, not over it as when the readout sat inside a ring too short for it.
         val clock = onNodeWithText("0:45").getUnclippedBoundsInRoot()
         assertTrue(onNodeWithText("Work").getUnclippedBoundsInRoot().left >= clock.right)
+    }
+
+    @Test
+    fun `a rest keeps to its one row with no Next under it`() = runUiTest(Window.PhoneSideways) {
+        val clocks = SessionClocks(elapsed = "1:40", sinceLast = "0:10", rest = RestState(90, 80, 0.11f))
+        setThemedContent(dark = true) { SessionScreen(SessionUiState(free = true), { clocks }, SessionActions()) }
+        onNodeWithText("1:20").assertIsDisplayed()
+        onNodeWithText("Next:", substring = true).assertDoesNotExist()
     }
 
     @Test

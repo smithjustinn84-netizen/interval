@@ -59,6 +59,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
+import dev.justinsmith.interval.ui.ExerciseDemoColors
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
@@ -73,12 +74,17 @@ import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.interval.ui.windowIsRoomy
 import dev.justinsmith.lift.domain.EmomClock
+import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.emom_next
 import dev.justinsmith.lift.session.resources.emom_stop
+import dev.justinsmith.lift.session.resources.next_figure_cd
 import dev.justinsmith.lift.ui.LiftSizes
+import dev.justinsmith.lift.ui.demo.ExerciseGhost
+import dev.justinsmith.lift.ui.demo.rep
+import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -129,7 +135,7 @@ internal fun taskWords(name: String, task: String, next: Boolean = false): TaskW
  * the action while it is live, Escape asks to stop, as Stop does until the block is over. A haptic marks each
  * [TimedBlock.beat]; the beeps come from the session's timers. [heart] is the live heart rate, at the end of the
  * top row while a sensor is in use; [tally] is drawn under the ring (beside it, sideways), as a density block's
- * rounds are.
+ * rounds are, and [figure] before it on the same line: the block's lift, done by a ghost ([BlockFigure]).
  */
 @Composable
 internal fun TimedBlockScaffold(
@@ -140,6 +146,7 @@ internal fun TimedBlockScaffold(
     modifier: Modifier = Modifier,
     heart: @Composable () -> Unit = {},
     tally: @Composable (Modifier) -> Unit = {},
+    figure: @Composable (Modifier) -> Unit = {},
 ) {
     val colors = IntervalTheme.workout
     // Read where it is drawn or written, so a crossfade's frames recompose only what shows it.
@@ -174,9 +181,9 @@ internal fun TimedBlockScaffold(
         val roomy = windowIsRoomy()
         if (isLandscape && !roomy) {
             val sideWidth = minOf(Sizes.setupColumnLandscape, maxWidth * LANDSCAPE_PRIMARY_SHARE)
-            LandscapeBlock(block, color, progress, sideWidth, onAction, requestStop, heart, tally)
+            LandscapeBlock(block, color, progress, sideWidth, onAction, requestStop, heart, tally, figure)
         } else {
-            PortraitBlock(block, color, progress, onAction, requestStop, roomy, heart, tally)
+            PortraitBlock(block, color, progress, onAction, requestStop, roomy, heart, tally, figure)
         }
     }
     if (confirmingStop && !block.over) {
@@ -221,8 +228,8 @@ private fun Modifier.timedBlockKeys(
 
 /**
  * Upright, and on a tablet either way up: the band, Stop and the heading across the top, the ring with the
- * readout inside, the tally, the action at the foot. On a tablet ([roomy]) the ring grows past a phone's widest,
- * and the clock in it to the workout's size.
+ * readout inside, the figure and the tally on a line, the action at the foot. On a tablet ([roomy]) the ring
+ * grows past a phone's widest, and the clock in it to the workout's size.
  */
 @Composable
 private fun PortraitBlock(
@@ -234,6 +241,7 @@ private fun PortraitBlock(
     roomy: Boolean,
     heart: @Composable () -> Unit,
     tally: @Composable (Modifier) -> Unit,
+    figure: @Composable (Modifier) -> Unit,
 ) {
     Column(
         Modifier.widthIn(max = Sizes.contentWide).fillMaxSize().safeDrawingPadding()
@@ -261,14 +269,15 @@ private fun PortraitBlock(
                 }
             }
         }
-        tally(Modifier.padding(bottom = Spacing.space16))
+        FigureAndTally(figure, tally, clearBelow = true)
         ActionButton(block, color, onAction, Modifier.fillMaxWidth().padding(bottom = Spacing.space16))
     }
 }
 
 /**
  * Sideways, as the workout lies: the band down the start edge, the clock alone in the ring, and beside it a
- * column of Stop and the heading, the phase word, the task and the tally, and the action at its foot. A phone on
+ * column of Stop and the heading, the phase word, the task, the figure and the tally, and the action at its
+ * foot. A phone on
  * its side is too short for the readout inside the ring.
  */
 @Composable
@@ -281,6 +290,7 @@ private fun LandscapeBlock(
     onStop: () -> Unit,
     heart: @Composable () -> Unit,
     tally: @Composable (Modifier) -> Unit,
+    figure: @Composable (Modifier) -> Unit,
 ) {
     Box(Modifier.fillMaxSize()) {
         Box(
@@ -314,12 +324,49 @@ private fun LandscapeBlock(
                 Spacer(Modifier.weight(1f))
                 PhaseWord(block, color)
                 TaskText(block.task)
-                tally(Modifier)
+                FigureAndTally(figure, tally)
                 Spacer(Modifier.weight(1f))
                 ActionButton(block, color, onAction, Modifier.fillMaxWidth())
             }
         }
     }
+}
+
+/**
+ * The block's figure and its tally on one line: the ghost beside the rounds, or alone. With [clearBelow] each
+ * keeps room under itself, over the action, so the line takes none with neither on it.
+ */
+@Composable
+private fun FigureAndTally(
+    figure: @Composable (Modifier) -> Unit,
+    tally: @Composable (Modifier) -> Unit,
+    clearBelow: Boolean = false,
+) {
+    val each = if (clearBelow) Modifier.padding(bottom = Spacing.space16) else Modifier
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
+    ) {
+        figure(each)
+        tally(each)
+    }
+}
+
+/**
+ * A timed block's lift done by a ghost ([ExerciseGhost]) in the workout's colours, [TimedBlockScaffold]'s figure:
+ * the movement in the corner of the eye through the count-in, the work and the rest, [still] once the block is
+ * over. Nothing for a lift with no figure.
+ */
+@Composable
+internal fun BlockFigure(exercise: Exercise, double: Boolean, still: Boolean, modifier: Modifier = Modifier) {
+    val rep = exercise.rep ?: return
+    ExerciseGhost(
+        rep,
+        modifier,
+        contentDescription = stringResource(Res.string.next_figure_cd, liftName(exercise, double)),
+        paused = still,
+        colors = ExerciseDemoColors.workout(),
+    )
 }
 
 /** Stop, the heading ("Minute 3 of 10", "20 min cap") and the live heart rate. */

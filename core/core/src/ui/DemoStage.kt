@@ -83,6 +83,9 @@ internal class DemoStage(
     private val measure = PathMeasure()
     private val travelled = FloatArray(SAMPLES + 1)
 
+    /** Whether the bell leaves a ribbon behind it: not on a still thumb, nor behind a ghost. */
+    private val trails = rep.showsTrail && mode != DemoDisplayMode.Thumb && mode != DemoDisplayMode.Ghost
+
     /** Smoothed per-step ceiling heights (in Y-up standing-height units) for [ExerciseRep.follows] in Compact mode. */
     private val followTops: FloatArray?
 
@@ -172,7 +175,7 @@ internal class DemoStage(
 
     /** Samples the tapered ribbon trail points into [pen]'s pre-allocated float buffer. */
     fun populateMotionTrail(progress: Float) {
-        if (!rep.showsTrail || mode == DemoDisplayMode.Thumb || progress < 0f) {
+        if (!trails || progress < 0f) {
             pen.trailCount = 0
             return
         }

@@ -7,12 +7,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isFocused
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
@@ -20,9 +22,13 @@ import androidx.compose.ui.test.pressKey
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.EmomPhase
 import dev.justinsmith.lift.domain.EmomState
+import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Load
+import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Side
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -67,6 +73,28 @@ class EmomScreenTest {
         onNodeWithText("Press · 16 kg × 5 · Left").assertExists()
         state = EmomState(EmomPhase.Work, 2, 10, 50, 0.1f)
         onNodeWithText("Press · 16 kg × 5 · Right").assertExists()
+    }
+
+    @Test
+    fun `a ghost does the lift under the ring through work and rest`() = runUiTest {
+        var state by mutableStateOf(EmomState(EmomPhase.GetReady, 1, 10, 7, 0.3f))
+        setThemedContent(dark = true) { EmomScreen(swings, state, onFinishSet = {}, onStop = {}) }
+        onNodeWithContentDescription("A figure doing Two-hand swing").assertIsDisplayed()
+        state = EmomState(EmomPhase.Work, 3, 10, 45, 0.25f)
+        onNodeWithContentDescription("A figure doing Two-hand swing").assertIsDisplayed()
+        state = EmomState(EmomPhase.Rest, 3, 10, 20, 0.66f)
+        onNodeWithContentDescription("A figure doing Two-hand swing").assertIsDisplayed()
+    }
+
+    @Test
+    fun `a lift of the user's own with no figure has no ghost`() = runUiTest {
+        val sandbag = CustomExercise("e1", "Sandbag clean", Equipment.Kettlebell, Measure.Reps, false, Focus.FullBody)
+        val state = EmomState(EmomPhase.Work, 3, 10, 45, 0.25f)
+        setThemedContent(dark = true) {
+            EmomScreen(swings.copy(exercise = sandbag), state, onFinishSet = {}, onStop = {})
+        }
+        onNodeWithText("Sandbag clean · 24 kg × 10").assertExists()
+        onNodeWithContentDescription("A figure doing", substring = true).assertDoesNotExist()
     }
 
     @Test

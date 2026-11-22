@@ -20,6 +20,7 @@ class LiftEquipmentAcceptanceTest {
         seeSet("16 kg × 10")
         seeMoved("160 kg")
         seeResting("1:30")
+        seeRestLeadsTo("Two-hand swing · 16 kg × 10")
         skipRest()
 
         openLogSheet()

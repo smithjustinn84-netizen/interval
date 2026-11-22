@@ -16,6 +16,10 @@ internal fun DrawScope.drawCanvasScene(
     colors: ExerciseDemoColors,
     mode: DemoDisplayMode,
 ) {
+    if (mode == DemoDisplayMode.Ghost) {
+        drawGhostScene(rep, stage, joints, colors)
+        return
+    }
     val place = stage::place
     val s = stage.scale
     drawFloorAndShadow(
@@ -41,16 +45,76 @@ internal fun DrawScope.drawCanvasScene(
 
     val pen = stage.pen
     drawContext.canvas.saveLayer(stage.layerBounds, pen.layer)
-    if (joints.front) {
-        drawFrontBody(rep.hold, joints, pen, beatColor, colors.body, place)
-    } else {
-        drawSideBody(rep, joints, pen, beatColor, colors, place)
-    }
+    drawBody(rep, joints, pen, beatColor, colors, place)
     drawContext.canvas.restore()
 
     if (rep.hold == RepHold.Bar) drawBarbellPlate(place(joints.kettlebellAnchor), s, beatColor, colors.body)
     drawRepBands(rep.bands, joints, s, beatColor, behind = false, place)
     for (i in rails.indices) drawRepProp(rails[i], stage.floor, stage.top, s, colors.far, place)
+}
+
+/** The body and what it holds, from the side, the front or above, into the body's layer. */
+private fun DrawScope.drawBody(
+    rep: ExerciseRep,
+    joints: BodyFrame,
+    pen: BodyPen,
+    bellColor: Color,
+    colors: ExerciseDemoColors,
+    place: (Offset) -> Offset,
+) {
+    if (joints.front) {
+        drawFrontBody(rep.hold, joints, pen, bellColor, colors.body, place)
+    } else {
+        drawSideBody(rep, joints, pen, bellColor, colors, place)
+    }
+}
+
+/**
+ * A [DemoDisplayMode.Ghost]'s frame, all in the quiet [ExerciseDemoColors.far]: the floor as a hairline (none
+ * from above), what the lift is done on or against, and the body with what it holds as one line round all of it,
+ * every part drawn a stroke fatter then cleared at its own size ([BodyPen.rim], [BodyPen.hollow]).
+ */
+private fun DrawScope.drawGhostScene(
+    rep: ExerciseRep,
+    stage: DemoStage,
+    joints: BodyFrame,
+    colors: ExerciseDemoColors,
+) {
+    val place = stage::place
+    val s = stage.scale
+    val ink = colors.far
+    val pen = stage.pen
+    pen.breath = 0f
+    pen.pulse = 0f
+    if (stage.matFromAbove == null) {
+        drawLine(
+            stage.floorBrush,
+            Offset(stage.floorFrom, stage.floor),
+            Offset(stage.floorTo, stage.floor),
+            stage.hairline,
+            StrokeCap.Round,
+        )
+    }
+    val propsBehind = rep.propsBehind
+    for (i in propsBehind.indices) drawRepProp(propsBehind[i], stage.floor, stage.top, s, ink, place)
+    val rails = rep.rails
+    for (i in rails.indices) drawRepRailStand(rails[i], stage.floor, stage.top, s, ink, place)
+    drawRepBands(rep.bands, joints, s, ink, behind = true, place)
+
+    drawContext.canvas.saveLayer(stage.layerBounds, pen.layer)
+    pen.rim(ink, stage.hairline)
+    drawBody(rep, joints, pen, ink, colors, place)
+    pen.hollow()
+    drawBody(rep, joints, pen, ink, colors, place)
+    pen.solid()
+    drawContext.canvas.restore()
+
+    // A bar's plate, end on, is a ring the body shows through, as its disc lets it when filled in.
+    if (rep.hold == RepHold.Bar) {
+        drawCircle(ink, BodyProportions.PLATE_RADIUS * s, place(joints.kettlebellAnchor), style = stage.markStyle)
+    }
+    drawRepBands(rep.bands, joints, s, ink, behind = false, place)
+    for (i in rails.indices) drawRepProp(rails[i], stage.floor, stage.top, s, ink, place)
 }
 
 private fun DrawScope.drawDetailTelemetry(

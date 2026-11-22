@@ -56,8 +56,10 @@ import org.jetbrains.compose.resources.stringResource
  * - [Detail]: Exercise detail page — full plumb line, datum ticks, dashed trajectory & keyframe rings, trail, glow.
  * - [Compact]: Session & mobility bands — clean animated figure, trail, ground shadow, glow, and optional celebration.
  * - [Thumb]: List row thumbnail — static close-up still at [ExerciseRep.still], no telemetry or trail.
+ * - [Ghost]: Beside a running timer — the animated figure and what it holds as one thin outline in the quiet
+ *   [ExerciseDemoColors.far] ink, over a hairline floor: no fill, shading, shadow, glow, trail or celebration.
  */
-enum class DemoDisplayMode { Detail, Compact, Thumb }
+enum class DemoDisplayMode { Detail, Compact, Thumb, Ghost }
 
 /**
  * The colours a demonstration is drawn in: the [body], its [far] leg and arm, the [joint] contrast token, the
@@ -218,7 +220,7 @@ private fun rememberCelebrationInterlude(
     var interlude by remember { mutableStateOf<ExerciseRep?>(null) }
     val run = remember { Animatable(0f) }
     LaunchedEffect(rep, position, stillMotion, mode) {
-        if (stillMotion || mode == DemoDisplayMode.Thumb) return@LaunchedEffect
+        if (stillMotion || mode == DemoDisplayMode.Thumb || mode == DemoDisplayMode.Ghost) return@LaunchedEffect
         snapshotFlow { key }.filterNotNull().collect {
             val gesture = rep.celebrating(held ?: position.share) ?: return@collect
             interlude = gesture

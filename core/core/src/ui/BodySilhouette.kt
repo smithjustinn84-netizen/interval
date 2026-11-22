@@ -20,6 +20,12 @@ import kotlin.math.sqrt
 /**
  * Reusable drawing state for one [ExerciseDemoCanvas]: scratch path, offscreen body layer paint, trail buffer,
  * current breath/pulse/scale, and ink-vs-cutaway mode.
+ *
+ * A ghost's body is drawn in two passes over the same parts, which leave one line round all of it: [rim], every
+ * part a stroke's width fatter in the one ink, then [hollow], every part at its own size cleared out. While
+ * either is on ([outlining]) [ink] keeps the pass's ink whatever colour it is handed and [gapped] cuts no gap,
+ * so what draws a body needs no branch for it; [solid] ends it. A kettlebell is the one part filled in, in the
+ * second pass where it lies among the others: a ring that small is lost in the body's line.
  */
 internal class BodyPen {
     val path = Path()
@@ -37,19 +43,72 @@ internal class BodyPen {
         private set
     var blend = BlendMode.SrcOver
         private set
-    val cutting: Boolean get() = pad > 0f
+
+    /** While a gap is being cleared round a part, rather than the part drawn. */
+    var cutting = false
+        private set
+
+    private var outline = Outline.None
+    private var outlineWidth = 0f
+
+    /** The one ink of the outline under way. */
+    var outlineInk = Color.Transparent
+        private set
+    val outlining: Boolean get() = outline != Outline.None
+
+    /** In an outline's first pass, which a held weight keeps out of: it is drawn whole in the second. */
+    val rimming: Boolean get() = outline == Outline.Rim
 
     fun ink(color: Color) {
-        this.color = color
-        pad = 0f
-        blend = BlendMode.SrcOver
+        cutting = false
+        when (outline) {
+            Outline.None -> {
+                this.color = color
+                pad = 0f
+                blend = BlendMode.SrcOver
+            }
+
+            Outline.Rim -> {
+                this.color = outlineInk
+                pad = outlineWidth
+                blend = BlendMode.SrcOver
+            }
+
+            Outline.Hollow -> {
+                this.color = Color.Black
+                pad = 0f
+                blend = BlendMode.Clear
+            }
+        }
     }
 
     fun cut() {
+        cutting = true
         color = Color.Black
         pad = BodyBuild.GAP * scale
         blend = BlendMode.Clear
     }
+
+    /** Starts an outline's first pass: every part from here [width] pixels fatter, in [color]. */
+    fun rim(color: Color, width: Float) {
+        outline = Outline.Rim
+        outlineInk = color
+        outlineWidth = width
+        ink(color)
+    }
+
+    /** An outline's second pass: every part from here cleared at its own size, leaving the rim. */
+    fun hollow() {
+        outline = Outline.Hollow
+        ink(outlineInk)
+    }
+
+    /** Ends an outline: parts are drawn filled and gapped again. */
+    fun solid() {
+        outline = Outline.None
+    }
+
+    private enum class Outline { None, Rim, Hollow }
 
     companion object {
         /** Number of sampled points in a tapered motion ribbon trail. */
@@ -59,11 +118,14 @@ internal class BodyPen {
 
 /**
  * Draws a body part in [color] over whatever is behind it in the body layer, first cutting a thin gap round its
- * outline so overlapping limbs read cleanly on any background.
+ * outline so overlapping limbs read cleanly on any background. In an outline's pass ([BodyPen.outlining]) the part
+ * is drawn once, as the pass has it, with no gap: the parts are to run together.
  */
 internal inline fun gapped(pen: BodyPen, color: Color, part: () -> Unit) {
-    pen.cut()
-    part()
+    if (!pen.outlining) {
+        pen.cut()
+        part()
+    }
     pen.ink(color)
     part()
 }

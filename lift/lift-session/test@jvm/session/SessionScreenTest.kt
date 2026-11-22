@@ -55,6 +55,24 @@ class SessionScreenTest {
     }
 
     @Test
+    fun `a rest says the set it leads to under its clock`() = runUiTest {
+        val clocks = SessionClocks(elapsed = "1:40", sinceLast = "0:10", rest = RestState(90, 80, 0.11f))
+        setThemedContent(dark = true) { SessionScreen(free, { clocks }, SessionActions()) }
+        val next = onNodeWithText("Next: Two-hand swing · 16 kg × 10").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val clock = onNodeWithText("1:20").getUnclippedBoundsInRoot()
+        val log = onNodeWithText("Log set").getUnclippedBoundsInRoot()
+        assertTrue(next.top >= clock.bottom && log.top >= next.bottom, "Next between the clock and Log set")
+    }
+
+    @Test
+    fun `a rest after the day's last set leads to nothing`() = runUiTest {
+        val clocks = SessionClocks(elapsed = "1:40", sinceLast = "0:10", rest = RestState(90, 80, 0.11f))
+        setThemedContent(dark = true) { SessionScreen(SessionUiState(dayDone = true), { clocks }, SessionActions()) }
+        onNodeWithText("1:20").assertIsDisplayed()
+        onNodeWithText("Next:", substring = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `the last seconds of a rest tick under the thumb`() = runUiTest {
         val haptics = RecordingHaptics()
         var clocks by mutableStateOf(

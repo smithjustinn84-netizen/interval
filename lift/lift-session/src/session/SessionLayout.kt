@@ -43,6 +43,7 @@ import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.lift.domain.tonnage
 import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.density_start
 import dev.justinsmith.lift.session.resources.next_emom
 import dev.justinsmith.lift.session.resources.session_extra_set
@@ -52,6 +53,9 @@ import dev.justinsmith.lift.session.resources.session_moved
 import dev.justinsmith.lift.session.resources.session_since_last
 import dev.justinsmith.lift.session.resources.session_time
 import dev.justinsmith.lift.ui.StatTile
+import dev.justinsmith.lift.ui.demo.rep
+import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.setLine
 import dev.justinsmith.lift.ui.tonnageValue
 import org.jetbrains.compose.resources.stringResource
 
@@ -279,6 +283,7 @@ internal fun SessionFoot(
             progress = remember(clocks) { heldShare { clocks().rest?.progress } },
             modifier = Modifier.padding(start = Spacing.space16, end = Spacing.space16, top = Spacing.space8),
             heart = clocks().restHeart,
+            next = restNext(state),
         )
         state.partRoundOf?.let { round ->
             PartRound(
@@ -290,6 +295,27 @@ internal fun SessionFoot(
         SessionButtons(state, actions, onFinish, onOpenSheet)
     }
 }
+
+/**
+ * The set a rest leads to, as the band's Next row has it ([RestNext]): the plan's next set as its card words it,
+ * in a free session the draft, a hold by its length; none once the day's sets are done.
+ */
+@Composable
+private fun restNext(state: SessionUiState): RestNext? {
+    if (state.free) {
+        val draft = state.draft
+        val side = draft.side.takeIf { draft.exercise.sided(draft.doubled) }
+        val line = setLine(draft.load, draft.reps, side, draft.seconds.takeIf { draft.held })
+        return RestNext(draft.exercise.rep, joined(liftName(draft.exercise, draft.doubled), line))
+    }
+    val next = state.upNext ?: return null
+    val set = next.set
+    val line = setLine(next.load, set.reps, set.side, set.reps.takeIf { set.held })
+    return RestNext(set.exercise.rep, joined(liftName(set.exercise, set.double), line))
+}
+
+@Composable
+private fun joined(first: String, second: String): String = stringResource(Res.string.common_joined, first, second)
 
 /**
  * Finish beside Log set (or Start EMOM when an EMOM block is up next, Start the clock when a density block is); once a

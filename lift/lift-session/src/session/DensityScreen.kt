@@ -37,9 +37,10 @@ import org.jetbrains.compose.resources.stringResource
 
 /**
  * A density block, in the EMOM's look ([TimedBlockScaffold]): the phase colour on the band, the ring (the cap
- * going by) with the time left in it, the rounds done rolling up under it beside the best to beat, and one big
- * Round done. Count-in amber, work red for the whole cap, done green. A haptic marks each change of phase and
- * each round; the beeps and the calls of the clock come from the session's timers.
+ * going by) with the time left in it, the rounds done rolling up under it beside the best to beat, a ghost
+ * doing the lift before them ([BlockFigure]), and one big Round done. Count-in amber, work red for the whole cap,
+ * done green. A haptic marks each change of phase and each round; the beeps and the calls of the clock come from
+ * the session's timers.
  */
 @Composable
 fun DensityScreen(
@@ -82,7 +83,16 @@ fun DensityScreen(
         over = state.phase == DensityPhase.Done,
         largeAction = true,
     )
-    TimedBlockScaffold(block, progress, onFinishRound, onStop, modifier, heart) { Rounds(run, state, it) }
+    TimedBlockScaffold(
+        block,
+        progress,
+        onFinishRound,
+        onStop,
+        modifier,
+        heart,
+        tally = { Rounds(run, state, it) },
+        figure = { BlockFigure(run.exercise, run.double, still = block.over, it) },
+    )
 }
 
 /** The rounds done, rolling up as each is, and the best of the block before to beat, "Best: 14". */

@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
@@ -29,6 +30,8 @@ internal fun bellRestsOnForearm(elbow: Offset, hand: Offset, bell: Offset): Bool
 /**
  * A sculpted kettlebell gripped at [hand] with its body centred at [body]: arched quadratic handle, cast body with
  * a flat base, bottom shade arc, and top specular highlight arc. When cutting, clears a gap round its silhouette.
+ * In an outline ([BodyPen.outlining]) it is that silhouette filled with the outline's ink and no shading, a gap
+ * cleared round it, drawn in the second pass alone, so it lies over the parts before it and under those after.
  */
 internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: Offset) {
     val s = pen.scale
@@ -51,6 +54,20 @@ internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: 
     path.quadraticTo(rightCorner.x, rightCorner.y, rightGrip.x, rightGrip.y)
     path.lineTo(leftGrip.x, leftGrip.y)
     path.quadraticTo(leftCorner.x, leftCorner.y, leftBase.x, leftBase.y)
+    val radius = BodyProportions.BELL_RADIUS * s
+    if (pen.outlining) {
+        // Whole in the second pass alone: a gap cleared round it, then the handle and the body in the one ink.
+        if (!pen.rimming) {
+            val gap = BodyBuild.GAP * s
+            val around = Stroke(BELL_HANDLE_STROKE * s + 2f * gap, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            drawPath(path, Color.Black, style = around, blendMode = BlendMode.Clear)
+            drawCircle(Color.Black, radius + gap, body, blendMode = BlendMode.Clear)
+            val handle = Stroke(BELL_HANDLE_STROKE * s, cap = StrokeCap.Round, join = StrokeJoin.Round)
+            drawPath(path, pen.outlineInk, style = handle)
+            drawCircle(pen.outlineInk, radius, body)
+        }
+        return
+    }
     val handleWidth = BELL_HANDLE_STROKE * s + if (pen.cutting) 2f * pen.pad else 0f
     drawPath(
         path,
@@ -58,7 +75,6 @@ internal fun DrawScope.drawSculptedKettlebell(pen: BodyPen, hand: Offset, body: 
         style = Stroke(handleWidth, cap = StrokeCap.Round, join = StrokeJoin.Round),
         blendMode = pen.blend,
     )
-    val radius = BodyProportions.BELL_RADIUS * s
     if (pen.cutting) {
         drawCircle(pen.color, radius + pen.pad, body, blendMode = pen.blend)
         return

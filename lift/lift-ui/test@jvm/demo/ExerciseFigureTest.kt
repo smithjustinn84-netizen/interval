@@ -3,11 +3,13 @@
 package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -62,7 +64,7 @@ class ExerciseFigureTest {
         setThemedContent {
             Column {
                 reps.forEach { rep ->
-                    listOf(DemoDisplayMode.Detail, DemoDisplayMode.Compact, DemoDisplayMode.Thumb).forEach { mode ->
+                    DemoDisplayMode.entries.forEach { mode ->
                         ExerciseDemoCanvas(
                             rep,
                             Modifier.size(60.dp),
@@ -73,6 +75,53 @@ class ExerciseFigureTest {
                 }
             }
         }
+        onRoot().captureToImage()
+    }
+
+    @Test
+    fun `a ghost is the figure's outline and not its fill`() = runUiTest {
+        setThemedContent {
+            Row {
+                ExerciseDemoCanvas(
+                    KettlebellReps.GobletSquat,
+                    Modifier.size(240.dp),
+                    progress = 0.3f,
+                    contentDescription = "filled",
+                    mode = DemoDisplayMode.Compact,
+                )
+                ExerciseDemoCanvas(
+                    KettlebellReps.GobletSquat,
+                    Modifier.size(240.dp),
+                    progress = 0.3f,
+                    contentDescription = "ghost",
+                    mode = DemoDisplayMode.Ghost,
+                )
+            }
+        }
+        val filled = inkOf("filled")
+        val ghost = inkOf("ghost")
+        assertTrue(ghost > 0, "a ghost draws something")
+        assertTrue(ghost * 3 < filled, "a ghost inks $ghost pixels where the filled figure inks $filled")
+    }
+
+    /** How many pixels of the canvas described as [description] are not its ground's, the corner's. */
+    private fun ComposeUiTest.inkOf(description: String): Int {
+        val pixels = onNodeWithContentDescription(description).captureToImage().toPixelMap()
+        val ground = pixels[0, 0]
+        var inked = 0
+        for (y in 0 until pixels.height) for (x in 0 until pixels.width) if (pixels[x, y] != ground) inked++
+        return inked
+    }
+
+    @Test
+    fun `an exercise ghost is read aloud only when described`() = runUiTest {
+        setThemedContent {
+            Column {
+                ExerciseGhost(KettlebellReps.Swing, contentDescription = "A figure doing Two-hand swing")
+                ExerciseGhost(KettlebellReps.Snatch)
+            }
+        }
+        onNodeWithContentDescription("A figure doing Two-hand swing").assertIsDisplayed()
         onRoot().captureToImage()
     }
 

@@ -261,8 +261,12 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `RepPlayer`, `PhaseTrack`, `Celebration` raised bell or bow on record sets, and `follows`/`crop` framing),
                      shared across `Demonstration` (detail card over the scrubber and live cues, with `ExerciseRep.doneWrong`
                      under Watch for, used by exercise pages and flow moves), `ExerciseBand` (`DemoDisplayMode.Compact`,
-                     shared by session cards and mobility workouts), and `ExerciseThumb` (`DemoDisplayMode.Thumb`, list row
-                     thumbnails); most of Lift's strings
+                     shared by session cards and mobility workouts), `ExerciseThumb` (`DemoDisplayMode.Thumb`, list row
+                     thumbnails), and `ExerciseGhost` (`DemoDisplayMode.Ghost`: the figure running as one hairline outline
+                     in the quiet `far` ink, its bell a dot, `Sizes.figureGhost` square, on no ground of its own; core's
+                     `BodyPen.rim` then `hollow` draw every part fatter then clear it, so nothing that draws a body
+                     branches for it; beside a running timer: an EMOM's and a density block's page, `BlockFigure`, and
+                     the rest band's Next row, `RestNext`, in lift-session); most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`

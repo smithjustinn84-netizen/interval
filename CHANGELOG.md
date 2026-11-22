@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- The lift in view while a timer runs in Lift. An EMOM's and a time cap's page show a small figure doing the lift,
+  drawn as a quiet outline under the ring (beside the rounds on a time cap), through the count-in, the work and the
+  rest. The rest after a set says what it leads to under its clock: the same figure doing the next lift, beside
+  "Next" and the set ("Goblet squat · 24 kg × 5"), so the movement is in sight while its card is scrolled away. No
+  row on a phone held sideways, and no figure for an exercise of your own that names none.
 - Supersets in Lift: two sets blocks side by side, A1 and A2, done in turn, a set of each round by round. Pair
   them from a block's sheet in the program editor or in today's plan ("Superset with Row"), resting after both,
   where A1 goes straight on to A2 with no rest and A2's set-up is said at once, or after each. Up next, today's

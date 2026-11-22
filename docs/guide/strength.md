@@ -46,13 +46,17 @@ card sits under the session's numbers and rests read whether your heart is *high
 can be:
 
 **EMOM**
-:   Every minute on the minute, timed and beeped.
+:   Every minute on the minute, timed and beeped, a small figure doing the lift under the ring.
 
 **A hold**
 :   A timed hold or carry, with its own clock.
 
 **A density block**
-:   As many rounds of a lift as fit a time cap. Tap each round as it's done; the clock is called aloud.
+:   As many rounds of a lift as fit a time cap. Tap each round as it's done; the clock is called aloud. The same
+    small figure does the lift beside the rounds.
+
+While you rest, the band over **Log set** says what comes next under its clock: the lift, its load and reps, and
+that figure doing it.
 
 Timers keep going with the screen off: on Android a notification counts them down on the lock screen, on iOS a
 Live Activity. A session, its timers and the set you were typing survive the app being closed. Records are found

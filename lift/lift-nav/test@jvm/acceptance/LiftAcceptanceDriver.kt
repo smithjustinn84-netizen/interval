@@ -202,6 +202,9 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         see(left)
     }
 
+    /** On the rest's band, under its clock: the set the rest leads to, [set] ("Two-hand swing · 16 kg × 10"). */
+    fun seeRestLeadsTo(set: String) = see("Next: $set")
+
     fun skipRest() = tap("Skip")
 
     fun seeSet(set: String) = see(set)
@@ -310,6 +313,9 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
         secondsPass(10)
         see("Go")
     }
+
+    /** On an EMOM's or a density block's page: the ghost doing [exercise], the block's lift, by its timer. */
+    fun seeBlockLiftShown(exercise: String) = see(hasContentDescription("A figure doing $exercise"))
 
     /** In a density block's cap: Round done [times], the rounds counting up to [total]. */
     fun roundsDone(times: Int, total: Int) {

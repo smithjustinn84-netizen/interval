@@ -197,13 +197,14 @@ object Sizes {
 
     /**
      * The figure showing how an exercise goes, which both sides draw: on its page, tall enough to read a swing's
-     * arc on a phone; as a band across a card or over the workout's ring, where the arc still reads; and a still
-     * of it at the end of a list row.
+     * arc on a phone; as a band across a card or over the workout's ring, where the arc still reads; a still
+     * of it at the end of a list row; and its ghost beside a running timer, a square a standing figure fills.
      */
     val figurePage = 250.dp
     val figureBand = 140.dp
     val figureThumbWidth = 64.dp
     val figureThumbHeight = 48.dp
+    val figureGhost = 64.dp
 
     /**
      * An [ExerciseDemoCanvas]'s telemetry: the dashes of its plumb line and of the bell's path, that path's stroke,

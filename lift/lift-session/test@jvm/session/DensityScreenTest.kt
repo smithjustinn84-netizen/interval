@@ -6,11 +6,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import dev.justinsmith.interval.ui.runUiTest
@@ -22,6 +25,7 @@ import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Side
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 private val snatches = DensityRun(
     BuiltInExercise.Snatch,
@@ -63,6 +67,17 @@ class DensityScreenTest {
         onNodeWithText("Done").assertExists()
         onNodeWithText("15 rounds").assertExists()
         onNodeWithText("Round done").assertIsNotEnabled()
+    }
+
+    @Test
+    fun `a ghost does the lift on the line of the rounds`() = runUiTest {
+        val state = DensityState(DensityPhase.Work, 300, 4, 20, 0.7f)
+        setThemedContent(dark = true) { DensityScreen(snatches, state, {}, {}) }
+        val figure =
+            onNodeWithContentDescription("A figure doing Snatch").assertIsDisplayed().getUnclippedBoundsInRoot()
+        val rounds = onNodeWithText("4 rounds").assertIsDisplayed().getUnclippedBoundsInRoot()
+        assertTrue(figure.right <= rounds.left, "the figure before the rounds")
+        assertTrue(figure.top < rounds.bottom && rounds.top < figure.bottom, "on one line")
     }
 
     @Test

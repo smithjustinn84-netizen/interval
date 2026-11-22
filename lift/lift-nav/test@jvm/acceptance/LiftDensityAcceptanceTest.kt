@@ -4,7 +4,8 @@ import kotlin.test.Test
 
 /**
  * `journeys/lift-density.xml`: a density block, as many rounds of one lift as fit a time cap. Made in the program
- * editor, it starts from the session's foot, counts in, takes a tap a round with the rounds rolling up, and calls
+ * editor, it starts from the session's foot, counts in, shows its lift done by a ghost, takes a tap a round with
+ * the rounds rolling up, and calls
  * the clock (one minute left, then time and the rounds) without a word mid-round. The summary says the rounds, and
  * the next session of it, its best to beat on the clock, says the new best it set.
  */
@@ -14,6 +15,7 @@ class LiftDensityAcceptanceTest {
         followNewDensityProgram("Density")
         tap("Start day 1")
         startTheClock()
+        seeBlockLiftShown("Two-hand swing")
         roundsDone(3, total = 3)
         secondsPass(240)
         hear("One minute")

@@ -12,7 +12,7 @@
     <action>Verify that the day's block reads "As many rounds as you can in 5 min · 10 a round"</action>
     <action>Name the program "Density", tap "Save program", tap "Density" on the list and then "Follow this program"</action>
     <action>Tap "Start day 1" and verify that the session's foot offers "Start the clock" where "Log set" would be</action>
-    <action>Tap "Start the clock" and verify that the block's screen shows "Get ready", then "Go" with "5 min cap" and "0 rounds"</action>
+    <action>Tap "Start the clock" and verify that the block's screen shows "Get ready", then "Go" with "5 min cap" and "0 rounds", a small figure in outline doing the two-hand swing beside the rounds</action>
     <action>Tap "Round done" twice and verify that it reads "2 rounds"</action>
     <action>Verify with adb shell dumpsys notification --noredact that an ongoing notification titled "Rounds in a time cap" is showing, with PROMOTED_ONGOING among its flags (Android 16+)</action>
     <action>Turn the screen off (adb shell input keyevent KEYCODE_SLEEP)</action>
