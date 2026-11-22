@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The welcome: the heart rate drawn live over the work intervals beside its zones, and the phone it stays on. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="320dp" android:height="180dp"
+        android:viewportWidth="320" android:viewportHeight="180">
+    <group android:name="panel">
+        <path android:fillColor="#0D1814" android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M16.5,0.5 h287 a16,16 0 0 1 16,16 v147 a16,16 0 0 1 -16,16 h-287 a16,16 0 0 1 -16,-16 v-147 a16,16 0 0 1 16,-16 Z"/>
+    </group>
+    <group android:name="chart">
+        <path android:fillColor="#15241E"
+              android:pathData="M34,30 h22 v120 h-22 Z M68,30 h22 v120 h-22 Z M102,30 h22 v120 h-22 Z M136,30 h22 v120 h-22 Z M170,30 h22 v120 h-22 Z"/>
+        <path android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M34,30 H196 M34,54 H196 M34,78 H196 M34,102 H196 M34,126 H196 M34,150 H196"/>
+    </group>
+    <group android:name="zones">
+        <path android:fillColor="#7FA3D1"
+              android:pathData="M24,127 h0 a2,2 0 0 1 2,2 v18 a2,2 0 0 1 -2,2 h0 a2,2 0 0 1 -2,-2 v-18 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#2FD3A0"
+              android:pathData="M24,103 h0 a2,2 0 0 1 2,2 v18 a2,2 0 0 1 -2,2 h0 a2,2 0 0 1 -2,-2 v-18 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#F2A81D"
+              android:pathData="M24,79 h0 a2,2 0 0 1 2,2 v18 a2,2 0 0 1 -2,2 h0 a2,2 0 0 1 -2,-2 v-18 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#FF7A43"
+              android:pathData="M24,55 h0 a2,2 0 0 1 2,2 v18 a2,2 0 0 1 -2,2 h0 a2,2 0 0 1 -2,-2 v-18 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#FF4365"
+              android:pathData="M24,31 h0 a2,2 0 0 1 2,2 v18 a2,2 0 0 1 -2,2 h0 a2,2 0 0 1 -2,-2 v-18 a2,2 0 0 1 2,-2 Z"/>
+    </group>
+    <group android:name="trace">
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="2.5" android:strokeLineCap="round" android:strokeLineJoin="round"
+              android:pathData="M34,136 C38.4,136 42.8,100 56,100 C58.4,100 60.8,116 68,116 C72.4,116 76.8,84 90,84 C92.4,84 94.8,104 102,104 C106.4,104 110.8,70 124,70 C126.4,70 128.8,94 136,94 C140.4,94 144.8,60 158,60 C160.4,60 162.8,86 170,86 C173.2,86 176.4,60 186,60"/>
+        <path android:fillColor="#FF7A43" android:fillType="evenOdd"
+              android:pathData="M178.5,60 a7.5,7.5 0 1 0 15,0 a7.5,7.5 0 1 0 -15,0 Z M180,60 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 Z M182.5,60 a3.5,3.5 0 1 0 7,0 a3.5,3.5 0 1 0 -7,0 Z"/>
+        <path android:fillColor="#FF4365"
+              android:pathData="M45,46.5 l-6.3,-6.4 a3.7,3.7 0 0 1 5.2,-5.2 l1.1,1.1 l1.1,-1.1 a3.7,3.7 0 0 1 5.2,5.2 Z"/>
+    </group>
+    <group android:name="device">
+        <path android:strokeColor="#93AB9F" android:strokeWidth="2" android:strokeLineCap="round" android:strokeLineJoin="round"
+              android:pathData="M246,32 h36 a10,10 0 0 1 10,10 v96 a10,10 0 0 1 -10,10 h-36 a10,10 0 0 1 -10,-10 v-96 a10,10 0 0 1 10,-10 Z M257,40 H271 M198,60 H226 m-5,-4 l5,4 l-5,4"/>
+        <path android:fillColor="#E5A910"
+              android:pathData="M264,68 l16,6 v13 c0,11 -6.5,19.5 -16,24 c-9.5,-4.5 -16,-13 -16,-24 v-13 Z"/>
+        <path android:strokeColor="#0D1814" android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round"
+              android:pathData="M256.5,89 l5.5,5.5 l9.5,-11"/>
+    </group>
+</vector>

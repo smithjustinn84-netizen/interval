@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The welcome: a week of seven days as a ring and as a strip, strength in gold, conditioning in clay, a sport's day outlined in chalk, the hand on today. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="320dp" android:height="180dp"
+        android:viewportWidth="320" android:viewportHeight="180">
+    <group android:name="panel">
+        <path android:fillColor="#0D1814" android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M16.5,0.5 h287 a16,16 0 0 1 16,16 v147 a16,16 0 0 1 -16,16 h-287 a16,16 0 0 1 -16,-16 v-147 a16,16 0 0 1 16,-16 Z"/>
+    </group>
+    <group android:name="lanes">
+        <path android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M24,90 a66,66 0 1 0 132,0 a66,66 0 1 0 -132,0 Z M56,90 a34,34 0 1 0 68,0 a34,34 0 1 0 -68,0 Z M90,28 V20 M138.5,51.3 L144.7,46.4 M150.4,103.8 L158.2,105.6 M116.9,145.9 L120.4,153.1 M63.1,145.9 L59.6,153.1 M29.6,103.8 L21.8,105.6 M41.5,51.3 L35.3,46.4"/>
+    </group>
+    <group android:name="ring">
+        <path android:fillColor="#1E332B"
+              android:pathData="M34.9,100 A56,56 0 0 1 44.7,57.1 L54.4,64.2 A44,44 0 0 0 46.7,97.8 Z M47.8,53.1 A56,56 0 0 1 87.5,34.1 L88,46 A44,44 0 0 0 56.9,61 Z"/>
+        <path android:fillColor="#E5A910"
+              android:pathData="M92.5,34.1 A56,56 0 0 1 132.2,53.1 L123.1,61 A44,44 0 0 0 92,46 Z M63.4,139.3 A56,56 0 0 1 36,104.9 L47.6,101.7 A44,44 0 0 0 69.1,128.7 Z"/>
+        <path android:fillColor="#F0583A"
+              android:pathData="M144,104.9 A56,56 0 0 1 116.6,139.3 L110.9,128.7 A44,44 0 0 0 132.4,101.7 Z"/>
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="1.5" android:strokeLineJoin="round"
+              android:pathData="M135.2,58.2 A55.2,55.2 0 0 1 144.5,99.1 L134.1,97.4 A44.8,44.8 0 0 0 126.6,64.2 Z M111,141.1 A55.2,55.2 0 0 1 69,141.1 L73,131.4 A44.8,44.8 0 0 0 107,131.4 Z"/>
+    </group>
+    <group android:name="strip">
+        <path android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M194,62 V68 M210,62 V68 M226,62 V68 M242,62 V68 M258,62 V68 M274,62 V68 M290,62 V68 M188,62 H296"/>
+        <path android:fillColor="#1E332B"
+              android:pathData="M272,78 h4 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-4 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z M288,78 h4 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-4 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z"/>
+        <path android:fillColor="#E5A910"
+              android:pathData="M192,78 h4 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-4 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z M256,78 h4 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-4 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z"/>
+        <path android:fillColor="#F0583A"
+              android:pathData="M224,78 h4 a4,4 0 0 1 4,4 v16 a4,4 0 0 1 -4,4 h-4 a4,4 0 0 1 -4,-4 v-16 a4,4 0 0 1 4,-4 Z"/>
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="1.5"
+              android:pathData="M208.2,78.8 h3.7 a3.4,3.4 0 0 1 3.4,3.4 v15.7 a3.4,3.4 0 0 1 -3.4,3.4 h-3.7 a3.4,3.4 0 0 1 -3.4,-3.4 v-15.7 a3.4,3.4 0 0 1 3.4,-3.4 Z M240.2,78.8 h3.7 a3.4,3.4 0 0 1 3.4,3.4 v15.7 a3.4,3.4 0 0 1 -3.4,3.4 h-3.7 a3.4,3.4 0 0 1 -3.4,-3.4 v-15.7 a3.4,3.4 0 0 1 3.4,-3.4 Z"/>
+    </group>
+    <group android:name="today">
+        <path android:strokeColor="#93AB9F" android:strokeWidth="1" android:strokeLineJoin="round"
+              android:pathData="M141.6,131.2 L151,138.6 H226 V109 m-4,0 h8"/>
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="3.5" android:strokeLineCap="round"
+              android:pathData="M97,95.6 L113.5,108.7"/>
+        <path android:fillColor="#F7F3E9" android:fillType="evenOdd"
+              android:pathData="M84,90 a6,6 0 1 0 12,0 a6,6 0 1 0 -12,0 Z M87.7,90 a2.3,2.3 0 1 0 4.6,0 a2.3,2.3 0 1 0 -4.6,0 Z"/>
+    </group>
+</vector>

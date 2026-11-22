@@ -10,6 +10,10 @@ fun IntervalAcceptanceDriver.seeWelcome() = see("Three pages, then four question
 /** A tab's page of the welcome, by its title. */
 fun IntervalAcceptanceDriver.seeWelcomePage(title: String) = see(title)
 
+/** The Log page's last line: the heart rate is kept too, and where all of it stays. */
+fun IntervalAcceptanceDriver.seeKeptOnThisDevice() =
+    see("Wear a sensor or a watch and your heart rate is kept too. All of it stays on this device.")
+
 /** Past the welcome from its opening page, to Set up. */
 fun IntervalAcceptanceDriver.skipWelcome() {
     seeWelcome()

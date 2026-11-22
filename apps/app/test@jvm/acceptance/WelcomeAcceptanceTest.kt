@@ -21,6 +21,7 @@ class WelcomeAcceptanceTest {
         tap("Next")
         tap("Next")
         seeWelcomePage("Everything counts toward the week")
+        seeKeptOnThisDevice()
         tap("Set up my week")
         seeSetUp()
         // Set up took the welcome's place: Back from it is Today.

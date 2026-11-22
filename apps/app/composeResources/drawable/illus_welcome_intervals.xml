@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The welcome: work and rest as blocks, an EMOM's minutes as ticks, a time cap as a bar with its rounds tapped over it. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+        android:width="320dp" android:height="180dp"
+        android:viewportWidth="320" android:viewportHeight="180">
+    <group android:name="panel">
+        <path android:fillColor="#0D1814" android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M16.5,0.5 h287 a16,16 0 0 1 16,16 v147 a16,16 0 0 1 -16,16 h-287 a16,16 0 0 1 -16,-16 v-147 a16,16 0 0 1 16,-16 Z"/>
+    </group>
+    <group android:name="lanes">
+        <path android:fillColor="#15241E"
+              android:pathData="M18,76 h284 a6,6 0 0 1 6,6 v24 a6,6 0 0 1 -6,6 h-284 a6,6 0 0 1 -6,-6 v-24 a6,6 0 0 1 6,-6 Z"/>
+    </group>
+    <group android:name="intervals">
+        <path android:fillColor="#F58A3D"
+              android:pathData="M26,50 h14 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-14 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#F0583A"
+              android:pathData="M46,34 h24 a2,2 0 0 1 2,2 v24 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-24 a2,2 0 0 1 2,-2 Z M94,34 h24 a2,2 0 0 1 2,2 v24 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-24 a2,2 0 0 1 2,-2 Z M142,34 h24 a2,2 0 0 1 2,2 v24 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-24 a2,2 0 0 1 2,-2 Z M190,34 h24 a2,2 0 0 1 2,2 v24 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-24 a2,2 0 0 1 2,-2 Z M238,34 h24 a2,2 0 0 1 2,2 v24 a2,2 0 0 1 -2,2 h-24 a2,2 0 0 1 -2,-2 v-24 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#34C785"
+              android:pathData="M76,50 h12 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z M124,50 h12 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z M172,50 h12 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z M220,50 h12 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z M268,50 h12 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-12 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z"/>
+        <path android:fillColor="#E5A910"
+              android:pathData="M286,50 h8 a2,2 0 0 1 2,2 v8 a2,2 0 0 1 -2,2 h-8 a2,2 0 0 1 -2,-2 v-8 a2,2 0 0 1 2,-2 Z"/>
+    </group>
+    <group android:name="emom">
+        <path android:strokeColor="#2A453A" android:strokeWidth="1"
+              android:pathData="M24,100 H296 M32.5,96 V100 M41,94 V100 M49.5,96 V100 M66.5,96 V100 M75,94 V100 M83.5,96 V100 M100.5,96 V100 M109,94 V100 M117.5,96 V100 M134.5,96 V100 M143,94 V100 M151.5,96 V100 M168.5,96 V100 M177,94 V100 M185.5,96 V100 M202.5,96 V100 M211,94 V100 M219.5,96 V100 M236.5,96 V100 M245,94 V100 M253.5,96 V100 M270.5,96 V100 M279,94 V100 M287.5,96 V100"/>
+        <path android:fillColor="#E5A910"
+              android:pathData="M28.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M62.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M96.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M130.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M164.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M198.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M232.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z M266.5,90 h10 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-10 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 Z"/>
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="1.5"
+              android:pathData="M24,86 V100 M58,86 V100 M92,86 V100 M126,86 V100 M160,86 V100 M194,86 V100 M228,86 V100 M262,86 V100 M296,86 V100"/>
+    </group>
+    <group android:name="cap">
+        <path android:fillColor="#1E332B"
+              android:pathData="M29,132 h262 a5,5 0 0 1 5,5 v0 a5,5 0 0 1 -5,5 h-262 a5,5 0 0 1 -5,-5 v0 a5,5 0 0 1 5,-5 Z"/>
+        <path android:fillColor="#F0583A"
+              android:pathData="M29,132 H209 V142 H29 a5,5 0 0 1 0,-10 Z"/>
+        <path android:fillColor="#F7F3E9"
+              android:pathData="M57.4,125 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 Z M95.4,125 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 Z M130.8,125 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 Z M171.6,125 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 Z M201.5,125 a2,2 0 1 0 4,0 a2,2 0 1 0 -4,0 Z"/>
+        <path android:strokeColor="#F7F3E9" android:strokeWidth="2" android:strokeLineCap="round"
+              android:pathData="M296,122 V146"/>
+    </group>
+    <group android:name="playhead">
+        <path android:fillColor="#93AB9F" android:strokeColor="#93AB9F" android:strokeWidth="1"
+              android:pathData="M209,24 V154 M205,20 h8 l-4,5 Z"/>
+    </group>
+</vector>

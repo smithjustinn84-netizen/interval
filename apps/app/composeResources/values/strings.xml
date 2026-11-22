@@ -86,6 +86,7 @@
     <string name="welcome_log_legend_today">Today</string>
     <string name="welcome_log_legend_planned">Planned</string>
     <string name="welcome_log_keeps">Log keeps each one, by week and by month.</string>
+    <string name="welcome_log_private">Wear a sensor or a watch and your heart rate is kept too. All of it stays on this device.</string>
     <!-- The pages' examples: a day of a program up next on Today, the minutes it picks by, and a week on Log -->
     <string name="welcome_example_up_next">Up next</string>
     <string name="welcome_example_program">Kettlebell foundations</string>

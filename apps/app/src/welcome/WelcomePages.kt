@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.welcome
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -29,6 +31,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.resources.Res
+import dev.justinsmith.interval.resources.illus_welcome_intervals
+import dev.justinsmith.interval.resources.illus_welcome_offline_telemetry
+import dev.justinsmith.interval.resources.illus_welcome_week_ring
 import dev.justinsmith.interval.resources.nav_history
 import dev.justinsmith.interval.resources.nav_today
 import dev.justinsmith.interval.resources.nav_train
@@ -48,6 +53,7 @@ import dev.justinsmith.interval.resources.welcome_log_lead
 import dev.justinsmith.interval.resources.welcome_log_legend_done
 import dev.justinsmith.interval.resources.welcome_log_legend_planned
 import dev.justinsmith.interval.resources.welcome_log_legend_today
+import dev.justinsmith.interval.resources.welcome_log_private
 import dev.justinsmith.interval.resources.welcome_log_title
 import dev.justinsmith.interval.resources.welcome_today_lead
 import dev.justinsmith.interval.resources.welcome_today_time
@@ -69,10 +75,13 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StripeMark
 import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.weekdayText
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 
 // The welcome's three pages, a tab each. Each shows what is on its tab as an example drawn from the tab's own
 // parts: read, not pressed, so none of it takes a tap and what only draws (a Start, a picker) is left unspoken.
+// Each has one illustration, a picture of what its words say, unspoken too.
 
 /** The page of tab [page], 1 to [WELCOME_TABS]: the tab as the bar shows it selected, what it is for, an example. */
 @Composable
@@ -98,6 +107,7 @@ internal fun TabPage(page: Int, modifier: Modifier = Modifier) {
 private fun ColumnScope.TodayPage() {
     PageHead(IntervalIcons.Today, stringResource(Res.string.nav_today), stringResource(Res.string.welcome_today_title))
     Lead(stringResource(Res.string.welcome_today_lead))
+    Illustration(Res.drawable.illus_welcome_week_ring)
     ListCard(Modifier.semantics(mergeDescendants = true) {}) {
         val palette = IntervalTheme.palette
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
@@ -151,6 +161,7 @@ private fun ColumnScope.TrainPage() {
     val palette = IntervalTheme.palette
     PageHead(IntervalIcons.Bell, stringResource(Res.string.nav_train), stringResource(Res.string.welcome_train_title))
     Lead(stringResource(Res.string.welcome_train_lead))
+    Illustration(Res.drawable.illus_welcome_intervals)
     val strength = stringResource(Res.string.train_strength)
     val conditioning = stringResource(Res.string.train_conditioning)
     val mobility = stringResource(Res.string.train_mobility)
@@ -206,6 +217,8 @@ private fun ColumnScope.LogPage() {
         Legend(ExampleDay.Planned, stringResource(Res.string.welcome_log_legend_planned))
     }
     Lead(stringResource(Res.string.welcome_log_keeps), Modifier.padding(top = Spacing.space12))
+    Lead(stringResource(Res.string.welcome_log_private))
+    Illustration(Res.drawable.illus_welcome_offline_telemetry)
 }
 
 /** A page's head: its tab as the bar shows it selected, the icon on the accent beside its name, over the title. */
@@ -236,6 +249,19 @@ private fun PageHead(icon: ImageVector, tab: String, title: String, modifier: Mo
 @Composable
 private fun Lead(text: String, modifier: Modifier = Modifier) {
     Text(text, style = IntervalTheme.type.body, color = IntervalTheme.palette.textDim, modifier = modifier)
+}
+
+/**
+ * One of the welcome's illustrations across the page. Each is drawn on a panel of the workout's pine in either
+ * theme, as the intro is, since a drawable's colours are fixed; on the dark page only the panel's line shows.
+ */
+@Composable
+private fun Illustration(drawable: DrawableResource, modifier: Modifier = Modifier) {
+    Image(
+        painter = painterResource(drawable),
+        contentDescription = null,
+        modifier = modifier.fillMaxWidth().aspectRatio(ILLUSTRATION_ASPECT),
+    )
 }
 
 /** A segmented picker as it stands with [selected] chosen: drawn, not pressed, so unspoken. */
@@ -384,3 +410,6 @@ private val BlockShape = RoundedCornerShape(percent = 36)
 
 /** How much of its dot a check takes. */
 private const val CHECK_SHARE = 0.6f
+
+/** The illustrations' viewport, 320 by 180. */
+private const val ILLUSTRATION_ASPECT = 320f / 180f
