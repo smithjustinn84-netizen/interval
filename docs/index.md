@@ -89,7 +89,7 @@ on Android and iOS.** Everything stays on your device: no account, no analytics,
 <figure markdown>![A workout running](screenshots/09_workout.png)<figcaption>A workout running</figcaption></figure>
 <figure markdown>![An EMOM in a Lift session](screenshots/11_lift_emom.png)<figcaption>An EMOM in Lift</figcaption></figure>
 <figure markdown>![The Log](screenshots/12_log_week.png)<figcaption>The Log</figcaption></figure>
-<figure markdown>![An exercise shown by a figure](screenshots/15_exercise.png)<figcaption>Exercises & body map</figcaption></figure>
+<figure markdown>![An exercise drawn from the side with its bell's path](screenshots/15_exercise.png)<figcaption>Exercises & body map</figcaption></figure>
 </div>
 
 ## Where it runs
