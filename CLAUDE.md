@@ -457,7 +457,12 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   published on the repository's `writeErrors`, which `AppContent` shows as a "Couldn't save" notice. `AppContent` draws
   nothing until `repository.ready`. The DataStore is a `single` on a scope of its own (`PreferencesScope`): one
   per file is DataStore's rule, which a container per process keeps. A schema change bumps the `@Database` version, adds a migration, and
-  commits the new `interval/interval-data/schemas/` (or `lift/lift-data/schemas/`) JSON.
+  commits the new `interval/interval-data/schemas/` (or `lift/lift-data/schemas/`) JSON: one bump a change, since
+  Room refuses a database whose schema moved under the same version, and every install between tags is one. The
+  export file is not held to that: `ExportBundle.SCHEMA` moves at most once between tags. Compare it with the last
+  tag's (`git show $(git describe --tags --abbrev=0 --match 'v*'):apps/app/src/export/ExportBundle.kt`); already
+  higher, a new field joins the current number's entry in its KDoc rather than taking a number of its own. Either
+  way the field has a default, which is what a file without it reads as.
 - **Text**: every user-facing string lives in the `composeResources/values/strings.xml` of the module whose
   screens say it, under its own `Res` (`settings.compose.resources.packageName` is
   `<the module's code package>.resources`, such as `dev.justinsmith.interval.history.resources` and, for

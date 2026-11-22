@@ -11,6 +11,7 @@ tracked in [CHANGELOG.md](../CHANGELOG.md).
 | Step | Action | Command / Check |
 |---|---|---|
 | 1 | **Static checks, rules & tests** | `./kotlin check lint detekt`, `./kotlin test -p jvm -p android`, `python3 tools/check_module_rules.py`, and `python3 tools/check_ios_shards.py` (a bare `./kotlin check` also links every iOS test in Release: 15+ min) |
+| 1b | **Export schema** | `ExportBundle.SCHEMA` moved at most once since the last tag, and its KDoc names every field the release adds under that number: it is final once tagged |
 | 2 | **Version parity** | `python3 tools/check_versions.py` (Android and iOS match) |
 | 3 | **Full build & opt-in check** | `./kotlin build` (compiles all targets including iOS framework) |
 | 4 | **R8 Minification Smoke Test** | Build release APK, install on emulator, run key journeys (including `widget.xml`) |
