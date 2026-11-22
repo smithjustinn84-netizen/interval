@@ -42,7 +42,7 @@ Built with **Compose Multiplatform** for **Android** and **iOS**, powered by the
 | Today | Set up | Log: this week | Log: the month |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/01_today.png" width="200" alt="Today"/> | <img src="docs/screenshots/02_setup.png" width="200" alt="Set up"/> | <img src="docs/screenshots/12_log_week.png" width="200" alt="Log, this week"/> | <img src="docs/screenshots/13_log_month.png" width="200" alt="Log, the month"/> |
-| *The week against the goal, the flow to do before class, the class to log, and picks that fit the minutes you have* | *Four answers (your sport and its days, your bells, a session's length) build the week* | *Each kind done against its plan, time and calories, then what is coming up* | *A calendar of done, planned and missed days* |
+| *The week against the goal, the flow to do before class, the class to log, and picks that fit the minutes you have* | *A few answers (your sport and its days, what you train with, your bells or bar, a session's length) build the week* | *Each kind done against its plan, time and calories, then what is coming up* | *A calendar of done, planned and missed days* |
 
 ### 🏋️ Train: Strength, Conditioning & Mobility
 

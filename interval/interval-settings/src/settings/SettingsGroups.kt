@@ -424,7 +424,7 @@ private fun ColumnScope.CueRows(cues: CueSettings, halfwayAudible: Boolean, onTo
 /**
  * The plan's two settings as they stand, the weekly [goal] and the [reminderTime], each "Off" while it has none.
  * Both are changed on Plan, where they sit with what they are for, so either row leads there. Under them, the way
- * back to Set up, whose four answers build the week again.
+ * back to Set up, whose answers build the week again.
  */
 @Composable
 private fun PlanCard(

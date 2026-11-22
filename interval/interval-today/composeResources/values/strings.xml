@@ -28,7 +28,7 @@
     <!-- The same button once every step is done -->
     <string name="first_week_done">Done</string>
     <string name="first_week_build">Build the week</string>
-    <string name="first_week_build_hint">Four answers in Set up</string>
+    <string name="first_week_build_hint">A few answers in Set up</string>
     <string name="first_week_workout">Do the first workout</string>
     <!-- Where the first workout is: under what is up next, or with nothing up next among the picks by time -->
     <string name="first_week_workout_start">Start, above</string>

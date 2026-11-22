@@ -274,7 +274,7 @@ class HomeActions(
     val onOpenHistory: (Long?) -> Unit = {},
     val onOpenTimer: () -> Unit = {},
     val onOpenSettings: () -> Unit = {},
-    /** Opens Set up, which builds a week from four answers. */
+    /** Opens Set up, which builds a week from a few answers. */
     val onSetup: () -> Unit = {},
     /** Opens Train's Mobility pillar, where the flows are. */
     val onOpenMobility: () -> Unit = {},
@@ -499,7 +499,7 @@ internal fun upNextLength(next: UpNextItem): String? = when (next) {
     is UpNextItem.Lift, is UpNextItem.SportDay -> null
 }
 
-/** Nothing up next: what Today is waiting for, and the ways to give it one, Set up's four answers first. */
+/** Nothing up next: what Today is waiting for, and the ways to give it one, Set up's answers first. */
 @Composable
 private fun NothingPlanned(actions: HomeActions, modifier: Modifier = Modifier) {
     ListCard(modifier) {

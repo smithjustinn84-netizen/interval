@@ -708,7 +708,7 @@ private val HistoryUiState.showsFilterBar: Boolean
 
 /**
  * Before anything is done or planned: what History keeps, and the ways to begin, as Today's empty card has them:
- * Set up first, which builds the whole week from four answers, then the plan a workout at a time, then a workout now.
+ * Set up first, which builds the whole week from a few answers, then the plan a workout at a time, then a workout now.
  */
 @Composable
 private fun FirstRun(actions: HistoryActions, modifier: Modifier = Modifier) {

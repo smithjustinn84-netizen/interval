@@ -100,9 +100,9 @@
     <string name="welcome_example_week_count">3 of 5 done</string>
     <string name="welcome_example_sport">BJJ</string>
 
-    <!-- Set up: four answers that build the week -->
+    <!-- Set up: a few answers that build the week -->
     <string name="setup_title">Set up</string>
-    <string name="setup_intro">Four answers, so Today can pick for you. Change any of them later in Settings.</string>
+    <string name="setup_intro">A few answers, so Today can pick for you. Change any of them later in Settings.</string>
     <string name="setup_sport">What else do you train?</string>
     <string name="setup_sport_another">Another sport</string>
     <string name="setup_sport_none">Nothing else</string>
