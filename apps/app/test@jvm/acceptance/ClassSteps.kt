@@ -104,7 +104,7 @@ fun IntervalAcceptanceDriver.openSensorSettings() {
     see("Forget")
 }
 
-fun IntervalAcceptanceDriver.seeNoSensorInSettings() = seeNo("Heart-rate sensor")
+fun IntervalAcceptanceDriver.seeNoSensorInSettings() = seeNo("Pair a sensor")
 
 /** Today, on a class's day, offers to record it. */
 fun IntervalAcceptanceDriver.seeRecordClassOffered() {

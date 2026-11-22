@@ -36,7 +36,7 @@ fun IntervalAcceptanceDriver.clearHistory() {
     see("Clear the log?")
     tap(hasText("Clear") and hasAnyAncestor(isDialog()))
     // Back is in the title bar, scrolled away with the page's top.
-    scrollTo("Cues")
+    scrollTo("Workout and cues")
     goBack()
 }
 

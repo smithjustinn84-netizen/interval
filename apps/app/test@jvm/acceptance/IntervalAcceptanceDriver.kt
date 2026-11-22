@@ -704,7 +704,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
 
     fun openSettings() {
         tapDescribed("Settings")
-        see("Cues")
+        see("Workout and cues")
     }
 
     /** Settings' Plan group reads a weekly goal of [goal], or "Off" for none, and that is what is kept. */

@@ -249,12 +249,12 @@ class AppNavigationTest {
     fun `on a phone settings opens full screen and goes back`() = appTest {
         openTimer()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("Start workout").assertDoesNotExist()
 
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Start workout").assertExists()
-        onNodeWithText("Cues").assertDoesNotExist()
+        onNodeWithText("Workout and cues").assertDoesNotExist()
     }
 
     @Test
@@ -263,7 +263,7 @@ class AppNavigationTest {
         scrollToText("About Interval")
         onNodeWithText("About Interval").performClick()
         onNodeWithText("Version 1.2.3").assertExists()
-        onNodeWithText("Cues").assertDoesNotExist()
+        onNodeWithText("Workout and cues").assertDoesNotExist()
 
         onNodeWithText("Open-source licenses").performClick()
         onNodeWithText("Barlow").assertExists()
@@ -279,11 +279,11 @@ class AppNavigationTest {
     fun `on a tablet settings opens beside the timer`() = appTest(Window.Tablet) {
         openTimer()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("Start workout").assertExists()
 
         onNodeWithContentDescription("Close settings").performClick()
-        onNodeWithText("Cues").assertDoesNotExist()
+        onNodeWithText("Workout and cues").assertDoesNotExist()
     }
 
     @Test
@@ -346,24 +346,24 @@ class AppNavigationTest {
         mainClock.autoAdvance = false
         onNodeWithContentDescription("Settings").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 5L)
-        val arriving = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        val arriving = onNodeWithText("Workout and cues").fetchSemanticsNode().boundsInRoot
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 3L)
-        val settled = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        val settled = onNodeWithText("Workout and cues").fetchSemanticsNode().boundsInRoot
         assertTrue(arriving.left > settled.left + SETTLED_SLACK, "still sliding in: $arriving vs $settled")
         onNodeWithText("Start workout").assertExists()
 
         onNodeWithContentDescription("Close settings").performClick()
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS / 5L)
-        val leaving = onNodeWithText("Cues").fetchSemanticsNode().boundsInRoot
+        val leaving = onNodeWithText("Workout and cues").fetchSemanticsNode().boundsInRoot
         assertTrue(leaving.left > settled.left + SETTLED_SLACK, "sliding out, not gone at once: $leaving vs $settled")
         mainClock.advanceTimeBy(Motion.PAGE_MILLIS * 3L)
-        onNodeWithText("Cues").assertDoesNotExist()
+        onNodeWithText("Workout and cues").assertDoesNotExist()
     }
 
     @Test
     fun `on a tablet settings opened from Today is a page of its own`() = appTest(Window.Tablet) {
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("This week").assertDoesNotExist()
         onNodeWithContentDescription("Close settings").assertDoesNotExist()
 
@@ -376,7 +376,7 @@ class AppNavigationTest {
     fun `on a tablet settings opened from Lift is a page of its own`() = appTest(Window.Tablet) {
         tab("Train").performClick()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("Start session").assertDoesNotExist()
         onNodeWithContentDescription("Close settings").assertDoesNotExist()
 
@@ -389,11 +389,11 @@ class AppNavigationTest {
     fun `on a tablet settings opened from History is a page of its own`() = appTest(Window.Tablet) {
         tab("Log").performClick()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithContentDescription("Close settings").assertDoesNotExist()
 
         onNodeWithContentDescription("Back").performClick()
-        onNodeWithText("Cues").assertDoesNotExist()
+        onNodeWithText("Workout and cues").assertDoesNotExist()
         tab("Log").assertIsSelected()
     }
 
@@ -401,7 +401,7 @@ class AppNavigationTest {
     fun `the desktop window opens settings beside the timer`() = appTest(Window.Desktop) {
         openTimer()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("Start workout").assertExists()
     }
 
@@ -409,7 +409,7 @@ class AppNavigationTest {
     fun `on a tablet held upright settings opens full screen`() = appTest(Window.TabletPortrait) {
         openTimer()
         onNodeWithContentDescription("Settings").performClick()
-        onNodeWithText("Cues").assertExists()
+        onNodeWithText("Workout and cues").assertExists()
         onNodeWithText("Start workout").assertDoesNotExist()
         onNodeWithContentDescription("Back").performClick()
         onNodeWithText("Start workout").assertExists()
