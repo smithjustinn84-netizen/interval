@@ -54,10 +54,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
+import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -457,6 +459,27 @@ private fun EmomScreenPreview() {
             EmomState(EmomPhase.Work, minute = 3, minutes = 10, secondsLeft = 45, minuteProgress = 0.25f),
             onFinishSet = {},
             onStop = {},
+        )
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun EmomScreenHeartPreview() {
+    IntervalTheme(darkTheme = true) {
+        EmomScreen(
+            EmomRun(
+                BuiltInExercise.TwoHandSwing,
+                Load.Bell(kg = 24.0),
+                reps = 10,
+                minutes = 10,
+                firstSide = Side.Left,
+                startedAtMillis = 0,
+            ),
+            EmomState(EmomPhase.Work, minute = 3, minutes = 10, secondsLeft = 45, minuteProgress = 0.25f),
+            onFinishSet = {},
+            onStop = {},
+            heart = { HeartBeatBadge(LiveHeartRateState.Reading(bpm = 156)) },
         )
     }
 }
