@@ -70,6 +70,7 @@ import dev.justinsmith.lift.session.resources.summary_how_was_it
 import dev.justinsmith.lift.session.resources.summary_note_placeholder
 import dev.justinsmith.lift.session.resources.summary_pace
 import dev.justinsmith.lift.session.resources.summary_program_finished
+import dev.justinsmith.lift.session.resources.summary_see_recap
 import dev.justinsmith.lift.session.resources.summary_share
 import dev.justinsmith.lift.session.resources.summary_shared
 import dev.justinsmith.lift.session.resources.summary_streak
@@ -369,13 +370,18 @@ private fun SummaryHeading(title: String, modifier: Modifier = Modifier) {
 
 /**
  * The way out under the summary: the session's [SummaryStanding] over Close, or with [standing] off Close alone, the
- * standing then scrolling with the rest (large text, where it would leave the numbers a sliver).
+ * standing then scrolling with the rest (large text, where it would leave the numbers a sliver). After a program's
+ * last day it says See the recap, which [onDone] then opens.
  */
 @Composable
 private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () -> Unit, standing: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         if (standing) SummaryStanding(finished, onShare)
-        AccentButton(stringResource(Res.string.summary_close), onDone, Modifier.fillMaxWidth())
+        AccentButton(
+            stringResource(if (finished.lastDayOf != null) Res.string.summary_see_recap else Res.string.summary_close),
+            onDone,
+            Modifier.fillMaxWidth(),
+        )
     }
 }
 

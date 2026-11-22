@@ -150,6 +150,8 @@ Ordered by product leverage while staying 100% offline-first and privacy-preserv
 | **F6** | **P2** | **CSV Export & Gentle Offline Backup Nudges** | Keep schema-versioned JSON for full restore; add flat CSV export for spreadsheets/coaches and a subtle monthly reminder (or Android SAF folder export) to back up local data. |
 | **F7** | **P3** | **Audio Ducking & OEM Battery Reliability Check** | Ensure crisp audio focus ducking over podcasts/music during cues, plus an optional Settings check for aggressive Android OEM battery optimization (Samsung/Xiaomi/OnePlus) so screen-off timers never stall. |
 
+- **F2 done (2026-11-22)**: a program's last day closes its summary onto the program's page ("See the recap" in place of Close), which once finished leads with the next cycle as a coach calls it (`programRecap`, lift-domain, pure): a few easy days first when under 75% of the plan was done, missed days' sets counted undone, or the sessions felt very hard or worse on average; a beginner's program done to 90% moves on to the next program for what is owned and the time a day took (`starterProgram` over the catalogue, no beginner's and no barbell without a bar), its button following it; any other goes again, saying so honestly: from the loads last lifted for a program naming none (its days take each lift's load from history), from its own loads otherwise. Under it each lift done twice or more, its best working set at the start beside the end ("16 kg × 10 → 24 kg × 10"), then the records. An easy week is advice only: nothing lightens the next run's loads.
+
 ---
 
 ## 5. Suggested 3-phase roadmap

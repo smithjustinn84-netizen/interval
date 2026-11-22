@@ -95,7 +95,7 @@ Full findings, cleanup items, and the 3-phase `0.6.0 → 1.0.0` roadmap live in 
 
 - **Release blockers before `0.6.0` (B2–B3).** Consolidate `[0.5.0]` + `[0.6.0]` in `CHANGELOG.md`; complete real-hardware Polar R8 smoke test. (B1's licences and B4's counts are done.)
 - **Clean up & dead weight (C1–C6).** Batch `ExportBundle.SCHEMA` bumps once per release (the rule is in CLAUDE.md's Storage and release.md's pre-flight from 2026-11-22; Room stays one bump a change); prune the `Presets` route (and its `subclass` in `navConfiguration`, its line in `NavKeyRoundTripTest`) and `timerUnderTrain`/`rootAtToday` only after a release past `v0.4.0`, the last build with the Timer as a tab, is tagged and installed (no tag holds them yet; `Timer`'s `@SerialName` stays, it is the name every build saves under); curate the built-in program catalogue.
-- **Next-level `1.0` features (F1–F7).** Standard BLE GATT (`0x180D`) live heart rate on Android & iOS; Program Completion Recap & next-cycle coach; shareable Track & Chalk PNG summary cards; unified Progress / Trends view in Log; superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
+- **Next-level `1.0` features (F1, F3–F7; F2 is done).** Standard BLE GATT (`0x180D`) live heart rate on Android & iOS; shareable Track & Chalk PNG summary cards; unified Progress / Trends view in Log; superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
 
 ## Left out on purpose
 

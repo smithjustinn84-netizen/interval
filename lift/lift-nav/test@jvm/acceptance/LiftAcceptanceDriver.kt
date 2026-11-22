@@ -25,6 +25,8 @@ import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.ui.AcceptanceSteps
 import dev.justinsmith.interval.ui.JOURNEY_TIMEOUT
 import dev.justinsmith.interval.ui.Window
+import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.LiftAppFixture
@@ -378,6 +380,30 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     fun skipBlock(exercise: String) {
         tap(exercise)
         tap("Skip this block")
+    }
+
+    // A program's last day and its recap
+
+    /** From Strength: starts [id]'s last day, logs each of its sets as planned, and finishes. */
+    fun doTheLastDay(id: ProgramId) {
+        val program = program(id)
+        startProgramDay(program.totalDays)
+        repeat(program.day(program.totalDays).plannedSets().size) { logNextSet() }
+        tap("Finish")
+    }
+
+    /**
+     * The summary's See the recap; the step up it offers is dropped when asked about first, as leaving asks of
+     * changes not yet kept.
+     */
+    fun seeTheRecap() {
+        tap("See the recap")
+        waitFor("the recap, or the changes asked about") {
+            ui.onAllNodes(hasText("Next cycle")).fetchSemanticsNodes().isNotEmpty() ||
+                ui.onAllNodes(hasText("Drop")).fetchSemanticsNodes().isNotEmpty()
+        }
+        if (ui.onAllNodes(hasText("Drop")).fetchSemanticsNodes().isNotEmpty()) tap("Drop")
+        see("Next cycle")
     }
 
     fun finish() {

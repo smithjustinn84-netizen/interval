@@ -43,7 +43,7 @@ import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
-fun SessionRoute(onExit: () -> Unit) {
+fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
     val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<SessionViewModel>()
     // A page a killed process left on a session since finished or dropped has nothing to go on with: it closes.
@@ -105,7 +105,8 @@ fun SessionRoute(onExit: () -> Unit) {
         when (shown) {
             is SessionPage.Summary -> SummaryScreen(
                 shown.finished,
-                onDone = onExit,
+                // A program's last day closes onto the program's recap.
+                onDone = if (shown.finished.lastDayOf != null) onRecap else onExit,
                 onKeep = viewModel.summary::keepChanges,
                 onShare = sharer::shareText,
                 reflection = viewModel.summary.let {

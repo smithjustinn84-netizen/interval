@@ -29,9 +29,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Arrival
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.Corners
@@ -45,7 +43,6 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
-import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
@@ -55,6 +52,8 @@ import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.DayStanding
 import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.NextCycle
+import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramProgress
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.programProgress
@@ -73,11 +72,8 @@ import dev.justinsmith.lift.session.resources.program_days_done
 import dev.justinsmith.lift.session.resources.program_days_done_label
 import dev.justinsmith.lift.session.resources.program_days_left_label
 import dev.justinsmith.lift.session.resources.program_finished
-import dev.justinsmith.lift.session.resources.program_follow_again
-import dev.justinsmith.lift.session.resources.program_follow_again_hint
 import dev.justinsmith.lift.session.resources.program_none_done
 import dev.justinsmith.lift.session.resources.program_open_session_cd
-import dev.justinsmith.lift.session.resources.program_pick_another
 import dev.justinsmith.lift.session.resources.program_preview_day
 import dev.justinsmith.lift.session.resources.program_records_set
 import dev.justinsmith.lift.session.resources.program_sets_done
@@ -93,10 +89,14 @@ import dev.justinsmith.lift.ui.tonnageValue
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
-/** What the Program page does: open a day's session, follow the program again or pick another, and go back. */
+/**
+ * What the Program page does: open a day's session, follow the program again, follow the next one its recap calls
+ * for, or pick another, and go back.
+ */
 data class ProgramProgressActions(
     val onOpenSession: (uid: String) -> Unit = {},
     val onFollowAgain: () -> Unit = {},
+    val onFollow: (Program) -> Unit = {},
     val onPickAnother: () -> Unit = {},
     val onBack: () -> Unit = {},
 )
@@ -110,6 +110,8 @@ fun ProgramProgressRoute(onOpenSession: (uid: String) -> Unit, onPickAnother: ()
         Res.string.notice_program_followed,
         state.progress?.let { programName(it.program) }.orEmpty(),
     )
+    val nextName = (state.recap?.next as? NextCycle.MoveOn)?.program?.let { programName(it) }.orEmpty()
+    val followedNextText = stringResource(Res.string.notice_program_followed, nextName)
     ProgramProgressScreen(
         state,
         ProgramProgressActions(
@@ -117,6 +119,10 @@ fun ProgramProgressRoute(onOpenSession: (uid: String) -> Unit, onPickAnother: ()
             onFollowAgain = {
                 notices.show(followedText)
                 viewModel.followAgain()
+            },
+            onFollow = { program ->
+                notices.show(followedNextText)
+                viewModel.follow(program)
             },
             onPickAnother = onPickAnother,
             onBack = onBack,
@@ -126,8 +132,9 @@ fun ProgramProgressRoute(onOpenSession: (uid: String) -> Unit, onPickAnother: ()
 
 /**
  * The program followed: where it stands, a map of its days by week and each day done (a tap opens its
- * session); once every day is done, what it came to, with Follow again and a way to another program ahead of
- * the days. On a wider window the days done sit beside the map. Once nothing is followed the page goes back.
+ * session); once every day is done, its recap: what it came to, the next cycle as a coach would call it (with its
+ * button, and a way to another program), how each lift moved and the records set, ahead of the days. On a wider
+ * window the days done sit beside the map. Once nothing is followed the page goes back.
  */
 @Composable
 fun ProgramProgressScreen(
@@ -143,6 +150,18 @@ fun ProgramProgressScreen(
     val card = Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space4)
     TabGrid(programName(progress.program), modifier, navigation = { BackAction(actions.onBack) }) {
         item(key = "standing") { Arrival(entrance, STANDING_STEP) { Standing(progress, card) } }
+        state.recap?.let { recap ->
+            item(key = "next", span = StaggeredGridItemSpan.FullLine) {
+                Arrival(entrance, MAP_STEP) {
+                    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                        NextCycleCard(recap, actions, card.widthIn(max = Sizes.content))
+                    }
+                }
+            }
+            if (recap.lifts.isNotEmpty()) {
+                item(key = "lifts") { Arrival(entrance, DONE_STEP) { LiftChanges(recap.lifts, card) } }
+            }
+        }
         item(key = "map") { Arrival(entrance, MAP_STEP) { ListCard(card) { DayMap(progress) } } }
         if (progress.finished && progress.records.isNotEmpty()) {
             item(key = "records") {
@@ -159,11 +178,6 @@ fun ProgramProgressScreen(
                 }
             }
         }
-        if (progress.finished) {
-            item(key = "again", span = StaggeredGridItemSpan.FullLine) {
-                Arrival(entrance, AGAIN_STEP) { Again(actions, card.padding(vertical = Spacing.space12)) }
-            }
-        }
         item(key = "done") { Arrival(entrance, DONE_STEP) { DaysDone(state, actions.onOpenSession, card) } }
     }
 }
@@ -171,7 +185,6 @@ fun ProgramProgressScreen(
 private const val STANDING_STEP = 0
 private const val MAP_STEP = 1
 private const val DONE_STEP = 2
-private const val AGAIN_STEP = 3
 
 /** The day to do next and the days done and left; once finished, the days, reps and weight the program came to. */
 @Composable
@@ -364,35 +377,6 @@ private fun DoneRow(row: DoneRow, onOpenSession: (uid: String) -> Unit) {
             tint = palette.textDim,
             modifier = Modifier.size(Sizes.icon),
         )
-    }
-}
-
-/** Once every day is done: Follow again, Pick another program, and what Follow again does. */
-@Composable
-private fun Again(actions: ProgramProgressActions, modifier: Modifier = Modifier) {
-    Column(modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
-        Column(
-            Modifier.widthIn(max = Sizes.content).fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
-            AccentButton(
-                stringResource(Res.string.program_follow_again),
-                actions.onFollowAgain,
-                Modifier.fillMaxWidth(),
-            )
-            SecondaryButton(
-                stringResource(Res.string.program_pick_another),
-                actions.onPickAnother,
-                Modifier.fillMaxWidth(),
-            )
-            Text(
-                stringResource(Res.string.program_follow_again_hint),
-                style = IntervalTheme.type.meta,
-                color = IntervalTheme.palette.textDim,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
     }
 }
 

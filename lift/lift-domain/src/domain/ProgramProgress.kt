@@ -87,7 +87,7 @@ fun programProgress(followed: Followed, sessions: List<LiftSession>): ProgramPro
         program,
         done = before + done,
         next = program.dayAfter(lastDayDone(run.map { it.day }, followed.daysBefore)),
-        reps = setsOfRun.sumOf { it.reps },
+        reps = run.sumOf { it.reps },
         tonnageKg = run.sumOf { it.tonnageKg },
         records = newRecords(sessions.filter { it.startedAtEpochMillis < since }.flatMap { it.sets }, setsOfRun),
     )

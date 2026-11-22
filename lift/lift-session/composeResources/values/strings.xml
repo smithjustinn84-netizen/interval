@@ -175,6 +175,24 @@
     <string name="program_follow_again">Follow again</string>
     <string name="program_pick_another">Pick another program</string>
     <string name="program_follow_again_hint">Starts again at day 1. These sessions stay in your log.</string>
+    <!-- A finished program's recap: the coach's call on the cycle after it -->
+    <string name="recap_next_cycle">Next cycle</string>
+    <string name="recap_go_again_heavier">Go again, from where you finished</string>
+    <string name="recap_go_again">Go again</string>
+    <string name="recap_ease_off">Ease in, then go again</string>
+    <string name="recap_move_on">Ready to move on</string>
+    <string name="recap_sets_done">You did %1$d of %2$d planned sets.</string>
+    <string name="recap_from_last">Each lift starts at the load you last lifted it with.</string>
+    <string name="recap_from_plan">It starts again from day 1, at the loads it names.</string>
+    <string name="recap_missed_work">Too much went undone to build on yet. Take a few easy days, then go again.</string>
+    <string name="recap_hard_going">The sessions felt very hard. Take a few easy days, then go again.</string>
+    <string name="recap_move_on_why">You finished a beginner's program. %1$s is the next step for what you own.</string>
+    <string name="recap_follow">Follow %1$s</string>
+    <string name="recap_lifts">How the lifts moved</string>
+    <!-- A lift as it started and ended: "16 kg × 10 → 24 kg × 10" -->
+    <string name="recap_lift_change">%1$s → %2$s</string>
+    <!-- The summary's way out after the last day of a program, to its recap -->
+    <string name="summary_see_recap">See the recap</string>
     <string name="editor_new_title">New program</string>
     <string name="editor_edit_title">Edit program</string>
     <string name="editor_name">Name</string>

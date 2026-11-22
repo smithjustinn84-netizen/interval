@@ -1,0 +1,17 @@
+<journey name="Lift: a finished program's recap and the next cycle">
+  <description>
+    A program's last day done, the session's summary closes onto the program's recap: what it came to, how much of
+    the plan was done, how each lift moved, the records set, and the next cycle as a coach would call it, its button
+    doing what it says. A beginner's program done well moves on to the next program for the bells owned; a program
+    with days missed or sets left eases in; any other goes again from the loads last lifted. Run on an install
+    following "Kettlebell foundations" with every day but its last logged, and a 16 kg and a 24 kg bell owned.
+  </description>
+  <actions>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Start day 12" on the program's card</action>
+    <action>Tap "Log set" for each set up next until "Up next" is gone, then "Finish"</action>
+    <action>Verify that the summary says "Kettlebell foundations finished · every day done" and that its button reads "See the recap" rather than "Close"</action>
+    <action>Tap "See the recap"; if asked "Keep today's changes?", tap "Drop"</action>
+    <action>Verify that the program's page shows "Finished", the days done, reps and weight moved, then "Next cycle" with "Ready to move on", "You did N of N planned sets." and the program it names, then "How the lifts moved" with each lift's first and last best set ("16 kg × 10 → 24 kg × 10")</action>
+    <action>Tap "Follow" and the program named, and verify the notice says it is followed and the page shows its day 1</action>
+  </actions>
+</journey>

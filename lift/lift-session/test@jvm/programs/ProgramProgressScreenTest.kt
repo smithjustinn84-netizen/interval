@@ -16,6 +16,7 @@ import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Followed
+import dev.justinsmith.lift.domain.Gear
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.Program
@@ -25,6 +26,7 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.domain.programProgress
+import dev.justinsmith.lift.domain.programRecap
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -61,6 +63,7 @@ class ProgramProgressScreenTest {
                     },
                 )
             },
+            programRecap(progress, Gear(bells = listOf(16.0)), restSeconds = 60),
         )
     }
 
@@ -144,7 +147,7 @@ class ProgramProgressScreenTest {
         onNodeWithText("Reps").assertIsDisplayed()
         onNodeWithText("720").assertIsDisplayed()
         onNodeWithText("Moved").assertIsDisplayed()
-        scrollToText("Records set")
+        scrollToText("Next cycle")
         scrollToText("Follow again")
         onNodeWithText("Follow again").performClick()
         scrollToText("Pick another program")

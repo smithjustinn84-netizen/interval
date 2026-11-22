@@ -273,7 +273,10 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `SessionStore.startTest`)
   lift-session       the session (log sheet, EMOM, hold, density and rest timers under `SessionTimers`, plan sheets,
                      summary; a free one takes a day of any program from `ProgramDaySheet`), the programs
-                     and their editor and progress (they share the block editor), a finished session's page
+                     and their editor and progress (they share the block editor; a finished program's recap,
+                     `programs/ProgramRecap.kt` over lift-domain's `programRecap`: the next cycle, go again, ease in
+                     or move on, and how each lift moved, which the last day's summary opens through "See the recap"),
+                     a finished session's page
   lift-library       the exercise library, each exercise's page and editor, the picker
   lift-nav           Lift's entry point: its navigation keys (`nav/LiftRoutes.kt`) and the entry for each
                      (`liftEntries`), which `App` registers and composes; its flow tests drive those entries

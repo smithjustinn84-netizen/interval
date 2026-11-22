@@ -54,7 +54,13 @@ fun EntryProviderScope<NavKey>.liftEntries(
         )
     }
     entry<Lifting>(metadata = pageKind(PageKind.Mode)) {
-        SessionRoute(onExit = { backStack.removeLastOrNull() })
+        SessionRoute(
+            onExit = { backStack.removeLastOrNull() },
+            onRecap = {
+                backStack.removeLastOrNull()
+                backStack.push(ProgramProgress)
+            },
+        )
     }
     entry<Programs> { ProgramsEntry(backStack) }
     entry<ProgramSheet> { key -> ProgramsEntry(backStack, open = key.program) }
