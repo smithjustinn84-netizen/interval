@@ -50,7 +50,8 @@ import androidx.compose.ui.unit.dp
  *
  * A title with a word too wide to fit beside the actions (with large text, say, beside a wide one such as a
  * session's heart rate) takes a line of its own under them, the whole width, rather than breaking a letter or
- * two a line. One that only wraps between words wraps beside them, as it always has.
+ * two a line; so, with large text, does one that would wrap beside them and fits that line whole (Set up beside
+ * Skip for now). At the usual size a title that wraps between words wraps beside them, as it always has.
  */
 @Composable
 fun TitleBar(
@@ -64,6 +65,7 @@ fun TitleBar(
     val capTop = Spacing.space8
     // From the touch target's centre to the capitals' centre: negative, so the glyphs move up.
     val glyphShift = capTop + capHeight / 2 - Sizes.iconButton / 2
+    val large = isLargeText()
     CompositionLocalProvider(LocalTitleBarGlyphShift provides glyphShift) {
         Layout(
             contents = listOf(
@@ -90,8 +92,11 @@ fun TitleBar(
             val acts = actionRows.single().measure(loose.copy(maxWidth = (loose.maxWidth - nav.width).coerceAtLeast(0)))
             val text = titles.single()
             val beside = (constraints.maxWidth - nav.width - acts.width).coerceAtLeast(0)
-            // Its longest word, which is the least it can be drawn in without breaking one.
-            val fits = text.minIntrinsicWidth(Constraints.Infinity) <= beside
+            // Beside the actions unless that breaks a word, or with large text wraps a title the whole width
+            // would hold on one line. At the usual size a long title wraps beside Back, as it always has.
+            val oneLine = text.maxIntrinsicWidth(Constraints.Infinity)
+            val fits = text.minIntrinsicWidth(Constraints.Infinity) <= beside &&
+                (!large || oneLine <= beside || oneLine > constraints.maxWidth)
             val head = maxOf(nav.height, acts.height)
             if (fits) {
                 val placed = text.measure(Constraints(minWidth = beside, maxWidth = beside))
