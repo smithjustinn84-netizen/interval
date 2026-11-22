@@ -605,7 +605,7 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         tap("Log set")
         app.clock.set(90_000)
         tap("Finish")
-        see("Counts toward your week and your goal")
+        see("Close")
         tap("Close")
         waitFor("the session finished") { app.lift.sessions.sessions.value.any { it.finishedAtEpochMillis != null } }
     }

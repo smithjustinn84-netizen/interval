@@ -364,7 +364,7 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun finish() {
         tap("Finish")
-        see("Counts toward your week and your goal")
+        see("Close")
     }
 
     /** Starts day 1 and logs its [sets] sets, then Finish. */

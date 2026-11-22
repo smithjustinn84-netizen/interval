@@ -36,7 +36,7 @@ class SidewaysTest {
         onNodeWithText("Finish").assertIsDisplayed()
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
-        waitForText("Counts toward your week and your goal")
+        waitForText("Close")
         onNodeWithText("Close").assertIsDisplayed()
     }
 }

@@ -24,7 +24,7 @@ class ShareFlowTest {
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
-        waitForText("Counts toward your week and your goal")
+        waitForText("Close")
 
         onNodeWithText("Share").performClick()
 
@@ -39,7 +39,7 @@ class ShareFlowTest {
         waitForText("16 kg × 10")
         app.clock.set(90_000)
         onNodeWithText("Finish").performClick()
-        waitForText("Counts toward your week and your goal")
+        waitForText("Close")
         onNodeWithText("Close").performClick()
         waitForText("Last session")
         onNodeWithText("Last session").performClick()

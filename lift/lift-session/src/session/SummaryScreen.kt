@@ -378,7 +378,7 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () ->
     }
 }
 
-/** Where the week stands with the session in it, the program it finished if it did, where it went, and Share. */
+/** Where the week stands with the session in it, the program it finished if it did, and Share. */
 @Composable
 private fun SummaryStanding(finished: Finished, onShare: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
@@ -408,18 +408,24 @@ private fun SummaryStanding(finished: Finished, onShare: () -> Unit, modifier: M
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        Text(
-            stringResource(Res.string.summary_shared),
-            style = IntervalTheme.type.meta,
-            color = IntervalTheme.palette.textDim,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
+        // Said only with no week to show: the week's line, the session in it, says it already.
+        if (finished.week == null) {
+            Text(
+                stringResource(Res.string.summary_shared),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         QuietTextButton(stringResource(Res.string.summary_share), onShare, Modifier.align(Alignment.CenterHorizontally))
     }
 }
 
-/** "3 of 4 this week", "Goal met this week", or with no goal set, the count; the streak is a [StreakBadge] under it. */
+/**
+ * "3 of 4 days this week", "Goal met this week", or with no goal set, the count; the streak is a [StreakBadge]
+ * under it.
+ */
 @Composable
 private fun weekText(week: WeekStanding): String {
     val goal = week.goal

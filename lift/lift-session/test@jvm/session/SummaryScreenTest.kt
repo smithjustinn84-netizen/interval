@@ -11,6 +11,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -77,6 +78,20 @@ class SummaryScreenTest {
         onNodeWithText("Bests").performScrollTo()
         onNodeWithText("Snatch test: 100 in 5 minutes, your best").assertExists()
         onNodeWithText("1000 in all: Two-hand swing").assertExists()
+    }
+
+    @Test
+    fun `the week's line says the session counts and says it once`() = runUiTest {
+        var finished by mutableStateOf(
+            Finished(session, emptyList(), week = WeekStanding(count = 3, goal = 4, streak = 0)),
+        )
+        setThemedContent(dark = true) { SummaryScreen(finished, onDone = {}) }
+        onNodeWithText("3 of 4 days this week").assertExists()
+        onNodeWithText("Counts toward your week and your goal").assertDoesNotExist()
+
+        // With no week to show, the line says it.
+        finished = Finished(session, emptyList())
+        onNodeWithText("Counts toward your week and your goal").assertExists()
     }
 
     @Test

@@ -59,6 +59,7 @@ import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ProgressRing
@@ -369,11 +370,16 @@ private fun RoundDone(
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(Res.string.density_round_done),
-            style = IntervalTheme.type.stat,
-            color = if (working) colors.onFill(fill) else colors.onGroundDim,
-        )
+        // Its word grows no further than large text begins, on one line: past that it takes two, the button half
+        // the screen.
+        TextScaleAtMost(LARGE_FONT_SCALE) {
+            Text(
+                stringResource(Res.string.density_round_done),
+                style = IntervalTheme.type.stat,
+                color = if (working) colors.onFill(fill) else colors.onGroundDim,
+                maxLines = 1,
+            )
+        }
     }
 }
 

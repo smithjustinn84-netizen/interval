@@ -84,7 +84,7 @@
     <string name="share_session_record">%1$s: %2$s</string>
     <string name="summary_shared">Counts toward your week and your goal</string>
     <string name="summary_program_finished">%1$s finished · every day done</string>
-    <string name="summary_week_of_goal">%1$d of %2$d this week</string>
+    <string name="summary_week_of_goal">%1$d of %2$d days this week</string>
     <plurals name="summary_week_count">
         <item quantity="one">%1$d day trained this week</item>
         <item quantity="other">%1$d days trained this week</item>
