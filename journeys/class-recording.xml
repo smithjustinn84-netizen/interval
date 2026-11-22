@@ -23,7 +23,7 @@
     <action>Open the app with the sensor still on the arm</action>
     <action>Verify that "Today" still shows "Recording since" and the time it was started</action>
     <action>Tap "Sync class"</action>
-    <action>Verify that the "Log" tab opens on a page titled "BJJ class" with today and the time the recording started, a "Length" close to how long it ran, a line of the heart rate with a shaded band a round, "Avg heart rate" and "Peak heart rate", and under "Rounds" a row a round reading its length, "avg", "peak" and "down … in 60 s" or "in 30 s"</action>
+    <action>Verify that the "Log" tab opens on a page titled "BJJ class" with today and the time the recording started, a "Length" close to how long it ran, a card of the heart rate (a dot, the average over "BPM" and its zone, a line with a shaded band a round, the time in each zone) and under it "Average · … peak", and under "Rounds" a row a round reading its length, "avg", "peak" and "down … in 60 s" or "in 30 s"</action>
     <action>Tap "Back"</action>
     <action>Verify that the log lists "BJJ class" under today reading its rounds and length ("2 rounds · 21:40"), and the week card's "Sport days" row reads "1 of 1"</action>
     <action>Tap the "Today" tab</action>

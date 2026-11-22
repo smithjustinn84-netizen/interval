@@ -2,7 +2,7 @@ package dev.justinsmith.interval.history
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
@@ -25,30 +25,33 @@ import dev.justinsmith.interval.history.resources.class_detail_delete_title
 import dev.justinsmith.interval.history.resources.class_detail_length
 import dev.justinsmith.interval.history.resources.class_detail_no_rounds
 import dev.justinsmith.interval.history.resources.class_detail_rounds
+import dev.justinsmith.interval.history.resources.class_heart_average_peak
+import dev.justinsmith.interval.history.resources.class_heart_load
 import dev.justinsmith.interval.history.resources.class_round
 import dev.justinsmith.interval.history.resources.class_round_drop
 import dev.justinsmith.interval.history.resources.class_round_figures
 import dev.justinsmith.interval.history.resources.common_cancel
 import dev.justinsmith.interval.history.resources.common_joined
-import dev.justinsmith.interval.history.resources.detail_average_heart_rate
-import dev.justinsmith.interval.history.resources.detail_bpm_value
 import dev.justinsmith.interval.history.resources.detail_delete_confirm
-import dev.justinsmith.interval.history.resources.detail_peak_heart_rate
 import dev.justinsmith.interval.history.resources.history_more_options_cd
 import dev.justinsmith.interval.history.resources.notice_class_deleted
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportTitle
+import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.HeartRateChart
+import dev.justinsmith.interval.ui.HeartReading
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
 import dev.justinsmith.interval.ui.IntervalMenuItem
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.JoinedText
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
@@ -154,9 +157,13 @@ fun ClassDetailScreen(
     }
 }
 
-/** When it was, its length, its heart rate drawn, and the average and the peak. */
+/**
+ * When it was and its length, then its heart rate as a finished workout's reads: the average with its zone, its dot
+ * held still, the heart rate drawn with a band a round, and the time in each zone; under that card the peak and
+ * what the class cost the heart.
+ */
 @Composable
-private fun ClassFigures(recorded: RecordedClass) {
+private fun ColumnScope.ClassFigures(recorded: RecordedClass) {
     val palette = IntervalTheme.palette
     Text(
         stringResource(Res.string.common_joined, dayHeading(recorded.day), recorded.time),
@@ -171,28 +178,35 @@ private fun ClassFigures(recorded: RecordedClass) {
             color = palette.textDim,
         )
         Text(recorded.length, style = IntervalTheme.type.display, color = palette.text)
-        HeartRateChart(
-            recorded.samples,
-            Modifier.padding(vertical = Spacing.space8),
-            maxBpm = recorded.maxHeartRate,
-            marks = recorded.marks,
-        )
-        val average = recorded.averageBpm
-        val peak = recorded.peakBpm
-        if (average != null && peak != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                Stat(
-                    stringResource(Res.string.detail_average_heart_rate),
-                    stringResource(Res.string.detail_bpm_value, average),
-                )
-                Stat(
-                    stringResource(Res.string.detail_peak_heart_rate),
-                    stringResource(Res.string.detail_bpm_value, peak),
-                )
-            }
+    }
+    val average = recorded.averageBpm
+    val peak = recorded.peakBpm
+    SummaryCard {
+        if (average != null) {
+            HeartReading(
+                average,
+                heartRateZone(average, recorded.maxHeartRate, LocalRestingHeartRate.current),
+                onWorkoutGround = false,
+                beating = false,
+            )
         }
-        HeartInsights(recovery = null, load = recorded.heartLoad)
-        ZoneBreakdown(recorded.samples, Modifier.padding(top = Spacing.space8), maxBpm = recorded.maxHeartRate)
+        HeartRateChart(recorded.samples, maxBpm = recorded.maxHeartRate, marks = recorded.marks)
+        ZoneBreakdown(recorded.samples, maxBpm = recorded.maxHeartRate)
+    }
+    val peakWords = peak?.let { stringResource(Res.string.class_heart_average_peak, it) }
+    val loadWords = recorded.heartLoad?.let { stringResource(Res.string.class_heart_load, it) }
+    val read = if (peakWords != null && loadWords != null) {
+        stringResource(Res.string.common_joined, peakWords, loadWords)
+    } else {
+        peakWords ?: loadWords
+    }
+    if (read != null) {
+        JoinedText(
+            read,
+            style = IntervalTheme.type.meta,
+            color = palette.textDim,
+            modifier = Modifier.padding(horizontal = Spacing.space4),
+        )
     }
 }
 
@@ -256,6 +270,7 @@ private fun ClassDetailScreenPreview() {
         length = "1:02:10",
         averageBpm = 138,
         peakBpm = 181,
+        heartLoad = PREVIEW_HEART_LOAD,
         samples = samples,
         marks = listOf(PREVIEW_ROUND_ONE, PREVIEW_ROUND_TWO).map {
             it.first.toFloat() / PREVIEW_SAMPLES..it.last.toFloat() / PREVIEW_SAMPLES
@@ -275,3 +290,4 @@ private const val PREVIEW_WAVE = 5
 private const val PREVIEW_RIPPLE = 3
 private const val PREVIEW_HIGH = 162
 private const val PREVIEW_LOW = 108
+private const val PREVIEW_HEART_LOAD = 96

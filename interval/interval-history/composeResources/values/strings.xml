@@ -243,6 +243,9 @@
         <item quantity="other">%1$d rounds</item>
     </plurals>
     <string name="class_detail_length">Length</string>
+    <!-- Under a class's heart card, whose number is the class's average. -->
+    <string name="class_heart_average_peak">Average · %1$d peak</string>
+    <string name="class_heart_load">Heart load %1$d</string>
     <string name="class_detail_rounds">Rounds</string>
     <string name="class_detail_no_rounds">No rounds found: the heart rate never stood out for two minutes.</string>
     <string name="class_round">Round %1$d</string>

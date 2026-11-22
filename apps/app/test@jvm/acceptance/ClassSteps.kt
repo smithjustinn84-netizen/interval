@@ -141,7 +141,7 @@ fun IntervalAcceptanceDriver.syncClass() {
 
 /** The class's page, opened by its sync: its rounds, each with its heart rate. */
 fun IntervalAcceptanceDriver.seeClassPage(rounds: Int) {
-    see("Avg heart rate")
+    see(hasText("Average · ", substring = true))
     see(hasText("Round $rounds", substring = true))
     seeNo(hasText("Round ${rounds + 1}", substring = true))
     see(hasText("170 peak", substring = true))
@@ -159,7 +159,7 @@ fun IntervalAcceptanceDriver.seeClassInLog(rounds: Int) {
 
 fun IntervalAcceptanceDriver.openClassFromLog() {
     tap(hasText("BJJ class") and hasText("rounds", substring = true))
-    see("Avg heart rate")
+    see(hasText("Average · ", substring = true))
 }
 
 fun IntervalAcceptanceDriver.deleteRecording() {
