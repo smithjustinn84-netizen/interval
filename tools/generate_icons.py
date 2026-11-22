@@ -2,6 +2,10 @@
 
     uv run --with pillow tools/generate_icons.py
 
+Every icon but iOS's app icon and the foreground of Android's launcher icon, which `tools/render_icon_3d.py`
+renders in Blender (`--flat-ios-icon` here writes the flat mark over iOS's; Android's `ic_launcher_foreground.xml`
+is still written, for the splash screen).
+
 The mark is the workout's phase ring: three round-capped arcs in the phase colours (Get ready, Work,
 Rest), with a clock hand pointing up through the gap at the top. Its geometry lives here and in
 `interval/interval-ui/src/splash/IntervalMark.kt`, which draws the same mark for the animated intro; keep the two
@@ -9,6 +13,7 @@ in step. Everything is laid out on Android's 108-unit adaptive-icon canvas.
 """
 
 import math
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -223,10 +228,12 @@ def main():
 
     write(ROOT / "apps/app/composeResources/drawable/app_icon.xml", desktop_vector(mark_paths(colors, INK)))
 
-    # iOS draws icons full bleed and rounds the corners itself, so the mark can sit larger than on
-    # Android, whose launchers crop the 108 canvas to its middle 72.
-    ios_scale = 1.3
-    ios_icons(ROOT / "apps/iosApp/src/Assets.xcassets", ios_scale, draw_mark)
+    # iOS's app icon is the rendered bell, `tools/render_icon_3d.py`'s, so this leaves it alone unless asked for
+    # the flat mark (`--flat-ios-icon`). iOS draws icons full bleed and rounds the corners itself, so the mark
+    # can sit larger than on Android, whose launchers crop the 108 canvas to its middle 72.
+    if "--flat-ios-icon" in sys.argv:
+        ios_scale = 1.3
+        ios_icons(ROOT / "apps/iosApp/src/Assets.xcassets", ios_scale, draw_mark)
 
     # The launch screen's mark, matching the first frame of the intro: the 108 canvas at 288 pt,
     # as Android's splash screen draws its icon.
