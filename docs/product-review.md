@@ -100,6 +100,7 @@ Targeted fixes for the sharpest daily user friction.
 - **Where**: `lift/lift-domain/src/domain/Load.kt`, `apps/app/src/weeksetup/WeekSetupScreen.kt`, `lift/lift-ui/`
 - **Issue**: Settings already supports `WeightUnit.Lb` for body weight (`WeightSheet.kt`), but `Set up` ("Which bells do you own, in kg?") and every Lift picker, plate loader, PR, and benchmark are hardcoded to kilograms.
 - **Improvement**: Keep internal storage in `kg` (or canonical bell weights) and add display/picker support for standard `lb` kettlebells (18, 26, 35, 44, 53, 70 lb) and `lb` barbell plates (45 lb bar), respecting the user's unit preference.
+- **Done (2026-11-22)**: storage stays in kg (both databases and the export, no schema bump); `WeightUnit` is in `core-time`, `LocalWeightUnit` in core, and Lift reads it through `IntervalActivity.weightUnit`. Bells show as US sizes (18, 26, 35, 44, 53, 70 lb and the rest of the 19), bars as 25, 35 and 45 lb with plates by the pound, and barbell steps, an easier day's step down, sets, records and tonnage follow the unit. Set up asks kg or lb above the bells, and Settings has a Weight unit row. Checked by the Lift, Set up and settings tests and by drawing the Lift screens in pounds.
 
 ### P2. Make `Set up` equipment-aware beyond kettlebells + BJJ
 - **Where**: `apps/app/src/weeksetup/BuiltWeek.kt`, `WeekSetupScreen.kt`, `lift/lift-domain/src/domain/StarterProgram.kt`

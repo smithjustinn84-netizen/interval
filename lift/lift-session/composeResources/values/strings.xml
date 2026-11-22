@@ -308,7 +308,6 @@
     <string name="notice_program_stopped">Stopped following %1$s</string>
     <string name="common_joined">%1$s · %2$s</string>
     <string name="exercise_editor_new">New exercise</string>
-    <string name="kg_value">%1$s kg</string>
     <string name="library_title">Exercises</string>
     <string name="lift_double">Two bells</string>
     <string name="session_moved">Moved</string>
