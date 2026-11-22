@@ -80,6 +80,24 @@ class LiftRoomTest {
     }
 
     @Test
+    fun `the heart rate read so far is kept on the session in progress and never on a finished one`() {
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, null)
+        repository.sets.saveLiveSamples(listOf(0, 120, 131))
+        val active = await({ repository.sessions.active.value }) { it?.heartRateSamples != null }
+        assertEquals(listOf(0, 120, 131), active?.heartRateSamples)
+        val uid = active!!.uid
+        runBlocking { database.sessionDao().finishActive("Swings", 60_000) }
+        runBlocking { database.sessionDao().setLiveSamples(uid, "[99]") }
+        assertEquals(
+            "[0,120,131]",
+            runBlocking {
+                database.sessionDao().observeSessions().first().single().heartRateSamples
+            },
+        )
+    }
+
+    @Test
     fun `an import that fails part way writes nothing`() = runBlocking {
         val set = SetLog.of(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
         val session = LiftSession("s1", 0, 1_000, "Swings", listOf(set))

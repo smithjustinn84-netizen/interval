@@ -278,9 +278,10 @@ class SessionViewModel(
                 if (startedAt == null) {
                     liveHeartRate.stop(this@SessionViewModel)
                 } else {
-                    // Sampled from the session's own start, so a sample's place says when in it it was.
-                    sampler.restore(startedAt)
-                    liveSamples.value = emptyList()
+                    // Sampled from the session's own start, so a sample's place says when in it it was, and going
+                    // on from what the session kept: a page opened again in a process the last one's kill left.
+                    sampler.restore(startedAt, sessionStore.active.value?.heartRateSamples.orEmpty())
+                    liveSamples.value = sampler.samples()
                     liveHeartRate.start(this@SessionViewModel)
                 }
             }
@@ -298,8 +299,15 @@ class SessionViewModel(
         if (reading !is LiveHeartRateState.Reading || sessionStore.active.value == null) return
         val now = clock.nowMillis()
         sampler.add(reading.bpm, now)
-        // The card's line takes a sample as each begins: every five seconds, not every reading.
-        if (sampler.size != liveSamples.value.size) liveSamples.value = sampler.samples()
+        // The card's line takes a sample as each begins: every five seconds, not every reading. Every half minute
+        // the session keeps them, so a process killed in it loses at most that much of the trace.
+        if (sampler.size != liveSamples.value.size) {
+            val kept = liveSamples.value
+            liveSamples.value = sampler.samples()
+            if (kept.size / SAMPLES_KEPT_EVERY != sampler.size / SAMPLES_KEPT_EVERY) {
+                setStore.saveLiveSamples(kept)
+            }
+        }
         val tone = when (zoneTracker.record(reading.bpm, now)) {
             ZoneTransition.EnteredHigh -> ToneSynth.zoneUp
             ZoneTransition.EnteredRecovery -> ToneSynth.zoneDown
@@ -310,6 +318,9 @@ class SessionViewModel(
 
     override fun onCleared() {
         liveHeartRate.stop(this)
+        // The page can close with the session going on (Leave, or the process is ending it): what was read since
+        // the last half minute's keep is kept too. A session finished or dropped by now takes none.
+        if (sampler.hasReadings) setStore.saveLiveSamples(sampler.samples())
         super.onCleared()
     }
 
@@ -475,5 +486,8 @@ class SessionViewModel(
 
     private companion object {
         const val TICK_MILLIS = 250L
+
+        /** The live samples are kept on the session every six of them, half a minute of five-second ones. */
+        const val SAMPLES_KEPT_EVERY = 6
     }
 }

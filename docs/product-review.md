@@ -132,6 +132,7 @@ Targeted fixes for the sharpest daily user friction.
 - **Where**: `lift/lift-session/src/session/SessionViewModel.kt`, `lift/lift-data/src/data/LiftDatabase.kt`
 - **Issue**: Documented in [backlog.md](backlog.md): Lift live HR samples currently live in ViewModel memory and are lost on process death, unlike Interval workouts which persist them with active progress.
 - **Improvement**: Persist active session HR samples alongside the active timer/session row so background kills never drop the trace.
+- **Done (2026-11-22)**: the session in progress keeps its samples in the `heart_rate_samples` column it already had (`SetStore.saveLiveSamples`, `SessionDao.setLiveSamples`, which leaves a finished session's alone), every six samples, half a minute, so a kill loses at most that much, and as the page closes over a session still going; the page opened again restores the sampler from them (`HeartRateSampler.restore(start, kept)`, as the workout does), its average and peak included. No schema change. `SessionViewModelTest` kills a session mid-trace and finishes it with the trace whole; `LiftRoomTest` holds the query.
 
 ---
 

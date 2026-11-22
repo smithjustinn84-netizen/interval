@@ -729,7 +729,8 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   are five-second averages from the moment it began (`HeartRateSampler.restore(origin, kept)`: a sample's place
   says when it was, 0 until the sensor first read), kept on the run as they come (`WorkoutRun.liveSamples`, saved
   in `WorkoutProgress.heartRateSamples` at each change of course, so a restored workout goes on from them;
-  `SessionClocks.liveSamples` for Lift, which a killed process loses). The zones are a share of the max heart
+  `SessionClocks.liveSamples` for Lift, kept on the session in progress every half minute, `SetStore.saveLiveSamples`
+  into its `heart_rate_samples`, and gone on from as its page opens again). The zones are a share of the max heart
   rate, or once `BodySettings.restingHeartRate` is set of the reserve between it and the max (`heartRateZone(bpm,
   maxBpm, restingBpm)`, `zoneCutoff`, core-platform's `LiveHeartRate.kt`): the maths takes the resting rate as a
   parameter, and everything drawn reads it from `LocalRestingHeartRate` (core, provided once in `AppContent`),

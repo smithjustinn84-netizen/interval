@@ -66,9 +66,7 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   The constants are first readings to tune on real weeks: `heavyHeartDay`'s half again a usual day and its floor
   of 60, `Recovery`'s fading at three quarters, `USUAL_MAT_SECONDS`. *Brings it in:* a sensor in hand, then a few
   weeks of its days.
-- **Live heart rate, still left.** A Lift session's samples are held by its page's ViewModel, so a process killed
-  under it loses them (the workout's are saved with its progress; a session's would go on its `timer` row or a
-  column of its own). A workout recorded before 2026-11-19 keeps samples that start at the sensor's first
+- **Live heart rate, still left.** A workout recorded before 2026-11-19 keeps samples that start at the sensor's first
   reading rather than its own start, so its recovery in the Log may be read a few seconds off. Recovery is read
   for Lift nowhere but live in the rest. Lift's zone change has no haptic, as the workout's has under Vibrate.
   No acceptance spec drives a workout or a session with a sensor: the fakes can (`FakeLiveHeartRate`).

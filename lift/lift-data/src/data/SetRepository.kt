@@ -149,6 +149,13 @@ class SetRepository(
         }
     }
 
+    override fun saveLiveSamples(samples: List<Int>) {
+        writer.persist {
+            val row = sessionDao.active() ?: return@persist
+            sessionDao.setLiveSamples(row.uid, encodeHeartRateSamples(samples.takeIf { it.isNotEmpty() }))
+        }
+    }
+
     /** Sets how long a rest between sets lasts, in seconds. */
     override fun setRestSeconds(seconds: Int) {
         _restSeconds.value = seconds

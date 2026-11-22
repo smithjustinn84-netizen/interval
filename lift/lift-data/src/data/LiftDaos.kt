@@ -67,6 +67,13 @@ interface SessionDao {
     @Query("UPDATE session SET program_id = :programId, program_day = :day, plan = NULL WHERE uid = :uid")
     suspend fun setProgramDay(uid: String, programId: String, day: Int)
 
+    /**
+     * Keeps the heart rate read so far in the session [uid] while it is in progress, a JSON list of samples, so a
+     * process killed in it goes on from them; a finished session's are [keepHeartRate]'s.
+     */
+    @Query("UPDATE session SET heart_rate_samples = :samples WHERE uid = :uid AND finished_at IS NULL")
+    suspend fun setLiveSamples(uid: String, samples: String?)
+
     /** Sets the timer running in the session [uid], in [encodeTimer]'s shape; null for none. */
     @Query("UPDATE session SET timer = :timer WHERE uid = :uid")
     suspend fun setTimer(uid: String, timer: String?)

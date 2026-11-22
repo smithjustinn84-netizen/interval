@@ -121,6 +121,10 @@ class FakeSessionDao : SessionDao {
         all.map { if (it.uid == uid) it.copy(programId = programId, programDay = day, plan = null) else it }
     }
 
+    override suspend fun setLiveSamples(uid: String, samples: String?) = sessions.update { all ->
+        all.map { if (it.uid == uid && it.finishedAtEpochMillis == null) it.copy(heartRateSamples = samples) else it }
+    }
+
     override suspend fun setTimer(uid: String, timer: String?) = sessions.update { all ->
         all.map { if (it.uid == uid) it.copy(timer = timer) else it }
     }

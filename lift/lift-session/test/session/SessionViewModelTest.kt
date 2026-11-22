@@ -769,6 +769,52 @@ class SessionViewModelTest {
         }
     }
 
+    /** A reading every second for [seconds], [bpm] and a beat over by turns: a state flow drops a repeat. */
+    private fun heartReadsFor(seconds: Int, bpm: Int) = repeat(seconds) {
+        live.emitBpm(bpm + it % 2)
+        now += 1_000L
+    }
+
+    @Test
+    fun `the heart rate read so far is kept on the session and a killed process goes on from it`() {
+        val started = viewModel().use {
+            heartReadsFor(seconds = 65, bpm = 120)
+            repository.sessions.active.value!!
+        }
+        // Kept every half minute: what a kill would otherwise take with it.
+        val kept = assertNotNull(started.heartRateSamples)
+        assertTrue(kept.size >= 6 && kept.all { it in 120..121 }, "$kept")
+
+        // The process is killed and the page comes back over the same session.
+        opened().use {
+            // Its trace leads with what was kept, before the sensor's reading now.
+            assertEquals(kept, clocks.value.liveSamples.take(kept.size))
+            heartReadsFor(seconds = 10, bpm = 150)
+            assertTrue(clocks.value.liveSamples.size > kept.size)
+            assertEquals(kept, clocks.value.liveSamples.take(kept.size))
+            repository.sets.logSet(BuiltInExercise.TwoHandSwing, 24.0, 10, null)
+            assertTrue(finish("Swings"))
+        }
+        val finished = repository.sessions.sessions.value.first()
+        assertEquals(151, finished.peakBpm)
+        assertEquals(kept, finished.heartRateSamples?.take(kept.size))
+    }
+
+    @Test
+    fun `the page closing keeps what was read since the last half minute`() {
+        val viewModel = viewModel()
+        heartReadsFor(seconds = 20, bpm = 120)
+        assertNull(repository.sessions.active.value?.heartRateSamples)
+        ViewModelStore().apply { put("session", viewModel) }.clear()
+        assertEquals(4, repository.sessions.active.value?.heartRateSamples?.count { it in 120..121 })
+    }
+
+    @Test
+    fun `a session with no heart rate read keeps none`() {
+        viewModel().use { heartReadsFor(seconds = 65, bpm = 0) }
+        assertNull(repository.sessions.active.value?.heartRateSamples)
+    }
+
     @Test
     fun `a rest says ready once the heart is back in an easy zone`() {
         assertEquals(RestHeart.Standing.Ready, restHeart(LiveHeartRateState.Reading(110), 190)?.standing)

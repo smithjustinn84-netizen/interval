@@ -89,6 +89,9 @@ interface SetStore {
 
     fun saveTimer(timer: SavedTimer?)
 
+    /** Keeps the heart rate a sensor has read so far on the session in progress, as five-second [samples]. */
+    fun saveLiveSamples(samples: List<Int>)
+
     fun setRestSeconds(seconds: Int)
 }
 
