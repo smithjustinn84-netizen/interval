@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -27,6 +29,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -37,6 +40,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import dev.justinsmith.interval.history.ChipButton
 import dev.justinsmith.interval.history.DayCell
 import dev.justinsmith.interval.history.DayState
@@ -57,6 +61,7 @@ import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
@@ -86,21 +91,30 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
         modifier = modifier.fillMaxWidth(),
         gap = Spacing.space12,
         main = {
-            Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-                Text(
-                    stringResource(Res.string.history_this_week),
-                    style = IntervalTheme.type.caption,
-                    color = palette.textDim,
-                )
-                Text(
-                    when {
-                        goal == null -> pluralStringResource(Res.plurals.history_week_count, week.count, week.count)
-                        week.count >= goal -> stringResource(Res.string.home_week_goal_met)
-                        else -> stringResource(Res.string.home_week_done, week.count, goal)
-                    },
-                    style = IntervalTheme.type.label,
-                    color = palette.text,
-                )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                if (goal != null && goal > 0 && !isLargeText()) WeekMiniGoalRing(week.count, goal)
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                    Text(
+                        stringResource(Res.string.history_this_week),
+                        style = IntervalTheme.type.caption,
+                        color = palette.textDim,
+                    )
+                    Text(
+                        when {
+                            goal == null ->
+                                pluralStringResource(Res.plurals.history_week_count, week.count, week.count)
+
+                            week.count >= goal -> stringResource(Res.string.home_week_goal_met)
+
+                            else -> stringResource(Res.string.home_week_done, week.count, goal)
+                        },
+                        style = IntervalTheme.type.label,
+                        color = palette.text,
+                    )
+                }
             }
         },
         trailing = {
@@ -112,6 +126,78 @@ internal fun WeekHeader(week: WeekGoal, onSetGoal: () -> Unit, modifier: Modifie
         },
     )
 }
+
+/**
+ * A compact segmented goal ring beside "This week": one lap a day of [goal] (up to seven), filled in the accent as
+ * days are trained, holding a check once the goal is met or the count while short. Decorative only, since the
+ * header right beside it already reads out how the week stands.
+ */
+@Composable
+private fun WeekMiniGoalRing(count: Int, goal: Int, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
+    val met = count >= goal
+    val filled = count.coerceIn(0, goal)
+    val track = palette.line
+    val accent = palette.accent
+    Box(
+        modifier.size(IntervalSizes.weekMiniRing).clearAndSetSemantics {},
+        contentAlignment = Alignment.Center,
+    ) {
+        Spacer(
+            Modifier.fillMaxSize().drawWithCache {
+                val strokePx = IntervalSizes.weekMiniRingStroke.toPx()
+                val stroke = Stroke(width = strokePx, cap = StrokeCap.Round)
+                val diameter = (size.minDimension - strokePx).coerceAtLeast(1f)
+                val topLeft = Offset((size.width - diameter) / 2f, (size.height - diameter) / 2f)
+                val arcSize = Size(diameter, diameter)
+                onDrawBehind {
+                    if (goal <= 1 || goal > MAX_MINI_LAPS) {
+                        drawArc(track, 0f, Angles.FULL_TURN, false, topLeft, arcSize, style = stroke)
+                        val sweep = Angles.FULL_TURN * (filled.toFloat() / goal.coerceAtLeast(1))
+                        if (sweep > 0f) {
+                            drawArc(accent, Angles.TWELVE_O_CLOCK, sweep, false, topLeft, arcSize, style = stroke)
+                        }
+                    } else {
+                        val step = Angles.FULL_TURN / goal
+                        val lapSweep = (step - MINI_LAP_GAP_DEGREES).coerceAtLeast(1f)
+                        val halfGap = MINI_LAP_GAP_DEGREES / 2f
+                        repeat(goal) { lap ->
+                            val start = Angles.TWELVE_O_CLOCK + lap * step + halfGap
+                            drawArc(
+                                color = if (lap < filled) accent else track,
+                                startAngle = start,
+                                sweepAngle = lapSweep,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = stroke,
+                            )
+                        }
+                    }
+                }
+            },
+        )
+        if (met) {
+            Icon(IntervalIcons.Check, null, tint = accent, modifier = Modifier.size(Sizes.chipIcon))
+        } else if (!isLargeText()) {
+            Text(
+                "$count/$goal",
+                style = IntervalTheme.type.caption.copy(
+                    fontSize = MINI_RING_TEXT_SP.sp,
+                    lineHeight = MINI_RING_TEXT_SP.sp,
+                    fontFeatureSettings = MINI_TABULAR,
+                ),
+                color = palette.text,
+                maxLines = 1,
+            )
+        }
+    }
+}
+
+private const val MAX_MINI_LAPS = 7
+private const val MINI_LAP_GAP_DEGREES = 14f
+private const val MINI_RING_TEXT_SP = 10f
+private const val MINI_TABULAR = "tnum"
 
 /**
  * Monday to Sunday as a block a day, as Log's week draws them: filled and checked in its kind's colour once done

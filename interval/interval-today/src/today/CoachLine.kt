@@ -9,12 +9,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.today.resources.Res
 import dev.justinsmith.interval.today.resources.home_coach_conditioning
@@ -45,6 +47,8 @@ import dev.justinsmith.interval.today.resources.home_day_run
 import dev.justinsmith.interval.today.resources.home_day_sport
 import dev.justinsmith.interval.today.resources.home_day_strength
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.IntervalIcons
+import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.Sizes
@@ -78,9 +82,9 @@ internal fun DayCaption(weekday: Int?, kind: DayKind, modifier: Modifier = Modif
 internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
     // Warm for a day to take care with, the rest mark for rest and a day done, quiet for a plain training day's word.
-    val (fill, dot, border) = when (note) {
+    val (fill, badge, border) = when (note) {
         is CoachNote.Taxed, is CoachNote.ForSport ->
-            Triple(palette.accentTint, palette.accentFill, palette.accent.copy(alpha = Opacity.DISABLED))
+            Triple(palette.accentTint, palette.accent, palette.accent.copy(alpha = Opacity.DISABLED))
 
         is CoachNote.TowardGoal, is CoachNote.Steps -> Triple(palette.surfaceVariant, palette.accent, palette.line)
 
@@ -97,7 +101,7 @@ internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
-        Box(Modifier.size(Sizes.coachDot).clip(CircleShape).background(dot))
+        CoachBadge(note, badge)
         Text(
             coachText(note),
             style = IntervalTheme.type.label,
@@ -106,6 +110,33 @@ internal fun CoachLine(note: CoachNote, modifier: Modifier = Modifier) {
         )
     }
 }
+
+/** A circular tinted status medallion pairing [note]'s glyph with its banner colour. */
+@Composable
+private fun CoachBadge(note: CoachNote, tint: Color, modifier: Modifier = Modifier) {
+    Box(
+        modifier
+            .size(IntervalSizes.coachBadge)
+            .clip(CircleShape)
+            .background(tint.copy(alpha = BADGE_FILL_ALPHA))
+            .border(Sizes.hairline, tint.copy(alpha = BADGE_BORDER_ALPHA), CircleShape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(coachIcon(note), contentDescription = null, tint = tint, modifier = Modifier.size(Sizes.chipIcon))
+    }
+}
+
+private fun coachIcon(note: CoachNote): ImageVector = when (note) {
+    is CoachNote.Taxed -> IntervalIcons.Ease
+    is CoachNote.ForSport -> IntervalIcons.Sport
+    is CoachNote.DayDone -> IntervalIcons.Check
+    CoachNote.RestDay -> IntervalIcons.Rest
+    is CoachNote.TowardGoal -> IntervalIcons.Streak
+    is CoachNote.Steps -> IntervalIcons.Today
+}
+
+private const val BADGE_FILL_ALPHA = 0.16f
+private const val BADGE_BORDER_ALPHA = 0.36f
 
 /** A day's tone as the theme draws it. */
 @Composable

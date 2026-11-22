@@ -118,7 +118,7 @@ internal fun DayCard(
     // One lane runs down the marks, in the day's tone up to the step to do now and a hairline after it.
     val line = IntervalTheme.palette.line
     fun lane(above: Color?, below: Color?) = Lane(above, below).takeIf { numbered }
-    DayColumn(modifier) {
+    DayColumn(modifier, header = { DayHeroBand(plan.kind.art, tone) }) {
         plan.done.forEachIndexed { index, step ->
             DoneRow(step, rail = numbered, last = false, lane = lane(tone.takeIf { index > 0 }, tone))
         }
@@ -150,7 +150,7 @@ private fun ThenLine(later: List<UpNextItem>) {
 /** Everything today asked for, done: the ticks under "Done for today". */
 @Composable
 internal fun DoneCard(done: List<DoneStep>, modifier: Modifier = Modifier) {
-    DayColumn(modifier) {
+    DayColumn(modifier, header = { DayHeroBand(DayArt.Done, toneColor(DayKind.Done.tone)) }) {
         Text(
             stringResource(Res.string.home_done_today),
             style = IntervalTheme.type.value,
@@ -170,6 +170,7 @@ internal fun RestCard(next: UpNextItem, actions: HomeActions, modifier: Modifier
     val palette = IntervalTheme.palette
     val flow = restDayFlow
     ListCard(modifier) {
+        DayHeroBand(DayArt.Rest, toneColor(DayKind.Rest.tone))
         Text(
             stringResource(Res.string.home_rest_until, shortDay(next.day, next.epochDay, midSentence = true)),
             style = IntervalTheme.type.value,
@@ -252,18 +253,29 @@ private fun logSport(sport: Sport, actions: HomeActions): () -> Unit {
     return { actions.onLogSport(sport, logged) }
 }
 
-/** The card the day is laid out on: its rows keep their own room above and below, so a hairline sits between. */
+/**
+ * The card the day is laid out on: an optional full-bleed [header] plate at its top, then its rows keeping their
+ * own room above and below so a hairline sits between.
+ */
 @Composable
-private fun DayColumn(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
+private fun DayColumn(
+    modifier: Modifier = Modifier,
+    header: (@Composable () -> Unit)? = null,
+    content: @Composable ColumnScope.() -> Unit,
+) {
     Column(
         modifier
             .fillMaxWidth()
             .clip(Corners.radius18)
             .background(IntervalTheme.palette.surface)
-            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18)
-            .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
-        content = content,
-    )
+            .border(Sizes.hairline, IntervalTheme.palette.line, Corners.radius18),
+    ) {
+        header?.invoke()
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space4),
+            content = content,
+        )
+    }
 }
 
 /**

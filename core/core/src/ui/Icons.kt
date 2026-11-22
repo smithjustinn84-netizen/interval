@@ -81,6 +81,19 @@ object IntervalIcons {
         "M12 3c1 4 5 5 5 10a5 5 0 0 1 -10 0c0 -2 1 -3 2 -4c0 2 1 3 2 3c0 -3 -1 -5 1 -9z",
     )
 
+    /** A calm crescent: a rest day on Today's coach banner. */
+    val Rest: ImageVector = lineIcon(
+        "Rest",
+        "M20.5 14.5A8.5 8.5 0 1 1 9.5 3.5a6.8 6.8 0 0 0 11 11z",
+    )
+
+    /** A gentle easing wave: a taxed day to take a notch easier on Today's coach banner. */
+    val Ease: ImageVector = lineIcon(
+        "Ease",
+        "M3 10c2.5 -3 5.5 -3 8 0s5.5 3 10 0",
+        "M3 16c2.5 -3 5.5 -3 8 0s5.5 3 10 0",
+    )
+
     /** A filled heart: live heart rate beside the BPM readout. */
     val Heart: ImageVector = ImageVector.Builder("Heart", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         addPath(

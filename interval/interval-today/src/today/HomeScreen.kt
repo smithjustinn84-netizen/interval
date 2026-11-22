@@ -26,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.history.DayCell
@@ -53,6 +54,7 @@ import dev.justinsmith.interval.sensor.words
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.interval.timer.builtInPresets
+import dev.justinsmith.interval.timer.flowBefore
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.restDayFlow
 import dev.justinsmith.interval.today.resources.Res
@@ -86,7 +88,6 @@ import dev.justinsmith.interval.today.resources.notice_undo
 import dev.justinsmith.interval.today.resources.preview_open_cd
 import dev.justinsmith.interval.today.resources.sport_counts
 import dev.justinsmith.interval.ui.AccentButton
-import dev.justinsmith.interval.ui.EmptyState
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
@@ -511,12 +512,27 @@ internal fun upNextLength(next: UpNextItem): String? = when (next) {
 /** Nothing up next: what Today is waiting for, and the ways to give it one, Set up's answers first. */
 @Composable
 private fun NothingPlanned(actions: HomeActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
     ListCard(modifier) {
-        EmptyState(
-            IntervalIcons.Plan,
-            stringResource(Res.string.home_empty_title),
-            stringResource(Res.string.home_empty_text),
-        )
+        DayHeroBand(DayArt.Empty, palette.accent)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+        ) {
+            Text(
+                stringResource(Res.string.home_empty_title),
+                style = IntervalTheme.type.section,
+                color = palette.text,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                stringResource(Res.string.home_empty_text),
+                style = IntervalTheme.type.body,
+                color = palette.textDim,
+                textAlign = TextAlign.Center,
+            )
+        }
         Column(
             Modifier.padding(start = Spacing.space16, end = Spacing.space16, bottom = Spacing.space16),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -535,12 +551,27 @@ private fun NothingPlanned(actions: HomeActions, modifier: Modifier = Modifier) 
 /** A plan with nothing left of it for now: it says so, quietly, and leads to the plan to add to it. */
 @Composable
 private fun NothingDue(actions: HomeActions, modifier: Modifier = Modifier) {
+    val palette = IntervalTheme.palette
     ListCard(modifier) {
-        EmptyState(
-            IntervalIcons.Check,
-            stringResource(Res.string.home_done_title),
-            stringResource(Res.string.home_done_text),
-        )
+        DayHeroBand(DayArt.Done, palette.accent)
+        Column(
+            Modifier.fillMaxWidth().padding(horizontal = Spacing.space20, vertical = Spacing.space16),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+        ) {
+            Text(
+                stringResource(Res.string.home_done_title),
+                style = IntervalTheme.type.section,
+                color = palette.text,
+                textAlign = TextAlign.Center,
+            )
+            Text(
+                stringResource(Res.string.home_done_text),
+                style = IntervalTheme.type.body,
+                color = palette.textDim,
+                textAlign = TextAlign.Center,
+            )
+        }
         SecondaryButton(
             stringResource(Res.string.history_edit_plan),
             actions.onPlan,
@@ -745,6 +776,68 @@ private fun HomeScreenRestDayPreview() {
                     UpNextItem.Planned(planId = 3, PREVIEW_TODAY + 1, HistoryDay.Tomorrow, hiit.name, hiit.config),
                 ),
                 done = emptyList(),
+            ),
+            HomeActions(),
+        )
+    }
+}
+
+/** A BJJ class day: pre-rolling mobility flow first over Start, then the class to log. */
+@PreviewFormFactors
+@Composable
+private fun HomeScreenClassDayPreview() {
+    val flow = flowBefore(Sport.Bjj)
+    val hiit = builtInPresets[1]
+    IntervalTheme {
+        HomeScreen(
+            previewState(
+                today = DayState.Planned,
+                upNext = listOf(
+                    UpNextItem.Flow(PREVIEW_TODAY, HistoryDay.Today, flow, Sport.Bjj, totalSeconds = 540),
+                    UpNextItem.SportDay(planId = 2, PREVIEW_TODAY, HistoryDay.Today, Sport.Bjj),
+                    UpNextItem.Planned(planId = 3, PREVIEW_TODAY + 2, HistoryDay.On("Sat"), hiit.name, hiit.config),
+                ),
+                done = emptyList(),
+            ).copy(
+                week = PreviewWeek.map { if (it.today) it.copy(sport = Sport.Bjj) else it },
+                weekGoal = WeekGoal(count = 4, lifts = 2, goal = 4, streak = Streak(current = 6, best = 7)),
+            ),
+            HomeActions(),
+        )
+    }
+}
+
+/** Everything done for today with the week's goal met, and tomorrow's session waiting quietly below. */
+@PreviewFormFactors
+@Composable
+private fun HomeScreenDonePreview() {
+    val tabata = builtInPresets[0]
+    IntervalTheme {
+        HomeScreen(
+            previewState(
+                today = DayState.Done,
+                upNext = listOf(
+                    UpNextItem.Planned(planId = 3, PREVIEW_TODAY + 1, HistoryDay.Tomorrow, tabata.name, tabata.config),
+                ),
+                done = listOf(DoneStep.Session("Easy Strength", elapsedSeconds = 1_620)),
+            ).copy(
+                weekGoal = WeekGoal(count = 4, lifts = 2, goal = 4, streak = Streak(current = 6, best = 7)),
+            ),
+            HomeActions(),
+        )
+    }
+}
+
+/** Nothing planned yet: the empty card inviting the user to set up their week, over the picks by time. */
+@PreviewFormFactors
+@Composable
+private fun HomeScreenEmptyPreview() {
+    IntervalTheme {
+        HomeScreen(
+            HomeUiState(
+                week = PreviewWeek.map { it.copy(state = DayState.Rest, seconds = 0) },
+                picks = builtInPresets.fitting(PREVIEW_MINUTES, onTimer = IntervalConfig()),
+                minutes = PREVIEW_MINUTES,
             ),
             HomeActions(),
         )

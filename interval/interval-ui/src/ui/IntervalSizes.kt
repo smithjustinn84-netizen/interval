@@ -87,6 +87,18 @@ object IntervalSizes {
     /** The least width of a later step's quiet button on Today, so "Log it" and "Do it now" end level. */
     val stepButton = 104.dp
 
+    /** Today's editorial card-top artwork band, its top tone strip, and its corner registration ticks. */
+    val todayArtHeight = 104.dp
+    val todayArtAccentStrip = 2.dp
+    val todayArtCornerTick = 8.dp
+
+    /** Today's compact weekly goal dial beside "This week", and its lap stroke. */
+    val weekMiniRing = 36.dp
+    val weekMiniRingStroke = 3.5.dp
+
+    /** The circular tinted status medallion at the start of Today's coach banner. */
+    val coachBadge = 28.dp
+
     /** The pill of phase colour at the start of a History row. */
     val historyMarkHeight = 40.dp
 
