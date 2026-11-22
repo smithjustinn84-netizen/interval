@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -44,6 +45,8 @@ import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.platform.inUse
+import dev.justinsmith.interval.platform.startShare
+import dev.justinsmith.interval.platform.zoneCutoff
 import org.jetbrains.compose.resources.stringResource
 
 /**
@@ -236,6 +239,26 @@ fun HeartZoneBars(zone: HeartRateZone?, onWorkoutGround: Boolean, modifier: Modi
             },
     )
 }
+
+/**
+ * The four ascending BPM cutoffs separating the five training zones ([HeartRateZone.Zone2] through
+ * [HeartRateZone.Zone5]), matching the zone classification used by [HeartZoneScale].
+ */
+@Immutable
+internal data class HeartZoneThresholds(
+    val zone2: Float,
+    val zone3: Float,
+    val zone4: Float,
+    val zone5: Float,
+)
+
+/** Computes the [HeartZoneThresholds] for [maxBpm] and optional [restingBpm]. */
+internal fun heartZoneThresholds(maxBpm: Int, restingBpm: Int?): HeartZoneThresholds = HeartZoneThresholds(
+    zone2 = zoneCutoff(HeartRateZone.Zone2.startShare, maxBpm, restingBpm),
+    zone3 = zoneCutoff(HeartRateZone.Zone3.startShare, maxBpm, restingBpm),
+    zone4 = zoneCutoff(HeartRateZone.Zone4.startShare, maxBpm, restingBpm),
+    zone5 = zoneCutoff(HeartRateZone.Zone5.startShare, maxBpm, restingBpm),
+)
 
 private const val ZONES = 5
 

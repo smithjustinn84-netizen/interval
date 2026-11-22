@@ -30,10 +30,10 @@ import dev.justinsmith.interval.platform.inUse
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * The live heart rate as [HeartZoneScale] reads it out, over the heart rate so far as a line in place of the
- * scale's bars: [samples] drawn across the zones' bands, each of [marks] (a work interval) shaded behind it. It
- * takes the room the scale does, so the two swap under the workout's ring without moving it. Draws nothing
- * unless the sensor is [inUse]. On the workout's ground only.
+ * The live heart rate as [HeartZoneScale] reads it out, over the heart rate so far as a trace in place of the
+ * scale's bars: [samples] drawn with a zone-banded area fill shader across the zones' thresholds, each of [marks]
+ * (a work interval) shaded behind it. It takes the room the scale does, so the two swap under the workout's ring
+ * without moving it. Draws nothing unless the sensor is [inUse]. On the workout's ground only.
  */
 @Composable
 fun LiveHeartTrace(
@@ -44,6 +44,7 @@ fun LiveHeartTrace(
     marks: List<ClosedFloatingPointRange<Float>> = emptyList(),
 ) {
     if (!state.inUse) return
+    val workout = IntervalTheme.workout
     val reading = (state as? LiveHeartRateState.Reading)?.takeIf { it.contact }
     Column(
         modifier.widthIn(max = Sizes.zoneScale).fillMaxWidth(),
@@ -67,6 +68,8 @@ fun LiveHeartTrace(
                 onWorkoutGround = true,
                 marks = marks,
                 height = Sizes.zoneScaleBand,
+                surfaceColor = workout.control,
+                liveReading = reading != null,
             )
         }
     }
@@ -74,9 +77,9 @@ fun LiveHeartTrace(
 
 /**
  * The live heart rate on a card of the app's ground, as a Lift session shows it among its numbers: the beats a
- * minute, the zone by name and number, and the session's heart rate so far as a line over the zones' bands.
- * Without a reading it says why in place of the number, the line staying. Draws nothing unless the sensor is
- * [inUse].
+ * minute, the zone by name and number, and the session's heart rate so far with a zone-banded area fill shader
+ * fading into the card's surface. Without a reading it says why in place of the number, the trace staying. Draws
+ * nothing unless the sensor is [inUse].
  */
 @Composable
 fun HeartCard(
@@ -124,7 +127,13 @@ fun HeartCard(
         }
         if (samples.count { it in HeartRate.BPM_RANGE } >= 2) {
             Box(Modifier.fillMaxWidth().clip(Corners.radius12)) {
-                HeartRateChart(samples, maxBpm = maxBpm, height = Sizes.heartTrace)
+                HeartRateChart(
+                    samples,
+                    maxBpm = maxBpm,
+                    height = Sizes.heartTrace,
+                    surfaceColor = palette.surface,
+                    liveReading = reading != null,
+                )
             }
         } else {
             Spacer(Modifier.height(Sizes.heartTrace))
