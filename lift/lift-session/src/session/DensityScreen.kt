@@ -54,10 +54,12 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import dev.justinsmith.interval.platform.KeepScreenOn
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
+import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
@@ -473,6 +475,29 @@ private fun DensityScreenPreview() {
             DensityState(DensityPhase.Work, secondsLeft = 545, rounds = 9, minutes = 20, progress = 0.55f),
             onFinishRound = {},
             onStop = {},
+        )
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun DensityScreenHeartPreview() {
+    IntervalTheme(darkTheme = true) {
+        DensityScreen(
+            DensityRun(
+                BuiltInExercise.ArmorBuildingComplex,
+                Load.Bell(kg = 24.0, double = true),
+                reps = 1,
+                minutes = 20,
+                firstSide = Side.Left,
+                startedAtMillis = 0,
+                rounds = 9,
+                best = 14,
+            ),
+            DensityState(DensityPhase.Work, secondsLeft = 545, rounds = 9, minutes = 20, progress = 0.55f),
+            onFinishRound = {},
+            onStop = {},
+            heart = { HeartBeatBadge(LiveHeartRateState.Reading(bpm = 164)) },
         )
     }
 }
