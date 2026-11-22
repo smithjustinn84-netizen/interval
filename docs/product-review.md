@@ -82,6 +82,7 @@ Reduce maintenance drag before it calcifies after `1.0`.
 - **Merge `scripts/` into `tools/`**: `scripts/render_store_frames.py` is the only file in `scripts/`, while all other automation (including `tools/render_icon_3d.py`) lives in `tools/`. Move it into `tools/` and remove `scripts/`.
 - **Unify `EmomScreen` and `DensityScreen`**: `lift/lift-session/src/session/EmomScreen.kt` (485 lines) and `DensityScreen.kt` (503 lines) duplicate screen chrome, ring/clock layout, and live heart-rate badge wiring. Extract a shared `TimedBlockScaffold`.
 - **Deduplicate shared copy helpers**: `EffortWords.kt` and `ShareWords.kt` are mirrored across `interval-history` and `lift-session`. Extract shared effort labels into `core` so wording stays consistent across both sides.
+- **Done (2026-11-22)**: `render_store_frames.py` is in `tools/` and `scripts/` is gone; `TimedBlockScaffold` draws both pages, `EmomScreen` and `DensityScreen` now 126 and 160 lines mapping their state onto it; the effort words are core's `effortWord(level)`, the three copies gone. `ShareWords` stays on each side: the workout summary's, a finished workout's and a session's word different things and share no wording.
 
 ### C6. Isolate or lighten Polar SDK dependency
 - **Where**: `interval/interval-platform/module.yaml`
