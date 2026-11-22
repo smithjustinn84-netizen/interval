@@ -132,9 +132,6 @@
 
     <!-- The paired heart-rate sensor's sheet, from a tap on its pulse in any tab's title bar. -->
     <string name="sensor_sheet_title">Heart-rate sensor</string>
-    <string name="sensor_sheet_bpm">bpm</string>
-    <string name="sensor_sheet_zone">Zone %1$d · %2$s</string>
-    <string name="sensor_sheet_reading_cd">%1$d beats per minute, Zone %2$d, %3$s</string>
     <string name="sensor_sheet_looking">Not connected. Wear it and keep it close.</string>
     <string name="sensor_sheet_no_contact">Connected, with no heart to read. Check it sits snug against the skin.</string>
     <string name="sensor_sheet_no_bluetooth">Not connected. Bluetooth is off, or the app may not use it.</string>

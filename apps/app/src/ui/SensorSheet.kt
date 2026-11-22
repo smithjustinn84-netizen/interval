@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,10 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.lifecycle.compose.LifecycleStartEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.platform.ClassSensor
@@ -30,16 +26,13 @@ import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.sensor_sheet_battery
 import dev.justinsmith.interval.resources.sensor_sheet_battery_low
-import dev.justinsmith.interval.resources.sensor_sheet_bpm
 import dev.justinsmith.interval.resources.sensor_sheet_looking
 import dev.justinsmith.interval.resources.sensor_sheet_no_bluetooth
 import dev.justinsmith.interval.resources.sensor_sheet_no_contact
-import dev.justinsmith.interval.resources.sensor_sheet_reading_cd
 import dev.justinsmith.interval.resources.sensor_sheet_recording
 import dev.justinsmith.interval.resources.sensor_sheet_settings
 import dev.justinsmith.interval.resources.sensor_sheet_settings_hint
 import dev.justinsmith.interval.resources.sensor_sheet_title
-import dev.justinsmith.interval.resources.sensor_sheet_zone
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 
@@ -116,7 +109,11 @@ private fun ColumnScope.SensorSheetContent(pulse: SensorPulse, battery: Int?, on
     Text(pulse.name, style = IntervalTheme.type.value, color = palette.text)
     val bpm = pulse.bpm
     if (bpm != null && !pulse.recording) {
-        Reading(bpm, pulse.maxBpm)
+        val zone = heartRateZone(bpm, pulse.maxBpm, LocalRestingHeartRate.current)
+        Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+            HeartReading(bpm, zone, onWorkoutGround = false)
+            HeartZoneBars(zone, onWorkoutGround = false)
+        }
     } else {
         Text(
             stringResource(
@@ -151,39 +148,6 @@ private fun ColumnScope.SensorSheetContent(pulse: SensorPulse, battery: Int?, on
 /** Being looked for: the stream is up and has no connection yet, or lost the one it had. */
 private val LiveHeartRateState.isSearching: Boolean
     get() = this == LiveHeartRateState.Connecting || this == LiveHeartRateState.Disconnected
-
-/** The heart rate large, and under it its zone by number and name in the zone's colour: never by colour alone. */
-@Composable
-private fun Reading(bpm: Int, maxBpm: Int, modifier: Modifier = Modifier) {
-    val palette = IntervalTheme.palette
-    val zone = heartRateZone(bpm, maxBpm, LocalRestingHeartRate.current)
-    val zoneName = heartRateZoneName(zone)
-    val description = stringResource(Res.string.sensor_sheet_reading_cd, bpm, zone.number, zoneName)
-    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
-        Row(
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-        ) {
-            Text(
-                bpm.toString(),
-                style = IntervalTheme.type.stat,
-                color = palette.text,
-                modifier = Modifier.alignByBaseline(),
-            )
-            Text(
-                stringResource(Res.string.sensor_sheet_bpm),
-                style = IntervalTheme.type.label,
-                color = palette.textDim,
-                modifier = Modifier.alignByBaseline(),
-            )
-        }
-        Text(
-            stringResource(Res.string.sensor_sheet_zone, zone.number, zoneName),
-            style = IntervalTheme.type.label,
-            color = palette.heartZones.of(zone),
-        )
-    }
-}
 
 @PreviewFormFactors
 @Composable

@@ -71,31 +71,37 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
     ) {
         Box(Modifier.fillMaxWidth().heightIn(min = Sizes.zoneScaleReadout), contentAlignment = Alignment.Center) {
             if (reading != null && zone != null) {
-                ReadingRow(reading.bpm, zone)
+                HeartReading(reading.bpm, zone, onWorkoutGround = true)
             } else {
                 StatusRow(connecting = state == LiveHeartRateState.Connecting, lastBpm = lastBpm)
             }
         }
-        ZoneBars(zone)
+        HeartZoneBars(zone, onWorkoutGround = true)
     }
 }
 
+/**
+ * The heart rate read out as one line: a dot in [zone]'s colour beating with it, the beats a minute over BPM, and
+ * the zone by number and name dim at the right. On the workout's ground ([onWorkoutGround]) the line keeps its
+ * height, so the ring over it never moves: with large text it says the zone by number alone and its words grow no
+ * further than large text begins, since squeezed they break mid-word ("Zon / e 4"). Anywhere else large text
+ * puts the zone, in full, on a line of its own under the number. Either way it is read as one description.
+ */
 @Composable
-internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
-    val colors = IntervalTheme.workout
+fun HeartReading(bpm: Int, zone: HeartRateZone, onWorkoutGround: Boolean, modifier: Modifier = Modifier) {
+    val text = if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text
+    val dim = if (onWorkoutGround) IntervalTheme.workout.onGroundDim else IntervalTheme.palette.textDim
+    val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
     val zoneColor by animateColorAsState(
-        colors.heartZones.of(zone),
+        zones.of(zone),
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "zone",
     )
     val scale = rememberHeartPulseScale(bpm)
     val name = heartRateZoneName(zone)
     val description = stringResource(Res.string.heart_rate_scale_cd, bpm, zone.number, name)
-    // The zone by number and name, or with large text by number alone ("Zone 4"), and the row's words growing no
-    // further than large text begins: the card keeps its height so the ring over it never moves, and squeezed they
-    // break mid-word ("Zon / e 4"). The bars and the description say the zone in full.
     val large = isLargeText()
-    val zoneWords = if (large) {
+    val zoneWords = if (large && onWorkoutGround) {
         stringResource(Res.string.heart_rate_zone_number, zone.number)
     } else {
         stringResource(Res.string.heart_rate_zone_named, zone.number, name)
@@ -117,24 +123,41 @@ internal fun ReadingRow(bpm: Int, zone: HeartRateZone) {
                     .background(zoneColor),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.stat, color = colors.onGround)
+                Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.stat, color = text)
                 Text(
                     stringResource(Res.string.heart_rate_unit_caps),
                     Modifier.alignByBaseline(),
                     style = IntervalTheme.type.body,
-                    color = colors.onGroundDim,
+                    color = dim,
                 )
             }
         }
     }
-    TextScaleAtMost(LARGE_FONT_SCALE) {
-        Row(
-            Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
+    val described = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }
+    when {
+        onWorkoutGround -> TextScaleAtMost(LARGE_FONT_SCALE) {
+            Row(
+                described,
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                reading()
+                JoinedText(zoneWords, style = IntervalTheme.type.body, color = dim)
+            }
+        }
+
+        large -> Column(described, verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            reading()
+            JoinedText(zoneWords, style = IntervalTheme.type.body, color = dim)
+        }
+
+        else -> Row(
+            described,
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             reading()
-            JoinedText(zoneWords, style = IntervalTheme.type.body, color = colors.onGroundDim)
+            JoinedText(zoneWords, style = IntervalTheme.type.body, color = dim)
         }
     }
 }
@@ -170,12 +193,15 @@ internal fun StatusRow(connecting: Boolean, lastBpm: Int?) {
     }
 }
 
-/** The five zones a bar each in its own colour, faint, [zone]'s lit and a little taller; all faint without one. */
+/**
+ * The five zones a bar each in its own colour, faint, [zone]'s lit and a little taller; all faint without one.
+ * In the workout's colours [onWorkoutGround], else the app's.
+ */
 @Composable
-private fun ZoneBars(zone: HeartRateZone?) {
-    val colors = IntervalTheme.workout
+fun HeartZoneBars(zone: HeartRateZone?, onWorkoutGround: Boolean, modifier: Modifier = Modifier) {
+    val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
     val fills = HeartRateZone.entries.map { each ->
-        val full = colors.heartZones.of(each)
+        val full = zones.of(each)
         animateColorAsState(
             if (each == zone) full else full.copy(alpha = Opacity.ZONE_UNLIT),
             tween(Motion.STATE_MILLIS, easing = StandardEasing),
@@ -183,7 +209,7 @@ private fun ZoneBars(zone: HeartRateZone?) {
         )
     }
     Spacer(
-        Modifier
+        modifier
             .fillMaxWidth()
             .height(Sizes.zoneScaleBand)
             .drawBehind {

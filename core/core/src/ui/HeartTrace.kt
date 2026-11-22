@@ -1,7 +1,5 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -21,15 +19,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.semantics.contentDescription
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.heart_rate_connecting
 import dev.justinsmith.core.resources.heart_rate_disconnected
-import dev.justinsmith.core.resources.heart_rate_scale_cd
-import dev.justinsmith.core.resources.heart_rate_unit_caps
-import dev.justinsmith.core.resources.heart_rate_zone_named
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.LiveHeartRateState
@@ -59,7 +51,11 @@ fun LiveHeartTrace(
     ) {
         Box(Modifier.fillMaxWidth().heightIn(min = Sizes.zoneScaleReadout), contentAlignment = Alignment.Center) {
             if (reading != null) {
-                ReadingRow(reading.bpm, heartRateZone(reading.bpm, maxBpm, LocalRestingHeartRate.current))
+                HeartReading(
+                    reading.bpm,
+                    heartRateZone(reading.bpm, maxBpm, LocalRestingHeartRate.current),
+                    onWorkoutGround = true,
+                )
             } else {
                 StatusRow(connecting = state == LiveHeartRateState.Connecting, lastBpm = samples.lastRead())
             }
@@ -102,7 +98,11 @@ fun HeartCard(
         verticalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         if (reading != null) {
-            CardReading(reading.bpm, maxBpm)
+            HeartReading(
+                reading.bpm,
+                heartRateZone(reading.bpm, maxBpm, LocalRestingHeartRate.current),
+                onWorkoutGround = false,
+            )
         } else {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
@@ -129,57 +129,6 @@ fun HeartCard(
         } else {
             Spacer(Modifier.height(Sizes.heartTrace))
         }
-    }
-}
-
-/** The card's reading, as the workout's scale reads: a dot beating in the zone's colour, the number, the zone. */
-@Composable
-private fun CardReading(bpm: Int, maxBpm: Int) {
-    val palette = IntervalTheme.palette
-    val zone = heartRateZone(bpm, maxBpm, LocalRestingHeartRate.current)
-    val zoneColor by animateColorAsState(
-        palette.heartZones.of(zone),
-        tween(Motion.STATE_MILLIS, easing = StandardEasing),
-        label = "cardZone",
-    )
-    val scale = rememberHeartPulseScale(bpm)
-    val name = heartRateZoneName(zone)
-    val description = stringResource(Res.string.heart_rate_scale_cd, bpm, zone.number, name)
-    Row(
-        Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Box(
-                Modifier
-                    .size(Sizes.zoneScaleDot)
-                    .graphicsLayer {
-                        val s = scale()
-                        scaleX = s
-                        scaleY = s
-                    }
-                    .clip(Corners.full)
-                    .background(zoneColor),
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.stat, color = palette.text)
-                Text(
-                    stringResource(Res.string.heart_rate_unit_caps),
-                    Modifier.alignByBaseline(),
-                    style = IntervalTheme.type.body,
-                    color = palette.textDim,
-                )
-            }
-        }
-        JoinedText(
-            stringResource(Res.string.heart_rate_zone_named, zone.number, name),
-            style = IntervalTheme.type.body,
-            color = palette.textDim,
-        )
     }
 }
 
