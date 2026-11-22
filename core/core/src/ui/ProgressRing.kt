@@ -236,37 +236,40 @@ private fun DrawScope.drawLaps(
 @Preview
 @Composable
 private fun ProgressRingPreview() {
-    val workout = IntervalTheme.workout
-    val rings = listOf(
-        PreviewRing(progress = 0.62f, RingDial(seconds = 30, draining = true), workout.work, RingLaps(8, 3, 4)),
-        PreviewRing(progress = 0.25f, RingDial(seconds = 60), workout.rest),
-        PreviewRing(progress = 1f, dial = null, workout.done),
-        PreviewRing(progress = 0.18f, RingDial(seconds = 30, draining = true), workout.work, RingLaps(8, 3, 4)),
-    )
-    FlowRow(
-        Modifier.fillMaxSize().background(workout.ground).padding(Spacing.space16),
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space16),
-    ) {
-        for (ring in rings) {
-            Box(Modifier.size(Sizes.figurePage), contentAlignment = Alignment.Center) {
-                ProgressRing(
-                    { ring.progress },
-                    { ring.accent },
-                    Modifier.fillMaxSize(),
-                    glide = false,
-                    laps = { ring.laps },
-                    dial = ring.dial,
-                )
-                val left = ceil(ring.dial?.secondsLeft(ring.progress) ?: 0f).toInt()
-                CountdownClock(
-                    formatClock(left),
-                    intervalKey = Unit,
-                    countingDown = false,
-                    accent = ring.accent,
-                    style = IntervalTheme.type.display,
-                    heat = { ring.dial?.heat(ring.progress) ?: 0f },
-                )
+    // The ring is drawn in the workout's colours, read from the theme: dark, as the workout runs.
+    IntervalTheme(darkTheme = true) {
+        val workout = IntervalTheme.workout
+        val rings = listOf(
+            PreviewRing(progress = 0.62f, RingDial(seconds = 30, draining = true), workout.work, RingLaps(8, 3, 4)),
+            PreviewRing(progress = 0.25f, RingDial(seconds = 60), workout.rest),
+            PreviewRing(progress = 1f, dial = null, workout.done),
+            PreviewRing(progress = 0.18f, RingDial(seconds = 30, draining = true), workout.work, RingLaps(8, 3, 4)),
+        )
+        FlowRow(
+            Modifier.fillMaxSize().background(workout.ground).padding(Spacing.space16),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space16),
+        ) {
+            for (ring in rings) {
+                Box(Modifier.size(Sizes.figurePage), contentAlignment = Alignment.Center) {
+                    ProgressRing(
+                        { ring.progress },
+                        { ring.accent },
+                        Modifier.fillMaxSize(),
+                        glide = false,
+                        laps = { ring.laps },
+                        dial = ring.dial,
+                    )
+                    val left = ceil(ring.dial?.secondsLeft(ring.progress) ?: 0f).toInt()
+                    CountdownClock(
+                        formatClock(left),
+                        intervalKey = Unit,
+                        countingDown = false,
+                        accent = ring.accent,
+                        style = IntervalTheme.type.display,
+                        heat = { ring.dial?.heat(ring.progress) ?: 0f },
+                    )
+                }
             }
         }
     }
