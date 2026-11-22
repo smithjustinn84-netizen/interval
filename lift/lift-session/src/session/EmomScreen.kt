@@ -62,6 +62,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.RingDial
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -230,11 +231,13 @@ private fun PortraitEmom(
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
             Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+                val dial = emomDial(state)
                 ProgressRing(
                     progress,
                     color,
                     Modifier.fillMaxSize(),
                     glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                    dial = dial,
                 )
                 // The ring's words keep the size it is drawn for, as the clock does, sized by the ring alone:
                 // larger, the word sits on the stroke and the line under the clock is cut ("24 kg × 10").
@@ -242,7 +245,8 @@ private fun PortraitEmom(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         PhaseWord(state, color)
                         val type = IntervalTheme.type
-                        ClockText(state, color, diameter, if (roomy) type.clock else type.display)
+                        val style = if (roomy) type.clock else type.display
+                        ClockText(state, color, diameter, style, heat = { dial?.heat(progress()) ?: 0f })
                         TaskText(
                             run,
                             state,
@@ -294,13 +298,15 @@ private fun LandscapeEmom(
             BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
                 Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+                    val dial = emomDial(state)
                     ProgressRing(
                         progress,
                         color,
                         Modifier.fillMaxSize(),
                         glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                        dial = dial,
                     )
-                    ClockText(state, color, diameter, IntervalTheme.type.clock)
+                    ClockText(state, color, diameter, IntervalTheme.type.clock, heat = { dial?.heat(progress()) ?: 0f })
                 }
             }
             Column(
@@ -390,7 +396,7 @@ private fun PhaseWord(state: EmomState, color: () -> Color) {
  * style between the phase word and the set, the clock style alone in the ring or in a tablet's.
  */
 @Composable
-private fun ClockText(state: EmomState, color: () -> Color, diameter: Dp, style: TextStyle) {
+private fun ClockText(state: EmomState, color: () -> Color, diameter: Dp, style: TextStyle, heat: () -> Float) {
     val text = formatClock(state.secondsLeft)
     val size = ringClockSize(diameter, text.length, style.fontSize)
     CountdownClock(
@@ -399,7 +405,15 @@ private fun ClockText(state: EmomState, color: () -> Color, diameter: Dp, style:
         countingDown = state.phase != EmomPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
         accent = color(),
         style = style.copy(fontSize = size, lineHeight = size),
+        heat = heat,
     )
+}
+
+/** The ring as a dial of what it fills over: the count-in, then each minute; none once the EMOM is over. */
+private fun emomDial(state: EmomState): RingDial? = when (state.phase) {
+    EmomPhase.GetReady -> RingDial((EmomClock.COUNT_IN_MILLIS / EmomClock.SECOND_MILLIS).toInt())
+    EmomPhase.Work, EmomPhase.Rest -> RingDial((EmomClock.MINUTE_MILLIS / EmomClock.SECOND_MILLIS).toInt())
+    EmomPhase.Done -> null
 }
 
 /** The set to do, or next while resting. */

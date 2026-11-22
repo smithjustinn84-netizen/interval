@@ -526,7 +526,8 @@ The visual identity is defined in `core/core/src/ui/`:
   - Moments: `stampIn` (a Record tag landing on its set, with a `Burst` of the accent behind the row, two
     beats under the thumb, and the next lift's figure on the session card raising what it holds or taking a bow,
     a one-rep `ExerciseDemo` built from where it stood by lift-ui's `Celebration`), `rememberCountdownPulse` (an interval's last seconds: the clock pops and the ring's
-    stroke swells with each beep, a `Haptic.Countdown` tick with them; Lift's rest band the same), a `Burst`
+    stroke swells with each beep, a `Haptic.Countdown` tick with them; Lift's rest band the same; before them the
+    ring's dial heats over the interval's last ten seconds, `RingDial`, its band drawn by a shader, `RingShader.kt`), a `Burst`
     of the new phase's colour from the clock on each change of interval, `countUp` for both summaries' numbers,
     `FinishHaptic` as a summary lands (firmer for a record or the week's goal), `StreakBadge` rolling up a week
     as the streak grows, Today's week dots drawing a day on as it turns done, and the Log's goal ring igniting

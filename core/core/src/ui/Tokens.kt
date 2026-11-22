@@ -400,6 +400,16 @@ object Motion {
     /** The ring thickens to this on each of an interval's last seconds, with the clock's pop. */
     const val COUNTDOWN_RING_SCALE = 1.35f
 
+    /**
+     * An interval's last seconds heat its dial: from this many left, or of a shorter interval this share, the
+     * arc brightens and beats, softly every [URGENT_BEAT_SECONDS] and then on each of the countdown's
+     * [COUNTDOWN_SECONDS], the beeps' and the clock's pops'.
+     */
+    const val URGENT_SECONDS = 10
+    const val URGENT_SHARE = 1f / 3f
+    const val URGENT_BEAT_SECONDS = 2f
+    const val COUNTDOWN_SECONDS = 3
+
     /** A record's two beats under the thumb are this far apart. */
     const val RECORD_BEAT_GAP_MILLIS = 140L
 

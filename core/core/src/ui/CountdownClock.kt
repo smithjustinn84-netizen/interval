@@ -1,17 +1,24 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
@@ -23,6 +30,12 @@ import dev.justinsmith.interval.platform.prefersReducedMotion
  * interval starts (a change of [intervalKey]) and, smaller, on each of its last seconds while [countingDown]
  * (the [rememberCountdownPulse] the ring swells to), in step with the beeps, when its colour also goes to
  * the [accent]; otherwise it reads in the ink.
+ *
+ * With [heat] (0 to 1, a [RingDial]'s reading of the interval's last seconds) the accent comes before the
+ * countdown does: it rises through the digits from their foot as the heat grows, so they are part filled as the
+ * beeps start and fill then. Each of those seconds also flashes them brighter as it lands. Both are a shader's
+ * ([CLOCK_SKSL]), painted into the digits where they are drawn, so nothing of it lays out or recomposes; where
+ * the platform has none the digits go from the ink to the accent whole, as the countdown starts.
  */
 @Composable
 fun CountdownClock(
@@ -33,6 +46,7 @@ fun CountdownClock(
     style: TextStyle,
     modifier: Modifier = Modifier,
     ink: Color = IntervalTheme.workout.onGround,
+    heat: () -> Float = { 0f },
 ) {
     val reducedMotion = prefersReducedMotion()
     val scale = remember { Animatable(1f) }
@@ -45,23 +59,76 @@ fun CountdownClock(
         }
     }
     val pulse = rememberCountdownPulse(text, countingDown)
-    val color by animateColorAsState(
-        if (countingDown) accent else ink,
+    val counting = animateFloatAsState(
+        if (countingDown) 1f else 0f,
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "clock",
     )
+    val fill = remember { shaderProgram(CLOCK_SKSL)?.let(::ClockShaderPaint) }
+    // Read through a derived state: the heat is nothing for most of an interval, and digits that aren't heating
+    // aren't drawn again at each tick of the progress it is worked out from.
+    val latestHeat by rememberUpdatedState(heat)
+    val heated = remember { derivedStateOf { latestHeat() } }
     Text(
         text,
+        // The digits are drawn as a mask, in any opaque colour, and their ink painted into them.
         style = style,
-        color = color,
+        color = Color.Black,
         maxLines = 1,
         softWrap = false,
-        modifier = modifier.graphicsLayer {
-            val popped = scale.value * (1f + pulse() * (Motion.COUNTDOWN_POP_SCALE - 1f))
-            scaleX = popped
-            scaleY = popped
-        },
+        modifier = modifier
+            .graphicsLayer {
+                val popped = scale.value * (1f + pulse() * (Motion.COUNTDOWN_POP_SCALE - 1f))
+                scaleX = popped
+                scaleY = popped
+                compositingStrategy = CompositingStrategy.Offscreen
+            }
+            .drawWithContent {
+                drawContent()
+                if (fill != null) {
+                    val risen = maxOf(counting.value, heated.value * HEAT_FILL)
+                    with(fill) { drawInk(ink, accent, risen, beat = pulse()) }
+                } else {
+                    drawRect(lerp(ink, accent, counting.value), blendMode = BlendMode.SrcIn)
+                }
+            },
     )
+}
+
+/** How much of the digits the accent has risen through at full heat, before the countdown fills the rest. */
+private const val HEAT_FILL = 0.6f
+
+/**
+ * A clock's digits' ink: `ink` with `accent` risen through it from the foot to `fill` (0 none of it, 1 all), the
+ * line between them soft, and all of it exposed brighter by `beat` ([SKSL_LIGHT]). Colours are sRGB with their
+ * alpha apart; `size` is the digits' box in pixels.
+ */
+internal const val CLOCK_SKSL = """
+uniform float2 size;
+uniform float fill;
+uniform float beat;
+uniform float4 ink;
+uniform float4 accent;
+$SKSL_LIGHT
+half4 main(float2 p) {
+    float line = mix(0.94, 0.06, fill);
+    float4 color = mix(ink, accent, smoothstep(line - 0.04, line + 0.04, p.y / size.y));
+    float3 lit = exposed(color.rgb, 0.4 * beat);
+    lit = clamp(lit + grain(p) / 255.0, 0.0, 1.0) * color.a;
+    return half4(lit.r, lit.g, lit.b, color.a);
+}
+"""
+
+/** Paints [CLOCK_SKSL] into whatever is drawn already: the digits, as their mask. */
+private class ClockShaderPaint(private val program: ShaderProgram) {
+    fun DrawScope.drawInk(ink: Color, accent: Color, fill: Float, beat: Float) {
+        program.set("size", size.width, size.height)
+        program.set("fill", fill)
+        program.set("beat", beat)
+        program.set("ink", ink)
+        program.set("accent", accent)
+        drawRect(program.brush(), blendMode = BlendMode.SrcIn)
+    }
 }
 
 /**

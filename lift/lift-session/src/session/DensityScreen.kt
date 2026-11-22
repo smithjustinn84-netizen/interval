@@ -63,6 +63,7 @@ import dev.justinsmith.interval.ui.LARGE_FONT_SCALE
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.RingDial
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -227,14 +228,22 @@ private fun PortraitDensity(
         BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
             Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
-                ProgressRing(progress, color, Modifier.fillMaxSize(), glideMillis = Motion.EMOM_RING_GLIDE_MILLIS)
+                val dial = densityDial(state)
+                ProgressRing(
+                    progress,
+                    color,
+                    Modifier.fillMaxSize(),
+                    glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                    dial = dial,
+                )
                 // The ring's words keep the size it is drawn for, as the clock does, sized by the ring alone:
                 // larger, the word sits on the stroke and the line under the clock is cut ("24 kg × 10").
                 TextScaleAtMost(1f) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         PhaseWord(state, color)
                         val type = IntervalTheme.type
-                        ClockText(state, color, diameter, if (roomy) type.clock else type.display)
+                        val style = if (roomy) type.clock else type.display
+                        ClockText(state, color, diameter, style, heat = { dial?.heat(progress()) ?: 0f })
                         TaskText(
                             run,
                             state,
@@ -283,13 +292,15 @@ private fun LandscapeDensity(
             BoxWithConstraints(Modifier.weight(1f).fillMaxHeight(), contentAlignment = Alignment.Center) {
                 val diameter = minOf(maxWidth, maxHeight, Sizes.ringMax)
                 Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
+                    val dial = densityDial(state)
                     ProgressRing(
                         progress,
                         color,
                         Modifier.fillMaxSize(),
                         glideMillis = Motion.EMOM_RING_GLIDE_MILLIS,
+                        dial = dial,
                     )
-                    ClockText(state, color, diameter, IntervalTheme.type.clock)
+                    ClockText(state, color, diameter, IntervalTheme.type.clock, heat = { dial?.heat(progress()) ?: 0f })
                 }
             }
             Column(
@@ -407,7 +418,7 @@ private fun PhaseWord(state: DensityState, color: () -> Color) {
 
 /** The time left of the cap (or the count-in), popping on its last three seconds as the beeps go. */
 @Composable
-private fun ClockText(state: DensityState, color: () -> Color, diameter: Dp, style: TextStyle) {
+private fun ClockText(state: DensityState, color: () -> Color, diameter: Dp, style: TextStyle, heat: () -> Float) {
     val text = formatClock(state.secondsLeft)
     val size = ringClockSize(diameter, text.length, style.fontSize)
     CountdownClock(
@@ -416,7 +427,15 @@ private fun ClockText(state: DensityState, color: () -> Color, diameter: Dp, sty
         countingDown = state.phase != DensityPhase.Done && state.secondsLeft in 1..EmomClock.COUNTDOWN,
         accent = color(),
         style = style.copy(fontSize = size, lineHeight = size),
+        heat = heat,
     )
+}
+
+/** The ring as a dial of what it fills over: the count-in, then the whole cap; none once the block is over. */
+private fun densityDial(state: DensityState): RingDial? = when (state.phase) {
+    DensityPhase.GetReady -> RingDial((EmomClock.COUNT_IN_MILLIS / EmomClock.SECOND_MILLIS).toInt())
+    DensityPhase.Work -> RingDial(state.minutes * (EmomClock.MINUTE_MILLIS / EmomClock.SECOND_MILLIS).toInt())
+    DensityPhase.Done -> null
 }
 
 /** The round to do: the lift, its load and reps, and a one-sided lift's side, which turns each round. */

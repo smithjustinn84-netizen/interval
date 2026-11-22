@@ -53,6 +53,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MAX_ROUND_MARKS
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
+import dev.justinsmith.interval.ui.RingDial
 import dev.justinsmith.interval.ui.RingLaps
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -206,21 +207,24 @@ internal fun RingReadout(
     diameter: Dp,
     modifier: Modifier = Modifier,
 ) {
+    val dial = ringDial(state)
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         PhaseBurst(state, Modifier.matchParentSize())
         ProgressRing(
             progress,
             accent,
             Modifier.fillMaxSize(),
-            strokeScale = ringSwell(state),
+            pulse = rememberCountdownPulse(state.clock, state.countingDown),
             laps = { ringLaps(state) },
+            dial = dial,
         )
         // Inside the ring its words keep the size the ring is drawn for, as the clock does, sized by the ring alone:
         // the clock fills it, so larger they run into the ring. Over the ring the round line says it at full size.
         TextScaleAtMost(1f) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 PhaseLabel(state, accent)
-                Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
+                val size = ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize)
+                Clock(state, accent, size, heat = { dial?.heat(progress()) ?: 0f })
                 val nextText = nextText(state)
                 if (nextText.isNotEmpty()) {
                     Text(
@@ -248,6 +252,7 @@ internal fun LandscapeReadout(
     onOpenMove: () -> Unit = {},
     onToggleHeart: () -> Unit = {},
 ) {
+    val dial = ringDial(state)
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -259,10 +264,12 @@ internal fun LandscapeReadout(
                 progress,
                 accent,
                 Modifier.fillMaxSize(),
-                strokeScale = ringSwell(state),
+                pulse = rememberCountdownPulse(state.clock, state.countingDown),
                 laps = { ringLaps(state) },
+                dial = dial,
             )
-            Clock(state, accent, ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize))
+            val size = ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize)
+            Clock(state, accent, size, heat = { dial?.heat(progress()) ?: 0f })
         }
         Column(Modifier.weight(1f, fill = false), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
             state.flow?.let { flow ->
@@ -285,12 +292,9 @@ internal fun LandscapeReadout(
     }
 }
 
-/** The ring thickens with the clock's pop on each of an interval's last seconds: [rememberCountdownPulse]. */
-@Composable
-private fun ringSwell(state: WorkoutUiState): () -> Float {
-    val pulse = rememberCountdownPulse(state.clock, state.countingDown)
-    return remember(pulse) { { 1f + pulse() * (Motion.COUNTDOWN_RING_SCALE - 1f) } }
-}
+/** The ring as a dial of the interval under way, which it empties over; none once the workout is over. */
+private fun ringDial(state: WorkoutUiState): RingDial? =
+    RingDial(state.intervalSeconds, draining = true).takeIf { state.intervalSeconds > 0 && !state.isDone }
 
 /**
  * A change of interval sends one ring of the new phase's colour out from the clock as the ground crossfades
@@ -389,15 +393,19 @@ private fun nextUpText(next: NextUp?): String = when (next) {
     null -> ""
 }
 
-/** The digits inside the ring: see [CountdownClock]. A phase or round change starts a new interval. */
+/**
+ * The digits inside the ring: see [CountdownClock]. A phase or round change starts a new interval; [heat] is the
+ * ring's dial's reading of its last seconds.
+ */
 @Composable
-private fun Clock(state: WorkoutUiState, accent: () -> Color, size: TextUnit) {
+private fun Clock(state: WorkoutUiState, accent: () -> Color, size: TextUnit, heat: () -> Float) {
     CountdownClock(
         state.clock,
         intervalKey = state.phase to state.completedRounds,
         countingDown = state.countingDown,
         accent = accent(),
         style = IntervalTheme.type.clock.copy(fontSize = size, lineHeight = size),
+        heat = heat,
     )
 }
 
