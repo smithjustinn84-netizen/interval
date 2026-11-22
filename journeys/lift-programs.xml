@@ -8,12 +8,12 @@
   <actions>
     <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
     <action>Tap the "Train" tab, which opens on "Strength"</action>
-    <action>Tap "Follow a program" and verify that "Strong for life" is listed under "Dan John–inspired" and "One bell beside BJJ" under the grapplers' programs, and that "Grip and pull", "Clean and press EMOM", "Long cycle EMOM", "Bodyweight EMOM" and "Daily 100 swings + 10 get-ups" are not listed; go back</action>
+    <action>Tap "Follow a program" and verify that "Easy Strength" is listed under "Dan John–inspired" and "One bell beside BJJ" under the grapplers' programs, each with a line under its name saying who it is for, and that "Strong for life", "Round conditioning", "15-minute kettlebell plan", "Grip and pull", "Clean and press EMOM", "Long cycle EMOM", "Bodyweight EMOM" and "Daily 100 swings + 10 get-ups" are not listed; scroll to "Barbell", verify that "Barbell 5×5" is not listed but "Show barbell programs" is, tap it and verify that "Olympic foundations" and "Barbell 5×5" are; go back</action>
     <action>Tap "Follow a program", scroll to "Simple &amp; Sinister" and tap it</action>
     <action>Verify that the sheet shows "Simple &amp; Sinister", its summary, and under it "Balance" with "Sets in a week"</action>
     <action>Verify that the bars read "Chest", "Shoulders", "Back", "Arms", "Core", "Glutes and hamstrings" and "Quads and calves", "Glutes and hamstrings" and "Shoulders" at 25, the chest's empty, with "Worked most" and "Assisted" under them</action>
     <action>Verify that "Nothing in a week for: Chest, Quads and calves" is shown under the bars, and "Day 1" follows with "about 25 min" beside it</action>
-    <action>Swipe the sheet away, scroll to "15-minute kettlebell plan" and verify that its row ends in "about 15 min"; tap it and verify that "Day 1" and "Day 2" each say "about 15 min"</action>
+    <action>Swipe the sheet away, scroll to "One bell beside BJJ" and verify that its row ends in "about 20 min"; tap it and verify that "Day 1" and "Day 2" each say "about 20 min"</action>
     <action>Swipe the sheet away, scroll to "Goblet squat and row", tap it, then tap "Follow this program"</action>
     <action>Verify that Strength shows "Day 1 of 8 · week 1" with "about 10 min" beside it; tap "Start day 1", log one set, tap "Finish" and then "Close"</action>
     <action>Verify that Strength shows "Day 2 of 8 · week 1"; tap "All programs", scroll to "Goblet squat and row" and tap it</action>

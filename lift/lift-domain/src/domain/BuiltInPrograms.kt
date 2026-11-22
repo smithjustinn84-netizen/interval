@@ -589,9 +589,10 @@ val builtInPrograms: List<Program> = listOf(
 ) + barbellPrograms
 
 /**
- * The built-ins no longer offered: each said better by another, or too hard on a shoulder, a grip or the knees to
- * be anyone's default. They stay among [builtInPrograms], since a program is stored by its id: whoever follows one
- * keeps it, and the sessions done of it keep their days.
+ * The built-ins no longer offered: each said better by another, too hard on a shoulder, a grip or the knees to be
+ * anyone's default, or cut to keep the catalogue short enough to choose from (a handful a family, each for someone
+ * in particular). They stay among [builtInPrograms], since a program is stored by its id: whoever follows one keeps
+ * it, and the sessions done of it keep their days.
  */
 val retiredPrograms: Set<ProgramId> = setOf(
     ProgramId.DailySwingsGetUps,
@@ -599,24 +600,45 @@ val retiredPrograms: Set<ProgramId> = setOf(
     ProgramId.LongCycleEmom,
     ProgramId.GripAndPull,
     ProgramId.BodyweightEmom,
+    // Said better by Rite of Passage, Simple & Sinister and Easy Strength.
+    ProgramId.PressLadders,
+    ProgramId.ProgramMinimum,
+    ProgramId.SwingSquatCountdown,
+    ProgramId.OneStopShop,
+    ProgramId.StrongForLife,
+    // Narrow: a test's prep, a skill's practice, a double-bell plan the Armor Building Formula covers.
+    ProgramId.SnatchTestPrep,
+    ProgramId.GetUpPractice,
+    ProgramId.FifteenMinuteKettlebell,
+    // Beside the mat, the two BJJ programs and Shoulder armor say it; the rounds are the Timer's.
+    ProgramId.GrapplerStrength,
+    ProgramId.RoundConditioning,
+    // Bodyweight basics and Bands and bells cover the mixed kit.
+    ProgramId.BellsAndBodyweight,
+    ProgramId.CoreOnTheMat,
 )
 
 /** Whether this is a built-in no longer offered ([retiredPrograms]). */
 val Program.retired: Boolean get() = (key as? ProgramKey.BuiltIn)?.id in retiredPrograms
 
-/** The built-ins on offer: all but the [retiredPrograms], and of those the one [following], which is kept. */
-fun programCatalogue(following: ProgramKey? = null): List<Program> =
-    builtInPrograms.filter { !it.retired || it.key == following }
+/** Whether this is a built-in done under a barbell, which someone with no bar is shown only on asking. */
+val Program.barbell: Boolean get() = (key as? ProgramKey.BuiltIn)?.id?.family == ProgramFamily.Barbell
+
+/**
+ * The built-ins on offer: all but the [retiredPrograms], and the [barbell] ones only with a [bar]; of those left
+ * out, the one [following] is kept, in its place.
+ */
+fun programCatalogue(following: ProgramKey? = null, bar: Boolean = true): List<Program> =
+    builtInPrograms.filter { it.key == following || (!it.retired && (bar || !it.barbell)) }
 
 /**
  * The programs to put before someone who trains on the mat or the wall, the first that suit what they own first:
- * the two made to sit beside BJJ, then the shoulders, then strength.
+ * the two made to sit beside BJJ, then the shoulders.
  */
 val besideTheMat: List<ProgramId> = listOf(
     ProgramId.BjjKettlebell,
     ProgramId.BjjOneBell,
     ProgramId.ShoulderArmor,
-    ProgramId.GrapplerStrength,
 )
 
 fun program(

@@ -28,18 +28,24 @@ import dev.justinsmith.lift.ui.resources.load_added
 import dev.justinsmith.lift.ui.resources.load_double
 import dev.justinsmith.lift.ui.resources.load_kg
 import dev.justinsmith.lift.ui.resources.log_added_none
+import dev.justinsmith.lift.ui.resources.program_abf_for
 import dev.justinsmith.lift.ui.resources.program_abf_name
 import dev.justinsmith.lift.ui.resources.program_abf_summary
+import dev.justinsmith.lift.ui.resources.program_bands_bells_for
 import dev.justinsmith.lift.ui.resources.program_bands_bells_name
 import dev.justinsmith.lift.ui.resources.program_bands_bells_summary
+import dev.justinsmith.lift.ui.resources.program_beginner_full_body_for
 import dev.justinsmith.lift.ui.resources.program_beginner_full_body_name
 import dev.justinsmith.lift.ui.resources.program_beginner_full_body_summary
 import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_name
 import dev.justinsmith.lift.ui.resources.program_bells_bodyweight_summary
+import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_for
 import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_name
 import dev.justinsmith.lift.ui.resources.program_bjj_kettlebell_summary
+import dev.justinsmith.lift.ui.resources.program_bjj_one_bell_for
 import dev.justinsmith.lift.ui.resources.program_bjj_one_bell_name
 import dev.justinsmith.lift.ui.resources.program_bjj_one_bell_summary
+import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_for
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_name
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_emom_name
@@ -55,52 +61,63 @@ import dev.justinsmith.lift.ui.resources.program_daily_summary
 import dev.justinsmith.lift.ui.resources.program_day
 import dev.justinsmith.lift.ui.resources.program_days_a_week
 import dev.justinsmith.lift.ui.resources.program_days_count
+import dev.justinsmith.lift.ui.resources.program_easy_strength_for
 import dev.justinsmith.lift.ui.resources.program_easy_strength_name
 import dev.justinsmith.lift.ui.resources.program_easy_strength_summary
 import dev.justinsmith.lift.ui.resources.program_estimate
 import dev.justinsmith.lift.ui.resources.program_estimate_range
 import dev.justinsmith.lift.ui.resources.program_fifteen_minute_name
 import dev.justinsmith.lift.ui.resources.program_fifteen_minute_summary
+import dev.justinsmith.lift.ui.resources.program_first_hundred_for
 import dev.justinsmith.lift.ui.resources.program_first_hundred_name
 import dev.justinsmith.lift.ui.resources.program_first_hundred_summary
+import dev.justinsmith.lift.ui.resources.program_five_by_five_for
 import dev.justinsmith.lift.ui.resources.program_five_by_five_name
 import dev.justinsmith.lift.ui.resources.program_five_by_five_summary
+import dev.justinsmith.lift.ui.resources.program_foundations_for
 import dev.justinsmith.lift.ui.resources.program_foundations_name
 import dev.justinsmith.lift.ui.resources.program_foundations_summary
 import dev.justinsmith.lift.ui.resources.program_get_up_practice_name
 import dev.justinsmith.lift.ui.resources.program_get_up_practice_summary
+import dev.justinsmith.lift.ui.resources.program_goblet_row_for
 import dev.justinsmith.lift.ui.resources.program_goblet_row_name
 import dev.justinsmith.lift.ui.resources.program_goblet_row_summary
 import dev.justinsmith.lift.ui.resources.program_grappler_strength_name
 import dev.justinsmith.lift.ui.resources.program_grappler_strength_summary
 import dev.justinsmith.lift.ui.resources.program_grip_pull_name
 import dev.justinsmith.lift.ui.resources.program_grip_pull_summary
+import dev.justinsmith.lift.ui.resources.program_iron_cardio_for
 import dev.justinsmith.lift.ui.resources.program_iron_cardio_name
 import dev.justinsmith.lift.ui.resources.program_iron_cardio_summary
 import dev.justinsmith.lift.ui.resources.program_ladders_name
 import dev.justinsmith.lift.ui.resources.program_ladders_summary
 import dev.justinsmith.lift.ui.resources.program_long_cycle_name
 import dev.justinsmith.lift.ui.resources.program_long_cycle_summary
+import dev.justinsmith.lift.ui.resources.program_olympic_foundations_for
 import dev.justinsmith.lift.ui.resources.program_olympic_foundations_name
 import dev.justinsmith.lift.ui.resources.program_olympic_foundations_summary
 import dev.justinsmith.lift.ui.resources.program_one_stop_shop_name
 import dev.justinsmith.lift.ui.resources.program_one_stop_shop_summary
 import dev.justinsmith.lift.ui.resources.program_program_minimum_name
 import dev.justinsmith.lift.ui.resources.program_program_minimum_summary
+import dev.justinsmith.lift.ui.resources.program_rite_of_passage_for
 import dev.justinsmith.lift.ui.resources.program_rite_of_passage_name
 import dev.justinsmith.lift.ui.resources.program_rite_of_passage_summary
 import dev.justinsmith.lift.ui.resources.program_rounds_name
 import dev.justinsmith.lift.ui.resources.program_rounds_summary
 import dev.justinsmith.lift.ui.resources.program_schedule
 import dev.justinsmith.lift.ui.resources.program_schedule_days
+import dev.justinsmith.lift.ui.resources.program_shoulder_armor_for
 import dev.justinsmith.lift.ui.resources.program_shoulder_armor_name
 import dev.justinsmith.lift.ui.resources.program_shoulder_armor_summary
+import dev.justinsmith.lift.ui.resources.program_simple_sinister_for
 import dev.justinsmith.lift.ui.resources.program_simple_sinister_name
 import dev.justinsmith.lift.ui.resources.program_simple_sinister_summary
 import dev.justinsmith.lift.ui.resources.program_snatch_test_name
 import dev.justinsmith.lift.ui.resources.program_snatch_test_summary
 import dev.justinsmith.lift.ui.resources.program_strong_for_life_name
 import dev.justinsmith.lift.ui.resources.program_strong_for_life_summary
+import dev.justinsmith.lift.ui.resources.program_ten_thousand_for
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_name
 import dev.justinsmith.lift.ui.resources.program_ten_thousand_summary
 import dev.justinsmith.lift.ui.resources.program_weeks
@@ -180,6 +197,36 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_name
     },
 )
+
+/**
+ * Who a built-in on offer is for, in a line: "For grapplers with one bell". Null for one the user made, a test, or a
+ * built-in no longer offered, which is chosen by nobody new.
+ */
+@Composable
+fun programFor(program: Program): String? {
+    val id = (program.key as? ProgramKey.BuiltIn)?.id ?: return null
+    val words = when (id) {
+        ProgramId.GobletSquatRow -> Res.string.program_goblet_row_for
+        ProgramId.EasyStrength -> Res.string.program_easy_strength_for
+        ProgramId.ArmorBuildingFormula -> Res.string.program_abf_for
+        ProgramId.TenThousandSwings -> Res.string.program_ten_thousand_for
+        ProgramId.SimpleAndSinister -> Res.string.program_simple_sinister_for
+        ProgramId.RiteOfPassage -> Res.string.program_rite_of_passage_for
+        ProgramId.IronCardio -> Res.string.program_iron_cardio_for
+        ProgramId.ShoulderArmor -> Res.string.program_shoulder_armor_for
+        ProgramId.BjjKettlebell -> Res.string.program_bjj_kettlebell_for
+        ProgramId.BjjOneBell -> Res.string.program_bjj_one_bell_for
+        ProgramId.KettlebellFoundations -> Res.string.program_foundations_for
+        ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_for
+        ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_for
+        ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_for
+        ProgramId.BandsAndBells -> Res.string.program_bands_bells_for
+        ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_for
+        ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_for
+        else -> null
+    }
+    return words?.let { stringResource(it) }
+}
 
 /**
  * What a program asks for and its schedule, in a line: "3 sets of 10 of each · 2 days a week for 4 weeks"; for

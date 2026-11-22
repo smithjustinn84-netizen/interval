@@ -163,7 +163,12 @@ The built-ins are curated for someone who trains a sport as well, BJJ first, and
   `retiredPrograms`, which `programCatalogue` leaves out for everyone but whoever follows it. Retired so far: the
   daily swings and get-ups (Simple & Sinister says it), the clean and press EMOM and the long cycle (presses and
   jerks on the minute under fatigue), Grip and pull (the mat loads the grip already) and the bodyweight EMOM
-  (burpees on the minute).
+  (burpees on the minute); then, to keep the catalogue to a handful a family each with a line saying who it is
+  for, press ladders and Program Minimum (Rite of Passage and Simple & Sinister say them), the swing and squat
+  countdown, One-stop shop and Strong for life (Easy Strength), snatch test prep, get-up practice, the 15-minute
+  plan, Strength for the mat and Round conditioning (the BJJ programs, Shoulder armor and the Timer), Bells and
+  bodyweight and Core on the mat. The barbell's two are shown only with a bar owned (`programCatalogue`'s `bar`), or
+  on asking.
 - **A bell overhead starts light** (`startingBellKg`): presses, the get-up, the windmill, the halo and the
   bottoms-up carry open at the lightest bell owned, or 8 kg with none said.
 - **Recovery is given two days**: a very hard session, or a very hard interval workout, taxes the next 48 hours

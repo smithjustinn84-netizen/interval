@@ -50,12 +50,12 @@ class LiftProgramsAcceptanceTest {
 
     @Test
     fun `a program's days say about how long they take and so does the day followed`() = liftScenario {
-        // Three sets each of three lifts one day, 8 and 7 minutes on the minute the other.
-        openProgram("15-minute kettlebell plan")
-        seeEstimate("about 15 min")
+        // Goblet squats, presses and rows one day, 8 minutes of swings on the minute and carries the other.
+        openProgram("One bell beside BJJ")
+        seeEstimate("about 20 min")
         followFromSheet()
-        seeProgramDay("Day 1 of 18 · week 1")
-        seeEstimate("about 15 min")
+        seeProgramDay("Day 1 of 12 · week 1")
+        seeEstimate("about 20 min")
     }
 
     @Test

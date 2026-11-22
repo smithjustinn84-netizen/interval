@@ -66,6 +66,7 @@ Reduce maintenance drag before it calcifies after `1.0`.
 - **Where**: `lift/lift-domain/src/domain/BuiltInPrograms.kt`, `BarbellPrograms.kt`
 - **Issue**: 29 active programs (plus 5 `retiredPrograms` still defined in code) across 6 families create choice paralysis—especially Barbell programs that `Set up` cannot recommend.
 - **Action**: Trim overlapping programs down to a tighter, opinionated set (~12–16 standout programs with clear equipment/goal tags) and place Barbell behind an equipment filter so kettlebell/bodyweight users aren't shown irrelevant programs.
+- **Done (2026-11-22)**: 17 offered (15 without a bar), 12 more retired (kept in code, since a program is stored by its id), each offered one with a "who it's for" line, and Barbell folded behind "Show barbell programs" unless a bar is owned. `ProgramsTest` pins the list.
 
 ### C4. Make an explicit call on `desktopApp`
 - **Where**: `apps/desktopApp/src/main.kt` (43 lines), `README.md`, `docs/index.md`

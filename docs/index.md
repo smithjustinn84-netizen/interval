@@ -46,7 +46,7 @@ on Android and iOS.** Everything stays on your device: no account, no analytics,
 
     ---
 
-    Three pillars: **Strength** (27 programs, 134 lifts, every one shown by a figure), **Conditioning** (the
+    Three pillars: **Strength** (17 programs, 134 lifts, every one shown by a figure), **Conditioning** (the
     Timer and presets) and **Mobility** (nine follow-along flows and your own).
 
     [:octicons-arrow-right-24: Strength](guide/strength.md) ·

@@ -37,11 +37,11 @@
     <action>Verify that the log lists "BJJ class" under "Today" and the week card's "Sport days" row reads "1 of 1"</action>
     <action>Tap the "×" on the "BJJ class" row</action>
     <action>Verify that a notice says "Removed BJJ class" with "Undo", and the row is gone</action>
-    <action>Tap the "Train" tab, then "All programs", and follow "15-minute kettlebell plan"</action>
+    <action>Tap the "Train" tab, then "All programs", and follow "Your first 100 swings"</action>
     <action>Tap the "Today" tab</action>
     <action>Verify that "Up next · Today" still leads with "BJJ class" and "Log it" (the flow is done for today)</action>
-    <action>Verify that the step after it is "15-minute kettlebell plan" under "If there is time", with "about 15 min" and "Do it now", and no "Start day 1" shows</action>
+    <action>Verify that the step after it is "Your first 100 swings" under "If there is time", with "about 15 min" and "Do it now", and no "Start day 1" shows</action>
     <action>Tap "Log it"</action>
-    <action>Verify that the card now says "Done for today" under a line ending "done" and "That is the day.", and that "15-minute kettlebell plan" waits in the card after it under "If there is time" with "Do it now" and no "Start day 1"</action>
+    <action>Verify that the card now says "Done for today" under a line ending "done" and "That is the day.", and that "Your first 100 swings" waits in the card after it under "If there is time" with "Do it now" and no "Start day 1"</action>
   </actions>
 </journey>

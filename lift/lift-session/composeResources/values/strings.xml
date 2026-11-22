@@ -132,6 +132,8 @@
     <string name="programs_grappling">For grapplers</string>
     <string name="programs_mixed">Bodyweight and mixed</string>
     <string name="programs_barbell">Barbell</string>
+    <string name="programs_barbell_show">Show barbell programs</string>
+    <string name="programs_barbell_hint">The Olympic lifts and a 5×5, for when there's a bar. Add one under Gear to keep them shown</string>
     <string name="programs_yours">Your programs</string>
     <string name="programs_new">New program</string>
     <string name="programs_new_hint">Lay out your own days of sets, EMOMs and ladders.</string>

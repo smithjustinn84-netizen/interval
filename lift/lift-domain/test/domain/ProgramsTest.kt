@@ -197,6 +197,52 @@ class ProgramsTest {
         }
     }
 
+    /** The catalogue, curated: a new built-in, or one retired, changes this list on purpose. */
+    @Test
+    fun `the catalogue is a short list a family`() {
+        val offered = programCatalogue().groupBy({ it.family }, { (it.key as ProgramKey.BuiltIn).id })
+        assertEquals(
+            mapOf<ProgramFamily?, List<ProgramId>>(
+                ProgramFamily.Classic to listOf(
+                    ProgramId.GobletSquatRow,
+                    ProgramId.SimpleAndSinister,
+                    ProgramId.RiteOfPassage,
+                    ProgramId.IronCardio,
+                ),
+                ProgramFamily.DanJohn to listOf(
+                    ProgramId.EasyStrength,
+                    ProgramId.ArmorBuildingFormula,
+                    ProgramId.TenThousandSwings,
+                ),
+                ProgramFamily.Grappling to listOf(
+                    ProgramId.ShoulderArmor,
+                    ProgramId.BjjKettlebell,
+                    ProgramId.BjjOneBell,
+                ),
+                ProgramFamily.Beginner to listOf(
+                    ProgramId.KettlebellFoundations,
+                    ProgramId.FirstHundredSwings,
+                    ProgramId.BeginnerFullBody,
+                ),
+                ProgramFamily.Mixed to listOf(ProgramId.BodyweightBasics, ProgramId.BandsAndBells),
+                ProgramFamily.Barbell to listOf(ProgramId.OlympicFoundations, ProgramId.BarbellFiveByFive),
+            ),
+            offered,
+        )
+    }
+
+    @Test
+    fun `with no bar the barbell programs are off the catalogue unless one is followed`() {
+        val withoutBar = programCatalogue(bar = false)
+        assertEquals(programCatalogue().filterNot { it.barbell }, withoutBar)
+        assertTrue(withoutBar.none { it.family == ProgramFamily.Barbell })
+        val fiveByFive = ProgramKey.BuiltIn(ProgramId.BarbellFiveByFive)
+        assertEquals(
+            listOf(program(ProgramId.BarbellFiveByFive)),
+            programCatalogue(fiveByFive, bar = false) - withoutBar,
+        )
+    }
+
     @Test
     fun `the catalogue keeps a retired program for whoever follows it`() {
         val followed = ProgramKey.BuiltIn(ProgramId.GripAndPull)

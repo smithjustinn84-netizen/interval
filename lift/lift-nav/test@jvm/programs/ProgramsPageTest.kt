@@ -14,6 +14,7 @@ import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.scrollToText
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.BarEntity
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.SessionEntity
 import dev.justinsmith.lift.domain.ProgramId
@@ -110,8 +111,16 @@ class ProgramsPageTest {
     fun `a program no longer offered is off the page`() = liftAppTest {
         onNodeWithText("Follow a program").performClick()
         scrollToText("One bell beside BJJ")
-        scrollToText("Strong for life")
-        listOf("Grip and pull", "Clean and press EMOM", "Long cycle EMOM", "Bodyweight EMOM").forEach {
+        scrollToText("Easy Strength")
+        listOf(
+            "Grip and pull",
+            "Clean and press EMOM",
+            "Long cycle EMOM",
+            "Bodyweight EMOM",
+            "Strong for life",
+            "Round conditioning",
+            "15-minute kettlebell plan",
+        ).forEach {
             onNodeWithText(it).assertDoesNotExist()
         }
     }
@@ -133,12 +142,12 @@ class ProgramsPageTest {
     fun `a program for grapplers is followed from its own group`() = liftAppTest { app ->
         onNodeWithText("Follow a program").performClick()
         scrollToText("For grapplers")
-        scrollToText("Round conditioning")
-        onNodeWithText("Round conditioning").performClick()
-        waitForText("Follow this program")
+        scrollToText("Shoulder armor")
+        onNodeWithText("Shoulder armor").performClick()
+        waitForText("For shoulders that take frames and locks")
         onNodeWithText("Follow this program").performScrollTo().performClick()
-        waitForText("Day 1 of 12 · week 1")
-        assertEquals(ProgramId.RoundConditioning.name, app.storage.following.row.value?.programId)
+        waitForText("Day 1 of 18 · week 1")
+        assertEquals(ProgramId.ShoulderArmor.name, app.storage.following.row.value?.programId)
     }
 
     @Test
@@ -180,23 +189,38 @@ class ProgramsPageTest {
     }
 
     @Test
-    fun `the 15-minute kettlebell plan shows its strength circuit and its EMOM day`() = liftAppTest { app ->
+    fun `with no bar the barbell programs are folded until asked for`() = liftAppTest {
         onNodeWithText("Follow a program").performClick()
-        scrollToText("15-minute kettlebell plan")
-        onNodeWithText("15-minute kettlebell plan").performClick()
-        waitForText("Follow this program")
-        onNodeWithText("Front squat · Two bells").assertExists()
-        onNodeWithText("3 × 8 (8–12)").assertExists()
-        onNodeWithText("Clean and press · Two bells").assertExists()
-        onNodeWithText("3 × 6 (6–12)").assertExists()
-        onNodeWithText("Row · Two bells").assertExists()
-        onNodeWithText("3 × 10 (10–15)").assertExists()
-        onNodeWithText("Two-hand swing").assertExists()
-        onNodeWithText("15 every minute for 8 minutes (15–20)").assertExists()
-        onNodeWithText("Thruster · Two bells").assertExists()
-        onNodeWithText("5 every minute for 7 minutes (5–6)").assertExists()
-        onNodeWithText("Follow this program").performScrollTo().performClick()
-        waitForText("Day 1 of 18 · week 1")
-        assertEquals(ProgramId.FifteenMinuteKettlebell.name, app.storage.following.row.value?.programId)
+        scrollToText("Show barbell programs")
+        onNodeWithText("Barbell 5×5").assertDoesNotExist()
+        onNodeWithText("Show barbell programs").performClick()
+        scrollToText("Barbell 5×5")
+        onNodeWithText("For plain strength under a bar").assertExists()
+        onNodeWithText("Show barbell programs").assertDoesNotExist()
+    }
+
+    @Test
+    fun `with a bar owned the barbell programs are shown`() = liftAppTest(
+        FakeLiftStorage().apply { bells.bar.value = BarEntity(kg = 20.0) },
+    ) {
+        onNodeWithText("Follow a program").performClick()
+        scrollToText("Olympic foundations")
+        onNodeWithText("Show barbell programs").assertDoesNotExist()
+    }
+
+    @Test
+    fun `following a barbell program with no bar keeps the other a tap away`() = liftAppTest(
+        FakeLiftStorage().apply {
+            following.row.value =
+                FollowingEntity(programId = ProgramId.BarbellFiveByFive.name, startedAtEpochMillis = 0)
+        },
+    ) {
+        scrollToText("All programs")
+        onNodeWithText("All programs").performClick()
+        scrollToText("Barbell 5×5")
+        onNodeWithText("Olympic foundations").assertDoesNotExist()
+        scrollToText("Show barbell programs")
+        onNodeWithText("Show barbell programs").performClick()
+        scrollToText("Olympic foundations")
     }
 }

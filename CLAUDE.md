@@ -632,7 +632,9 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   (`lift-domain`, `StarterProgram.kt`) picks among the built-ins one bell is enough for (`Program.oneBell`: no
   lift with two bells, none under a bar or against a band, none that needs a bar to hang from or a bench;
   `StarterProgramTest` pins the set, so a new built-in says which side it is on; never one of `retiredPrograms`,
-  the built-ins `programCatalogue` no longer offers but whoever follows one keeps, since a program is stored by its id), or with a pair of bells owned
+  the built-ins `programCatalogue` no longer offers but whoever follows one keeps, since a program is stored by its id;
+  `ProgramsTest` pins what it offers, a short list a family, each with its line of who it is for, `programFor` in
+  lift-ui, and the barbell's shown on the Programs page only with a bar owned, `programCatalogue(bar =)`, or on a tap), or with a pair of bells owned
   (`GearStore.pairs`, asked under the bells) those two are enough for (`Program.pairOfBells`), those whose longest
   day fits the session, a grappler's first for BJJ (`BjjKettlebell` with a pair, else `BjjOneBell`, once it fits), then a beginner's,
   then any; `buildWeek` (`BuiltWeek.kt`) puts the sport on its days and the program's on the free ones, spread

@@ -11,15 +11,17 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlinx.coroutines.cancel
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class ProgramsViewModelTest : MainDispatcherTest() {
     private val repository = FakeLiftStorage().repository()
     private val ladders = ProgramKey.BuiltIn(ProgramId.PressLadders)
 
     private inline fun programs(block: ProgramsViewModel.() -> Unit) =
-        ProgramsViewModel(repository.programs, repository.sets).run {
+        ProgramsViewModel(repository.programs, repository.sets, repository.gear).run {
             try {
                 block()
             } finally {
@@ -46,6 +48,13 @@ class ProgramsViewModelTest : MainDispatcherTest() {
         val since = repository.programs.following.value
         follow(ladders)
         assertEquals(since, repository.programs.following.value)
+    }
+
+    @Test
+    fun `a bar owned shows the barbell programs`() = programs {
+        assertFalse(state.value.bar)
+        repository.gear.setBar(20.0)
+        assertTrue(state.value.bar)
     }
 
     @Test

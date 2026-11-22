@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
+import dev.justinsmith.lift.data.BarEntity
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -50,5 +51,25 @@ class PickDayFlowTest {
         waitForText("Up next · 1 of 12 sets")
         val session = app.storage.sessions.sessions.value.single()
         assertEquals(ProgramId.FirstHundredSwings.name to 1, session.programId to session.programDay)
+    }
+
+    @Test
+    fun `with no bar the barbell programs are no day to take`() = liftAppTest {
+        onNodeWithText("Start session").performClick()
+        waitForText("Next set")
+        onNodeWithText("Do a program day").performScrollTo().performClick()
+        waitForText("Built-in")
+        onNodeWithText("Barbell 5×5").assertDoesNotExist()
+    }
+
+    @Test
+    fun `with a bar the barbell programs are a day to take`() = liftAppTest(
+        FakeLiftStorage().apply { bells.bar.value = BarEntity(kg = 20.0) },
+    ) {
+        onNodeWithText("Start session").performClick()
+        waitForText("Next set")
+        onNodeWithText("Do a program day").performScrollTo().performClick()
+        waitForText("Built-in")
+        onNodeWithText("Barbell 5×5").performScrollTo().assertExists()
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -59,6 +60,7 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
 import dev.justinsmith.lift.domain.estimatedMinutes
+import dev.justinsmith.lift.domain.family
 import dev.justinsmith.lift.domain.programCatalogue
 import dev.justinsmith.lift.domain.shippedPrograms
 import dev.justinsmith.lift.domain.weekBalance
@@ -79,6 +81,8 @@ import dev.justinsmith.lift.session.resources.program_switch
 import dev.justinsmith.lift.session.resources.program_switch_text
 import dev.justinsmith.lift.session.resources.program_switch_title
 import dev.justinsmith.lift.session.resources.programs_barbell
+import dev.justinsmith.lift.session.resources.programs_barbell_hint
+import dev.justinsmith.lift.session.resources.programs_barbell_show
 import dev.justinsmith.lift.session.resources.programs_beginner
 import dev.justinsmith.lift.session.resources.programs_classics
 import dev.justinsmith.lift.session.resources.programs_dan_john
@@ -95,6 +99,7 @@ import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programAbout
 import dev.justinsmith.lift.ui.programFacts
+import dev.justinsmith.lift.ui.programFor
 import dev.justinsmith.lift.ui.programName
 import dev.justinsmith.lift.ui.programSummary
 import org.jetbrains.compose.resources.stringResource
@@ -129,6 +134,7 @@ fun ProgramsRoute(
         custom = state.custom,
         followingDay = state.followingDay,
         restSeconds = state.restSeconds,
+        bar = state.bar,
         actions = ProgramsActions(
             onFollow = {
                 viewModel.follow(it)
@@ -153,7 +159,8 @@ fun ProgramsRoute(
  * program's sheet, its days laid out, from which it is followed from its first day. Following one in place
  * of a program part done asks first: [followingDay] is the followed program's next day, null for none or
  * once it is over. Each program and each of its days says about how long it takes, resting [restSeconds]
- * between sets. It opens on the sheet of the program stored as [open], when one is.
+ * between sets. It opens on the sheet of the program stored as [open], when one is. With no [bar] owned the barbell
+ * programs stand folded behind a row that shows them, unless one of them is followed.
  */
 @Composable
 fun ProgramsScreen(
@@ -164,8 +171,10 @@ fun ProgramsScreen(
     followingDay: ProgramDay? = null,
     restSeconds: Int = RestClock.DEFAULT_SECONDS,
     open: String? = null,
+    bar: Boolean = true,
 ) {
-    val families = programCatalogue(following).groupBy { (it.key as? ProgramKey.BuiltIn)?.id?.family }
+    var showBarbell by rememberSaveable { mutableStateOf(false) }
+    val families = programCatalogue(following, bar = bar || showBarbell).groupBy { it.family }
     // Saved by their stored keys: a program is not saveable.
     var previewing by rememberSaveable { mutableStateOf(open) }
     var switching by rememberSaveable { mutableStateOf<String?>(null) }
@@ -175,11 +184,9 @@ fun ProgramsScreen(
     val gutter = Modifier.padding(horizontal = Spacing.space16)
     // One column on a phone; wider windows lay the families out side by side.
     TabGrid(stringResource(Res.string.programs_title), modifier, navigation = { BackAction(actions.onBack) }) {
-        ProgramFamily.entries.forEach { family ->
-            item(key = family.name) {
-                val programs = families[family].orEmpty()
-                ProgramGroup(familyName(family), programs, following, restSeconds, onOpen, actions, gutter)
-            }
+        val folded = !bar && !showBarbell
+        familyItems(families, folded, onShowBarbell = { showBarbell = true }) { family, programs ->
+            ProgramGroup(familyName(family), programs, following, restSeconds, onOpen, actions, gutter)
         }
         item(key = "yours") { YoursGroup(custom, following, restSeconds, onOpen, actions, gutter) }
         val followed = programOf(following?.stored)
@@ -289,6 +296,7 @@ private fun ProgramSheet(
             first = {
                 Column(verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
                     Text(name, style = IntervalTheme.type.value, color = palette.text)
+                    programFor(program)?.let { Text(it, style = IntervalTheme.type.label, color = palette.text) }
                     Text(programSummary(program), style = IntervalTheme.type.body, color = palette.textDim)
                 }
                 if (sideways) FollowFooter(current, replacing, onFollow, onOpenProgress, onCopy)
@@ -434,6 +442,48 @@ private fun ProgramGroup(
     }
 }
 
+/**
+ * A card a family of the built-ins on offer, drawn by [group], in [ProgramFamily]'s order; one with none drawn not
+ * at all. The barbell's, while [folded] for someone with no bar, is a row that [onShowBarbell]s it, under the one of
+ * them followed when there is one.
+ */
+private fun LazyStaggeredGridScope.familyItems(
+    families: Map<ProgramFamily?, List<Program>>,
+    folded: Boolean,
+    onShowBarbell: () -> Unit,
+    group: @Composable (ProgramFamily, List<Program>) -> Unit,
+) {
+    val gutter = Modifier.padding(horizontal = Spacing.space16)
+    ProgramFamily.entries.forEach { family ->
+        val programs = families[family].orEmpty()
+        val unfold = folded && family == ProgramFamily.Barbell
+        if (programs.isNotEmpty() || unfold) {
+            item(key = family.name) {
+                Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                    if (programs.isNotEmpty()) group(family, programs)
+                    // Under the one followed, the row alone: the heading is over it already.
+                    if (unfold) FoldedGroup(familyName(family).takeIf { programs.isEmpty() }, onShowBarbell, gutter)
+                }
+            }
+        }
+    }
+}
+
+/** A family left folded, as the barbell's is for someone with no bar: a row that shows its programs. */
+@Composable
+private fun FoldedGroup(title: String?, onShow: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        title?.let { GroupLabel(it) }
+        ListCard {
+            LinkRow(
+                stringResource(Res.string.programs_barbell_show),
+                stringResource(Res.string.programs_barbell_hint),
+                onClick = onShow,
+            )
+        }
+    }
+}
+
 /** The programs the user made, then a way to make one. */
 @Composable
 private fun YoursGroup(
@@ -493,14 +543,13 @@ private fun ProgramRow(
     ) {
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
-            // What it is chosen by first, in the text's ink; then what it asks for, cut to two lines.
+            // What it is chosen by first, in the text's ink: who it is for, else how often and how long; then the
+            // rest, a built-in's facts or what one made asks for, cut to two lines.
+            val facts = programFacts(program, remember(program, restSeconds) { program.dayMinutes(restSeconds) })
+            val forWhom = programFor(program)
+            Text(forWhom ?: facts, style = IntervalTheme.type.meta, color = palette.text)
             Text(
-                programFacts(program, remember(program, restSeconds) { program.dayMinutes(restSeconds) }),
-                style = IntervalTheme.type.meta,
-                color = palette.text,
-            )
-            Text(
-                programAbout(program),
+                if (forWhom != null) facts else programAbout(program),
                 style = IntervalTheme.type.meta,
                 color = palette.textDim,
                 maxLines = 2,
