@@ -11,6 +11,7 @@ import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.heartLoad
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.IntervalWorkout
@@ -71,6 +72,10 @@ class RepositoryIntervalActivity(
     override val bodyWeightKg: StateFlow<Double?> = settingsStore.appSettings
         .map { it.body.weightKg }
         .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.weightKg)
+
+    override val weightUnit: StateFlow<WeightUnit> = settingsStore.appSettings
+        .map { it.body.unit }
+        .stateIn(scope, SharingStarted.Eagerly, settingsStore.appSettings.value.body.unit)
 
     override val voice: StateFlow<Boolean> = settingsStore.cueSettings
         .map { it.voice }

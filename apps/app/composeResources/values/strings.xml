@@ -107,9 +107,12 @@
     <string name="setup_sport_name_placeholder">Judo, yoga, five-a-side</string>
     <string name="setup_days">On which days?</string>
     <string name="setup_bells">Which bells do you own, in kg?</string>
-    <string name="setup_bell_cd">%1$s kg</string>
+    <string name="setup_bells_lb">Which bells do you own, in lb?</string>
+    <string name="setup_bell_cd">%1$s</string>
     <string name="setup_pairs">Which do you have two of?</string>
-    <string name="setup_pair_cd">Two of %1$s kg</string>
+    <string name="setup_pair_cd">Two of %1$s</string>
+    <string name="setup_unit_kg">kg</string>
+    <string name="setup_unit_lb">lb</string>
     <string name="setup_minutes">How long is a session?</string>
     <string name="setup_minutes_value">%1$d min</string>
     <string name="setup_week">Your week</string>

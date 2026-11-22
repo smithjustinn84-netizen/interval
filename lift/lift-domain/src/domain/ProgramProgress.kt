@@ -1,5 +1,7 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
+
 /**
  * The day of its program each session of it was, from [days], the day each finished session was logged as,
  * oldest first: as logged, or for one logged before sessions kept their day (null) the day after the one
@@ -43,6 +45,12 @@ data class ProgramProgress(
     val daysLeft: Int get() = (program.totalDays - lastDay).coerceAtLeast(0)
 
     val finished: Boolean get() = next == null
+
+    /** The total weight moved across this run's sessions in [unit]. */
+    fun tonnage(unit: WeightUnit): Double = when (unit) {
+        WeightUnit.Kg -> tonnageKg
+        WeightUnit.Lb -> done.sumOf { it.session?.tonnage(WeightUnit.Lb) ?: 0.0 }
+    }
 
     /** How day [number] stands, for the map. */
     fun standing(number: Int): DayStanding {

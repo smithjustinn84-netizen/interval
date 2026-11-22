@@ -14,11 +14,9 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.PersonalRecord
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.common_joined
-import dev.justinsmith.lift.ui.resources.kg_value
-import dev.justinsmith.lift.ui.resources.record_added_kg
+import dev.justinsmith.lift.ui.resources.record_added_weight
 import dev.justinsmith.lift.ui.resources.record_heaviest
 import dev.justinsmith.lift.ui.resources.record_heaviest_held
 import dev.justinsmith.lift.ui.resources.record_longest
@@ -81,33 +79,28 @@ fun recordLine(record: PersonalRecord): String = when (record) {
 @Composable
 private fun heldLine(record: PersonalRecord.Held): String {
     if (record.heaviestKg == 0.0) return stringResource(Res.string.record_longest, formatClock(record.longestSeconds))
-    val added = record.exercise.equipment == Equipment.Bodyweight
+    val equipment = record.exercise.equipment
+    val added = equipment == Equipment.Bodyweight
     val atHeaviest = formatClock(record.secondsAtHeaviest)
+    val heaviestWeight = weightValue(record.heaviestKg, equipment)
     val heaviest = if (added) {
-        stringResource(Res.string.record_most_added_held, formatKg(record.heaviestKg), atHeaviest)
+        stringResource(Res.string.record_most_added_held, heaviestWeight, atHeaviest)
     } else {
-        stringResource(
-            Res.string.record_heaviest_held,
-            stringResource(Res.string.kg_value, formatKg(record.heaviestKg)),
-            atHeaviest,
-        )
+        stringResource(Res.string.record_heaviest_held, heaviestWeight, atHeaviest)
     }
     if (record.longestSeconds <= record.secondsAtHeaviest) return heaviest
     val longestTime = formatClock(record.longestSeconds)
+    val longestWeight = weightValue(record.longestKg, equipment)
     val longest = when {
         record.longestKg == 0.0 -> stringResource(Res.string.record_longest_none_added, longestTime)
 
         added -> stringResource(
             Res.string.record_longest_at,
             longestTime,
-            stringResource(Res.string.record_added_kg, formatKg(record.longestKg)),
+            stringResource(Res.string.record_added_weight, longestWeight),
         )
 
-        else -> stringResource(
-            Res.string.record_longest_at,
-            longestTime,
-            stringResource(Res.string.kg_value, formatKg(record.longestKg)),
-        )
+        else -> stringResource(Res.string.record_longest_at, longestTime, longestWeight)
     }
     return stringResource(Res.string.common_joined, heaviest, longest)
 }
@@ -115,31 +108,26 @@ private fun heldLine(record: PersonalRecord.Held): String {
 @Composable
 private fun weightedLine(record: PersonalRecord.Weighted): String {
     if (record.heaviestKg == 0.0) return stringResource(Res.string.record_most_reps, record.mostReps)
-    val added = record.exercise.equipment == Equipment.Bodyweight
+    val equipment = record.exercise.equipment
+    val added = equipment == Equipment.Bodyweight
+    val heaviestWeight = weightValue(record.heaviestKg, equipment)
     val heaviest = if (added) {
-        stringResource(Res.string.record_most_added, formatKg(record.heaviestKg), record.repsAtHeaviest)
+        stringResource(Res.string.record_most_added, heaviestWeight, record.repsAtHeaviest)
     } else {
-        stringResource(
-            Res.string.record_heaviest,
-            stringResource(Res.string.kg_value, formatKg(record.heaviestKg)),
-            record.repsAtHeaviest,
-        )
+        stringResource(Res.string.record_heaviest, heaviestWeight, record.repsAtHeaviest)
     }
     if (record.mostReps <= record.repsAtHeaviest) return heaviest
+    val mostWeight = weightValue(record.mostRepsKg, equipment)
     val most = when {
         record.mostRepsKg == 0.0 -> stringResource(Res.string.record_most_reps_none_added, record.mostReps)
 
         added -> stringResource(
             Res.string.record_most_reps_at,
             record.mostReps,
-            stringResource(Res.string.record_added_kg, formatKg(record.mostRepsKg)),
+            stringResource(Res.string.record_added_weight, mostWeight),
         )
 
-        else -> stringResource(
-            Res.string.record_most_reps_at,
-            record.mostReps,
-            stringResource(Res.string.kg_value, formatKg(record.mostRepsKg)),
-        )
+        else -> stringResource(Res.string.record_most_reps_at, record.mostReps, mostWeight)
     }
     return stringResource(Res.string.common_joined, heaviest, most)
 }

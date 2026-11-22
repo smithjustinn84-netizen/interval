@@ -69,7 +69,7 @@
     <string name="summary_snatch_test">Snatch test: %1$d in 5 minutes, your best</string>
     <string name="summary_abc_best">Armor Building Complex: %1$d in 20 minutes, your best</string>
     <string name="summary_milestone">%1$d in all: %2$s</string>
-    <string name="summary_pace">New best pace, %1$s: %2$s a minute at %3$s kg</string>
+    <string name="summary_pace">New best pace, %1$s: %2$s a minute at %3$s</string>
     <string name="summary_heavy_grip">A heavy day on the grip: half again your usual. Go lighter on swings and snatches next time</string>
     <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>

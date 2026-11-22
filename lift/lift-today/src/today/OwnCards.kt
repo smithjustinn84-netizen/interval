@@ -5,12 +5,11 @@ import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ProgramKey
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.bells_title
 import dev.justinsmith.lift.today.resources.common_joined
-import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.today.resources.library_entry_text
 import dev.justinsmith.lift.today.resources.library_title
 import dev.justinsmith.lift.today.resources.today_equipment_hint
@@ -19,6 +18,7 @@ import dev.justinsmith.lift.today.resources.today_free_session
 import dev.justinsmith.lift.today.resources.today_free_session_hint
 import dev.justinsmith.lift.today.resources.today_tests
 import dev.justinsmith.lift.today.resources.today_tests_hint
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.stringResource
 
 // Strength's groups of what there is apart from the program: on one's own, and what is looked up or set.
@@ -62,7 +62,7 @@ internal fun KitCard(
             onOpenExercises,
         )
         RowDivider()
-        val bells = state.ownedBells.map { stringResource(Res.string.kg_value, formatKg(it)) }
+        val bells = state.ownedBells.map { weightValue(it, Equipment.Kettlebell) }
         LinkRow(
             stringResource(Res.string.bells_title),
             if (bells.isEmpty()) {

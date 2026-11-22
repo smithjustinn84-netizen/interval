@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SetStore
@@ -73,12 +74,12 @@ class TodayPlanEditor(
      * suggested from the sets [before] the session (oldest first), the [draft]'s standing in where the lift has
      * neither a planned load nor a past. The rest of its block takes it, for today.
      */
-    fun stepNextLoad(step: Int, before: List<SetLog>, draft: SetDraft) {
+    fun stepNextLoad(step: Int, before: List<SetLog>, draft: SetDraft, unit: WeightUnit = WeightUnit.Kg) {
         setStore.changeSessionPlan { session ->
             val (plan, _) = today(session) ?: return@changeSessionPlan null
             val next = next(session, before, draft) ?: return@changeSessionPlan null
             val bells = gearStore.bells.value.ifEmpty { standardBells }
-            next.load.stepped(step, bells, gearStore.bar.value, offeredBands(gearStore.bands.value))
+            next.load.stepped(step, bells, gearStore.bar.value, offeredBands(gearStore.bands.value), unit)
                 ?.let { load -> plan.change(next.block) { it.withLoad(load) } }
         }
     }

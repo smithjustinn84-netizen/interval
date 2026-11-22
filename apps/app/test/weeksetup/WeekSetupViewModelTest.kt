@@ -8,6 +8,7 @@ import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.lift.domain.ProgramId
@@ -248,5 +249,15 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
     fun `a length that isn't offered is not taken`() {
         viewModel.setMinutes(25)
         assertEquals(DEFAULT_SESSION_MINUTES, viewModel.state.value.minutes)
+    }
+
+    @Test
+    fun `switching to pounds survives recreation and persists on build`() {
+        viewModel.setUnit(WeightUnit.Lb)
+        viewModel.toggleBell(16.0)
+        assertEquals(WeightUnit.Lb, viewModel().state.value.unit)
+        assertTrue(viewModel().build())
+        assertEquals(WeightUnit.Lb, repository.settings.appSettings.value.body.unit)
+        assertEquals(listOf(16.0), lift.gear.bells.value)
     }
 }

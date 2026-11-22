@@ -20,10 +20,10 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.lift.domain.AbcProtocol
 import dev.justinsmith.lift.domain.Challenge
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.SNATCH_TEST_REPS
 import dev.justinsmith.lift.domain.TEN_THOUSAND
 import dev.justinsmith.lift.domain.TestId
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.test
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.today_challenge_abc
@@ -40,6 +40,7 @@ import dev.justinsmith.lift.today.resources.today_challenge_swings
 import dev.justinsmith.lift.today.resources.today_challenge_swings_count
 import dev.justinsmith.lift.today.resources.today_challenge_swings_program
 import dev.justinsmith.lift.today.resources.today_challenge_test_cd
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
@@ -100,7 +101,7 @@ internal fun ChallengesCard(
                     Res.string.today_challenge_get_up,
                     stringResource(
                         Res.string.today_challenge_get_up_best,
-                        formatKg(challenge.kg),
+                        weightValue(challenge.kg, Equipment.Kettlebell),
                         (challenge.share * PERCENT).roundToInt(),
                     ),
                     share = challenge.share.toFloat(),

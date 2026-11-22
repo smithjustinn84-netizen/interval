@@ -96,10 +96,10 @@ Compose:
   CompositionLocalAllowlist:
     active: true
     # The theme's own locals, read through IntervalTheme like MaterialTheme's; LocalFileOpener, a test's
-    # stand-in for the system's file picker, null in the app; and LocalRestingHeartRate, a setting every
-    # heart-rate zone drawn goes by, as each goes by the theme; and LocalSensorPulse, the paired sensor every
-    # tab's gear draws beside it, which no tab could be handed without each side knowing of a sensor.
-    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType', 'LocalNotices', 'LocalIdle', 'LocalFileOpener', 'LocalRestingHeartRate', 'LocalSensorPulse']
+    # stand-in for the system's file picker, null in the app; LocalRestingHeartRate and LocalWeightUnit, settings
+    # every heart-rate zone and weight drawn goes by, as each goes by the theme; and LocalSensorPulse, the paired
+    # sensor every tab's gear draws beside it, which no tab could be handed without each side knowing of a sensor.
+    allowedCompositionLocals: ['LocalIntervalPalette', 'LocalWorkoutColors', 'LocalIntervalType', 'LocalNotices', 'LocalIdle', 'LocalFileOpener', 'LocalRestingHeartRate', 'LocalWeightUnit', 'LocalSensorPulse']
   CompositionLocalNaming:
     active: true
   ConditionHoist:

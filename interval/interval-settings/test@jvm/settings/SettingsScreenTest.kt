@@ -400,6 +400,14 @@ class SettingsScreenTest {
     }
 
     @Test
+    fun `the weight unit picker switches between kilograms and pounds`() = runUiTest {
+        setThemedContent { Screen() }
+        onNodeWithText("Kilograms").performScrollTo().assertIsSelected()
+        onNodeWithText("Pounds").performClick()
+        assertEquals(listOf<Any>(WeightUnit.Lb), calls)
+    }
+
+    @Test
     fun `the effort picker shows and changes the effort`() = runUiTest {
         setThemedContent { Screen() }
         onNodeWithText("Hard").performScrollTo().assertIsSelected()

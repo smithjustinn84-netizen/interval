@@ -11,10 +11,10 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Trend
 import dev.justinsmith.lift.domain.TrendMeasure
 import dev.justinsmith.lift.domain.TrendPoint
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.detail_trend
 import dev.justinsmith.lift.library.resources.detail_trend_bell
@@ -28,6 +28,7 @@ import dev.justinsmith.lift.library.resources.detail_trend_work
 import dev.justinsmith.lift.library.resources.detail_trend_work_best
 import dev.justinsmith.lift.ui.Sparkline
 import dev.justinsmith.lift.ui.SparklineLabel
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -39,9 +40,9 @@ import org.jetbrains.compose.resources.stringResource
  * exercise's page.
  */
 @Composable
-internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
+internal fun TrendCard(trend: Trend, equipment: Equipment, modifier: Modifier = Modifier) {
     val palette = IntervalTheme.palette
-    val values = trend.points.map { trendValue(trend.measure, it) }
+    val values = trend.points.map { trendValue(trend.measure, it, equipment) }
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         GroupLabel(stringResource(Res.string.detail_trend))
         Row(Modifier.fillMaxWidth()) {
@@ -62,7 +63,7 @@ internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
             description = stringResource(Res.string.detail_trend_cd, values.joinToString()),
             marks = trend.bellChanges,
             labels = trend.latestAtBells.zip(trend.bestAtBells).map { (latest, best) ->
-                bellLabel(latest, trend.points[best].takeIf { it != latest })
+                bellLabel(latest, trend.points[best].takeIf { it != latest }, equipment)
             },
             rings = trend.bestAtBells.filter { trend.points[it] !in trend.latestAtBells },
         )
@@ -82,23 +83,23 @@ internal fun TrendCard(trend: Trend, modifier: Modifier = Modifier) {
  * best 12"), the latest alone, then the bell.
  */
 @Composable
-private fun bellLabel(latest: TrendPoint, best: TrendPoint?): SparklineLabel {
-    val kg = formatKg(latest.kg)
-    val work = stringResource(Res.string.detail_trend_work, kg, latest.reps)
-    val bell = stringResource(Res.string.detail_trend_bell, kg)
+private fun bellLabel(latest: TrendPoint, best: TrendPoint?, equipment: Equipment): SparklineLabel {
+    val weight = weightValue(latest.kg, equipment)
+    val work = stringResource(Res.string.detail_trend_work, weight, latest.reps)
+    val bell = stringResource(Res.string.detail_trend_bell, weight)
     return SparklineLabel(
         listOfNotNull(
-            best?.let { stringResource(Res.string.detail_trend_work_best, kg, latest.reps, it.reps) },
+            best?.let { stringResource(Res.string.detail_trend_work_best, weight, latest.reps, it.reps) },
             work,
             bell,
         ),
     )
 }
 
-/** A trend's point in its own words: "24 kg × 12", "12 reps", "0:45". */
+/** A trend's point in its own words: "24 kg × 12" / "53 lb × 12", "12 reps", "0:45". */
 @Composable
-private fun trendValue(measure: TrendMeasure, point: TrendPoint): String = when (measure) {
-    TrendMeasure.Work -> stringResource(Res.string.detail_trend_work, formatKg(point.kg), point.reps)
+private fun trendValue(measure: TrendMeasure, point: TrendPoint, equipment: Equipment): String = when (measure) {
+    TrendMeasure.Work -> stringResource(Res.string.detail_trend_work, weightValue(point.kg, equipment), point.reps)
     TrendMeasure.Reps -> pluralStringResource(Res.plurals.detail_trend_reps, point.value.toInt(), point.value.toInt())
     TrendMeasure.Seconds -> formatClock(point.value.toInt())
 }

@@ -12,7 +12,6 @@ import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.ui.resources.Res
-import dev.justinsmith.interval.ui.resources.snatch_bell
 import dev.justinsmith.interval.ui.resources.snatch_fewer_cd
 import dev.justinsmith.interval.ui.resources.snatch_more_cd
 import dev.justinsmith.interval.ui.resources.snatch_not_counted
@@ -20,8 +19,9 @@ import dev.justinsmith.interval.ui.resources.snatch_per_set
 import dev.justinsmith.interval.ui.resources.snatch_question
 import dev.justinsmith.interval.ui.resources.snatch_step_hint
 import dev.justinsmith.interval.ui.resources.snatch_uncounted_hint
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.standardBells
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.abs
 
@@ -90,7 +90,7 @@ fun SnatchQuestion(ask: SnatchAsk, onCount: (SnatchCount?) -> Unit, modifier: Mo
         SegmentedPicker(
             ask.bells,
             ask.count?.bellKg,
-            label = { stringResource(Res.string.snatch_bell, formatKg(it)) },
+            label = { weightValue(it, Equipment.Kettlebell) },
             onSelect = { onCount(shown.copy(bellKg = it)) },
         )
         if (ask.count == null) {

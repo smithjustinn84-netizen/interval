@@ -98,6 +98,8 @@ import dev.justinsmith.interval.settings.resources.settings_voice_hint
 import dev.justinsmith.interval.settings.resources.settings_weight
 import dev.justinsmith.interval.settings.resources.settings_weight_edit
 import dev.justinsmith.interval.settings.resources.settings_weight_hint
+import dev.justinsmith.interval.settings.resources.settings_weight_unit
+import dev.justinsmith.interval.settings.resources.settings_weight_unit_hint
 import dev.justinsmith.interval.settings.resources.settings_weight_unset
 import dev.justinsmith.interval.settings.resources.settings_weight_value
 import dev.justinsmith.interval.settings.resources.settings_workout
@@ -106,6 +108,7 @@ import dev.justinsmith.interval.settings.resources.theme_light
 import dev.justinsmith.interval.settings.resources.theme_system
 import dev.justinsmith.interval.timer.ConfigField
 import dev.justinsmith.interval.timer.Effort
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.FieldRow
 import dev.justinsmith.interval.ui.GroupLabel
@@ -169,6 +172,7 @@ internal fun settingsGroups(
     onEditPrep: () -> Unit,
     onToggleKeepScreenOn: () -> Unit,
     onEditWeight: () -> Unit,
+    onSetWeightUnit: (WeightUnit) -> Unit,
     onEditMaxHeartRate: () -> Unit,
     onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
@@ -203,7 +207,7 @@ internal fun settingsGroups(
     },
     SettingsGroup("calories") {
         GroupLabel(stringResource(Res.string.settings_calories))
-        CaloriesCard(state, onEditWeight, onEditMaxHeartRate, onEditRestingHeartRate, onSetEffort)
+        CaloriesCard(state, onEditWeight, onSetWeightUnit, onEditMaxHeartRate, onEditRestingHeartRate, onSetEffort)
     },
     // After the calories its weight feeds, and only where the platform has a store.
     SettingsGroup("health") {
@@ -531,6 +535,7 @@ private fun <T> ChoiceRow(
 private fun CaloriesCard(
     state: SettingsUiState,
     onEditWeight: () -> Unit,
+    onSetWeightUnit: (WeightUnit) -> Unit,
     onEditMaxHeartRate: () -> Unit,
     onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
@@ -551,6 +556,15 @@ private fun CaloriesCard(
             onClick = onEditWeight,
             onClickLabel = stringResource(Res.string.settings_weight_edit),
             dim = weight == null,
+        )
+        RowDivider()
+        ChoiceRow(
+            stringResource(Res.string.settings_weight_unit),
+            stringResource(Res.string.settings_weight_unit_hint),
+            WeightUnit.entries,
+            state.body.unit,
+            label = { stringResource(it.fullLabelRes) },
+            onSelect = onSetWeightUnit,
         )
         RowDivider()
         val maxHr = state.body.maxHeartRate

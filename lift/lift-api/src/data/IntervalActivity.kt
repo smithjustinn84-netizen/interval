@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.data
 
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.lift.domain.HeartLoad
 import dev.justinsmith.lift.domain.IntervalSetGroup
 import dev.justinsmith.lift.domain.IntervalSnatches
@@ -72,6 +73,9 @@ interface IntervalActivity {
     val matOrWall: StateFlow<Boolean>
     val weeklyGoal: StateFlow<Int?>
     val bodyWeightKg: StateFlow<Double?>
+
+    /** The weight unit set in Settings (kg or lb): governs barbell plate steps and progression. */
+    val weightUnit: StateFlow<WeightUnit>
     val voice: StateFlow<Boolean>
     val maxHeartRate: StateFlow<Int?>
 

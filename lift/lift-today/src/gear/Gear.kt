@@ -37,11 +37,11 @@ import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.MAX_BAND_NAME
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.bars
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.personalRecords
 import dev.justinsmith.lift.domain.standardBells
@@ -70,13 +70,13 @@ import dev.justinsmith.lift.today.resources.bells_owned_hint
 import dev.justinsmith.lift.today.resources.bells_records
 import dev.justinsmith.lift.today.resources.bells_records_empty
 import dev.justinsmith.lift.today.resources.bells_title
-import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.ui.Choice
 import dev.justinsmith.lift.ui.ChoiceRow
 import dev.justinsmith.lift.ui.KettlebellRack
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.bandColourName
 import dev.justinsmith.lift.ui.bandName
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import dev.justinsmith.core.resources.Res as CoreRes
@@ -187,7 +187,7 @@ private fun BellsSection(owned: Set<Double>, onToggle: (Double) -> Unit, modifie
                     ) {
                         row.forEach { kg ->
                             Choice(
-                                stringResource(Res.string.kg_value, formatKg(kg)),
+                                weightValue(kg, Equipment.Kettlebell),
                                 kg in owned,
                                 onClick = { onToggle(kg) },
                                 modifier = Modifier.weight(1f),
@@ -221,7 +221,7 @@ private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifie
             ) {
                 (listOf(null) + bars).forEach { kg ->
                     Choice(
-                        kg?.let { stringResource(Res.string.kg_value, formatKg(it)) } ?: none,
+                        kg?.let { weightValue(it, Equipment.Barbell) } ?: none,
                         kg == bar,
                         onClick = { onBar(kg) },
                         modifier = Modifier.weight(1f),

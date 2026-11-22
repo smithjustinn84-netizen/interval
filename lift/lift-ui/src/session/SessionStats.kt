@@ -17,6 +17,7 @@ import dev.justinsmith.interval.ui.HeartReading
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalRestingHeartRate
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ZoneBreakdown
@@ -24,16 +25,16 @@ import dev.justinsmith.interval.ui.countUp
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.tonnage
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.resources.Res
-import dev.justinsmith.lift.ui.resources.kg_value
 import dev.justinsmith.lift.ui.resources.session_heart_average_peak
 import dev.justinsmith.lift.ui.resources.session_moved
 import dev.justinsmith.lift.ui.resources.session_time
 import dev.justinsmith.lift.ui.resources.summary_records
 import dev.justinsmith.lift.ui.resources.summary_reps
+import dev.justinsmith.lift.ui.tonnageValue
 import org.jetbrains.compose.resources.stringResource
 import kotlin.math.roundToInt
 
@@ -63,15 +64,14 @@ fun SessionStats(
             },
             { StatTile(stringResource(Res.string.summary_reps), countUp(session.reps, countUp).toString(), it) },
         )
-        // The kilograms count up whole, and read to the half once they have landed.
-        val wholeKg = session.tonnageKg.roundToInt()
-        val countedKg = countUp(wholeKg, countUp)
+        // The weight counts up whole, and reads to the half once it has landed.
+        val unit = LocalWeightUnit.current
+        val tonnage = session.tonnage(unit)
+        val whole = tonnage.roundToInt()
+        val counted = countUp(whole, countUp)
         StatTile(
             stringResource(Res.string.session_moved),
-            stringResource(
-                Res.string.kg_value,
-                formatKg(if (countedKg == wholeKg) session.tonnageKg else countedKg.toDouble()),
-            ),
+            tonnageValue(if (counted == whole) tonnage else counted.toDouble(), unit),
             Modifier.fillMaxWidth(),
         )
         val average = session.averageBpm

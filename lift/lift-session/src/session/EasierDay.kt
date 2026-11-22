@@ -191,6 +191,7 @@ class EasierDay(
             },
             gear = Gear(gearStore.bells.value.ifEmpty { standardBells }, gearStore.pairs.value, bar),
             baseRest = setStore.restSeconds.value,
+            unit = intervals.weightUnit.value,
         )
     }
 }

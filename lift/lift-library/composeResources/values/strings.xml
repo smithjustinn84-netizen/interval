@@ -36,16 +36,16 @@
     <string name="detail_never">Not logged yet. Its sets will show here.</string>
     <string name="detail_best">Your best</string>
     <string name="detail_lifetime">%1$d reps in all</string>
-    <string name="detail_best_pace">Best pace: %1$s a minute at %2$s kg</string>
+    <string name="detail_best_pace">Best pace: %1$s a minute at %2$s</string>
     <string name="detail_trend">Best each session</string>
     <plurals name="detail_trend_span">
         <item quantity="one">Last session</item>
         <item quantity="other">Last %1$d sessions</item>
     </plurals>
     <string name="detail_trend_latest">Latest %1$s</string>
-    <string name="detail_trend_work">%1$s kg × %2$d</string>
-    <string name="detail_trend_work_best">%1$s kg × %2$d, best %3$d</string>
-    <string name="detail_trend_bell">%1$s kg</string>
+    <string name="detail_trend_work">%1$s × %2$d</string>
+    <string name="detail_trend_work_best">%1$s × %2$d, best %3$d</string>
+    <string name="detail_trend_bell">%1$s</string>
     <string name="detail_trend_from">From %1$s</string>
     <string name="detail_trend_from_bells">From %1$s. At each dash a new bell starts the line again</string>
     <plurals name="detail_trend_reps">

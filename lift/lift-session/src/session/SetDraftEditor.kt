@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.session
 
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.DEFAULT_BELL_KG
@@ -23,6 +24,7 @@ data class DraftContext(
     val history: List<SetLog>,
     val logged: List<SetLog>,
     val made: List<CustomExercise>,
+    val unit: WeightUnit = WeightUnit.Kg,
 )
 
 /**
@@ -79,8 +81,11 @@ class SetDraftEditor(private val context: () -> DraftContext) {
      * plates, the next weight added to bodyweight, or the next band. Nothing on the mat, or at either end.
      */
     fun stepLoad(step: Int) {
-        val (bells, bar, bands) = context()
-        update { d -> d.load.stepped(step, bells, bar, bands)?.let(d::keeping) ?: d }
+        val context = context()
+        update { d ->
+            d.load.stepped(step, context.bells, context.bar, context.bands, context.unit)?.let(d::keeping)
+                ?: d
+        }
     }
 
     /**

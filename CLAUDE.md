@@ -116,8 +116,9 @@ core/
                      `orOnError`/`orEmptyOnError`); packages `.platform`, `.storage`; exports `core-time`. The
                      data modules depend on this, not `core`, so a theme edit neither recompiles them nor reruns
                      their Room KSP (interval-data's test KSP still does, through `interval-testing`)
-  core-time          calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`), package `.timer`. No
-                     dependencies, so the domains compile without Compose
+  core-time          calendar/clock maths (`CalendarDays`, `formatClock`, `WeekStanding`) and `WeightUnit`
+                     (`WeightUnit.kt`: `Kg`/`Lb` shared across both domains), package `.timer`. No dependencies, so
+                     the domains compile without Compose
   core-testing       `MainDispatcherTest`, `FixedTimestampFormatter`, `FakeAppInfo`, `RecordingSharer`,
                      `RecordingHealthStore`, `fakeCorePlatformModule`, the tests' calendar. Over `core-platform`, no
                      Compose, so the pure layers' tests link none

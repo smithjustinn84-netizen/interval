@@ -201,6 +201,7 @@ fun SettingsScreen(
         onEditPrep = { editingPrep = true },
         onToggleKeepScreenOn,
         onEditWeight = { editingWeight = true },
+        onSetWeightUnit,
         onEditMaxHeartRate = { editingMaxHeartRate = true },
         onEditRestingHeartRate = { editingRestingHeartRate = true },
         onSetEffort,

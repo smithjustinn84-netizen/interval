@@ -27,6 +27,7 @@ import dev.justinsmith.interval.plan.sportName
 import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.setup_bell_cd
 import dev.justinsmith.interval.resources.setup_bells
+import dev.justinsmith.interval.resources.setup_bells_lb
 import dev.justinsmith.interval.resources.setup_days
 import dev.justinsmith.interval.resources.setup_goal
 import dev.justinsmith.interval.resources.setup_minutes
@@ -39,6 +40,8 @@ import dev.justinsmith.interval.resources.setup_sport_another
 import dev.justinsmith.interval.resources.setup_sport_name_label
 import dev.justinsmith.interval.resources.setup_sport_name_placeholder
 import dev.justinsmith.interval.resources.setup_sport_none
+import dev.justinsmith.interval.resources.setup_unit_kg
+import dev.justinsmith.interval.resources.setup_unit_lb
 import dev.justinsmith.interval.resources.setup_week
 import dev.justinsmith.interval.resources.setup_week_days
 import dev.justinsmith.interval.resources.setup_week_empty
@@ -48,6 +51,7 @@ import dev.justinsmith.interval.resources.setup_week_no_bell
 import dev.justinsmith.interval.resources.setup_week_no_day
 import dev.justinsmith.interval.resources.setup_week_no_room
 import dev.justinsmith.interval.resources.setup_week_pick_days
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -61,11 +65,13 @@ import dev.justinsmith.interval.ui.WeekdayForm
 import dev.justinsmith.interval.ui.WeekdayPicker
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.weekdayText
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.ui.Choice
 import dev.justinsmith.lift.ui.ChoiceRow
+import dev.justinsmith.lift.ui.bellNumber
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import dev.justinsmith.core.resources.Res as CoreRes
@@ -112,24 +118,41 @@ internal fun DaysQuestion(weekdays: Int, onChange: (Int) -> Unit) {
     }
 }
 
-/** The bells owned, each a size in kg to tick. */
+/** The bells owned, each a size in the chosen unit (kg or lb) to tick. */
 @Composable
-internal fun BellsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) {
-    GroupLabel(stringResource(Res.string.setup_bells), icon = CoreRes.drawable.ic_equip_kettlebell)
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-    ) {
-        state.bellChoices.forEach { kg ->
-            val size = formatKg(kg)
-            val described = stringResource(Res.string.setup_bell_cd, size)
-            Choice(
-                size,
-                kg in state.bells,
-                onClick = { onToggle(kg) },
-                modifier = Modifier.semantics { contentDescription = described },
-                role = Role.Checkbox,
-            )
+internal fun BellsQuestion(
+    state: WeekSetupUiState,
+    onToggle: (Double) -> Unit,
+    onUnit: (WeightUnit) -> Unit,
+) {
+    Column {
+        val heading = if (state.unit == WeightUnit.Lb) Res.string.setup_bells_lb else Res.string.setup_bells
+        GroupLabel(stringResource(heading), icon = CoreRes.drawable.ic_equip_kettlebell)
+        SegmentedPicker(
+            WeightUnit.entries,
+            state.unit,
+            label = { stringResource(if (it == WeightUnit.Lb) Res.string.setup_unit_lb else Res.string.setup_unit_kg) },
+            onSelect = onUnit,
+            modifier = Modifier.padding(bottom = Spacing.space12),
+        )
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            state.bellChoices.forEach { kg ->
+                val size = bellNumber(kg, state.unit)
+                val described = stringResource(
+                    Res.string.setup_bell_cd,
+                    weightValue(kg, Equipment.Kettlebell, state.unit),
+                )
+                Choice(
+                    size,
+                    kg in state.bells,
+                    onClick = { onToggle(kg) },
+                    modifier = Modifier.semantics { contentDescription = described },
+                    role = Role.Checkbox,
+                )
+            }
         }
     }
 }
@@ -144,8 +167,11 @@ internal fun PairsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) 
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             state.bellChoices.filter { it in state.bells }.forEach { kg ->
-                val size = formatKg(kg)
-                val described = stringResource(Res.string.setup_pair_cd, size)
+                val size = bellNumber(kg, state.unit)
+                val described = stringResource(
+                    Res.string.setup_pair_cd,
+                    weightValue(kg, Equipment.Kettlebell, state.unit),
+                )
                 Choice(
                     size,
                     kg in state.pairs,

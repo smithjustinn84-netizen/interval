@@ -57,7 +57,6 @@ import dev.justinsmith.lift.domain.MuscleMap
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SaveScope
 import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.resources.Res
@@ -80,6 +79,7 @@ import dev.justinsmith.lift.session.resources.today_goal_met
 import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -318,7 +318,7 @@ private fun GripNotes(finished: Finished) {
             Res.string.summary_pace,
             liftName(pace.exercise, pace.double),
             formatPace(pace.perMinute),
-            formatKg(pace.kg),
+            weightValue(pace.kg, pace.exercise.equipment),
         )
     }
     val lines = paces + listOfNotNull(

@@ -38,6 +38,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LapBar
 import dev.justinsmith.interval.ui.LinkRow
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.SecondaryButton
@@ -59,12 +60,10 @@ import dev.justinsmith.lift.domain.ReadinessReason
 import dev.justinsmith.lift.domain.TestId
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.dayMinutes
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.tonnage
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.common_cancel
 import dev.justinsmith.lift.today.resources.common_joined
-import dev.justinsmith.lift.today.resources.kg_pair
-import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.today.resources.program_finished
 import dev.justinsmith.lift.today.resources.program_follow_cta
 import dev.justinsmith.lift.today.resources.program_follow_hint
@@ -103,8 +102,11 @@ import dev.justinsmith.lift.today.resources.today_weeks
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.liftName
+import dev.justinsmith.lift.ui.pairWeightValue
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.tonnageValue
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -316,9 +318,10 @@ private fun LastCard(state: TodayUiState, onOpenSession: (uid: String) -> Unit, 
                         color = palette.textDim,
                     )
                     Text(last.title, style = IntervalTheme.type.stat, color = palette.text)
+                    val unit = LocalWeightUnit.current
                     val detail = listOf(
                         pluralStringResource(Res.plurals.sets_count, last.sets.size, last.sets.size),
-                        stringResource(Res.string.kg_value, formatKg(last.tonnageKg)),
+                        tonnageValue(last.tonnage(unit), unit),
                         formatClock(last.elapsedSeconds(0)),
                         state.lastWhen,
                     ).reduce { joined, part -> stringResource(Res.string.common_joined, joined, part) }
@@ -456,11 +459,13 @@ private fun BlockRow(block: Block, state: TodayUiState, modifier: Modifier = Mod
         }
         // Only a bell or a bar has a weight to suggest ahead of the session.
         if (block.exercise.hasSuggestedLoad) {
+            val suggested = state.suggestedKg(block)
             Text(
-                stringResource(
-                    if (block.double) Res.string.kg_pair else Res.string.kg_value,
-                    formatKg(state.suggestedKg(block)),
-                ),
+                if (block.double) {
+                    pairWeightValue(suggested)
+                } else {
+                    weightValue(suggested, block.exercise.equipment)
+                },
                 style = IntervalTheme.type.value,
                 color = palette.text,
             )

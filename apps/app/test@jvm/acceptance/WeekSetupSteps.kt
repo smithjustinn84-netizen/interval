@@ -46,6 +46,15 @@ fun IntervalAcceptanceDriver.ownBells(vararg kg: Int, twoOf: List<Int> = emptyLi
     twoOf.forEach { tap(hasContentDescription("Two of $it kg") and isToggleable()) }
 }
 
+/** Switches Set up's bell unit picker ("kg" or "lb"). */
+fun IntervalAcceptanceDriver.pickWeightUnit(unit: String) = tap(hasText(unit) and isSelectable())
+
+/** Ticks bells in pounds on Set up (e.g. 35, 53), and any owned two of. */
+fun IntervalAcceptanceDriver.ownBellsLb(vararg lb: Int, twoOf: List<Int> = emptyList()) {
+    lb.forEach { tap(hasContentDescription("$it lb") and isToggleable()) }
+    twoOf.forEach { tap(hasContentDescription("Two of $it lb") and isToggleable()) }
+}
+
 /** The fourth: how long a session is. */
 fun IntervalAcceptanceDriver.sessionOf(minutes: Int) = tap(hasText("$minutes min") and isSelectable())
 

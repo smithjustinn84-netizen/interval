@@ -10,4 +10,4 @@ apply:
   - //templates/tested-lib.module-template.yaml
 
 dependencies:
-  - //core/core-time
+  - //core/core-time: exported

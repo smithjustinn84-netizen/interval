@@ -11,7 +11,9 @@ import dev.justinsmith.interval.settings.resources.Res
 import dev.justinsmith.interval.settings.resources.common_done
 import dev.justinsmith.interval.settings.resources.settings_weight
 import dev.justinsmith.interval.settings.resources.unit_kg
+import dev.justinsmith.interval.settings.resources.unit_kg_full
 import dev.justinsmith.interval.settings.resources.unit_lb
+import dev.justinsmith.interval.settings.resources.unit_lb_full
 import dev.justinsmith.interval.settings.resources.value_sheet_hint_hold
 import dev.justinsmith.interval.settings.resources.weight_less_cd
 import dev.justinsmith.interval.settings.resources.weight_more_cd
@@ -115,4 +117,11 @@ internal val WeightUnit.labelRes: StringResource
     get() = when (this) {
         WeightUnit.Kg -> Res.string.unit_kg
         WeightUnit.Lb -> Res.string.unit_lb
+    }
+
+/** How a weight's unit is written in Settings' full-width picker: "Kilograms", "Pounds". */
+internal val WeightUnit.fullLabelRes: StringResource
+    get() = when (this) {
+        WeightUnit.Kg -> Res.string.unit_kg_full
+        WeightUnit.Lb -> Res.string.unit_lb_full
     }

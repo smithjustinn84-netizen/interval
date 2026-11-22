@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -99,5 +100,12 @@ class AutoregulateTest {
             double = true,
         )
         assertEquals(listOf(abcs.copy(kind = BlockKind.Emom)).plannedGripLoad, listOf(abcs).plannedGripLoad)
+    }
+
+    @Test
+    fun `an easier barbell block in pounds steps down by 5 lb`() {
+        val squat = Block(BuiltInExercise.BarbellBackSquat, rounds = 5, reps = 5)
+        val easier = squat.easier(Load.Bar(lbToKg(135.0)), Gear(bar = 20.0), baseRest = 120, unit = WeightUnit.Lb)
+        assertEquals(130.0, barWeight(easier.load!!.kg, WeightUnit.Lb))
     }
 }

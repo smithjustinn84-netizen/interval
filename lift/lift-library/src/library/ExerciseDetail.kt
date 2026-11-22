@@ -55,7 +55,6 @@ import dev.justinsmith.lift.domain.Trend
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.collapsedSets
 import dev.justinsmith.lift.domain.faults
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.library.resources.Res
 import dev.justinsmith.lift.library.resources.detail_bell_path
@@ -85,6 +84,7 @@ import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.focusName
 import dev.justinsmith.lift.ui.setLine
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
@@ -324,12 +324,16 @@ private fun ColumnScope.History(state: ExerciseDetailUiState, onOpen: ((uid: Str
     }
     state.bestPace?.let { pace ->
         Text(
-            stringResource(Res.string.detail_best_pace, formatPace(pace.perMinute), formatKg(pace.kg)),
+            stringResource(
+                Res.string.detail_best_pace,
+                formatPace(pace.perMinute),
+                weightValue(pace.kg, pace.exercise.equipment),
+            ),
             style = IntervalTheme.type.meta,
             color = palette.textDim,
         )
     }
-    state.trend?.let { TrendCard(it) }
+    state.trend?.let { TrendCard(it, state.exercise.equipment) }
     state.recent.forEach { dated -> PastSessionCard(dated, onOpen) }
 }
 

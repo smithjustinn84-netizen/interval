@@ -16,10 +16,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
+import dev.justinsmith.lift.domain.lbToKg
 import dev.justinsmith.lift.domain.platesPerSide
 
 /**
@@ -32,8 +35,9 @@ fun BarbellDiagram(
     totalKg: Double,
     barKg: Double,
     modifier: Modifier = Modifier,
+    unit: WeightUnit = LocalWeightUnit.current,
 ) {
-    val plates = remember(totalKg, barKg) { platesPerSide(totalKg, barKg) } ?: return
+    val plates = remember(totalKg, barKg, unit) { platesPerSide(totalKg, barKg, unit) } ?: return
     val palette = IntervalTheme.palette
     val barColor = palette.textDim.copy(alpha = BAR_ALPHA)
     val collarColor = palette.textDim.copy(alpha = COLLAR_ALPHA)
@@ -44,12 +48,13 @@ fun BarbellDiagram(
             .height(LiftSizes.barbellDiagram)
             .clearAndSetSemantics {},
     ) {
-        drawBarbell(plates, barColor, collarColor, plateBorder)
+        drawBarbell(plates, unit, barColor, collarColor, plateBorder)
     }
 }
 
 private fun DrawScope.drawBarbell(
     plates: List<Double>,
+    unit: WeightUnit,
     barColor: Color,
     collarColor: Color,
     plateBorder: Color,
@@ -104,7 +109,7 @@ private fun DrawScope.drawBarbell(
 
     if (plates.isEmpty()) return
 
-    val specs = plates.map(::plateSpec)
+    val specs = plates.map { plateSpec(it, unit) }
     val gap = (size.width * PLATE_GAP_SHARE).coerceAtLeast(MIN_GAP_PX)
     val rawWidth = specs.sumOf { it.thickness.toDouble() }.toFloat() * size.width +
         gap * (specs.size - 1).coerceAtLeast(0)
@@ -147,14 +152,25 @@ private fun DrawScope.drawPlate(
 
 private data class PlateSpec(val color: Color, val height: Float, val thickness: Float)
 
-private fun plateSpec(kg: Double): PlateSpec = when (kg) {
-    PLATE_25 -> PlateSpec(PlateRed, height = 1.00f, thickness = 0.036f)
-    PLATE_20 -> PlateSpec(PlateBlue, height = 1.00f, thickness = 0.032f)
-    PLATE_15 -> PlateSpec(PlateYellow, height = 0.88f, thickness = 0.028f)
-    PLATE_10 -> PlateSpec(PlateGreen, height = 0.78f, thickness = 0.025f)
-    PLATE_5 -> PlateSpec(PlateWhite, height = 0.60f, thickness = 0.022f)
-    PLATE_2_5 -> PlateSpec(PlateDark, height = 0.48f, thickness = 0.019f)
-    else -> PlateSpec(PlateSilver, height = 0.38f, thickness = 0.016f)
+private fun plateSpec(weight: Double, unit: WeightUnit): PlateSpec = when (unit) {
+    WeightUnit.Kg -> when (weight) {
+        PLATE_25 -> PlateSpec(PlateRed, height = 1.00f, thickness = 0.036f)
+        PLATE_20 -> PlateSpec(PlateBlue, height = 1.00f, thickness = 0.032f)
+        PLATE_15 -> PlateSpec(PlateYellow, height = 0.88f, thickness = 0.028f)
+        PLATE_10 -> PlateSpec(PlateGreen, height = 0.78f, thickness = 0.025f)
+        PLATE_5 -> PlateSpec(PlateWhite, height = 0.60f, thickness = 0.022f)
+        PLATE_2_5 -> PlateSpec(PlateDark, height = 0.48f, thickness = 0.019f)
+        else -> PlateSpec(PlateSilver, height = 0.38f, thickness = 0.016f)
+    }
+
+    WeightUnit.Lb -> when (weight) {
+        PLATE_LB_45 -> PlateSpec(PlateBlue, height = 1.00f, thickness = 0.036f)
+        PLATE_LB_35 -> PlateSpec(PlateYellow, height = 0.94f, thickness = 0.032f)
+        PLATE_LB_25 -> PlateSpec(PlateGreen, height = 0.88f, thickness = 0.028f)
+        PLATE_LB_10 -> PlateSpec(PlateWhite, height = 0.72f, thickness = 0.024f)
+        PLATE_LB_5 -> PlateSpec(PlateDark, height = 0.54f, thickness = 0.020f)
+        else -> PlateSpec(PlateSilver, height = 0.42f, thickness = 0.016f)
+    }
 }
 
 private const val PLATE_25 = 25.0
@@ -163,6 +179,11 @@ private const val PLATE_15 = 15.0
 private const val PLATE_10 = 10.0
 private const val PLATE_5 = 5.0
 private const val PLATE_2_5 = 2.5
+private const val PLATE_LB_45 = 45.0
+private const val PLATE_LB_35 = 35.0
+private const val PLATE_LB_25 = 25.0
+private const val PLATE_LB_10 = 10.0
+private const val PLATE_LB_5 = 5.0
 
 private val PlateRed = Color(0xFFD63638)
 private val PlateBlue = Color(0xFF2B6CB0)
@@ -199,6 +220,21 @@ private fun BarbellDiagramPreview() {
             BarbellDiagram(totalKg = 102.5, barKg = DEFAULT_BAR_KG)
             BarbellDiagram(totalKg = 140.0, barKg = DEFAULT_BAR_KG)
             BarbellDiagram(totalKg = DEFAULT_BAR_KG, barKg = DEFAULT_BAR_KG)
+        }
+    }
+}
+
+private const val PREVIEW_LB_140 = 140.0
+private const val PREVIEW_LB_225 = 225.0
+
+@PreviewFormFactors
+@Composable
+private fun BarbellDiagramLbPreview() {
+    IntervalTheme {
+        Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
+            BarbellDiagram(totalKg = lbToKg(PREVIEW_LB_140), barKg = DEFAULT_BAR_KG, unit = WeightUnit.Lb)
+            BarbellDiagram(totalKg = lbToKg(PREVIEW_LB_225), barKg = DEFAULT_BAR_KG, unit = WeightUnit.Lb)
+            BarbellDiagram(totalKg = DEFAULT_BAR_KG, barKg = DEFAULT_BAR_KG, unit = WeightUnit.Lb)
         }
     }
 }

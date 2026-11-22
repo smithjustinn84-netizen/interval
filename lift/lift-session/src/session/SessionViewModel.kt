@@ -121,6 +121,7 @@ class SessionViewModel(
             history = before.value.oldestFirst + sessionStore.active.value?.sets.orEmpty(),
             logged = sessionStore.active.value?.sets.orEmpty(),
             made = exerciseStore.customExercises.value,
+            unit = intervals.weightUnit.value,
         )
     }.apply {
         // A session resumed goes on where it left off: the sheet as it was, if a killed process left it half set,
@@ -358,7 +359,7 @@ class SessionViewModel(
 
     /** Steps the next set's load one [step] (−1 or +1), for the rest of its block today: see [TodayPlanEditor]. */
     fun stepNextLoad(step: Int) {
-        plan.stepNextLoad(step, before.value.oldestFirst, draft.draft.value)
+        plan.stepNextLoad(step, before.value.oldestFirst, draft.draft.value, intervals.weightUnit.value)
     }
 
     /**

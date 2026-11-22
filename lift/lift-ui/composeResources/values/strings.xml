@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="kg_value">%1$s kg</string>
-    <string name="set_line">%1$s kg × %2$d</string>
-    <string name="set_line_double">2 × %1$s kg × %2$d</string>
+    <string name="unit_kg">kg</string>
+    <string name="unit_lb">lb</string>
+    <string name="weight_value">%1$s %2$s</string>
+    <string name="set_line">%1$s × %2$d</string>
+    <string name="set_line_double">2 × %1$s × %2$d</string>
     <string name="set_line_reps">× %1$d</string>
-    <string name="set_line_added">+%1$s kg × %2$d</string>
+    <string name="set_line_added">+%1$s × %2$d</string>
     <string name="set_line_band">%1$s × %2$d</string>
     <string name="equipment_kettlebell">Kettlebell</string>
     <string name="equipment_barbell">Barbell</string>
@@ -194,11 +196,11 @@
     <string name="log_bar_weight">On the bar</string>
     <string name="log_lighter">Lighter</string>
     <string name="log_heavier">Heavier</string>
-    <string name="bar_plates">%1$s kg bar · %2$s a side</string>
+    <string name="bar_plates">%1$s bar · %2$s a side</string>
     <string name="plates_plus">%1$s + %2$s</string>
-    <string name="bar_empty">%1$s kg bar, empty</string>
-    <string name="bar_too_light">Lighter than your %1$s kg bar</string>
-    <string name="bar_unloadable">%1$s kg bar · not loadable with standard plates</string>
+    <string name="bar_empty">%1$s bar, empty</string>
+    <string name="bar_too_light">Lighter than your %1$s bar</string>
+    <string name="bar_unloadable">%1$s bar · not loadable with standard plates</string>
     <string name="log_no_bar">Set your bar under Your equipment on Lift to see the plates a side.</string>
     <string name="log_no_bells">Add the bells you own under Your equipment on Lift; until then every size shows.</string>
     <string name="summary_reps">Reps</string>
@@ -213,17 +215,17 @@
     <string name="colour_orange">Orange</string>
     <string name="colour_grey">Grey</string>
     <string name="record_heaviest">Heaviest %1$s × %2$d</string>
-    <string name="record_most_added">Most added +%1$s kg × %2$d</string>
+    <string name="record_most_added">Most added +%1$s × %2$d</string>
     <string name="record_most_reps_at">most reps %1$d at %2$s</string>
     <string name="record_most_reps_with">most reps %1$d with %2$s</string>
     <string name="record_most_reps_none_added">most reps %1$d with none added</string>
     <string name="record_most_reps">Most reps %1$d</string>
     <string name="record_longest">Longest %1$s</string>
     <string name="record_heaviest_held">Heaviest %1$s · %2$s</string>
-    <string name="record_most_added_held">Most added +%1$s kg · %2$s</string>
+    <string name="record_most_added_held">Most added +%1$s · %2$s</string>
     <string name="record_longest_at">longest %1$s at %2$s</string>
     <string name="record_longest_none_added">longest %1$s with none added</string>
-    <string name="record_added_kg">+%1$s kg</string>
+    <string name="record_added_weight">+%1$s</string>
     <string name="program_daily_name">Daily 100 swings + 10 get-ups</string>
     <string name="program_daily_summary">10 minutes of swings on the minute, then 5 get-ups a side</string>
     <string name="program_ladders_name">Press ladders 1-2-3</string>
@@ -352,9 +354,8 @@
         <item quantity="one">%1$d ladder of %2$s a side</item>
         <item quantity="other">%1$d ladders of %2$s a side</item>
     </plurals>
-    <string name="load_kg">%1$s kg</string>
-    <string name="load_double">2 × %1$s kg</string>
-    <string name="load_added">+%1$s kg</string>
+    <string name="load_double">2 × %1$s</string>
+    <string name="load_added">+%1$s</string>
     <string name="load_last_time">Last time</string>
     <string name="load_set_weight">Set weight</string>
     <string name="balance_title">Balance</string>

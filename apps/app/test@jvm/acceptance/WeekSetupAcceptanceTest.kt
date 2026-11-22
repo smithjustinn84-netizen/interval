@@ -4,6 +4,7 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -226,5 +227,32 @@ class WeekSetupAcceptanceTest {
         seePhase("Get ready")
         // Set up has had its turn: it is on Today's card and in Settings from here on.
         setUpOffered(true)
+    }
+
+    @Test
+    fun `setting up in pounds stores canonical bells and shows lb across lift`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("BJJ")
+        trainOn("Tuesday", "Thursday")
+        pickWeightUnit("lb")
+        see("Which bells do you own, in lb?")
+        ownBellsLb(35, 53, twoOf = listOf(53))
+        sessionOf(20)
+        buildMyWeek()
+
+        weekHolds(
+            sportDays = 2,
+            programDays = 2,
+            program = ProgramId.BjjKettlebell,
+            bells = listOf(16.0, 24.0),
+            goal = 5,
+            pairs = setOf(24.0),
+            intervalDays = 1,
+        )
+        assertEquals(WeightUnit.Lb, app.repository.settings.appSettings.value.body.unit)
+        openTab("Train")
+        see("2 × 35 lb")
+        scrollTo("Your equipment")
+        see("35 lb · 53 lb · records")
     }
 }

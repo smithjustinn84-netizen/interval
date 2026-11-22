@@ -1,5 +1,7 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
+
 /**
  * Of [planned], the set [logged] did each, or null for one not done: the n-th planned set of a lift (and side)
  * by the n-th logged one, as [nextPlanned] counts them.
@@ -29,8 +31,11 @@ fun plannedRounds(planned: List<PlannedSet>, logged: List<SetLog>): List<List<Se
     }
 }
 
-/** What weight added to bodyweight goes up by. */
+/** What weight added to bodyweight goes up by in kilograms. */
 const val ADDED_KG_STEP = 2.5
+
+/** What weight added to bodyweight goes up by in pounds. */
+const val ADDED_LB_STEP = 5.0
 
 /** A hold goes up by five seconds, up to ten minutes, as the Log sheet steps it. */
 private const val HOLD_STEP = 5
@@ -56,7 +61,8 @@ fun nextStep(
     done: List<SetLog?>,
     gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
-): Block? = (rungOf(block, done, gear, rest) as? Rung.Step)?.to
+    unit: WeightUnit = WeightUnit.Kg,
+): Block? = (rungOf(block, done, gear, rest, unit) as? Rung.Step)?.to
 
 /**
  * Where [block] stands, [done] being the set logged for each of its planned sets: null unless every one was done at
@@ -87,6 +93,7 @@ fun rungOf(
     done: List<SetLog?>,
     gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
+    unit: WeightUnit = WeightUnit.Kg,
 ): Rung? {
     if (block.kind == BlockKind.Density) return null
     val sets = doneInFull(block, done) ?: return null
@@ -97,17 +104,17 @@ fun rungOf(
 
         at is Load.Bell -> bellRung(block, at, gear.bells, gear.pairs, rest)
 
-        else -> otherRung(block, at, gear.bands)
+        else -> otherRung(block, at, gear.bands, unit)
     }
 }
 
 /** [block], done at [at], a load other than a bell, a rung up, as [rungOf] lays its steps out. */
-private fun otherRung(block: Block, at: Load, bands: List<Band>): Rung? {
+private fun otherRung(block: Block, at: Load, bands: List<Band>, unit: WeightUnit): Rung? {
     val range = block.ranged
     val next = when {
         range != null && block.reps < range.top -> block.copy(reps = block.reps + 1)
 
-        range != null -> return heavier(block, at, bands)?.copy(reps = range.bottom, rest = null)?.let(Rung::Step)
+        range != null -> return heavier(block, at, bands, unit)?.copy(reps = range.bottom, rest = null)?.let(Rung::Step)
             ?: Rung.ToppedOut
 
         block.kind == BlockKind.Emom ->
@@ -115,7 +122,7 @@ private fun otherRung(block: Block, at: Load, bands: List<Band>): Rung? {
 
         block.kind == BlockKind.Ladder -> moreLadder(block)
 
-        block.kind == BlockKind.Sets -> heavier(block, at, bands)?.copy(rest = null)
+        block.kind == BlockKind.Sets -> heavier(block, at, bands, unit)?.copy(rest = null)
             ?: block.copy(reps = block.reps + 1)
 
         else -> null
@@ -137,14 +144,19 @@ private fun loadDone(block: Block, sets: List<SetLog>, bands: List<Band>): Load?
 }
 
 /**
- * [block] at the next load up from [at], not a bell: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more added to
- * bodyweight, the next of [bands] heavier. Null with none heavier, or none to add.
+ * [block] at the next load up from [at], not a bell: a step more on the bar in [unit] ([BAR_KG_STEP] or
+ * [BAR_LB_STEP]), [ADDED_KG_STEP] or [ADDED_LB_STEP] more added to bodyweight, the next of [bands] heavier.
+ * Null with none heavier, or none to add.
  */
-private fun heavier(block: Block, at: Load, bands: List<Band>): Block? {
+private fun heavier(block: Block, at: Load, bands: List<Band>, unit: WeightUnit): Block? {
     val next = when (at) {
-        is Load.Bar -> (at.kg + BAR_KG_STEP).coerceAtMost(MAX_BAR_KG).takeIf { it > at.kg }?.let(Load::Bar)
+        is Load.Bar -> stepBarKg(at.kg, 1, bar = null, unit)?.takeIf { it > at.kg }?.let(Load::Bar)
 
-        is Load.Bodyweight -> Load.Bodyweight(at.kg + ADDED_KG_STEP).takeIf { at.kg > 0 }
+        is Load.Bodyweight -> when {
+            at.kg <= 0 -> null
+            unit == WeightUnit.Lb -> Load.Bodyweight(lbToKg(bellWeight(at.kg, WeightUnit.Lb) + ADDED_LB_STEP))
+            else -> Load.Bodyweight(at.kg + ADDED_KG_STEP)
+        }
 
         is Load.Banded -> at.band?.let { b -> bands.firstOrNull { it.position > b.position && !it.archived } }
             ?.let(Load::Banded)
@@ -193,6 +205,7 @@ fun progressions(
     gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
     before: List<LiftSession> = emptyList(),
+    unit: WeightUnit = WeightUnit.Kg,
 ): List<BlockChange> =
     // A test is done as it stands each time, or two attempts measure different things.
     if (day.program.test) {
@@ -203,7 +216,7 @@ fun progressions(
             val next = if (block.kind == BlockKind.Density) {
                 densityStep(block, done.done, densityRounds(block, day.program, before) + done.rounds)
             } else {
-                nextStep(block, done.done, gear, rest)
+                nextStep(block, done.done, gear, rest, unit)
             }
             next?.let { BlockChange(done.index, block, it) }
         }
@@ -218,12 +231,13 @@ fun toppedOut(
     logged: List<SetLog>,
     gear: Gear,
     rest: Int = RestClock.DEFAULT_SECONDS,
+    unit: WeightUnit = WeightUnit.Kg,
 ): List<Block> =
     if (day.program.test) {
         emptyList()
     } else {
         blocksDone(day, logged).mapNotNull { (_, block, done) ->
-            block.takeIf { rungOf(block, done, gear, rest) == Rung.ToppedOut }
+            block.takeIf { rungOf(block, done, gear, rest, unit) == Rung.ToppedOut }
         }
     }
 

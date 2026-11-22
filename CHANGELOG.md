@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Pounds (`lb`) across Lift, 15:15's snatch count, `Set up` and Settings. Weights stay stored in kilograms; switching
+  to pounds shows canonical US kettlebell sizes (18, 26, 35, 44, 53, 70 lb and the full bell table), standard US
+  bars (25, 35, 45 lb) with 5 lb steps and US plate breakdowns/diagrams (45, 35, 25, 10, 5, 2.5 lb), and totals
+  tonnage, records, pace and challenges in pounds. `Set up` offers a `kg`/`lb` picker over its bells, and Settings
+  gains a top-level **Weight unit** row alongside the body-weight sheet.
 - A class recorded on a heart-rate sensor (Android 12 and up, a Polar Verity Sense). Pair the armband in Settings
   ("Heart-rate sensor"); on a class's day Today offers "Record class", which sets the sensor recording on its own
   memory, so the phone can stay in the bag. After, "Sync class" brings it over, logs the day and opens the class:

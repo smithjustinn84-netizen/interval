@@ -54,8 +54,12 @@
     <string name="effort_steady">Steady</string>
     <string name="effort_hard">Hard</string>
     <string name="effort_max">Max</string>
+    <string name="settings_weight_unit">Weight unit</string>
+    <string name="settings_weight_unit_hint">Body weight, kettlebells and barbells</string>
     <string name="unit_kg">kg</string>
     <string name="unit_lb">lb</string>
+    <string name="unit_kg_full">Kilograms</string>
+    <string name="unit_lb_full">Pounds</string>
     <string name="weight_less_cd">Less weight</string>
     <string name="weight_more_cd">More weight</string>
     <string name="weight_sheet_privacy">Only used to estimate calories. It stays on this device.</string>

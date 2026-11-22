@@ -7,3 +7,6 @@ product:
 
 apply:
   - //templates/tested-lib.module-template.yaml
+
+dependencies:
+  - //core/core-time: exported

@@ -11,6 +11,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.interval.ui.weekdaysOf
@@ -50,6 +51,7 @@ data class WeekSetupUiState(
     val bellChoices: List<Double> = SETUP_BELLS,
     val bells: Set<Double> = emptySet(),
     val pairs: Set<Double> = emptySet(),
+    val unit: WeightUnit = WeightUnit.Kg,
     val minutes: Int = DEFAULT_SESSION_MINUTES,
     val week: BuiltWeek = BuiltWeek(),
     val programMinutes: IntRange? = null,
@@ -72,6 +74,7 @@ private const val KEY_NAME = "setup_sport_name"
 private const val KEY_DAYS = "setup_days"
 private const val KEY_BELLS = "setup_bells"
 private const val KEY_PAIRS = "setup_pairs"
+private const val KEY_UNIT = "setup_unit"
 private const val KEY_MINUTES = "setup_minutes"
 
 /**
@@ -129,6 +132,9 @@ class WeekSetupViewModel(
         }
     }
 
+    /** Switches the weight unit shown for the bells (and saved for the app on build). */
+    fun setUnit(unit: WeightUnit) = answer { it.copy(unit = unit) }
+
     /** How long a session is, one of [AppSettings.SESSION_MINUTES]. */
     fun setMinutes(minutes: Int) {
         if (minutes in AppSettings.SESSION_MINUTES) answer { it.copy(minutes = minutes) }
@@ -155,7 +161,12 @@ class WeekSetupViewModel(
         val pairs = gearStore.pairs.value
         state.bells.filter { (it in pairs) != (it in state.pairs) }.forEach { gearStore.setPair(it, it in state.pairs) }
         settingsStore.updateAppSettings {
-            it.copy(weeklyGoal = week.goal ?: it.weeklyGoal, sessionMinutes = state.minutes, setupOffered = true)
+            it.copy(
+                weeklyGoal = week.goal ?: it.weeklyGoal,
+                sessionMinutes = state.minutes,
+                setupOffered = true,
+                body = it.body.copy(unit = state.unit),
+            )
         }
         return true
     }
@@ -168,18 +179,23 @@ class WeekSetupViewModel(
         savedState[KEY_DAYS] = next.weekdays
         savedState[KEY_BELLS] = next.bells.sorted().joinToString(BELL_SEPARATOR)
         savedState[KEY_PAIRS] = next.pairs.sorted().joinToString(BELL_SEPARATOR)
+        savedState[KEY_UNIT] = next.unit.name
         savedState[KEY_MINUTES] = next.minutes
     }
 
     /** The answers as they were left, for a page brought back; null on its first opening. */
     private fun saved(): Answers? {
         val sport = savedState.get<Int>(KEY_SPORT) ?: return null
+        val savedUnit = savedState.get<String>(KEY_UNIT)
+            ?.let { name -> WeightUnit.entries.firstOrNull { it.name == name } }
+            ?: settingsStore.appSettings.value.body.unit
         return Answers(
             sport = sport,
             sportName = savedState.get<String>(KEY_NAME).orEmpty(),
             weekdays = savedState.get<Int>(KEY_DAYS) ?: 0,
             bells = savedState.get<String>(KEY_BELLS).bellsSaved(),
             pairs = savedState.get<String>(KEY_PAIRS).bellsSaved(),
+            unit = savedUnit,
             minutes = savedState.get<Int>(KEY_MINUTES) ?: DEFAULT_SESSION_MINUTES,
         )
     }
@@ -200,6 +216,7 @@ class WeekSetupViewModel(
             weekdays = if (was == null) 0 else weekdayMask(days.toSet()),
             bells = gearStore.bells.value.toSet(),
             pairs = gearStore.pairs.value intersect gearStore.bells.value.toSet(),
+            unit = settingsStore.appSettings.value.body.unit,
             minutes = settingsStore.appSettings.value.sessionMinutes ?: DEFAULT_SESSION_MINUTES,
         )
     }
@@ -217,6 +234,7 @@ class WeekSetupViewModel(
             bellChoices = chips,
             bells = answers.bells,
             pairs = answers.pairs,
+            unit = answers.unit,
             minutes = answers.minutes,
         )
         val asked = WeekAnswers(
@@ -245,6 +263,7 @@ private data class Answers(
     val bells: Set<Double>,
     val minutes: Int,
     val pairs: Set<Double> = emptySet(),
+    val unit: WeightUnit = WeightUnit.Kg,
 )
 
 /** The sport planned every week, the first of them when there are several; null with none. */

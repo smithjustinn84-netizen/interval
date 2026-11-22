@@ -26,13 +26,11 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.Attempt
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Retest
 import dev.justinsmith.lift.domain.TestId
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.today.resources.Res
 import dev.justinsmith.lift.today.resources.common_joined
-import dev.justinsmith.lift.today.resources.kg_pair
-import dev.justinsmith.lift.today.resources.kg_value
 import dev.justinsmith.lift.today.resources.tests_attempts
 import dev.justinsmith.lift.today.resources.tests_attempts_at
 import dev.justinsmith.lift.today.resources.tests_bars_cd
@@ -56,10 +54,12 @@ import dev.justinsmith.lift.today.resources.tests_warm_up
 import dev.justinsmith.lift.today.resources.tests_weeks_ago
 import dev.justinsmith.lift.today.resources.tests_yesterday
 import dev.justinsmith.lift.ui.ChoiceRow
+import dev.justinsmith.lift.ui.pairWeightValue
 import dev.justinsmith.lift.ui.testCount
 import dev.justinsmith.lift.ui.testName
 import dev.justinsmith.lift.ui.testProtocol
 import dev.justinsmith.lift.ui.testResultLine
+import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -195,10 +195,10 @@ private fun TestSheet(
     }
 }
 
-/** "24 kg", or for a test done with two "2 × 24 kg". */
+/** "24 kg" / "53 lb", or for a test done with two "2 × 24 kg" / "2 × 53 lb". */
 @Composable
 private fun bellLabel(kg: Double, double: Boolean): String =
-    stringResource(if (double) Res.string.kg_pair else Res.string.kg_value, formatKg(kg))
+    if (double) pairWeightValue(kg) else weightValue(kg, Equipment.Kettlebell)
 
 /** The attempts at the bell picked: bars of the latest against the target, then the best and the last in words. */
 @Composable

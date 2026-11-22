@@ -79,6 +79,7 @@ import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
 import dev.justinsmith.interval.ui.LocalRestingHeartRate
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.NavigationArea
 import dev.justinsmith.interval.ui.NavigationAreaBar
 import dev.justinsmith.interval.ui.NavigationItems
@@ -221,6 +222,7 @@ internal fun AppContent(
                     LocalNotices provides notices,
                     // Every heart-rate zone drawn goes by the reserve over this, once one is set.
                     LocalRestingHeartRate provides settings.body.restingHeartRate,
+                    LocalWeightUnit provides settings.body.unit,
                 ) {
                     WithSensorPulse(settings.body.maxHeartRate, onOpenSettings = { backStack.push(Settings) }) {
                         AppShell(backStack, notices)

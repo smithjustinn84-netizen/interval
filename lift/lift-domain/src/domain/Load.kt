@@ -1,5 +1,7 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
+
 /**
  * What a set is done with, and how heavy: a bell or a pair of them, a bar as loaded, weight added to
  * bodyweight, a band, or the mat, which takes nothing. A new kind of equipment is a case here; every `when`
@@ -91,14 +93,20 @@ val Load.weighedKg: Double? get() = when (this) {
 
 /**
  * This load one [step] (−1 lighter, +1 heavier) among what the user can load: the next of their [bells], the
- * bar a [BAR_KG_STEP] either way but never below the empty [bar], weight added to bodyweight (none, then a
- * bell's weight), or the next of the [offered] bands. A weight between two bells goes to the next one that way.
- * Null at either end, and for the mat.
+ * bar a step in [unit] ([BAR_KG_STEP] or [BAR_LB_STEP]) either way but never below the empty [bar], weight added to
+ * bodyweight (none, then a bell's weight), or the next of the [offered] bands. A weight between two bells goes to
+ * the next one that way. Null at either end, and for the mat.
  */
-fun Load.stepped(step: Int, bells: List<Double>, bar: Double?, offered: List<Band>): Load? = when (this) {
+fun Load.stepped(
+    step: Int,
+    bells: List<Double>,
+    bar: Double?,
+    offered: List<Band>,
+    unit: WeightUnit = WeightUnit.Kg,
+): Load? = when (this) {
     is Load.Bell -> nextOf(bells, kg, step)?.let { copy(kg = it) }
     is Load.Bodyweight -> nextOf(listOf(0.0) + bells, kg, step)?.let { copy(kg = it) }
-    is Load.Bar -> (kg + step * BAR_KG_STEP).takeIf { it >= (bar ?: 0.0) && it <= MAX_BAR_KG }?.let(Load::Bar)
+    is Load.Bar -> stepBarKg(kg, step, bar, unit)?.let(Load::Bar)
     is Load.Banded -> steppedBand(band, step, offered)?.let(Load::Banded)
     Load.Mat -> null
 }

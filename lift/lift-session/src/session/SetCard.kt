@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
@@ -146,14 +147,15 @@ internal fun LiftHeading(
  */
 @Composable
 internal fun LoadStep(load: Load, state: SessionUiState, onStep: (Int) -> Unit) {
+    val unit = LocalWeightUnit.current
     val line = loadLine(load) ?: return
-    val canStep = { step: Int -> load.stepped(step, state.bells, state.bar, state.bands) != null }
+    val canStep = { step: Int -> load.stepped(step, state.bells, state.bar, state.bands, unit) != null }
     LoadStepper(
         line,
         canLower = canStep(-1),
         canRaise = canStep(1),
         onStep = onStep,
-        note = (load as? Load.Bar)?.let { platesLine(it.kg, state.bar) },
+        note = (load as? Load.Bar)?.let { platesLine(it.kg, state.bar, unit) },
         compact = true,
     )
 }

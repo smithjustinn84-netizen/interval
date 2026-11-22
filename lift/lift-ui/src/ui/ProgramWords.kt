@@ -5,13 +5,13 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.BlockKind
+import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.block_density
 import dev.justinsmith.lift.ui.resources.block_emom
@@ -25,8 +25,6 @@ import dev.justinsmith.lift.ui.resources.block_sets
 import dev.justinsmith.lift.ui.resources.block_sets_sided
 import dev.justinsmith.lift.ui.resources.common_joined
 import dev.justinsmith.lift.ui.resources.load_added
-import dev.justinsmith.lift.ui.resources.load_double
-import dev.justinsmith.lift.ui.resources.load_kg
 import dev.justinsmith.lift.ui.resources.log_added_none
 import dev.justinsmith.lift.ui.resources.program_abf_for
 import dev.justinsmith.lift.ui.resources.program_abf_name
@@ -332,13 +330,12 @@ fun blockLine(block: Block, bands: List<Band> = emptyList(), withLoad: Boolean =
 fun blockLoad(block: Block, bands: List<Band> = emptyList()): String? = when (val load = block.load) {
     null, Load.Mat -> null
 
-    is Load.Bell ->
-        stringResource(if (load.double) Res.string.load_double else Res.string.load_kg, formatKg(load.kg))
+    is Load.Bell -> if (load.double) pairWeightValue(load.kg) else weightValue(load.kg, Equipment.Kettlebell)
 
-    is Load.Bar -> stringResource(Res.string.load_kg, formatKg(load.kg))
+    is Load.Bar -> weightValue(load.kg, Equipment.Barbell)
 
     is Load.Bodyweight -> if (load.kg > 0) {
-        stringResource(Res.string.load_added, formatKg(load.kg))
+        stringResource(Res.string.load_added, weightValue(load.kg, Equipment.Bodyweight))
     } else {
         stringResource(Res.string.log_added_none)
     }

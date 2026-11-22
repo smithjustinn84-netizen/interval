@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -482,5 +483,13 @@ class ProgressionTest {
         // The first time sets the best rather than beating one, and a block not begun says nothing.
         assertFalse(densityDone(day, abcRounds(9, 3 * DAY), emptyList()).single().newBest)
         assertEquals(emptyList(), densityDone(day, emptyList(), before))
+    }
+
+    @Test
+    fun `a barbell block in pounds progresses by 5 lb`() {
+        val squat = Block(BuiltInExercise.BarbellBackSquat, rounds = 3, reps = 5, load = Load.Bar(lbToKg(135.0)))
+        val done = doneFor(squat, lbToKg(135.0))
+        val stepped = nextStep(squat, done, Gear(bar = 20.0), unit = WeightUnit.Lb)!!
+        assertEquals(140.0, barWeight(stepped.load!!.kg, WeightUnit.Lb))
     }
 }

@@ -5,10 +5,12 @@ package dev.justinsmith.lift.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -25,12 +27,14 @@ import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.fakes.RecordingSpeaker
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.NoticeHost
 import dev.justinsmith.interval.ui.UI_TEST_TIMEOUT
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.onMainThread
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.runUiTest
+import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.di.liftFeatureModules
 import dev.justinsmith.lift.fakes.FakeIntervalActivity
 import dev.justinsmith.lift.fakes.FakeLiftStorage
@@ -79,8 +83,13 @@ private fun LiftHost(koin: KoinApplication, back: NavigationEventDispatcherOwner
     KoinIsolatedContext(context = koin) {
         val backStack = rememberNavBackStack(liftNavConfiguration, LiftTab)
         val notices = rememberNotices()
+        val weightUnit by koin.koin.get<IntervalActivity>().weightUnit.collectAsStateWithLifecycle()
         IntervalTheme(darkTheme = true) {
-            CompositionLocalProvider(LocalNavigationEventDispatcherOwner provides back, LocalNotices provides notices) {
+            CompositionLocalProvider(
+                LocalNavigationEventDispatcherOwner provides back,
+                LocalNotices provides notices,
+                LocalWeightUnit provides weightUnit,
+            ) {
                 Box {
                     NavDisplay(
                         backStack = backStack,

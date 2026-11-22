@@ -28,6 +28,7 @@ import dev.justinsmith.interval.resources.setup_built
 import dev.justinsmith.interval.resources.setup_intro
 import dev.justinsmith.interval.resources.setup_skip
 import dev.justinsmith.interval.resources.setup_title
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -67,6 +68,7 @@ fun WeekSetupRoute(onBack: () -> Unit, onShowWeek: () -> Unit, onPrograms: () ->
             onWeekdays = viewModel::setWeekdays,
             onBell = viewModel::toggleBell,
             onPair = viewModel::togglePair,
+            onUnit = viewModel::setUnit,
             onMinutes = viewModel::setMinutes,
             onPrograms = { programs() },
             onBuild = {
@@ -94,6 +96,8 @@ class WeekSetupActions(
     val onBell: (Double) -> Unit = {},
     /** Ticks or unticks owning two of a bell, by its kg. */
     val onPair: (Double) -> Unit = {},
+    /** Switches the weight unit shown for the bells (and saved on build). */
+    val onUnit: (WeightUnit) -> Unit = {},
     val onMinutes: (Int) -> Unit = {},
     val onPrograms: () -> Unit = {},
     val onBuild: () -> Unit = {},
@@ -137,7 +141,7 @@ fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier
                 )
                 SportQuestion(state, actions)
                 AnimatedVisibility(state.asksDays) { DaysQuestion(state.weekdays, actions.onWeekdays) }
-                BellsQuestion(state, actions.onBell)
+                BellsQuestion(state, actions.onBell, actions.onUnit)
                 AnimatedVisibility(state.bells.isNotEmpty()) { PairsQuestion(state, actions.onPair) }
                 MinutesQuestion(state.minutes, actions.onMinutes)
                 YourWeek(state, actions.onPrograms)

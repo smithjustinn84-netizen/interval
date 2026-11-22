@@ -8,6 +8,7 @@ import dev.justinsmith.interval.platform.IdGenerator
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speaker
 import dev.justinsmith.interval.platform.WallClock
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.lift.data.BandDao
 import dev.justinsmith.lift.data.BandEntity
 import dev.justinsmith.lift.data.BarEntity
@@ -268,6 +269,7 @@ class FakeIntervalActivity : IntervalActivity {
     override val matOrWall = MutableStateFlow(false)
     override val weeklyGoal = MutableStateFlow<Int?>(null)
     override val bodyWeightKg = MutableStateFlow<Double?>(null)
+    override val weightUnit = MutableStateFlow(WeightUnit.Kg)
     override val voice = MutableStateFlow(true)
     override val maxHeartRate = MutableStateFlow<Int?>(null)
     override val restingHeartRate = MutableStateFlow<Int?>(null)

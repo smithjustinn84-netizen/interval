@@ -1,5 +1,6 @@
 package dev.justinsmith.lift.domain
 
+import dev.justinsmith.interval.timer.WeightUnit
 import kotlin.math.ceil
 import kotlin.math.roundToInt
 
@@ -40,9 +41,9 @@ fun restFor(block: Block, base: Int): Int {
  * (a cap no shorter than [DensityClock.MIN_MINUTES]), ballistic sets a round fewer; every block but those on the
  * clock resting by its tempo ([restFor]) against the [baseRest] set on Lift.
  */
-fun Block.easier(at: Load?, gear: Gear, baseRest: Int): Block {
+fun Block.easier(at: Load?, gear: Gear, baseRest: Int, unit: WeightUnit = WeightUnit.Kg): Block {
     val tempo = exercise.movement.tempo
-    val lighter = if (tempo == Tempo.Grind) at?.lighter(double, gear) else null
+    val lighter = if (tempo == Tempo.Grind) at?.lighter(double, gear, unit) else null
     val rounds = when {
         tempo != Tempo.Ballistic -> rounds
         kind == BlockKind.Emom -> ceil(rounds * EASIER_EMOM_SHARE).toInt().coerceAtLeast(1)
@@ -58,14 +59,14 @@ fun Block.easier(at: Load?, gear: Gear, baseRest: Int): Block {
     )
 }
 
-private fun Load.lighter(double: Boolean, gear: Gear): Load? =
+private fun Load.lighter(double: Boolean, gear: Gear, unit: WeightUnit): Load? =
     when (this) {
         is Load.Bell -> {
             val owned = if (double && gear.pairs.isNotEmpty()) gear.bells.filter { it in gear.pairs } else gear.bells
             owned.filter { it < kg }.maxOrNull()?.let { copy(kg = it) }
         }
 
-        is Load.Bar -> stepped(-1, gear.bells, gear.bar, emptyList())
+        is Load.Bar -> stepped(-1, gear.bells, gear.bar, emptyList(), unit)
 
         is Load.Bodyweight, is Load.Banded, Load.Mat -> null
     }
@@ -78,13 +79,14 @@ fun SessionPlan.easier(
     loadOf: (Block) -> Load?,
     gear: Gear,
     baseRest: Int,
+    unit: WeightUnit = WeightUnit.Kg,
 ): SessionPlan? {
     val easier = copy(
         blocks = blocks.map { entry ->
             if (entry.skipped) {
                 entry
             } else {
-                entry.copy(block = entry.block.easier(loadOf(entry.block), gear, baseRest))
+                entry.copy(block = entry.block.easier(loadOf(entry.block), gear, baseRest, unit))
             }
         },
     )

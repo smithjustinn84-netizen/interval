@@ -40,6 +40,7 @@ import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.LocalNotices
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.Opacity
 import dev.justinsmith.interval.ui.PreviewFormFactors
@@ -56,11 +57,9 @@ import dev.justinsmith.lift.domain.DayStanding
 import dev.justinsmith.lift.domain.Followed
 import dev.justinsmith.lift.domain.ProgramProgress
 import dev.justinsmith.lift.domain.builtInPrograms
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.programProgress
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
-import dev.justinsmith.lift.session.resources.kg_value
 import dev.justinsmith.lift.session.resources.notice_program_followed
 import dev.justinsmith.lift.session.resources.program_day_before_copy
 import dev.justinsmith.lift.session.resources.program_day_cd
@@ -90,6 +89,7 @@ import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.programDayLine
 import dev.justinsmith.lift.ui.programName
+import dev.justinsmith.lift.ui.tonnageValue
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -193,9 +193,10 @@ private fun Standing(progress: ProgramProgress, modifier: Modifier = Modifier) {
                 )
                 StatTile(stringResource(Res.string.summary_reps), progress.reps.toString(), Modifier.weight(1f))
             }
+            val unit = LocalWeightUnit.current
             StatTile(
                 stringResource(Res.string.session_moved),
-                stringResource(Res.string.kg_value, formatKg(progress.tonnageKg)),
+                tonnageValue(progress.tonnage(unit), unit),
                 Modifier.fillMaxWidth(),
             )
         } else {

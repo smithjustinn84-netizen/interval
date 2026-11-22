@@ -8,21 +8,18 @@ import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ToggleRow
-import dev.justinsmith.lift.domain.BAR_KG_STEP
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.Doubles
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
-import dev.justinsmith.lift.domain.MAX_BAR_KG
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.stepped
 import dev.justinsmith.lift.domain.steppedBand
 import dev.justinsmith.lift.ui.resources.Res
-import dev.justinsmith.lift.ui.resources.kg_value
 import dev.justinsmith.lift.ui.resources.lift_double
 import dev.justinsmith.lift.ui.resources.load_last_time
 import dev.justinsmith.lift.ui.resources.load_set_weight
@@ -104,7 +101,7 @@ private fun BellChoices(
     if (kg != null && null !in options) {
         KgStepper(Load.Bell(kg, exercise.doubled(double)), options, onKg)
     }
-    ChoiceRow(options, kg, { it?.let(::formatKg) ?: last }, onKg)
+    ChoiceRow(options, kg, { it?.let { size -> bellNumber(size) } ?: last }, onKg)
     if (!ownsBells) {
         Text(
             stringResource(Res.string.log_no_bells),
@@ -128,12 +125,12 @@ private fun AddedChoices(kg: Double?, options: List<Double?>, onKg: (Double?) ->
     if (kg != null && null !in options) {
         KgStepper(Load.Bodyweight(kg), options, onKg)
     }
-    ChoiceRow(options, kg, { option -> option?.let { if (it == 0.0) none else formatKg(it) } ?: last }, onKg)
+    ChoiceRow(options, kg, { option -> option?.let { if (it == 0.0) none else bellNumber(it) } ?: last }, onKg)
 }
 
 /**
- * The total on the bar, in steps of [BAR_KG_STEP] from the empty [bar] up, and the plates a side it takes. For
- * a plan ([lastTime]) it can be left to last time (a null [kg]) instead.
+ * The total on the bar, in steps of the active weight unit from the empty [bar] up, and the plates a side it takes.
+ * For a plan ([lastTime]) it can be left to last time (a null [kg]) instead.
  */
 @Composable
 private fun BarChoices(kg: Double?, bar: Double?, lastTime: Boolean, onKg: (Double?) -> Unit) {
@@ -146,15 +143,17 @@ private fun BarChoices(kg: Double?, bar: Double?, lastTime: Boolean, onKg: (Doub
         })
     }
     if (kg == null) return
-    val lightest = bar ?: 0.0
+    val unit = LocalWeightUnit.current
+    val load = Load.Bar(kg)
+    val stepped = { step: Int -> load.stepped(step, emptyList(), bar, emptyList(), unit) }
     LoadStepper(
-        stringResource(Res.string.kg_value, formatKg(kg)),
-        canLower = kg - BAR_KG_STEP >= lightest,
-        canRaise = kg + BAR_KG_STEP <= MAX_BAR_KG,
-        onStep = { step -> onKg((kg + step * BAR_KG_STEP).coerceIn(lightest, MAX_BAR_KG)) },
-        note = platesLine(kg, bar),
+        weightValue(kg, Equipment.Barbell, unit),
+        canLower = stepped(-1) != null,
+        canRaise = stepped(1) != null,
+        onStep = { step -> stepped(step)?.let { onKg(it.kg) } },
+        note = platesLine(kg, bar, unit),
     )
-    BarbellDiagram(kg, bar ?: DEFAULT_BAR_KG)
+    BarbellDiagram(kg, bar ?: DEFAULT_BAR_KG, unit = unit)
 }
 
 /**

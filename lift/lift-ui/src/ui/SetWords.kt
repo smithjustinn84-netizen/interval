@@ -1,7 +1,9 @@
 package dev.justinsmith.lift.ui
 
 import androidx.compose.runtime.Composable
+import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.BandColour
 import dev.justinsmith.lift.domain.BandLevel
@@ -13,7 +15,8 @@ import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.Muscle
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.barWeight
+import dev.justinsmith.lift.domain.formatWeightNumber
 import dev.justinsmith.lift.domain.platesPerSide
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.band_extra_heavy
@@ -45,7 +48,6 @@ import dev.justinsmith.lift.ui.resources.focus_core
 import dev.justinsmith.lift.ui.resources.focus_full_body
 import dev.justinsmith.lift.ui.resources.focus_lower_body
 import dev.justinsmith.lift.ui.resources.focus_upper_body
-import dev.justinsmith.lift.ui.resources.kg_value
 import dev.justinsmith.lift.ui.resources.load_added
 import dev.justinsmith.lift.ui.resources.load_double
 import dev.justinsmith.lift.ui.resources.log_added_none
@@ -101,23 +103,37 @@ fun setLine(load: Load, reps: Int, side: Side?, seconds: Int? = null): String {
 @Composable
 private fun heldLoadLine(load: Load): String? = when (load) {
     is Load.Bell, is Load.Bar -> loadLine(load).takeIf { load.kg > 0 }
-    is Load.Bodyweight -> if (load.kg > 0) stringResource(Res.string.load_added, formatKg(load.kg)) else null
+
+    is Load.Bodyweight -> if (load.kg > 0) {
+        stringResource(Res.string.load_added, weightValue(load.kg, Equipment.Bodyweight))
+    } else {
+        null
+    }
+
     is Load.Banded -> loadLine(load)
+
     Load.Mat -> null
 }
 
 @Composable
 private fun repsLine(load: Load, reps: Int): String = when (load) {
-    is Load.Bell -> if (load.double) {
-        stringResource(Res.string.set_line_double, formatKg(load.kg), reps)
-    } else {
-        stringResource(Res.string.set_line, formatKg(load.kg), reps)
+    is Load.Bell -> {
+        val w = weightValue(load.kg, Equipment.Kettlebell)
+        if (load.double) {
+            stringResource(
+                Res.string.set_line_double,
+                w,
+                reps,
+            )
+        } else {
+            stringResource(Res.string.set_line, w, reps)
+        }
     }
 
-    is Load.Bar -> stringResource(Res.string.set_line, formatKg(load.kg), reps)
+    is Load.Bar -> stringResource(Res.string.set_line, weightValue(load.kg, Equipment.Barbell), reps)
 
     is Load.Bodyweight -> if (load.kg > 0) {
-        stringResource(Res.string.set_line_added, formatKg(load.kg), reps)
+        stringResource(Res.string.set_line_added, weightValue(load.kg, Equipment.Bodyweight), reps)
     } else {
         stringResource(Res.string.set_line_reps, reps)
     }
@@ -129,21 +145,21 @@ private fun repsLine(load: Load, reps: Int): String = when (load) {
 }
 
 /**
- * The load alone, as Up next steps it: a bell "24 kg", two "2 × 16 kg", a bar "62.5 kg", weight added to
- * bodyweight "+10 kg" or none, a band by name; null on the mat, or a band not yet known.
+ * The load alone, as Up next steps it: a bell "24 kg" / "53 lb", two "2 × 16 kg", a bar "62.5 kg" / "135 lb",
+ * weight added to bodyweight "+10 kg" or none, a band by name; null on the mat, or a band not yet known.
  */
 @Composable
 fun loadLine(load: Load): String? = when (load) {
     is Load.Bell -> if (load.double) {
-        stringResource(Res.string.load_double, formatKg(load.kg))
+        stringResource(Res.string.load_double, weightValue(load.kg, Equipment.Kettlebell))
     } else {
-        stringResource(Res.string.kg_value, formatKg(load.kg))
+        weightValue(load.kg, Equipment.Kettlebell)
     }
 
-    is Load.Bar -> stringResource(Res.string.kg_value, formatKg(load.kg))
+    is Load.Bar -> weightValue(load.kg, Equipment.Barbell)
 
     is Load.Bodyweight -> if (load.kg > 0) {
-        stringResource(Res.string.load_added, formatKg(load.kg))
+        stringResource(Res.string.load_added, weightValue(load.kg, Equipment.Bodyweight))
     } else {
         stringResource(Res.string.log_added_none)
     }
@@ -163,25 +179,28 @@ fun countLine(reps: Int, side: Side?, seconds: Int? = null): String {
 }
 
 /**
- * The plates [totalKg] takes a side of the user's [bar]: "20 kg bar · 20 + 1.25 a side", or that it is empty,
- * lighter than the bar or can't be made; with no bar, where to set one.
+ * The plates [totalKg] takes a side of the user's [bar] in [unit]: "20 kg bar · 20 + 1.25 a side" or
+ * "45 lb bar · 45 + 2.5 a side", or that it is empty, lighter than the bar or can't be made; with no bar, where
+ * to set one.
  */
 @Composable
-fun platesLine(totalKg: Double, bar: Double?): String {
+fun platesLine(totalKg: Double, bar: Double?, unit: WeightUnit = LocalWeightUnit.current): String {
     if (bar == null) return stringResource(Res.string.log_no_bar)
-    val barKg = formatKg(bar)
-    val plates = platesPerSide(totalKg, bar)
+    val barText = weightValue(bar, Equipment.Barbell, unit)
+    val plates = platesPerSide(totalKg, bar, unit)
     return when {
-        totalKg < bar -> stringResource(Res.string.bar_too_light, barKg)
+        barWeight(totalKg, unit) < barWeight(bar, unit) -> stringResource(Res.string.bar_too_light, barText)
 
-        plates == null -> stringResource(Res.string.bar_unloadable, barKg)
+        plates == null -> stringResource(Res.string.bar_unloadable, barText)
 
-        plates.isEmpty() -> stringResource(Res.string.bar_empty, barKg)
+        plates.isEmpty() -> stringResource(Res.string.bar_empty, barText)
 
         else -> {
-            var side = formatKg(plates.first())
-            for (plate in plates.drop(1)) side = stringResource(Res.string.plates_plus, side, formatKg(plate))
-            stringResource(Res.string.bar_plates, barKg, side)
+            var side = formatWeightNumber(plates.first())
+            for (plate in plates.drop(1)) {
+                side = stringResource(Res.string.plates_plus, side, formatWeightNumber(plate))
+            }
+            stringResource(Res.string.bar_plates, barText, side)
         }
     }
 }

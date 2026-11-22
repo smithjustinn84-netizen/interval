@@ -26,7 +26,6 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.standardBells
 
 /**
@@ -79,7 +78,7 @@ private fun KettlebellSlot(
         Canvas(Modifier.fillMaxWidth().height(LiftSizes.kettlebellRack)) {
             drawKettlebell(scale, bodyColor, bandColor)
         }
-        Text(formatKg(kg), style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)
+        Text(bellNumber(kg), style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)
     }
 }
 

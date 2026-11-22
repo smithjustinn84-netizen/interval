@@ -33,6 +33,7 @@ import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.HeartCard
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
@@ -40,10 +41,9 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.rememberRising
-import dev.justinsmith.lift.domain.formatKg
+import dev.justinsmith.lift.domain.tonnage
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.density_start
-import dev.justinsmith.lift.session.resources.kg_value
 import dev.justinsmith.lift.session.resources.next_emom
 import dev.justinsmith.lift.session.resources.session_extra_set
 import dev.justinsmith.lift.session.resources.session_finish
@@ -52,6 +52,7 @@ import dev.justinsmith.lift.session.resources.session_moved
 import dev.justinsmith.lift.session.resources.session_since_last
 import dev.justinsmith.lift.session.resources.session_time
 import dev.justinsmith.lift.ui.StatTile
+import dev.justinsmith.lift.ui.tonnageValue
 import org.jetbrains.compose.resources.stringResource
 
 /** Maximum share of window width the primary column takes on compact landscape phones. */
@@ -145,13 +146,14 @@ internal enum class TilesForm { Strip, Stacked, Row }
  */
 @Composable
 internal fun SessionTiles(state: SessionUiState, clocks: () -> SessionClocks, form: TilesForm) {
-    val moved = state.session?.tonnageKg ?: 0.0
+    val unit = LocalWeightUnit.current
+    val moved = state.session?.tonnage(unit) ?: 0.0
     val now = clocks()
     val stats = listOfNotNull(
         SessionStat(stringResource(Res.string.session_time), now.elapsed),
         SessionStat(
             stringResource(Res.string.session_moved),
-            stringResource(Res.string.kg_value, formatKg(moved)),
+            tonnageValue(moved, unit),
             rank = moved.toInt(),
         ),
         now.sinceLast?.let { SessionStat(stringResource(Res.string.session_since_last), it) },

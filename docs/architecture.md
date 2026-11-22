@@ -139,6 +139,7 @@ graph TD
 
     corePlatform --> coreTime
     intervalDomain --> coreTime
+    liftDomain --> coreTime
 ```
 
 Drawn from the modules themselves: `python3 tools/check_module_rules.py --diagram` reads every `module.yaml`

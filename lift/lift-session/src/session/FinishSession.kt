@@ -99,6 +99,7 @@ class FinishSession(
         // A test's attempt is said as its own line, against the last at its load: it changes no program, and the
         // marks its clock would set are that line's to say.
         val test = testOf(session.program)
+        val unit = intervals.weightUnit.value
         val changes = day?.takeIf { test == null }?.let {
             planChanges(
                 it,
@@ -108,6 +109,7 @@ class FinishSession(
                     gear,
                     setStore.restSeconds.value,
                     before = sessionStore.sessions.value,
+                    unit = unit,
                 ),
             )
         }
@@ -131,7 +133,7 @@ class FinishSession(
                 it.key == programStore.following.value?.key && day.number >= it.totalDays
             },
             toppedOut = day?.let {
-                toppedOut(it, session.sets, gear, setStore.restSeconds.value)
+                toppedOut(it, session.sets, gear, setStore.restSeconds.value, unit = unit)
             }.orEmpty(),
             heavyGrip = grip.heavyDay(done.gripLoad),
             // The day's hands: today's other sessions and 15:15's snatches with this one's.
