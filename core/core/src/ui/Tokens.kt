@@ -233,6 +233,9 @@ object Sizes {
     val sensorPulseHeart = 20.dp
     val sensorPulseDot = 8.dp
 
+    /** The dot of a heart rate's zone, beating with it, in a badge: the title bar's and a session's top bar's. */
+    val heartBadgeDot = 8.dp
+
     /** The round hit area of an icon-only top-bar action. */
     val iconButton = 48.dp
 

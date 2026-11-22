@@ -5,10 +5,10 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -23,15 +23,15 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.heart_rate_badge_cd
-import dev.justinsmith.core.resources.heart_rate_bpm
 import dev.justinsmith.core.resources.heart_rate_connecting
 import dev.justinsmith.core.resources.heart_rate_disconnected
+import dev.justinsmith.core.resources.heart_rate_unit_caps
 import dev.justinsmith.core.resources.heart_rate_zone_1
 import dev.justinsmith.core.resources.heart_rate_zone_2
 import dev.justinsmith.core.resources.heart_rate_zone_3
 import dev.justinsmith.core.resources.heart_rate_zone_4
 import dev.justinsmith.core.resources.heart_rate_zone_5
-import dev.justinsmith.core.resources.heart_rate_zone_short
+import dev.justinsmith.core.resources.heart_rate_zone_number
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
@@ -42,9 +42,9 @@ import kotlinx.coroutines.isActive
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * Compact live heart-rate pill: a heart icon pulsing at the live BPM rate, the BPM value, and the active
- * zone (`Z1`–`Z5`) tinted in the zone's colour. Draws nothing when [state] is [LiveHeartRateState.Unavailable]
- * or [LiveHeartRateState.Idle].
+ * Compact live heart-rate pill, as the heart rate reads everywhere ([HeartReading]): a dot in the zone's colour
+ * beating at the live BPM, the BPM value over a dim BPM, and the zone by number, dim. Draws nothing when [state]
+ * is [LiveHeartRateState.Unavailable] or [LiveHeartRateState.Idle].
  */
 @Composable
 fun HeartBeatBadge(
@@ -53,8 +53,20 @@ fun HeartBeatBadge(
     maxBpm: Int = DEFAULT_MAX_BPM,
     onWorkoutGround: Boolean = true,
 ) {
+    if (state == LiveHeartRateState.Unavailable || state == LiveHeartRateState.Idle) return
+    // A title bar's pill: its words grow no further than large text begins, leaving the title its room.
+    TextScaleAtMost(LARGE_FONT_SCALE) { BadgeFor(state, maxBpm, onWorkoutGround, modifier) }
+}
+
+@Composable
+private fun BadgeFor(
+    state: LiveHeartRateState,
+    maxBpm: Int,
+    onWorkoutGround: Boolean,
+    modifier: Modifier = Modifier,
+) {
     when (state) {
-        LiveHeartRateState.Unavailable, LiveHeartRateState.Idle -> return
+        LiveHeartRateState.Unavailable, LiveHeartRateState.Idle -> Unit
 
         LiveHeartRateState.Connecting -> StatusPill(
             text = stringResource(Res.string.heart_rate_connecting),
@@ -93,7 +105,7 @@ private fun StatusPill(text: String, onWorkoutGround: Boolean, modifier: Modifie
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        Icon(IntervalIcons.Heart, contentDescription = null, tint = fg, modifier = Modifier.size(Sizes.chipIcon))
+        Box(Modifier.size(Sizes.heartBadgeDot).clip(Corners.full).background(fg))
         Text(text, style = IntervalTheme.type.caption, color = fg)
     }
 }
@@ -109,7 +121,7 @@ private fun ReadingPill(bpm: Int, maxBpm: Int, onWorkoutGround: Boolean, modifie
     )
     val bg = if (onWorkoutGround) IntervalTheme.workout.control else IntervalTheme.palette.surfaceVariant
     val text = if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text
-    val scale = rememberHeartPulseScale(bpm)
+    val dim = if (onWorkoutGround) IntervalTheme.workout.onGroundDim else IntervalTheme.palette.textDim
     val description = stringResource(Res.string.heart_rate_badge_cd, bpm, zone.number)
 
     Row(
@@ -121,39 +133,45 @@ private fun ReadingPill(bpm: Int, maxBpm: Int, onWorkoutGround: Boolean, modifie
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        Icon(
-            IntervalIcons.Heart,
-            contentDescription = null,
-            tint = zoneColor,
-            modifier = Modifier
-                .size(Sizes.chipIcon)
-                .graphicsLayer {
-                    val s = scale()
-                    scaleX = s
-                    scaleY = s
-                },
-        )
+        ZoneDot(zoneColor, bpm)
+        BadgeBpm(bpm, text, dim)
         Text(
-            stringResource(Res.string.heart_rate_bpm, bpm),
-            style = IntervalTheme.type.label,
-            color = text,
+            stringResource(Res.string.heart_rate_zone_number, zone.number),
+            style = IntervalTheme.type.caption,
+            color = dim,
         )
-        ZoneTag(zone = zone, color = zoneColor, onWorkoutGround = onWorkoutGround)
     }
 }
 
+/** A heart rate's zone as a badge draws it: a dot in [color], beating at [bpm]. */
 @Composable
-internal fun ZoneTag(zone: HeartRateZone, color: Color, onWorkoutGround: Boolean) {
-    val onFill = if (onWorkoutGround) IntervalTheme.workout.onFill(color) else Color.White
-    Text(
-        stringResource(Res.string.heart_rate_zone_short, zone.number),
-        style = IntervalTheme.type.caption,
-        color = onFill,
-        modifier = Modifier
+internal fun ZoneDot(color: Color, bpm: Int, modifier: Modifier = Modifier) {
+    val scale = rememberHeartPulseScale(bpm)
+    Box(
+        modifier
+            .size(Sizes.heartBadgeDot)
+            .graphicsLayer {
+                val s = scale()
+                scaleX = s
+                scaleY = s
+            }
             .clip(Corners.full)
-            .background(color)
-            .padding(horizontal = Spacing.space8, vertical = Spacing.space4 / 2),
+            .background(color),
     )
+}
+
+/** A badge's number over a dim BPM, level on their baselines. */
+@Composable
+internal fun BadgeBpm(bpm: Int, text: Color, dim: Color) {
+    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+        Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.label, color = text)
+        Text(
+            stringResource(Res.string.heart_rate_unit_caps),
+            Modifier.alignByBaseline(),
+            style = IntervalTheme.type.caption,
+            color = dim,
+        )
+    }
 }
 
 /**
