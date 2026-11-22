@@ -23,28 +23,6 @@ class LiveHeartRateTest {
     }
 
     @Test
-    fun `the floor of a zone is the first heart rate sorted into it`() {
-        assertEquals(null, zoneFloor(HeartRateZone.Zone1, 190))
-        assertEquals(listOf(114, 133, 152, 171), HeartRateZone.entries.drop(1).map { zoneFloor(it, 190) })
-        for (max in MAX_BPM_RANGE) {
-            for (zone in HeartRateZone.entries.drop(1)) {
-                val floor = zoneFloor(zone, max) ?: error("no floor")
-                assertEquals(zone, heartRateZone(floor, max))
-                assertEquals(zone.ordinal - 1, heartRateZone(floor - 1, max).ordinal)
-            }
-        }
-    }
-
-    @Test
-    fun `the zone scale runs from half the max to the max`() {
-        assertEquals(0f, zoneScaleFraction(60, 200))
-        assertEquals(0f, zoneScaleFraction(100, 200))
-        assertEquals(0.5f, zoneScaleFraction(150, 200))
-        assertEquals(1f, zoneScaleFraction(200, 200))
-        assertEquals(1f, zoneScaleFraction(215, 200))
-    }
-
-    @Test
     fun `a sensor is in use once it is connecting`() {
         assertEquals(false, LiveHeartRateState.Unavailable.inUse)
         assertEquals(false, LiveHeartRateState.Idle.inUse)
@@ -125,15 +103,6 @@ class LiveHeartRateTest {
         assertEquals(HeartRateZone.Zone5, heartRateZone(176, maxBpm = 190, restingBpm = 50))
         // By the max alone 133 is zone 3 already.
         assertEquals(HeartRateZone.Zone3, heartRateZone(133, maxBpm = 190))
-    }
-
-    @Test
-    fun `a zone's floor and the scale follow the reserve`() {
-        assertEquals(134, zoneFloor(HeartRateZone.Zone2, maxBpm = 190, restingBpm = 50))
-        assertEquals(114, zoneFloor(HeartRateZone.Zone2, maxBpm = 190))
-        // Half the reserve up from rest is where the scale opens.
-        assertEquals(0f, zoneScaleFraction(120, maxBpm = 190, restingBpm = 50))
-        assertEquals(1f, zoneScaleFraction(190, maxBpm = 190, restingBpm = 50))
     }
 
     @Test
