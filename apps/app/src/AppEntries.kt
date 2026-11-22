@@ -47,6 +47,7 @@ import dev.justinsmith.interval.nav.Settings
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
+import dev.justinsmith.interval.nav.Trends
 import dev.justinsmith.interval.nav.WeekSetup
 import dev.justinsmith.interval.nav.Welcome
 import dev.justinsmith.interval.nav.Workout
@@ -60,6 +61,7 @@ import dev.justinsmith.interval.resources.Res
 import dev.justinsmith.interval.resources.nav_train
 import dev.justinsmith.interval.settings.SettingsRoute
 import dev.justinsmith.interval.today.HomeRoute
+import dev.justinsmith.interval.trends.TrendsRoute
 import dev.justinsmith.interval.ui.AppSizes
 import dev.justinsmith.interval.ui.PageKind
 import dev.justinsmith.interval.ui.PillarPicker
@@ -113,6 +115,7 @@ internal fun appEntries(
             onStartSession = { backStack.push(Lifting) },
             onOpenSettings = { backStack.push(Settings) },
             onSetup = { backStack.push(WeekSetup) },
+            onOpenTrends = { backStack.openDetail(Trends) },
             openDay = pendingHistoryDay.value,
             onClearOpenDay = { pendingHistoryDay.value = null },
         )
@@ -150,9 +153,7 @@ internal fun appEntries(
             inPane = twoPane,
         )
     }
-    entry<ClassDetail>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) { key ->
-        ClassDetailRoute(key.startedAtEpochMillis, onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
-    }
+    historyPages(backStack, twoPane)
     entry<Plan> { PlanRoute(onBack = { backStack.removeLastOrNull() }) }
     entry<Workout>(metadata = pageKind(PageKind.Mode)) { key ->
         WorkoutRoute(id = key.id, onExit = { backStack.removeLastOrNull() }, flow = key.flow)
@@ -169,6 +170,16 @@ internal fun appEntries(
     setupEntry(backStack, selectTab)
     entry<FlowEditor> { key ->
         FlowEditorRoute(key.id, key.copyOf, onDone = { backStack.removeLastOrNull() })
+    }
+}
+
+/** The Log's pages beside it that need nothing but the stack: a class recorded on a sensor, and Trends. */
+private fun EntryProviderScope<NavKey>.historyPages(backStack: NavBackStack<NavKey>, twoPane: Boolean) {
+    entry<ClassDetail>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) { key ->
+        ClassDetailRoute(key.startedAtEpochMillis, onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
+    }
+    entry<Trends>(metadata = ListDetailSceneStrategy.detailPane(HISTORY_SCENE)) {
+        TrendsRoute(onBack = { backStack.removeLastOrNull() }, inPane = twoPane)
     }
 }
 

@@ -108,6 +108,7 @@ fun HistoryRoute(
     selectedLift: String? = null,
     onOpenSettings: () -> Unit = {},
     onSetup: () -> Unit = {},
+    onOpenTrends: () -> Unit = {},
     openDay: Long? = null,
     onClearOpenDay: () -> Unit = {},
 ) {
@@ -133,6 +134,7 @@ fun HistoryRoute(
     val startSession by rememberUpdatedState(onStartSession)
     val openSettings by rememberUpdatedState(onOpenSettings)
     val setup by rememberUpdatedState(onSetup)
+    val trends by rememberUpdatedState(onOpenTrends)
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
@@ -150,6 +152,7 @@ fun HistoryRoute(
             startSession = { startSession() },
             openSettings = { openSettings() },
             setup = { setup() },
+            trends = { trends() },
         )
     }
     HistoryScreen(state, actions, modifier, selectedWorkout, selectedLift)
@@ -170,6 +173,7 @@ private fun historyActions(
     startSession: () -> Unit,
     openSettings: () -> Unit,
     setup: () -> Unit,
+    trends: () -> Unit,
 ): HistoryActions {
     // Every way off the day sheet to another page closes it first, so it isn't open on the way back.
     fun leavingSheet(go: () -> Unit) {
@@ -231,6 +235,7 @@ private fun historyActions(
         },
         onOpenSettings = openSettings,
         onSetup = setup,
+        onOpenTrends = { leavingSheet(trends) },
     )
 }
 
@@ -281,6 +286,8 @@ class HistoryActions(
     val onOpenSettings: () -> Unit = {},
     /** Opens Set up, which asks what is trained when and builds the week. */
     val onSetup: () -> Unit = {},
+    /** Opens Trends: the twelve weeks' time, weight and heart, recovery, records and tests. */
+    val onOpenTrends: () -> Unit = {},
 )
 
 /**
@@ -655,6 +662,7 @@ private fun SummaryFor(state: HistoryUiState, actions: HistoryActions, modifier:
                 state.weeks,
                 heatmap = state.heatmap,
                 onDay = { actions.onOpenDay(it) },
+                onTrends = actions.onOpenTrends,
             )
         }
     }

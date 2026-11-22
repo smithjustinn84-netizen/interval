@@ -279,4 +279,33 @@
     <string name="history_filter_clear">Clear</string>
     <string name="history_filter_empty">Nothing matches that filter.</string>
     <string name="history_pr">PR</string>
+
+    <!-- Trends: the Log's twelve weeks from both sides. -->
+    <string name="trends_title">Trends</string>
+    <string name="trends_open">Trends</string>
+    <string name="trends_close_cd">Close trends</string>
+    <string name="trends_empty">Trends are drawn from what you log. Train for a week or two and they fill in.</string>
+    <string name="trends_time_title">Time a week</string>
+    <string name="trends_lifted_title">Lifted a week</string>
+    <string name="trends_heart_title">Heart load a week</string>
+    <string name="trends_heart_hint">Minutes in each heart-rate zone times the zone, from a sensor’s readings</string>
+    <string name="trends_this_week">This week %1$s</string>
+    <string name="trends_this_week_usual">This week %1$s · usual %2$s</string>
+    <string name="trends_bars_cd">%1$s over the last 12 weeks: %2$s</string>
+    <string name="trends_recovery_title">Heart recovery</string>
+    <string name="trends_recovery_hint">How far your heart falls in the first minute of a rest, in workouts run straight through</string>
+    <string name="trends_recovery_bpm">%1$d bpm</string>
+    <string name="trends_recovery_range">%1$d → %2$d bpm</string>
+    <string name="trends_recovery_cd">Heart recovery over the last %1$d workouts: %2$s bpm</string>
+    <string name="trends_recovery_faster">Recovering faster</string>
+    <string name="trends_recovery_steady">Holding steady</string>
+    <string name="trends_recovery_slower">Recovering slower</string>
+    <string name="trends_records_title">Records</string>
+    <plurals name="trends_records_count">
+        <item quantity="one">%1$d record in 12 weeks</item>
+        <item quantity="other">%1$d records in 12 weeks</item>
+    </plurals>
+    <string name="trends_tests_title">Tests</string>
+    <string name="trends_test_change">%1$s → %2$s</string>
+    <string name="trends_test_cd">%1$s, latest %2$s: %3$s</string>
 </resources>

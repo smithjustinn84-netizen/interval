@@ -32,14 +32,13 @@ import dev.justinsmith.interval.history.resources.history_search
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.defaultPresetName
+import dev.justinsmith.interval.trends.recordMoments
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.NameField
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.CustomExercise
 import dev.justinsmith.lift.domain.LiftSession
-import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.ui.Choice
 import kotlinx.coroutines.flow.drop
 import org.jetbrains.compose.resources.stringResource
@@ -50,15 +49,8 @@ private const val SEARCH_MAX_LENGTH = 80
  * Returns the UIDs of finished Lift [sessions] (newest first) that set at least one personal record
  * against every session finished before them.
  */
-internal fun prSessionUids(sessions: List<LiftSession>): Set<String> {
-    val prior = mutableListOf<SetLog>()
-    val prs = mutableSetOf<String>()
-    for (session in sessions.asReversed()) {
-        if (newRecords(prior, session).isNotEmpty()) prs += session.uid
-        prior += session.sets
-    }
-    return prs
-}
+internal fun prSessionUids(sessions: List<LiftSession>): Set<String> =
+    recordMoments(sessions) { it }.mapTo(mutableSetOf()) { it.sessionUid }
 
 /**
  * Narrows [sections] by [filter] and free-text [query], dropping days left with no matching rows.

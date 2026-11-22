@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Trends, from the foot of the Log's All time card: the last 12 weeks of time trained and weight lifted, and the
+  heart load a sensor read, each week against a usual one; how far the heart falls a minute into the rests of
+  workouts run straight through, a point a workout, and whether that is getting faster; the records set, newest
+  first; and each test's results with the same bell, first to latest. Nothing new is stored: it is all worked out
+  from the log. Beside the log on a wide window.
 - A finished workout or Lift session shared as a picture. Share, on a summary or from a page in the Log, opens a
   sheet with the card that will be sent: what it was and when, its name, then the workout's timeline and the heart
   rate a sensor read, or the session's records (or its lifts and their sets), and the time, rounds or weight moved
@@ -431,6 +436,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   program; the equipment is a row rather than a button, and Change program is All programs.
 
 ### Fixed
+- The weight a Lift session moved, in pounds, no longer counts its warm-ups, as it never did in kilograms.
 - A workout skipped through or ended after a few seconds with a body weight set now reaches Health Connect and
   Apple Health: a calorie estimate that rounds to zero no longer drops the session with it.
 - A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of

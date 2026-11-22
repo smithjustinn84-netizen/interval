@@ -1,0 +1,18 @@
+<journey name="Trends">
+  <description>
+    The Log's All time opens Trends: the time and weight a week against a usual week, the records set and a test's
+    results at its bell. Run on an install with a few weeks of workouts and Lift sessions, at least one of them a
+    snatch test done twice with the same bell (TrendsAcceptanceTest seeds the same on the JVM).
+  </description>
+  <actions>
+    <action>Tap the "Log" tab, then "All time"</action>
+    <action>Scroll to the foot of the All time card and tap "Trends"</action>
+    <action>Verify that the page is titled "Trends" and reads "Since" over a date twelve weeks back</action>
+    <action>Verify that "Time a week" draws a bar a week, this week outlined, a dashed line across at the usual week, and under it "This week" with the usual beside it</action>
+    <action>Verify that "Lifted a week" is there with its weight in the unit Settings weighs in, and that "Heart load a week" and "Heart recovery" show only if a sensor read a workout</action>
+    <action>Scroll down and verify that "Records" counts the records set in 12 weeks and lists the newest first, each with its lift, the record and its date</action>
+    <action>Verify that "Tests" names the snatch test, its latest result with its bell ("… reps with 16 kg"), the first and latest joined by an arrow, and a line of the attempts</action>
+    <action>Tap "Back" and verify that the Log is on "All time"</action>
+    <action>On a tablet held sideways, open Trends again and verify that it opens beside the log with a close button in place of Back</action>
+  </actions>
+</journey>

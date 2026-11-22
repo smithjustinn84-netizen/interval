@@ -83,10 +83,13 @@ fun Load.movedWeight(unit: WeightUnit): Double = when (unit) {
 /** The weight this set moved in [unit]: [Load.movedWeight] times its reps. */
 fun SetLog.tonnage(unit: WeightUnit): Double = load.movedWeight(unit) * reps
 
-/** The total weight this session moved in [unit], summing each set's displayed weight times its reps. */
+/**
+ * The total weight this session's working sets moved in [unit], summing each set's displayed weight times its reps:
+ * warm-ups left out in either unit, as [LiftSession.tonnageKg] leaves them.
+ */
 fun LiftSession.tonnage(unit: WeightUnit): Double = when (unit) {
     WeightUnit.Kg -> tonnageKg
-    WeightUnit.Lb -> sets.sumOf { it.tonnage(WeightUnit.Lb) }
+    WeightUnit.Lb -> workingSets.sumOf { it.tonnage(WeightUnit.Lb) }
 }
 
 /** Formats a weight number in either unit, trimming trailing zeros as [formatKg] does. */

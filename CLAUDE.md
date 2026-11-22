@@ -186,7 +186,9 @@ interval/            the interval timer
   interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export, import and clearing the log
                      (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
-                     workout) and Plan: one module, each needs
+                     workout), Trends (`trends/`: `trends` pure, the last 12 weeks of both logs, recovery, records by
+                     `recordMoments`, which the Log's Records filter takes too, and the tests; the `Trends` key, opened
+                     from All time beside the log, nothing stored) and Plan: one module, each needs
                      the other; `PlanReminderScheduler` (`historyModule`, di/) keeps the platform's reminders
                      in step with the plan
   interval-today     Today, the first tab (`today/`: `HomeRoute`, `HomeViewModel`, named Home since Lift's tab is

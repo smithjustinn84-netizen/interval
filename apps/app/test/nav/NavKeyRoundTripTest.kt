@@ -47,6 +47,7 @@ class NavKeyRoundTripTest {
             Licenses,
             WorkoutDetail(7),
             Plan,
+            Trends,
             WeekSetup,
             Welcome,
             FlowEditor(),

@@ -62,6 +62,7 @@ import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
+import dev.justinsmith.interval.nav.Trends
 import dev.justinsmith.interval.nav.WeekSetup
 import dev.justinsmith.interval.nav.Welcome
 import dev.justinsmith.interval.nav.Workout
@@ -139,6 +140,7 @@ internal val navConfiguration = SavedStateConfiguration {
             subclass(Privacy::class)
             subclass(WorkoutDetail::class)
             subclass(ClassDetail::class)
+            subclass(Trends::class)
             subclass(Plan::class)
             subclass(Presets::class)
             subclass(WeekSetup::class)

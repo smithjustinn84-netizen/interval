@@ -10,6 +10,7 @@ import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.nav.Tab
 import dev.justinsmith.interval.nav.Timer
 import dev.justinsmith.interval.nav.TodayTab
+import dev.justinsmith.interval.nav.Trends
 import dev.justinsmith.interval.nav.Workout
 import dev.justinsmith.interval.nav.WorkoutDetail
 import dev.justinsmith.interval.nav.push
@@ -66,7 +67,7 @@ internal val NavBackStack<NavKey>.settingsOverTimer: Boolean
 
 /** A finished workout, class or session opened from History: on a wide window it sits beside the log. */
 internal val NavKey?.opensBesideHistory: Boolean
-    get() = this is WorkoutDetail || this is ClassDetail || (this is LiftDetail && fromHistory)
+    get() = this is WorkoutDetail || this is ClassDetail || this == Trends || (this is LiftDetail && fromHistory)
 
 /**
  * Opens [key] beside History's log, in place of whatever was open there, so Back closes it rather than walking

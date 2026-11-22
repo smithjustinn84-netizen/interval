@@ -77,6 +77,13 @@ data class WorkoutDetail(val id: Long) : NavKey
 @Serializable
 data class ClassDetail(val startedAtEpochMillis: Long) : NavKey
 
+/**
+ * Trends: the last twelve weeks of both sides' training, the heart's recovery, the records set and the tests. Opened
+ * from the Log's All time card, beside the log on a wide window.
+ */
+@Serializable
+data object Trends : NavKey
+
 /** The weekly goal, the routine by weekday and one-offs on dates. Pushed from History. */
 @Serializable
 data object Plan : NavKey

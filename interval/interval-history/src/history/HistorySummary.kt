@@ -77,6 +77,7 @@ import dev.justinsmith.interval.history.resources.history_week_mobility
 import dev.justinsmith.interval.history.resources.history_week_sports
 import dev.justinsmith.interval.history.resources.history_weeks
 import dev.justinsmith.interval.history.resources.history_weeks_cd
+import dev.justinsmith.interval.history.resources.trends_open
 import dev.justinsmith.interval.ui.Angles
 import dev.justinsmith.interval.ui.Bar
 import dev.justinsmith.interval.ui.Bars
@@ -477,7 +478,10 @@ internal fun MonthSummary(
     }
 }
 
-/** Everything so far: the totals, the best streak, and days trained a week over the last twelve. */
+/**
+ * Everything so far: the totals, the best streak, days trained a week over the last twelve and the heatmap, then the
+ * way to Trends, which draws how the training has gone.
+ */
 @Composable
 internal fun AllTimeSummary(
     summary: RangeSummary,
@@ -487,6 +491,7 @@ internal fun AllTimeSummary(
     modifier: Modifier = Modifier,
     heatmap: List<HeatmapDay> = emptyList(),
     onDay: (Long) -> Unit = {},
+    onTrends: () -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     SummaryCard(modifier) {
@@ -524,6 +529,7 @@ internal fun AllTimeSummary(
         if (heatmap.isNotEmpty()) {
             TrainingHeatmap(heatmap, onDay)
         }
+        ChipButton(stringResource(Res.string.trends_open), onTrends)
     }
 }
 

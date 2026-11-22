@@ -61,4 +61,13 @@ class WeightUnitsTest {
         assertEquals(1600.0, session.tonnage(WeightUnit.Lb))
         assertEquals(session.tonnageKg, session.tonnage(WeightUnit.Kg))
     }
+
+    @Test
+    fun `session tonnage in pounds leaves warm-ups out as in kilograms`() {
+        val warmUp = SetLog(1, BuiltInExercise.TwoHandSwing, Load.Bell(8.0), 10, null, 0, warmUp = true)
+        val work = SetLog(2, BuiltInExercise.TwoHandSwing, Load.Bell(16.0), 10, null, 1)
+        val session = LiftSession("s1", 0, 1000, "Test", listOf(warmUp, work))
+        assertEquals(350.0, session.tonnage(WeightUnit.Lb))
+        assertEquals(160.0, session.tonnage(WeightUnit.Kg))
+    }
 }

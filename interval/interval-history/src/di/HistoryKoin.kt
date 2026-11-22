@@ -6,6 +6,7 @@ import dev.justinsmith.interval.history.WorkoutDetailViewModel
 import dev.justinsmith.interval.plan.PlanReminderScheduler
 import dev.justinsmith.interval.plan.PlanViewModel
 import dev.justinsmith.interval.platform.PlanReminderSource
+import dev.justinsmith.interval.trends.TrendsViewModel
 import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.dsl.bind
@@ -17,7 +18,7 @@ import org.koin.dsl.module
  * from the process's first moment, on the storage scope, which closing the container cancels. It is also the
  * [PlanReminderSource] Android's reminder alarm reads as it shows. And the ViewModels of History (its view in the
  * entry's `SavedStateHandle`), Plan, a finished workout (`parametersOf(id)`) and a class recorded on a sensor (by
- * the moment it started).
+ * the moment it started), and Trends.
  */
 val historyModule: Module = module {
     single(createdAtStart = true) {
@@ -29,4 +30,5 @@ val historyModule: Module = module {
         WorkoutDetailViewModel(id, get(), get(), get(), get(), get(), get(), get(), get(), get())
     }
     viewModel { (startedAt: Long) -> ClassDetailViewModel(startedAt, get(), get(), get(), get()) }
+    viewModel { TrendsViewModel(get(), get(), get(), get(), get()) }
 }
