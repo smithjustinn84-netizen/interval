@@ -71,6 +71,7 @@ import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.countUp
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.presetNameOrCustom
 import dev.justinsmith.interval.ui.rememberEntrance
@@ -78,11 +79,6 @@ import dev.justinsmith.interval.ui.risingEnter
 import dev.justinsmith.interval.ui.workoutDescription
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.common_joined
-import dev.justinsmith.interval.workout.resources.effort_all_out
-import dev.justinsmith.interval.workout.resources.effort_easy
-import dev.justinsmith.interval.workout.resources.effort_hard
-import dev.justinsmith.interval.workout.resources.effort_steady
-import dev.justinsmith.interval.workout.resources.effort_very_hard
 import dev.justinsmith.interval.workout.resources.history_streak
 import dev.justinsmith.interval.workout.resources.summary_goal_met
 import dev.justinsmith.interval.workout.resources.summary_how_was_it
@@ -398,7 +394,7 @@ private fun SummaryDetails(
                 title = stringResource(Res.string.summary_how_was_it),
                 efforts = PerceivedEffort.entries,
                 effort = state.effort,
-                effortLabel = { effortWord(it) },
+                effortLabel = { effortWord(it.level) },
                 onEffortChange = reflection.onEffortChange,
                 note = state.note,
                 onNoteChange = reflection.onNoteChange,
@@ -478,22 +474,10 @@ class SummaryReflection(
     val onCountSnatches: (SnatchCount?) -> Unit = {},
 )
 
-/** The word for [effort]: "Easy" through "All out". */
-@Composable
-internal fun effortWord(effort: PerceivedEffort): String = stringResource(
-    when (effort) {
-        PerceivedEffort.Easy -> Res.string.effort_easy
-        PerceivedEffort.Steady -> Res.string.effort_steady
-        PerceivedEffort.Hard -> Res.string.effort_hard
-        PerceivedEffort.VeryHard -> Res.string.effort_very_hard
-        PerceivedEffort.AllOut -> Res.string.effort_all_out
-    },
-)
-
 /** The effort and the note as one line, "Hard · Felt strong", either alone, or null with neither. */
 @Composable
 internal fun healthNotes(state: WorkoutUiState): String? {
-    val word = state.effort?.let { effortWord(it) }
+    val word = state.effort?.let { effortWord(it.level) }
     val note = state.note.trim().ifEmpty { null }
     return when {
         word != null && note != null -> stringResource(Res.string.common_joined, word, note)

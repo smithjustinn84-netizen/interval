@@ -126,11 +126,6 @@
     <!-- The same words as lift-session's, for a summary whose snatches, with the day's, come to a hundred. -->
     <string name="summary_hand_care">Look after your hands: file the calluses down, and loosen your grip as the bell floats</string>
     <string name="summary_note_placeholder">A note on it</string>
-    <string name="effort_easy">Easy</string>
-    <string name="effort_steady">Steady</string>
-    <string name="effort_hard">Hard</string>
-    <string name="effort_very_hard">Very hard</string>
-    <string name="effort_all_out">All out</string>
     <string name="summary_week_of_goal">%1$d of %2$d days this week</string>
     <plurals name="summary_week_count">
         <item quantity="one">%1$d day trained this week</item>

@@ -13,7 +13,14 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import dev.justinsmith.core.resources.Res
+import dev.justinsmith.core.resources.effort_all_out
+import dev.justinsmith.core.resources.effort_easy
+import dev.justinsmith.core.resources.effort_hard
+import dev.justinsmith.core.resources.effort_steady
+import dev.justinsmith.core.resources.effort_very_hard
 import kotlinx.coroutines.flow.drop
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * "How was it?" at a finish, the same on both sides: how hard it felt, one of [efforts] (none until picked), and a
@@ -58,3 +65,25 @@ fun <T> HowWasIt(
         NameField(noteState, placeholder = notePlaceholder, label = notePlaceholder, maxLength = noteMaxLength)
     }
 }
+
+/**
+ * The word for how hard a workout or a session felt, by its [level] on the scale both sides' `PerceivedEffort`
+ * store (1 "Easy", 2 "Steady", 3 "Hard", 4 "Very hard", 5 "All out"), so the two say it alike.
+ */
+@Composable
+fun effortWord(level: Int): String = stringResource(
+    when (level) {
+        EASY -> Res.string.effort_easy
+        STEADY -> Res.string.effort_steady
+        HARD -> Res.string.effort_hard
+        VERY_HARD -> Res.string.effort_very_hard
+        ALL_OUT -> Res.string.effort_all_out
+        else -> throw IllegalArgumentException("No effort at level $level")
+    },
+)
+
+private const val EASY = 1
+private const val STEADY = 2
+private const val HARD = 3
+private const val VERY_HARD = 4
+private const val ALL_OUT = 5

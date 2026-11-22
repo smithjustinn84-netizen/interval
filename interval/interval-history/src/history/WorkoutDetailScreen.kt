@@ -83,6 +83,7 @@ import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.Timeline
 import dev.justinsmith.interval.ui.ZoneBreakdown
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.interval.ui.workoutDescription
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -296,7 +297,7 @@ private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
                 style = IntervalTheme.type.caption,
                 color = palette.textDim,
             )
-            workout.effort?.let { Text(effortWord(it), style = IntervalTheme.type.value, color = palette.text) }
+            workout.effort?.let { Text(effortWord(it.level), style = IntervalTheme.type.value, color = palette.text) }
             workout.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
         }
     }

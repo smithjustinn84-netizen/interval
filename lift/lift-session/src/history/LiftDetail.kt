@@ -32,6 +32,7 @@ import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.MuscleMap
@@ -39,7 +40,6 @@ import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.newRecords
 import dev.justinsmith.lift.session.SessionStats
-import dev.justinsmith.lift.session.effortWord
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
 import dev.justinsmith.lift.session.resources.common_joined
@@ -230,7 +230,9 @@ private fun HowItWent(session: LiftSession, modifier: Modifier = Modifier) {
         GroupLabel(stringResource(Res.string.detail_how_it_went))
         ListCard {
             Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
-                session.effort?.let { Text(effortWord(it), style = IntervalTheme.type.value, color = palette.text) }
+                session.effort?.let {
+                    Text(effortWord(it.level), style = IntervalTheme.type.value, color = palette.text)
+                }
                 session.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
             }
         }

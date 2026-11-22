@@ -49,6 +49,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.TabGrid
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.DayStanding
@@ -57,7 +58,6 @@ import dev.justinsmith.lift.domain.ProgramProgress
 import dev.justinsmith.lift.domain.builtInPrograms
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.programProgress
-import dev.justinsmith.lift.session.effortWord
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.kg_value
@@ -350,7 +350,7 @@ private fun DoneRow(row: DoneRow, onOpenSession: (uid: String) -> Unit) {
                 row.date,
                 stringResource(Res.string.program_sets_done, row.day.setsDone, row.day.setsPlanned),
             )
-            val effort = row.day.session?.effort?.let { effortWord(it) }
+            val effort = row.day.session?.effort?.let { effortWord(it.level) }
             Text(
                 effort?.let { stringResource(Res.string.common_joined, sets, it) } ?: sets,
                 style = IntervalTheme.type.meta,

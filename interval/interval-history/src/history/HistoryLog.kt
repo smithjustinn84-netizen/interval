@@ -59,6 +59,7 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.StripeMark
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.joined
 import dev.justinsmith.interval.ui.longestWordWidth
@@ -330,7 +331,7 @@ private fun HistoryRowText(item: HistoryItem, name: String, day: DayMark?) {
                 kindLead(item),
                 item.capRounds?.let { pluralStringResource(Res.plurals.history_cap_rounds, it, it) },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
-                item.effort?.let { effortWord(it) },
+                item.effort?.let { effortWord(it.level) },
                 item.calories?.let { stringResource(Res.string.history_calories_value, it) },
                 item.time,
             )

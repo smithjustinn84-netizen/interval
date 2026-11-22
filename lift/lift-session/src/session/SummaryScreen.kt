@@ -46,6 +46,7 @@ import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
+import dev.justinsmith.interval.ui.effortWord
 import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.isLargeText
@@ -296,7 +297,7 @@ private fun SummaryHowWasIt(finished: Finished, reflection: SummaryReflection) {
         title = stringResource(Res.string.summary_how_was_it),
         efforts = PerceivedEffort.entries,
         effort = finished.session.effort,
-        effortLabel = { effortWord(it) },
+        effortLabel = { effortWord(it.level) },
         onEffortChange = reflection.onEffortChange,
         note = finished.note,
         onNoteChange = reflection.onNoteChange,
@@ -337,7 +338,7 @@ private fun GripNotes(finished: Finished) {
 /** The effort and the note as one line, "Hard · Felt strong", either alone, or null with neither. */
 @Composable
 private fun healthNotes(finished: Finished): String? {
-    val word = finished.session.effort?.let { effortWord(it) }
+    val word = finished.session.effort?.let { effortWord(it.level) }
     val note = finished.session.note
     return when {
         word != null && note != null -> stringResource(Res.string.common_joined, word, note)

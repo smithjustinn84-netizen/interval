@@ -75,11 +75,6 @@
     <string name="summary_note_placeholder">A note on it</string>
     <string name="detail_how_it_went">How it went</string>
     <string name="detail_muscles_worked">Muscles worked</string>
-    <string name="effort_easy">Easy</string>
-    <string name="effort_steady">Steady</string>
-    <string name="effort_hard">Hard</string>
-    <string name="effort_very_hard">Very hard</string>
-    <string name="effort_all_out">All out</string>
     <string name="summary_share">Share</string>
     <string name="share_session_figures">%1$s · %2$s moved · %3$d reps</string>
     <string name="share_session_record">%1$s: %2$s</string>
