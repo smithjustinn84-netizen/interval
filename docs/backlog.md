@@ -2,8 +2,8 @@
 
 Work that is out of every sprint for now, each with why and what would bring it in. A sprint that takes an item
 moves it into its own tickets and deletes it here; a sprint's "Explicitly not this sprint" section links here
-rather than copying the list forward. What is in a sprint is in that sprint's file (the current one is
-[sprint-0.6.md](sprint-0.6.md)); finished sprints and reviews are in [archive/](archive/).
+rather than copying the list forward. What is in a sprint is in that sprint's file (none is open; the last
+was [sprint-0.6.md](archive/sprint-0.6.md)); finished sprints and reviews are in [archive/](archive/).
 
 ## Waiting on something
 
@@ -36,42 +36,20 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   tune `detectRounds`
   (`interval-domain`, `timer/Rounds.kt`) on what real classes look like, a recording or two kept as a fixture
   for `RoundsTest`. *Brings it in:* the sensor in hand.
-- **A class on the H10.** `PolarClassSensor` takes an H10 too (2026-11-19): it paired and streamed the heart rate
-  live through a conditioning workout, its zones shown after, on a real strap; a Lift session on it is still to
-  try. Its class recording (the exercise
-  recording, the heart rate a second with no movement) is untried: `FEATURE_POLAR_H10_EXERCISE_RECORDING` coming
-  ready, the recording surviving the phone out of reach, the exercise's interval as `fetchExercise` reports it,
-  and rounds found by the heart rate alone on a real class.
+- **A class on the H10.** `PolarClassSensor` takes an H10 too (2026-11-19), and on 2026-11-22 the R8 release
+  build paired, streamed, reconnected, recorded and synced on a real H10 and a real Verity Sense. Not yet: the
+  recording surviving the phone out of reach for a whole class, and rounds found by the heart rate alone on one.
   *Brings it in:* an H10 in hand.
-- **The sensor's review, on a real sensor** (2026-11-19). `PolarClassSensor` was split by model
-  (`PolarRecorders.kt`) and now keeps a class before clearing the sensor, stops the live stream for a recording's
-  start or a sync and starts it again after, and takes a forget under the same lock. None of it has met a sensor:
-  pair, Record and Sync on a Verity Sense, and Record tapped while a workout streams the heart rate.
-  *Brings it in:* the sensor in hand.
 - **Pairing and the pulse, on the real sensors** (2026-11-20: tried, both worked). Pairing took an H10 left at
   home in place of the Verity Sense on the arm, since Polar's search opens by naming every sensor the phone knows;
   it now takes only one heard advertising in the scan, and asks "Which sensor?" with two in reach. The paired
   sensor's heart rate beside the gear on every tab came with it. Both were run on the real sensors that day. Not
   said to be tried: the "Which sensor?" sheet with an armband and a strap both awake, the pulse's sheet, a low
   battery's dot, and "Rec" through a class.
-- **Live heart rate on a real strap** (2026-11-19). Lift's session now takes the max heart rate and the alerts
-  switch from Settings, the stream is held by its users (a workout's and a session's, neither ending the other's),
-  a strap that reads no heart shows as no signal, and a dropped connection is tried again (`HeartRateStream`, a
-  wait of 5 s growing to 30). The reconnecting and the contact flag have met no sensor. *Brings it in:* the H10.
 - **Live heart rate over Android's own Bluetooth** (F1, 2026-11-22). Every sensor streams over GATT now
-  (`AndroidHeartRateLink`), Polar's too, and pairing scans for the standard Heart Rate service: none of it has met a
-  sensor. To try: pairing an H10 and a Verity Sense, and a strap of another make; the live heart rate through a
-  workout on each (Android 12, and 13 and up, take different callbacks); a Verity paired by a build before this one
-  found again by its name; a class recorded and synced on each Polar sensor, the SDK now connecting by address;
-  the battery read over GATT. *Brings it in:* the sensors in hand.
-- **Live heart rate on iOS** (F1, 2026-11-22). Any strap pairs and streams over CoreBluetooth (`IosHeartRateLink`,
-  under interval-platform's common `StreamingSensor`), tested against fakes alone: the simulator has no Bluetooth, so
-  only the prompt's wiring and the notice were seen there. To try (`journeys/live-heart-rate-strap-ios.xml`): the
-  prompt on the first pairing, a strap and a Polar sensor found and streamed, two in reach, the battery, a drop and
-  its return. Foreground only, by choice: the app declares no `bluetooth-central` background mode, so with the
-  phone locked the connection goes as iOS suspends the app, the trace holds zeros for the gap, and the stream
-  connects again on return. Keeping it would wake the app for each reading, running the workout off screen, which
-  the iOS design leaves to notifications and the Live Activity. *Brings it in:* an iPhone and a strap.
+  (`AndroidHeartRateLink`), Polar's too. `journeys/live-heart-rate-strap.xml` was run by hand with real straps the
+  same day, and iOS's (`live-heart-rate-strap-ios.xml`) too. Not said to be tried: Android 12's callbacks beside 13
+  and up's, and a Verity paired by an older build found again by its name. *Brings it in:* an Android 12 phone.
 - **The heart rate read, on a real strap** (2026-11-19). The trace under the ring, Lift's heart card and its
   rest's "ready", recovery and heart load on the summary and in the Log, the zones by heart-rate reserve, the
   sensor's battery, and heart load in readiness are all built against fakes. None has met a sensor: the battery
@@ -107,9 +85,8 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
 
 Full findings, cleanup items, and the 3-phase `0.6.0 → 1.0.0` roadmap live in [product-review.md](product-review.md). Unscheduled items awaiting a sprint:
 
-- **Release blockers before `0.6.0` (B2–B3).** Consolidate `[0.5.0]` + `[0.6.0]` in `CHANGELOG.md`; complete real-hardware Polar R8 smoke test. (B1's licences and B4's counts are done.)
 - **Clean up & dead weight (C1–C6).** Batch `ExportBundle.SCHEMA` bumps once per release (the rule is in CLAUDE.md's Storage and release.md's pre-flight from 2026-11-22; Room stays one bump a change); prune the `Presets` route (and its `subclass` in `navConfiguration`, its line in `NavKeyRoundTripTest`) and `timerUnderTrain`/`rootAtToday` only after a release past `v0.4.0`, the last build with the Timer as a tab, is tagged and installed (no tag holds them yet; `Timer`'s `@SerialName` stays, it is the name every build saves under); curate the built-in program catalogue.
-- **Next-level `1.0` features (F1, F4–F7; F2 and F3 are done).** Standard BLE GATT (`0x180D`) live heart rate on Android & iOS; unified Progress / Trends view in Log; superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
+- **Next-level `1.0` features (F4–F7; F1, F2 and F3 are done).** Unified Progress / Trends view in Log; superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
 
 ## Left out on purpose
 

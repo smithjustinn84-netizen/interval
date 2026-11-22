@@ -174,101 +174,6 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   first", once for each lift and bell; on a day Lift reads as taxed it says "Stop a rep early", once a session.
   Each takes the place of the set-up cue the moment would say (a rest's last ten seconds, an EMOM's or a density
   block's count-in), and a session opening before its first set says the one due at once.
-
-### Changed
-- The desktop is no longer offered as a platform. Its window stays as the developer harness for Compose
-  Hot Reload and UI checks; Android and iOS are the apps.
-- A new look: Track & Chalk. Dark mode is the pine of a track's infield after dark, light mode chalk, with a
-  varsity gold for the accent (Start, the selected tab, a strength day, a day done), clay red for work, the
-  infield's green for rest and a warm amber for get-ready. In light the gold that fills a button is bright with dark
-  words on it, and a deeper gold carries words and marks so they read on chalk; a selected chip or card is washed in
-  gold, where the old tint was hard to tell from the page. The app icon, the splash and launch screens, the
-  shortcuts and both platforms' widgets take the same colours. Every pairing of words and ground is held to 4.5:1.
-- A preset's work and rest drawn small under its name on Train's Conditioning, Today's picks and a planned
-  workout's step, so Tabata and 15:15 differ at a glance. Log's time for a week or month says "16 min" or "2h 48m"
-  rather than a clock.
-- Compose Multiplatform 1.13 (rc01, from 1.12.1), compiled against Android 37.1. Lift's rest band closes on its
-  last frame (`CapturedAnimatedVisibility`) rather than holding a copy of the rest, the states read from a running
-  clock are `computedStateOf`, which is cheaper to invalidate than `derivedStateOf`, and Today keeps its day's plan
-  while what it is made of is, so its card isn't composed again for every change of the tab's state. A summary's
-  fade at its foot is one gradient made once, and the summary is drawn apart for it only while there is more below;
-  a time cap's best of the same workout is worked out once per change of the log, not ten times a second.
-- An interval workout said to have felt very hard or all out now makes the next two days ones to take easier, as a
-  Lift session does. Today says "A workout in the last two days felt very hard" and offers the program's day eased,
-  Lift's session offers its easier day, and the voice says "Stop a rep early". Before, a hard 15:15 counted for
-  nothing the next morning.
-- "Core on the mat" is 11 minutes, not 18, and far easier on the trunk. Each move runs about its classical count, 40 to 50
-  seconds curled up in place of two minutes (the hundred 0:50 from 1:40, the roll-up 0:50 from 2:00), the hundred is
-  cued with the knees bent over the hips and the roll-up with the knees soft, and a spine stretch forward sits
-  between the leg stretches and the criss-cross, so no more than two curled moves run on end. One finished before
-  this keeps its place in the Log as mobility, without the flow's name.
-- Today, tidied. The day and its kind ("Thursday · class day") sit over the title. The week is a block a day
-  under its short name, as Log draws it. The day's card is a row a step with a hairline between, each step
-  numbered "01", "02"; the quiet buttons down it are one width, and what comes after today stands under a last
-  hairline. Start says how long the workout runs ("Start 9:00"), which the line over it no longer does, and takes
-  the day's colour with the number of the step to do now: the accent on a strength or a sport's day, the work
-  colour on a conditioning day, the rest colour on a mobility day.
-- Today lays the day out in order, as a coach would. A line under the title says what kind of day it is and the one
-  thing worth saying of it. The day is one card: what is done is ticked, the step to do now is under the one Start,
-  and the steps after it have quiet buttons, the program's day on a class day under "If there is time". Once nothing
-  is left it says "Done for today", and a class logged ends the day: the lifting waits rather than leading again. A
-  day with nothing planned is a "Rest day" with Daily five to do if moving feels good, and what comes tomorrow
-  stands back behind "Do it today" rather than under Start. After a very hard session, or the mat on a grip that has
-  done more than usual, Today says so and starts the program's day easier unless "Easier today" is switched off.
-  "Or pick by time" is behind "Something else" on a day that has its plan.
-- Five programs are no longer offered: Daily 100 swings + 10 get-ups, Clean and press EMOM, Long cycle EMOM, Grip
-  and pull and Bodyweight EMOM. Each is said better by another or is hard on a shoulder, a grip or the knees for
-  what it gives. If you follow one you keep it, and the sessions you did of it read as they did.
-- Train's "Beside the mat and the wall" offers the programs made to sit beside BJJ first, the one your bells suit:
-  with a pair "20 minutes beside BJJ", otherwise "One bell beside BJJ" and "Shoulder armor".
-- A lift held overhead or upside down (presses, the get-up, the windmill, the halo, the bottoms-up carry) with no
-  history starts at your lightest bell, or 8 kg with no bells said, rather than the bell you swing.
-- A session felt very hard or more counts against the next two days, up from a day and a half, before Lift offers
-  the easier day.
-- The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock
-  tones: a short high tick for each of the last seconds, one mid note at halfway, one low note for get ready and
-  the warm-up, two notes rising into work, two falling into rest, and three rising to the octave at the finish,
-  all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music. Lift's
-  timers sound the same: an EMOM's or a rest's last three seconds tick, its minute or the next set starts on the
-  rising "go", and an EMOM ends on the three-note resolve.
-- The Armor Building Complex either way: the ABC on the minute in Armor Building Formula and 20 minutes beside BJJ
-  can be taken as many as you can for the same minutes, from today's plan ("As many as you can", and back with
-  "On the minute"), before its first round; the program keeps its own. The ABC challenge says which way its best
-  was done ("Best: 14 complexes in 20 minutes, as many as you can"), and the session's Up next card says a density
-  block's cap ("Up next · 15 min cap") rather than "1 of 1 sets".
-- The Log's week card colours a day's bar by kind, as its rows and Today's dots are: Lift's sessions in the accent
-  under the interval workouts in the work colour, under mobility in green, each its share of the day, so a day of
-  only a flow, or a flow and a climb, is green rather than the work colour. Today's dot for a Lift session that took
-  no time is the accent, as its bar is, not a sport day's dim.
-- The running screens do less work for the same picture. A workout's screen is recomposed once a second, not ten
-  times: the ring's share, which moves every tick, is drawn apart from the rest, as are the countdown's pop and the
-  phase colour's crossfade. An EMOM's, a density block's and a rest's rings and bar likewise, and a session's page
-  hears its clocks only when what it says changes. Lift's figure draws every frame on one path and the same strokes
-  rather than new ones, and stops taking frames while it is scrolled out of sight.
-- The other screens do less work too. On Android and desktop a list or a workout handed to a screen is compared by
-  what it holds, so a part of a page whose data didn't change no longer redraws. On iOS as well, opening a day in
-  the Log leaves its rows alone and its summary card as it was, and picking a length on Today leaves the week and
-  what is up next. A search in the exercise library or a picker redraws only the rows that come and go. A back swipe
-  and a step between pages no longer redraw every page on show, and the Log's week bars grow without redrawing
-  their contents. The sheet that picks an exercise opens in about a third of the time: it lays out only the rows in
-  view rather than the whole library.
-
-### Fixed
-- A workout skipped through or ended after a few seconds with a body weight set now reaches Health Connect and
-  Apple Health: a calorie estimate that rounds to zero no longer drops the session with it.
-- A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of
-  what it says while more lies below, so the bell row under the stepper no longer looks like the end of it.
-- A Lift session's summary fades at its foot the same way, so "Bests" cut off above Done no longer looks like a
-  heading with nothing under it.
-- A line of details that runs to a second line on Today ("about 35 min · Day 4 of 40 · Press · Row …") breaks after
-  a dot, never before one, so no line starts with the separator.
-- A move's small figure in a flow's list and in the flow editor is drawn in round the figure, so a deep squat or a
-  seated move is as plain as a lunge, not a speck in the room a whole rep takes.
-- The flow editor's name and note each sit under a label, so a filled-in note still says what it is.
-
-## [0.5.0] — Unreleased
-
-### Added
 - The moments that matter, marked: a set that beats a record has its Record tag stamp in over a ring of the
   accent, with two beats under the thumb, and a session's lifetime bests (a snatch test or Armor Building
   Complex best, a milestone of reps crossed) stand on a Bests card of their own on the summary rather than in
@@ -396,6 +301,82 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   is finished and empties at Monday's midnight without the app.
 
 ### Changed
+- The desktop is no longer offered as a platform. Its window stays as the developer harness for Compose
+  Hot Reload and UI checks; Android and iOS are the apps.
+- A new look: Track & Chalk. Dark mode is the pine of a track's infield after dark, light mode chalk, with a
+  varsity gold for the accent (Start, the selected tab, a strength day, a day done), clay red for work, the
+  infield's green for rest and a warm amber for get-ready. In light the gold that fills a button is bright with dark
+  words on it, and a deeper gold carries words and marks so they read on chalk; a selected chip or card is washed in
+  gold, where the old tint was hard to tell from the page. The app icon, the splash and launch screens, the
+  shortcuts and both platforms' widgets take the same colours. Every pairing of words and ground is held to 4.5:1.
+- A preset's work and rest drawn small under its name on Train's Conditioning, Today's picks and a planned
+  workout's step, so Tabata and 15:15 differ at a glance. Log's time for a week or month says "16 min" or "2h 48m"
+  rather than a clock.
+- Compose Multiplatform 1.13 (rc01, from 1.12.1), compiled against Android 37.1. Lift's rest band closes on its
+  last frame (`CapturedAnimatedVisibility`) rather than holding a copy of the rest, the states read from a running
+  clock are `computedStateOf`, which is cheaper to invalidate than `derivedStateOf`, and Today keeps its day's plan
+  while what it is made of is, so its card isn't composed again for every change of the tab's state. A summary's
+  fade at its foot is one gradient made once, and the summary is drawn apart for it only while there is more below;
+  a time cap's best of the same workout is worked out once per change of the log, not ten times a second.
+- An interval workout said to have felt very hard or all out now makes the next two days ones to take easier, as a
+  Lift session does. Today says "A workout in the last two days felt very hard" and offers the program's day eased,
+  Lift's session offers its easier day, and the voice says "Stop a rep early". Before, a hard 15:15 counted for
+  nothing the next morning.
+- "Core on the mat" is 11 minutes, not 18, and far easier on the trunk. Each move runs about its classical count, 40 to 50
+  seconds curled up in place of two minutes (the hundred 0:50 from 1:40, the roll-up 0:50 from 2:00), the hundred is
+  cued with the knees bent over the hips and the roll-up with the knees soft, and a spine stretch forward sits
+  between the leg stretches and the criss-cross, so no more than two curled moves run on end. One finished before
+  this keeps its place in the Log as mobility, without the flow's name.
+- Today, tidied. The day and its kind ("Thursday · class day") sit over the title. The week is a block a day
+  under its short name, as Log draws it. The day's card is a row a step with a hairline between, each step
+  numbered "01", "02"; the quiet buttons down it are one width, and what comes after today stands under a last
+  hairline. Start says how long the workout runs ("Start 9:00"), which the line over it no longer does, and takes
+  the day's colour with the number of the step to do now: the accent on a strength or a sport's day, the work
+  colour on a conditioning day, the rest colour on a mobility day.
+- Today lays the day out in order, as a coach would. A line under the title says what kind of day it is and the one
+  thing worth saying of it. The day is one card: what is done is ticked, the step to do now is under the one Start,
+  and the steps after it have quiet buttons, the program's day on a class day under "If there is time". Once nothing
+  is left it says "Done for today", and a class logged ends the day: the lifting waits rather than leading again. A
+  day with nothing planned is a "Rest day" with Daily five to do if moving feels good, and what comes tomorrow
+  stands back behind "Do it today" rather than under Start. After a very hard session, or the mat on a grip that has
+  done more than usual, Today says so and starts the program's day easier unless "Easier today" is switched off.
+  "Or pick by time" is behind "Something else" on a day that has its plan.
+- Five programs are no longer offered: Daily 100 swings + 10 get-ups, Clean and press EMOM, Long cycle EMOM, Grip
+  and pull and Bodyweight EMOM. Each is said better by another or is hard on a shoulder, a grip or the knees for
+  what it gives. If you follow one you keep it, and the sessions you did of it read as they did.
+- Train's "Beside the mat and the wall" offers the programs made to sit beside BJJ first, the one your bells suit:
+  with a pair "20 minutes beside BJJ", otherwise "One bell beside BJJ" and "Shoulder armor".
+- A lift held overhead or upside down (presses, the get-up, the windmill, the halo, the bottoms-up carry) with no
+  history starts at your lightest bell, or 8 kg with no bells said, rather than the bell you swing.
+- A session felt very hard or more counts against the next two days, up from a day and a half, before Lift offers
+  the easier day.
+- The six sounds are the app's own, the same on Android, iOS and desktop, in place of each platform's stock
+  tones: a short high tick for each of the last seconds, one mid note at halfway, one low note for get ready and
+  the warm-up, two notes rising into work, two falling into rest, and three rising to the octave at the finish,
+  all under 400 ms, drawn as plain sines in the app and played on the media stream over the user's music. Lift's
+  timers sound the same: an EMOM's or a rest's last three seconds tick, its minute or the next set starts on the
+  rising "go", and an EMOM ends on the three-note resolve.
+- The Armor Building Complex either way: the ABC on the minute in Armor Building Formula and 20 minutes beside BJJ
+  can be taken as many as you can for the same minutes, from today's plan ("As many as you can", and back with
+  "On the minute"), before its first round; the program keeps its own. The ABC challenge says which way its best
+  was done ("Best: 14 complexes in 20 minutes, as many as you can"), and the session's Up next card says a density
+  block's cap ("Up next · 15 min cap") rather than "1 of 1 sets".
+- The Log's week card colours a day's bar by kind, as its rows and Today's dots are: Lift's sessions in the accent
+  under the interval workouts in the work colour, under mobility in green, each its share of the day, so a day of
+  only a flow, or a flow and a climb, is green rather than the work colour. Today's dot for a Lift session that took
+  no time is the accent, as its bar is, not a sport day's dim.
+- The running screens do less work for the same picture. A workout's screen is recomposed once a second, not ten
+  times: the ring's share, which moves every tick, is drawn apart from the rest, as are the countdown's pop and the
+  phase colour's crossfade. An EMOM's, a density block's and a rest's rings and bar likewise, and a session's page
+  hears its clocks only when what it says changes. Lift's figure draws every frame on one path and the same strokes
+  rather than new ones, and stops taking frames while it is scrolled out of sight.
+- The other screens do less work too. On Android and desktop a list or a workout handed to a screen is compared by
+  what it holds, so a part of a page whose data didn't change no longer redraws. On iOS as well, opening a day in
+  the Log leaves its rows alone and its summary card as it was, and picking a length on Today leaves the week and
+  what is up next. A search in the exercise library or a picker redraws only the rows that come and go. A back swipe
+  and a step between pages no longer redraw every page on show, and the Log's week bars grow without redrawing
+  their contents. The sheet that picks an exercise opens in about a third of the time: it lays out only the rows in
+  view rather than the whole library.
 - The get-up is named the Turkish get-up, and the band's overhead press "Band overhead press". Program summaries
   say what their days do: Armor Building Formula no longer promises 30 complexes, Rite of Passage's ladders are
   presses starting at five, and Your first 100 swings rotates 5, 8 and 10 a minute within each week.
@@ -448,6 +429,19 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   each opening Programs with its sheet up, and All programs), On your own (Free session, Exercises, Your
   equipment with the bells owned) and Lately (the last session and the balance). The title bar's + starts a new
   program; the equipment is a row rather than a button, and Change program is All programs.
+
+### Fixed
+- A workout skipped through or ended after a few seconds with a body weight set now reaches Health Connect and
+  Apple Health: a calorie estimate that rounds to zero no longer drops the session with it.
+- A workout summary taller than a phone, such as 15:15's with "About how many snatches a set?", fades at the foot of
+  what it says while more lies below, so the bell row under the stepper no longer looks like the end of it.
+- A Lift session's summary fades at its foot the same way, so "Bests" cut off above Done no longer looks like a
+  heading with nothing under it.
+- A line of details that runs to a second line on Today ("about 35 min · Day 4 of 40 · Press · Row …") breaks after
+  a dot, never before one, so no line starts with the separator.
+- A move's small figure in a flow's list and in the flow editor is drawn in round the figure, so a deep squat or a
+  seated move is as plain as a lunge, not a speck in the room a whole rep takes.
+- The flow editor's name and note each sit under a label, so a filled-in note still says what it is.
 
 ## [0.4.0] — 2026-11-05
 

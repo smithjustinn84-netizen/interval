@@ -1,13 +1,16 @@
 # Sprint 0.6 — "Lift's coaching, part two: rounds against the clock, and 15:15's snatches counted"
 
 Two weeks, 2026-11-09 to 2026-11-20, one developer and Claude Code, ten working days. The goal is a shippable
-0.6.0 that finishes what [kettlebell-coaching.md](kettlebell-coaching.md) still plans. Section 4 plans two
+0.6.0 that finishes what [kettlebell-coaching.md](../kettlebell-coaching.md) still plans. Section 4 plans two
 things: the Armor Building Complex's second protocol, as many rounds as you can in a time cap; and 15:15's
 snatches, done on the interval side, counting toward Lift's snatch totals, snatch test, pace and grip. A
 release (a tag, the release journeys, a dated changelog) happens only when the user asks for one, never as a
-ticket. What landed before and how a release goes: [release.md](release.md) and [CHANGELOG.md](../CHANGELOG.md).
+ticket. What landed before and how a release goes: [release.md](../release.md) and [CHANGELOG.md](../../CHANGELOG.md).
 
 ## Context
+
+Every ticket of this sprint is built, the cut line's too (ticket 6), and its changes, with 0.5's, are in
+the changelog's one 0.6.0 entry; 0.5.0 was never tagged, so `v0.4.0` is still the last tag.
 
 0.5's tickets 0, 1, 2, 3 and 5 are built, and so is everything listed under its "Added during the sprint". Ticket 4
 (Describe reads "then") was below the cut line and carries over here. "Lift speaks" (coaching section 2:
@@ -177,7 +180,7 @@ ticket 6.
   own, saying nothing of the hands after a session with no snatches or one-hand swings.
 
 **7. The bell waits** (added during the sprint) · M
-- Fixed bell sizes, in one ordered ladder ([kettlebell-coaching.md](kettlebell-coaching.md), section 4):
+- Fixed bell sizes, in one ordered ladder ([kettlebell-coaching.md](../kettlebell-coaching.md), section 4):
   `rungOf` in `Progression.kt` replaces `stepUp`'s branching.
 - The steps, before the next bell: reps up the range; denser (less rest, or an EMOM's reps a minute); more (a
   set, a minute, a ladder, then a rung); and before a big jump, a harder lift at the same bell (`Variations.kt`).
@@ -357,7 +360,7 @@ ticket 6.
 
 ## Explicitly not this sprint
 
-Everything waiting for a sprint is in [backlog.md](backlog.md), each item with why it waits and what would bring
+Everything waiting for a sprint is in [backlog.md](../backlog.md), each item with why it waits and what would bring
 it in: AppFunctions, iOS signing, E5, localisation, Wear OS, and Lift's safety lines.
 
 ## Suggested order and calendar

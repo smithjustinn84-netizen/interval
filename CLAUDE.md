@@ -2,7 +2,7 @@
 
 Compose Multiplatform app for **Android and iOS**, with a desktop (JVM) host kept for development, built with the **Kotlin Toolchain**
 (`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.14/
-Full architecture guide: [docs/architecture.md](docs/architecture.md). The current sprint: [docs/sprint-0.6.md](docs/sprint-0.6.md);
+Full architecture guide: [docs/architecture.md](docs/architecture.md). No sprint is open (the last: [docs/archive/sprint-0.6.md](docs/archive/sprint-0.6.md));
 what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md); the 2026-11-22 product review and `1.0` roadmap:
 [docs/product-review.md](docs/product-review.md). Finished sprints and reviews: `docs/archive/`.
 
@@ -725,8 +725,9 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   false)` whatever it is, foreground only (no Bluetooth background mode, so locked it drops and connects again on
   return), its prompt raised by the first pairing (`NSBluetoothAlwaysUsageDescription`); desktop binds
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
-  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10 through Polar's SDK, its class recording not yet tried; the live heart
-  rate over Android's own GATT, and pairing by its scan, have met no sensor, nor has iOS's (docs/backlog.md). A sync hands its `keep`
+  `sparringRecording` a class to hand it). The R8 release build has paired, streamed live, reconnected, recorded and synced on a real Verity Sense
+  and H10, though not yet a whole class, and both strap journeys (Android's GATT and scan, iOS's CoreBluetooth) were
+  run on real phones (2026-11-22; what is left, docs/backlog.md). A sync hands its `keep`
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,
