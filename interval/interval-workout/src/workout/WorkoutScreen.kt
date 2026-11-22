@@ -51,7 +51,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
-import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.KeepScreenOn
@@ -71,7 +70,6 @@ import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.MoveDetail
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
-import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.WorkoutLanes
@@ -568,17 +566,3 @@ private fun WorkoutScreenSummaryHeartPreview() {
 private val previewRecovery = Recovery(drops = listOf(24, 21, 19), seconds = 60)
 
 private const val PREVIEW_HEART_LOAD = 42
-
-@PreviewFormFactors
-@Composable
-private fun WorkoutScreenSummarySnatchesPreview() {
-    val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
-        .first { it.isDone }
-    val counted = SnatchCount(perSet = 8, bellKg = 16.0)
-    WorkoutPreview(
-        done.toUiState(running = false, elapsedSeconds = done.config.totalSeconds).copy(
-            snatches = SnatchAsk(counted, opensOn = counted, bells = listOf(12.0, 16.0, 20.0)),
-            handCare = true,
-        ),
-    )
-}

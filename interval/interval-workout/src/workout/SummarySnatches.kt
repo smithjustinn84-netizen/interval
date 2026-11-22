@@ -14,8 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import dev.justinsmith.interval.model.SnatchCount
+import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.WorkoutEngine
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.interval.ui.SnatchQuestion
@@ -60,4 +63,20 @@ internal fun SummarySnatches(
             )
         }
     }
+}
+
+/** The summary of a workout whose snatches are counted, the count open and the hands' line under it. */
+@PreviewFormFactors
+@Composable
+private fun SummarySnatchesPreview() {
+    val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
+        .first { it.isDone }
+    val counted = SnatchCount(perSet = 8, bellKg = 16.0)
+    val bells = listOf(12.0, 16.0, 20.0)
+    WorkoutPreview(
+        done.toUiState(running = false, elapsedSeconds = done.config.totalSeconds).copy(
+            snatches = SnatchAsk(counted, opensOn = counted, bells = bells),
+            handCare = true,
+        ),
+    )
 }
