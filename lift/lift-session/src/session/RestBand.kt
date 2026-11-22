@@ -24,9 +24,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
+import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.ui.BadgeBpm
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.CountdownClock
 import dev.justinsmith.interval.ui.IntervalTheme
@@ -37,6 +41,7 @@ import dev.justinsmith.interval.ui.RepeatButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
+import dev.justinsmith.interval.ui.ZoneDot
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
 import dev.justinsmith.interval.ui.isLargeText
@@ -44,6 +49,7 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.session_rest
+import dev.justinsmith.lift.session.resources.session_rest_heart_cd
 import dev.justinsmith.lift.session.resources.session_rest_heart_down
 import dev.justinsmith.lift.session.resources.session_rest_heart_high
 import dev.justinsmith.lift.session.resources.session_rest_heart_ready
@@ -74,8 +80,9 @@ internal fun RestBand(
 }
 
 /**
- * The heart rate beside the rest's name and what it says of the next set: on its way down, ready (in the rest's
- * colour, with a tick under the thumb as it turns), or still high. It advises; the clock is the lifter's.
+ * The heart rate beside the rest's name, as the heart rate reads everywhere (a dot in its zone's colour beating
+ * with it, the number, a dim BPM), and what it says of the next set: on its way down, ready (in the rest's colour,
+ * with a tick under the thumb as it turns), or still high. It advises; the clock is the lifter's.
  */
 @Composable
 private fun RestHeartLine(heart: RestHeart) {
@@ -88,20 +95,34 @@ private fun RestHeartLine(heart: RestHeart) {
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "restHeart",
     )
-    Text(
-        stringResource(
-            when (heart.standing) {
-                RestHeart.Standing.ComingDown -> Res.string.session_rest_heart_down
-                RestHeart.Standing.Ready -> Res.string.session_rest_heart_ready
-                RestHeart.Standing.StillHigh -> Res.string.session_rest_heart_high
-            },
-            heart.bpm,
-        ),
-        style = IntervalTheme.type.caption,
-        color = ink,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+    val zone by animateColorAsState(
+        palette.heartZones.of(heart.zone),
+        tween(Motion.STATE_MILLIS, easing = StandardEasing),
+        label = "restHeartZone",
     )
+    val standing = stringResource(
+        when (heart.standing) {
+            RestHeart.Standing.ComingDown -> Res.string.session_rest_heart_down
+            RestHeart.Standing.Ready -> Res.string.session_rest_heart_ready
+            RestHeart.Standing.StillHigh -> Res.string.session_rest_heart_high
+        },
+    )
+    val description = stringResource(Res.string.session_rest_heart_cd, heart.bpm, standing)
+    Row(
+        Modifier.clearAndSetSemantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        ZoneDot(zone, heart.bpm)
+        BadgeBpm(heart.bpm, palette.text, palette.textDim)
+        Text(
+            standing,
+            style = IntervalTheme.type.caption,
+            color = ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
 }
 
 @Composable
@@ -146,11 +167,13 @@ private fun RestBandContent(
                         style = IntervalTheme.type.caption,
                         color = palette.textDim,
                     )
-                    // The heart's line takes what is left, cut short before it pushes anything out.
-                    Box(Modifier.weight(1f)) { heart?.let { RestHeartLine(it) } }
+                    // The heart's line takes what is left, cut short before it pushes anything out; with large text it
+                    // has a line of its own under this one, which the number and BPM would break in.
+                    Box(Modifier.weight(1f)) { if (!large) heart?.let { RestHeartLine(it) } }
                     // With large text Skip stands up here, so the clock beside − and + keeps its last digit ("0:4").
                     if (large) QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
                 }
+                if (large) heart?.let { RestHeartLine(it) }
                 CountdownClock(
                     formatClock(rest.secondsLeft),
                     intervalKey = Unit,
@@ -194,9 +217,9 @@ private fun RestBandContent(
 @Composable
 private fun RestBandHeartPreview() {
     val rests = listOf(
-        RestState(90, 71, 0.2f) to RestHeart(156, RestHeart.Standing.StillHigh),
-        RestState(90, 44, 0.5f) to RestHeart(138, RestHeart.Standing.ComingDown),
-        RestState(90, 12, 0.85f) to RestHeart(112, RestHeart.Standing.Ready),
+        RestState(90, 71, 0.2f) to RestHeart(156, RestHeart.Standing.StillHigh, HeartRateZone.Zone4),
+        RestState(90, 44, 0.5f) to RestHeart(138, RestHeart.Standing.ComingDown, HeartRateZone.Zone3),
+        RestState(90, 12, 0.85f) to RestHeart(112, RestHeart.Standing.Ready, HeartRateZone.Zone2),
     )
     IntervalTheme {
         Column(

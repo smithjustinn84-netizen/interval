@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.session
 
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.timer.WeekStanding
@@ -124,8 +125,8 @@ data class SessionClocks(
         get() = if (rest == null) null else restHeart(liveHeartRate, maxHeartRate, restingHeartRate)
 }
 
-/** The heart rate during a rest, and what it says of the next set. */
-data class RestHeart(val bpm: Int, val standing: Standing) {
+/** The heart rate during a rest, its [zone], and what it says of the next set. */
+data class RestHeart(val bpm: Int, val standing: Standing, val zone: HeartRateZone) {
     enum class Standing {
         /** Still in the middle zone: on its way down. */
         ComingDown,
@@ -147,7 +148,7 @@ internal fun restHeart(state: LiveHeartRateState, maxBpm: Int, restingBpm: Int? 
         zone.isHigh -> RestHeart.Standing.StillHigh
         else -> RestHeart.Standing.ComingDown
     }
-    return RestHeart(reading.bpm, standing)
+    return RestHeart(reading.bpm, standing, zone)
 }
 
 /**

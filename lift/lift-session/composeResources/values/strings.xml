@@ -5,9 +5,10 @@
     <string name="session_since_last">Since last set</string>
     <string name="session_rest">Rest</string>
     <string name="session_rest_skip">Skip</string>
-    <string name="session_rest_heart_down">%1$d bpm · easing</string>
-    <string name="session_rest_heart_ready">%1$d bpm · ready</string>
-    <string name="session_rest_heart_high">%1$d bpm · high</string>
+    <string name="session_rest_heart_down">easing</string>
+    <string name="session_rest_heart_ready">ready</string>
+    <string name="session_rest_heart_high">high</string>
+    <string name="session_rest_heart_cd">%1$d beats per minute, %2$s</string>
     <string name="session_rest_less_cd">Rest 15 seconds less</string>
     <string name="session_rest_more_cd">Rest 15 seconds more</string>
     <string name="session_log">Log set</string>

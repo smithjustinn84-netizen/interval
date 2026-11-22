@@ -145,7 +145,7 @@ private fun ReadingPill(bpm: Int, maxBpm: Int, onWorkoutGround: Boolean, modifie
 
 /** A heart rate's zone as a badge draws it: a dot in [color], beating at [bpm]. */
 @Composable
-internal fun ZoneDot(color: Color, bpm: Int, modifier: Modifier = Modifier) {
+fun ZoneDot(color: Color, bpm: Int, modifier: Modifier = Modifier) {
     val scale = rememberHeartPulseScale(bpm)
     Box(
         modifier
@@ -162,8 +162,8 @@ internal fun ZoneDot(color: Color, bpm: Int, modifier: Modifier = Modifier) {
 
 /** A badge's number over a dim BPM, level on their baselines. */
 @Composable
-internal fun BadgeBpm(bpm: Int, text: Color, dim: Color) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+fun BadgeBpm(bpm: Int, text: Color, dim: Color, modifier: Modifier = Modifier) {
+    Row(modifier, horizontalArrangement = Arrangement.spacedBy(Spacing.space4)) {
         Text("$bpm", Modifier.alignByBaseline(), style = IntervalTheme.type.label, color = text)
         Text(
             stringResource(Res.string.heart_rate_unit_caps),
