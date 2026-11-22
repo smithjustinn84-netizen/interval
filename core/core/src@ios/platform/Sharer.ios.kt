@@ -4,17 +4,22 @@ package dev.justinsmith.interval.platform
 
 import kotlinx.cinterop.BetaInteropApi
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.usePinned
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
+import platform.Foundation.NSData
 import platform.Foundation.NSString
 import platform.Foundation.NSTemporaryDirectory
 import platform.Foundation.NSURL
 import platform.Foundation.NSUTF8StringEncoding
 import platform.Foundation.create
+import platform.Foundation.dataWithBytes
 import platform.Foundation.writeToFile
 import platform.UIKit.UIActivityViewController
 import platform.UIKit.UIApplication
+import platform.UIKit.UIImage
 import platform.UIKit.popoverPresentationController
 
 /**
@@ -30,6 +35,20 @@ internal class IosSharer : Sharer {
                 .writeToFile(path, atomically = true, encoding = NSUTF8StringEncoding, error = null)
         }
         present(listOf(NSURL.fileURLWithPath(path)))
+    }
+
+    /**
+     * Handed over as an image, not a file, so the sheet offers Save Image (to Photos, which is what
+     * `NSPhotoLibraryAddUsageDescription` in Info.plist is for) and a messenger sends it as a picture.
+     */
+    override suspend fun shareImage(name: String, png: ByteArray) {
+        val image = withContext(Dispatchers.IO) {
+            val data = png.usePinned { pinned ->
+                NSData.dataWithBytes(pinned.addressOf(0), png.size.toULong())
+            }
+            UIImage.imageWithData(data)
+        } ?: return
+        present(listOf(image))
     }
 
     override fun shareText(text: String) = present(listOf(text))

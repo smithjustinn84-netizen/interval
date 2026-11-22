@@ -105,10 +105,11 @@ core/
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
-                     `AppInfo`, `Sharer`, the live heart rate (`LiveHeartRate.kt`; `HeartRateService.kt`, Bluetooth's
-                     standard Heart Rate service's ids and bytes read; `HeartRateStream.kt`, the stream held, given
-                     way and tried again over any `HeartRateLink`; Android's `AndroidHeartRateLink`, its GATT
-                     connection and scan), `AppIconSwitcher` (`AppIcon.kt`: which icon the app wears, the kettlebell
+                     `AppInfo`, `Sharer` (a file, a picture's PNG, or text), the live heart rate (`LiveHeartRate.kt`;
+                     `HeartRateService.kt`, Bluetooth's standard Heart Rate service's ids and bytes read;
+                     `HeartRateStream.kt`, the stream held, given way and tried again over any `HeartRateLink`;
+                     Android's `AndroidHeartRateLink`, its GATT connection and scan), `AppIconSwitcher` (`AppIcon.kt`:
+                     which icon the app wears, the kettlebell
                      or the ring, and each platform's way to change it), `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
                      iOS's Lock Screen and Dynamic Island, worded and timed, and the `LiveActivityRelay` iosApp points
                      at Swift's), `Speaker` (the device's voice, both sides', and `SpokenLines`, which
@@ -376,7 +377,11 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   picker is one (`rememberPickerList`, lift-library), so a test reaches a row far down it with `scrollToText`.
   A line of parts joined by the dot that may wrap is a `JoinedText` (core: it breaks after a dot, never before, and
   is read and found by tests as its own words); a summary's scrolling column wears `fadeWhenMoreBelow` (core's
-  `ScrollFade.kt`) before its `verticalScroll`, both sides'. A still of a figure in a list is `demo.closeUp()`
+  `ScrollFade.kt`) before its `verticalScroll`, both sides'. Share on a summary or a finished
+  one's page opens core's `ShareCardSheet` (`ShareCard.kt`): the side's card (`WorkoutShareCard` in interval-ui,
+  `SessionShareCard` in lift-session) as it will be sent, over Share picture and Share as text. A `ShareCard` is
+  laid out at `Sizes.shareCard*` in a density of its own, dark, so its PNG is 1080 by 1350 wherever it is drawn;
+  its previews show it through `FittedShareCard`. A still of a figure in a list is `demo.closeUp()`
   (`MoveThumb`): its view drawn in round the figure at `still`.
   The navigation bar or rail is an overlay (`NavigationAreaBar`, `core/core/src/ui/NavigationArea.kt`) that slides
   away as a page is pushed over a tab; a tab's scene reserves its room through `NavigationArea.tabScenes()`, so a

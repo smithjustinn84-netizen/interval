@@ -109,4 +109,11 @@
     <string name="rep_speed_slow_cd">Half speed</string>
     <string name="rep_raising_bell">Raising the bell</string>
     <string name="rep_bowing">Taking a bow</string>
+    <!-- Share's sheet (`ShareCardSheet`): a summary as a picture to send, or in words as before. -->
+    <string name="share_sheet_title">Share</string>
+    <string name="share_picture">Share picture</string>
+    <string name="share_as_text">Share as text</string>
+    <string name="share_card_cd">The picture that will be shared</string>
+    <!-- The app's name at the foot of a shared picture. -->
+    <string name="share_card_mark">Interval</string>
 </resources>

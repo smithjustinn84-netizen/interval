@@ -113,6 +113,13 @@ object Sizes {
     /** The tallest bar of All time's weekly chart. */
     val weeksChart = 96.dp
 
+    /**
+     * A summary shared as a picture (`ShareCard`): laid out at this size in a density of its own, so it is
+     * 1080 by 1350 pixels wherever it is drawn.
+     */
+    val shareCardWidth = 360.dp
+    val shareCardHeight = 450.dp
+
     /** The workout/session heart-rate line chart height and stroke, and each zone bar's height. */
     val heartChart = 112.dp
     val heartChartStroke = 2.5.dp

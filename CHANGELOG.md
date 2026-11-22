@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- A finished workout or Lift session shared as a picture. Share, on a summary or from a page in the Log, opens a
+  sheet with the card that will be sent: what it was and when, its name, then the workout's timeline and the heart
+  rate a sensor read, or the session's records (or its lifts and their sets), and the time, rounds or weight moved
+  and calories or reps, always dark and always 1080 by 1350 pixels. Share picture hands it to the system's share
+  sheet as a PNG (on iOS as an image, which Save Image puts in Photos); Share as text sends the words as before.
 - Equipment-aware `Set up` and sport-tailored starter tracks. `Set up` now asks what you train with (Kettlebells,
   Barbell, Bands, Pull-up bar, Bodyweight, or Conditioning only), revealing bell or bar pickers only when relevant,
   and persists your bar weight to Lift's gear. Two lean starter programs join Lift's Mixed family — **Bodyweight on

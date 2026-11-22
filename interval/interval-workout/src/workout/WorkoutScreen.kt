@@ -140,6 +140,7 @@ fun WorkoutRoute(id: Long, onExit: () -> Unit, modifier: Modifier = Modifier, fl
         onExit = onExit,
         modifier = modifier,
         onShare = sharer::shareText,
+        onSharePicture = { sharer.shareImage(SHARED_PICTURE, it) },
         reflection = SummaryReflection(
             viewModel::setEffort,
             viewModel::setNote,
@@ -180,6 +181,7 @@ fun WorkoutScreen(
     progress: () -> Float = { 0f },
     onShare: (String) -> Unit = {},
     reflection: SummaryReflection = SummaryReflection(),
+    onSharePicture: suspend (ByteArray) -> Unit = {},
     onFinishRound: () -> Unit = {},
     onUndoRound: () -> Unit = {},
     onToggleHeart: () -> Unit = {},
@@ -233,7 +235,7 @@ fun WorkoutScreen(
         WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
         if (state.isDone) {
-            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection)
+            SummaryLayout(state, landscape, onRestart, onSavePreset, onExit, onShare, reflection, onSharePicture)
         } else if (landscape) {
             LandscapeWorkout(state, progress, accent, primaryFill, anchor, actions)
         } else {
@@ -566,3 +568,6 @@ private fun WorkoutScreenSummaryHeartPreview() {
 private val previewRecovery = Recovery(drops = listOf(24, 21, 19), seconds = 60)
 
 private const val PREVIEW_HEART_LOAD = 42
+
+/** The name a summary shared as a picture goes by. */
+private const val SHARED_PICTURE = "workout.png"

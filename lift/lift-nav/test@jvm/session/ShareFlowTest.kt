@@ -8,16 +8,17 @@ import androidx.compose.ui.test.onNodeWithText
 import dev.justinsmith.interval.ui.performClick
 import dev.justinsmith.interval.ui.waitForText
 import dev.justinsmith.lift.ui.liftAppTest
+import org.jetbrains.skia.Image
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
-/** A session's words, as the summary and its page in History offer them to share. */
+/** A session's picture and words, as the summary and its page in History offer them to share. */
 class ShareFlowTest {
     private val figures = "1:30 · 160 kg moved · 10 reps\nTwo-hand swing: Heaviest 16 kg × 10"
 
     @Test
-    fun `the summary shares the session in words`() = liftAppTest { app ->
+    fun `the summary shares the session as a picture and in words`() = liftAppTest { app ->
         onNodeWithText("Start session").performClick()
         waitForText("Log set")
         onNodeWithText("Log set").performClick()
@@ -27,7 +28,16 @@ class ShareFlowTest {
         waitForText("Close")
 
         onNodeWithText("Share").performClick()
+        waitForText("Share picture")
+        onNodeWithText("Share picture").performClick()
+        waitUntil { app.sharer.images.isNotEmpty() }
+        val (name, png) = app.sharer.images.single()
+        assertEquals("session.png", name)
+        assertEquals(1080 to 1350, Image.makeFromEncoded(png).let { it.width to it.height })
 
+        onNodeWithText("Share").performClick()
+        waitForText("Share as text")
+        onNodeWithText("Share as text").performClick()
         assertEquals(listOf("Two-hand swing\n$figures"), app.sharer.texts)
     }
 
@@ -47,6 +57,8 @@ class ShareFlowTest {
 
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Share session").performClick()
+        waitForText("Share as text")
+        onNodeWithText("Share as text").performClick()
 
         val text = app.sharer.texts.single()
         assertTrue(text.startsWith("Two-hand swing · day 0 · "), text)

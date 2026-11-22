@@ -81,6 +81,7 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.ShareCardSheet
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
@@ -141,6 +142,7 @@ fun WorkoutDetailRoute(
         modifier = modifier,
         inPane = inPane,
         onShare = sharer::shareText,
+        onSharePicture = { sharer.shareImage(SHARED_PICTURE, it) },
         onCountSnatches = viewModel::countSnatches,
         onEffortChange = viewModel::setEffort,
         onNoteChange = viewModel::setNote,
@@ -149,9 +151,8 @@ fun WorkoutDetailRoute(
 
 /**
  * One finished workout: when it was, its shape and timeline, its figures, and the ways to repeat it now,
- * plan it again, share it in words, or (from the overflow, behind a confirmation) delete it. Beside History's
- * log ([inPane]) it
- * closes rather than going back, as Settings does beside the Timer.
+ * plan it again, share it as a picture or in words, or (from the overflow, behind a confirmation) delete it.
+ * Beside History's log ([inPane]) it closes rather than going back, as Settings does beside the Timer.
  */
 @Composable
 fun WorkoutDetailScreen(
@@ -168,9 +169,11 @@ fun WorkoutDetailScreen(
     onUseMax: (Int) -> Unit = {},
     onEffortChange: (PerceivedEffort?) -> Unit = {},
     onNoteChange: (String) -> Unit = {},
+    onSharePicture: suspend (ByteArray) -> Unit = {},
 ) {
     val workout = state.workout ?: return
     var menu by rememberSaveable { mutableStateOf(false) }
+    var sharing by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var planning by rememberSaveable { mutableStateOf(false) }
     val title = workout.presetName ?: workoutDescription(workout.config)
@@ -189,7 +192,7 @@ fun WorkoutDetailScreen(
                         stringResource(Res.string.detail_share_menu),
                         onClick = {
                             menu = false
-                            onShare(shareText)
+                            sharing = true
                         },
                     )
                     IntervalMenuItem(
@@ -223,6 +226,11 @@ fun WorkoutDetailScreen(
             onDismiss = { planning = false },
             weekday = state.todayWeekday,
         )
+    }
+    if (sharing) {
+        ShareCardSheet(shareText, onShare, onSharePicture, onDismiss = { sharing = false }) {
+            DetailShareCard(workout)
+        }
     }
     if (confirming) {
         ConfirmDialog(
@@ -456,3 +464,6 @@ private fun WorkoutDetailPreview(workout: FinishedWorkout) {
         )
     }
 }
+
+/** The name a workout shared as a picture goes by. */
+private const val SHARED_PICTURE = "workout.png"

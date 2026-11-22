@@ -87,8 +87,15 @@ class RecordingSharer : Sharer {
     val files = mutableListOf<ShareableFile>()
     val texts = mutableListOf<String>()
 
+    /** Each picture offered, by its name, with its bytes. */
+    val images = mutableListOf<Pair<String, ByteArray>>()
+
     override suspend fun shareFile(file: ShareableFile) {
         files += file
+    }
+
+    override suspend fun shareImage(name: String, png: ByteArray) {
+        images += name to png
     }
 
     override fun shareText(text: String) {

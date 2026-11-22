@@ -78,6 +78,7 @@ class WorkoutDetailScreenTest {
         setThemedContent { Screen(state) }
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Share workout").performClick()
+        onNodeWithText("Share as text").performClick()
         assertEquals(listOf("share HIIT 30/30 · Wednesday, Oct 14 · 7:05 AM\n9:40 total · 5:00 work · 84 kcal"), events)
     }
 
@@ -129,6 +130,7 @@ class WorkoutDetailScreenTest {
         events.clear()
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Share workout").performClick()
+        onNodeWithText("Share as text").performClick()
         assertEquals(
             listOf("share HIIT 30/30 · Wednesday, Oct 14 · 7:05 AM\n9:40 total · 5:00 work · 84 kcal\nLegs heavy"),
             events,

@@ -15,16 +15,25 @@ import java.io.File
  */
 internal class AndroidSharer(private val context: Context) : Sharer {
     override suspend fun shareFile(file: ShareableFile) {
+        offer(file.name, file.mimeType) { it.writeText(file.content) }
+    }
+
+    override suspend fun shareImage(name: String, png: ByteArray) {
+        offer(name, PNG_MIME_TYPE) { it.writeBytes(png) }
+    }
+
+    /** [name] written by [write] under the exports, then offered as a stream, its clip giving the chooser a preview. */
+    private suspend fun offer(name: String, mimeType: String, write: (File) -> Unit) {
         val uri = withContext(Dispatchers.IO) {
-            val target = File(File(context.cacheDir, EXPORTS_DIR).apply { mkdirs() }, file.name)
-            target.writeText(file.content)
+            val target = File(File(context.cacheDir, EXPORTS_DIR).apply { mkdirs() }, name)
+            write(target)
             FileProvider.getUriForFile(context, context.packageName + AUTHORITY_SUFFIX, target)
         }
         open(
             Intent(Intent.ACTION_SEND).apply {
-                type = file.mimeType
+                type = mimeType
                 putExtra(Intent.EXTRA_STREAM, uri)
-                clipData = ClipData.newRawUri(file.name, uri)
+                clipData = ClipData.newRawUri(name, uri)
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             },
         )
@@ -48,5 +57,6 @@ internal class AndroidSharer(private val context: Context) : Sharer {
         const val EXPORTS_DIR = "exports"
         const val AUTHORITY_SUFFIX = ".files"
         const val TEXT_MIME_TYPE = "text/plain"
+        const val PNG_MIME_TYPE = "image/png"
     }
 }

@@ -10,6 +10,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -39,6 +40,7 @@ import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.interval.ui.Window
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
+import org.jetbrains.skia.Image
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -56,6 +58,9 @@ private val done = states.last()
 class WorkoutScreenTest {
     private val calls = mutableListOf<String>()
 
+    /** The picture Share picture handed on, as a PNG's bytes. */
+    private var picture: ByteArray? = null
+
     /** The words the summary handed on for the health store, each time they changed. */
     private val healthNotes = mutableListOf<String?>()
 
@@ -72,6 +77,7 @@ class WorkoutScreenTest {
             onSavePreset = { calls += "save ${it.name}" },
             onExit = { calls += "exit" },
             onShare = { calls += "share $it" },
+            onSharePicture = { picture = it },
             reflection = SummaryReflection(
                 onEffortChange = { calls += "effort $it" },
                 onNoteChange = { calls += "note $it" },
@@ -174,7 +180,28 @@ class WorkoutScreenTest {
     fun `the summary shares the workout in words`() = runUiTest {
         setThemedContent { Screen(done.toUiState(running = false).copy(elapsedSeconds = 355, calories = 62)) }
         onNodeWithText("Share").performClick()
+        onNodeWithText("Share as text").performClick()
         assertEquals(listOf("share Custom · 30s on · 15s off · ×8\n8/8 rounds · 5:55 · 62 kcal"), calls)
+    }
+
+    @Test
+    fun `the summary shares the workout as a picture of the card it shows`() = runUiTest {
+        setThemedContent { Screen(done.toUiState(running = false).copy(elapsedSeconds = 355, calories = 62)) }
+        onNodeWithText("Share").performClick()
+        onNodeWithContentDescription("The picture that will be shared").assertExists()
+        onNodeWithText("Share picture").performClick()
+        waitUntil { picture != null }
+        val image = Image.makeFromEncoded(checkNotNull(picture))
+        assertEquals(1080 to 1350, image.width to image.height)
+        assertEquals(emptyList(), calls)
+    }
+
+    @Test
+    fun `sideways the share sheet keeps both its buttons on screen`() = runUiTest(Window.PhoneSideways) {
+        setThemedContent { Screen(done.toUiState(running = false).copy(elapsedSeconds = 355, calories = 62)) }
+        onNodeWithText("Share").performClick()
+        onNodeWithText("Share picture").assertIsDisplayed()
+        onNodeWithText("Share as text").assertIsDisplayed()
     }
 
     @Test

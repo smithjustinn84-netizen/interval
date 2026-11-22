@@ -53,6 +53,8 @@ import dev.justinsmith.lift.domain.MuscleMap
 import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.newRecords
+import dev.justinsmith.lift.session.SHARED_PICTURE
+import dev.justinsmith.lift.session.SessionShareSheet
 import dev.justinsmith.lift.session.SessionStats
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
@@ -106,6 +108,7 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
         modifier = modifier,
         inPane = inPane,
         onShare = sharer::shareText,
+        onSharePicture = { sharer.shareImage(SHARED_PICTURE, it) },
         onEffortChange = viewModel::setEffort,
         onNoteChange = viewModel::setNote,
         onUpdateSet = viewModel::updateSet,
@@ -119,8 +122,8 @@ fun LiftDetailRoute(uid: String, onBack: () -> Unit, modifier: Modifier = Modifi
 
 /**
  * A finished session's page: its title, when and which program day it was, its numbers and records, inline
- * editing for effort, notes, and every logged set by lift, and from the overflow Share, in words, and Delete
- * (behind a confirmation). On a wider window the lifts sit side by side. Once the session is gone, deleted
+ * editing for effort, notes, and every logged set by lift, and from the overflow Share, as a picture or in words,
+ * and Delete (behind a confirmation). On a wider window the lifts sit side by side. Once the session is gone, deleted
  * from here or elsewhere, the page goes back. Beside History's log ([inPane]) it closes rather than going back.
  */
 @Composable
@@ -135,14 +138,14 @@ fun LiftDetailScreen(
     onNoteChange: (String) -> Unit = {},
     onUpdateSet: (SetLog) -> Unit = {},
     onRemoveSet: (SetLog, removedText: String) -> Unit = { _, _ -> },
+    onSharePicture: suspend (ByteArray) -> Unit = {},
 ) {
     val session = state.session
     val back by rememberUpdatedState(onBack)
     LaunchedEffect(session == null) { if (session == null) back() }
     if (session == null) return
-    val shareText =
-        sessionShareText(session, state.records, stringResource(Res.string.common_joined, state.date, state.time))
     var menu by rememberSaveable { mutableStateOf(false) }
+    var sharing by rememberSaveable { mutableStateOf(false) }
     var confirming by rememberSaveable { mutableStateOf(false) }
     var editingSetId by rememberSaveable { mutableStateOf<Long?>(null) }
     val editingSet = editingSetId?.let { id -> session.sets.firstOrNull { it.id == id } }
@@ -162,7 +165,7 @@ fun LiftDetailScreen(
                     DetailMenuItems(
                         onShare = {
                             menu = false
-                            onShare(shareText)
+                            sharing = true
                         },
                         onDelete = { confirming = true },
                     )
@@ -213,6 +216,21 @@ fun LiftDetailScreen(
         },
         onDismissDelete = { confirming = false },
     )
+    if (sharing) LiftDetailShare(state, session, onShare, onSharePicture, onDismiss = { sharing = false })
+}
+
+/** Share's sheet for the session, headed by when it was, as the words it sends are. */
+@Composable
+private fun LiftDetailShare(
+    state: LiftDetailUiState,
+    session: LiftSession,
+    onShare: (String) -> Unit,
+    onSharePicture: suspend (ByteArray) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val moment = stringResource(Res.string.common_joined, state.date, state.time)
+    val text = sessionShareText(session, state.records, moment)
+    SessionShareSheet(moment, session, state.records, text, onShare, onSharePicture, onDismiss)
 }
 
 @Composable

@@ -345,4 +345,20 @@
     <string name="summary_test_shorter">%1$s, %2$s shorter than last time</string>
     <string name="session_test_part_round">Reps in the round you were on when time was called</string>
     <string name="session_test_part_add">Add to the count</string>
+    <!-- A session shared as a picture (`SessionShareCard`): a record's tag (as lift-ui's), a lift's sets, and the
+         records or lifts past those it has room for. -->
+    <string name="record_tag">Record</string>
+    <string name="share_card_moved">%1$s moved</string>
+    <plurals name="share_card_sets">
+        <item quantity="one">%1$d set</item>
+        <item quantity="other">%1$d sets</item>
+    </plurals>
+    <plurals name="share_card_more_records">
+        <item quantity="one">and %1$d more record</item>
+        <item quantity="other">and %1$d more records</item>
+    </plurals>
+    <plurals name="share_card_more_lifts">
+        <item quantity="one">and %1$d more lift</item>
+        <item quantity="other">and %1$d more lifts</item>
+    </plurals>
 </resources>

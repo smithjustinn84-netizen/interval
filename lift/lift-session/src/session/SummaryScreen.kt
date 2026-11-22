@@ -96,6 +96,7 @@ fun SummaryScreen(
     onKeep: (SaveScope, String, Set<Int>) -> Unit = { _, _, _ -> },
     onShare: (String) -> Unit = {},
     reflection: SummaryReflection = SummaryReflection(),
+    onSharePicture: suspend (ByteArray) -> Unit = {},
 ) {
     val palette = IntervalTheme.palette
     val session = finished.session
@@ -106,6 +107,7 @@ fun SummaryScreen(
     val entrance = rememberEntrance()
     // Done, or Back, with the changes neither saved nor set aside asks once before the choice is lost.
     var asking by rememberSaveable { mutableStateOf(false) }
+    var sharing by rememberSaveable { mutableStateOf(false) }
     val undecided = choices.undecided(finished)
     val leave = { if (undecided) asking = true else onDone() }
     NavigationBackHandler(
@@ -139,7 +141,7 @@ fun SummaryScreen(
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
                         Arrival(entrance, HEADING_STEP) { SummaryHeading(session.title) }
                     }
-                    Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
+                    Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { sharing = true }) }
                 }
                 val scroll = rememberScrollState()
                 Column(
@@ -158,10 +160,14 @@ fun SummaryScreen(
             UprightSummary(
                 finished,
                 entrance,
-                SummaryParts(choices, onKeep, reflection, leave, onShare = { onShare(shareText) }),
+                SummaryParts(choices, onKeep, reflection, leave, onShare = { sharing = true }),
                 Modifier.widthIn(max = if (isWideUpright) Sizes.contentWide else Sizes.content),
             )
         }
+    }
+    if (sharing) {
+        val done = stringResource(Res.string.summary_done)
+        SessionShareSheet(done, session, finished.records, shareText, onShare, onSharePicture) { sharing = false }
     }
 }
 

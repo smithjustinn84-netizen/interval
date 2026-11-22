@@ -27,7 +27,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -65,6 +67,7 @@ import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
+import dev.justinsmith.interval.ui.ShareCardSheet
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
@@ -121,13 +124,15 @@ internal fun SummaryLayout(
     onExit: () -> Unit,
     onShare: (String) -> Unit,
     reflection: SummaryReflection,
+    onSharePicture: suspend (ByteArray) -> Unit = {},
 ) {
     var draft by rememberPresetDraft()
+    var sharing by rememberSaveable { mutableStateOf(false) }
     val healthNotes = healthNotes(state)
     LaunchedEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     val shareText = workoutShareText(state)
-    val share = { onShare(shareText) }
+    val share = { sharing = true }
     val entrance = rememberEntrance()
     FinishHaptic(firm = state.week?.justMet == true)
     val padding = Modifier
@@ -198,6 +203,7 @@ internal fun SummaryLayout(
         presets = state.presets,
         onSave = { _, preset -> onSavePreset(preset) },
     )
+    if (sharing) ShareCardSheet(shareText, onShare, onSharePicture, { sharing = false }) { SummaryShareCard(state) }
 }
 
 @Composable

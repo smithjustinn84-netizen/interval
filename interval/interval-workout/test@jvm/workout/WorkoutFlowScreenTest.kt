@@ -176,6 +176,7 @@ class WorkoutFlowScreenTest {
         onNodeWithText("6/6").assertExists()
         onNodeWithText("Save as preset").assertDoesNotExist()
         onNodeWithText("Share").performClick()
+        onNodeWithText("Share as text").performClick()
         assertEquals(listOf("share Hips and shoulders · Mobility · 6 moves\n6/6 moves · 8:00"), calls)
     }
 }

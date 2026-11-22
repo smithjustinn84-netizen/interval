@@ -26,6 +26,7 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.program
 import dev.justinsmith.lift.history.LiftDetailScreen
 import dev.justinsmith.lift.history.LiftDetailUiState
+import org.jetbrains.skia.Image
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -100,6 +101,31 @@ class SummaryScreenTest {
         setThemedContent(dark = true) { SummaryScreen(Finished(session, emptyList()), onDone = {}) }
         onNodeWithText("Muscles worked").performScrollTo().assertExists()
         onNodeWithText("Glutes · Hamstrings").assertExists()
+    }
+
+    @Test
+    fun `share offers the session as a picture of its card or in words`() = runUiTest {
+        val texts = mutableListOf<String>()
+        var picture: ByteArray? = null
+        setThemedContent(dark = true) {
+            SummaryScreen(
+                Finished(session, emptyList()),
+                onDone = {},
+                onShare = { texts += it },
+                onSharePicture = { picture = it },
+            )
+        }
+        onNodeWithText("Share").performClick()
+        onNodeWithText("Two-hand swing").assertExists()
+        onNodeWithText("1 set").assertExists()
+        onNodeWithText("Share picture").performClick()
+        waitUntil { picture != null }
+        val image = Image.makeFromEncoded(checkNotNull(picture))
+        assertEquals(1080 to 1350, image.width to image.height)
+
+        onNodeWithText("Share").performClick()
+        onNodeWithText("Share as text").performClick()
+        assertEquals(listOf("Swings\n10:00 · 240 kg moved · 10 reps"), texts)
     }
 
     @Test

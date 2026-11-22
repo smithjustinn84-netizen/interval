@@ -44,7 +44,6 @@ import org.koin.compose.viewmodel.koinViewModel
 
 @Composable
 fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
-    val sharer = koinInject<Sharer>()
     val viewModel = koinViewModel<SessionViewModel>()
     // A page a killed process left on a session since finished or dropped has nothing to go on with: it closes.
     if (viewModel.sessionGone) {
@@ -103,15 +102,11 @@ fun SessionRoute(onExit: () -> Unit, onRecap: () -> Unit = onExit) {
         label = "sessionPage",
     ) { shown ->
         when (shown) {
-            is SessionPage.Summary -> SummaryScreen(
+            // A program's last day closes onto the program's recap.
+            is SessionPage.Summary -> SessionSummary(
                 shown.finished,
-                // A program's last day closes onto the program's recap.
+                viewModel.summary,
                 onDone = if (shown.finished.lastDayOf != null) onRecap else onExit,
-                onKeep = viewModel.summary::keepChanges,
-                onShare = sharer::shareText,
-                reflection = viewModel.summary.let {
-                    SummaryReflection(it::setEffort, it::setNote, it::describeForHealth)
-                },
             )
 
             is SessionPage.Emom -> EmomScreen(
@@ -240,6 +235,20 @@ internal fun LeaveDialog(running: StringResource?, hasSets: Boolean, onLeave: ()
         dismiss = stringResource(Res.string.session_stay),
         onConfirm = onLeave,
         onDismiss = onDismiss,
+    )
+}
+
+/** The finished session's [SummaryScreen], bound to [summary] and the platform's share sheet. */
+@Composable
+private fun SessionSummary(finished: Finished, summary: FinishSession, onDone: () -> Unit) {
+    val sharer = koinInject<Sharer>()
+    SummaryScreen(
+        finished,
+        onDone = onDone,
+        onKeep = summary::keepChanges,
+        onShare = sharer::shareText,
+        onSharePicture = { sharer.shareImage(SHARED_PICTURE, it) },
+        reflection = SummaryReflection(summary::setEffort, summary::setNote, summary::describeForHealth),
     )
 }
 

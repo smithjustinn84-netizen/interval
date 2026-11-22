@@ -38,6 +38,13 @@ object IntervalSizes {
 
     /** The hero card's stepped workout intensity waveform, and the gap between its segments. */
     val timeline = 28.dp
+
+    /**
+     * The timeline on a workout shared as a picture (`WorkoutShareCard`), taller as it is the card's art, and
+     * taller again with no heart rate under it.
+     */
+    val shareTimeline = 44.dp
+    val shareTimelineAlone = 96.dp
     val timelineGap = 2.dp
 
     /** The tallest bar of the History tab's week chart. */

@@ -39,6 +39,10 @@
 	<string>Interval reads your latest body weight, to offer it for the calorie estimate, and your heart rate during a workout you finished, to show on its summary.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Interval saves each workout and Lift session you finish to Apple Health, with its calorie estimate.</string>
+	<!-- The share sheet's Save Image, for a summary shared as a picture (IosSharer.shareImage, in core): without
+	     it the app is ended as the picture is saved. -->
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Interval saves the picture of a workout or session you share to your photos when you ask it to.</string>
 	<!-- The Home Screen's quick actions (a long-press on the icon), Android's launcher shortcuts: each type is a
 	     Shortcut.id (apps/app/src/nav/Shortcut.kt), which SceneDelegate hands to the app. -->
 	<key>NSSupportsLiveActivities</key>

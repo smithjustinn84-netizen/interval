@@ -23,11 +23,17 @@ fun interface FileOpener {
 
 /**
  * Hands something of the user's to the system: Android's share sheet, iOS's activity sheet; on desktop a file
- * goes to a save dialog and text to the clipboard. Injected, so tests record what was offered.
+ * or a picture goes to a save dialog and text to the clipboard. Injected, so tests record what was offered.
  */
 interface Sharer {
     /** Offers [file] to share or save. It is written somewhere temporary first, so this may suspend. */
     suspend fun shareFile(file: ShareableFile)
+
+    /**
+     * Offers a picture, [png] the bytes of one, under [name] (with its `.png`): written somewhere temporary
+     * first, as a file is, then handed over as an image, so a messenger shows it and iOS offers to save it.
+     */
+    suspend fun shareImage(name: String, png: ByteArray)
 
     /** Offers [text] to share. */
     fun shareText(text: String)
