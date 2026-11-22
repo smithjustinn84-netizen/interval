@@ -300,6 +300,7 @@ The user guide, privacy policy and developer docs are published at
   - [The architecture sprint](./docs/archive/sprint-architecture.md): one Koin container per process, `WorkoutSession` and `SessionTimers` owned by the process, narrow store ports, and the `SessionViewModel` and `LiftRepository` splits, from the [2026-10-31 review](./docs/archive/architecture-review.md).
   - [Sprint 0.3](./docs/archive/sprint-0.3.md): Android 16 Live Updates, launcher shortcuts, "How was it?", JSON import, Health Connect reads, Apple Health, warm-up and cool-down, muscle balance, and the Android Glance widget (`v0.3.0`).
 - [Backlog](./docs/backlog.md): What no sprint holds yet, why, and what would bring each in.
+- [Product Review](./docs/product-review.md): Release blockers, cleanup targets, UX polish, and the `0.6.0 → 1.0.0` roadmap (2026-11-22).
 - [Developer Guide (CLAUDE.md)](./CLAUDE.md): Code conventions, architecture invariants, and toolchain command reference.
 - [Changelog](./CHANGELOG.md): History of notable changes and milestone releases.
 

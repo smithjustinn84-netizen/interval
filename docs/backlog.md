@@ -91,6 +91,15 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   handed into Kotlin as `startWidgetFeed`'s closure is, implementing `ClassSensor` (`interval-platform-api`),
   with `NSBluetoothAlwaysUsageDescription`. iOS binds `NoClassSensor` until then.
 
+### From the 2026-11-22 product review ([product-review.md](product-review.md))
+
+Full findings, cleanup items, and the 3-phase `0.6.0 → 1.0.0` roadmap live in [product-review.md](product-review.md). Unscheduled items awaiting a sprint:
+
+- **Release blockers before `0.6.0` (B1–B4).** Add missing third-party license notices (`Polar BLE SDK`, AndroidX Glance, Health Connect) in `Credits.kt`; consolidate `[0.5.0]` + `[0.6.0]` in `CHANGELOG.md`; complete real-hardware Polar R8 smoke test; sync stale counts in `README.md` and `docs/index.md`.
+- **Clean up & dead weight (C1–C6).** Batch `ExportBundle.SCHEMA` bumps once per release; prune legacy `Presets` route and pre-`0.5` backstack shims post-migration; curate the built-in program catalogue; finalize `desktopApp` scope; merge `scripts/` into `tools/`, extract shared `TimedBlockScaffold` (`EmomScreen`/`DensityScreen`), and deduplicate `EffortWords`/`ShareWords`.
+- **Broadening & UX polish (P1–P5).** Support pounds (`lb`) across Lift and `Set up`; make `Set up` equipment-aware beyond kettlebells + BJJ; add post-workout editing (effort, notes, logged sets) and Log search/filters; add a **Warm-up** set toggle in Lift; reorganize Settings into tighter groups.
+- **Next-level `1.0` features (F1–F7).** Standard BLE GATT (`0x180D`) live heart rate on Android & iOS; Program Completion Recap & next-cycle coach; shareable Track & Chalk PNG summary cards; unified Progress / Trends view in Log; superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
+
 ## Left out on purpose
 
 - **Import atomicity across both databases (E5** in the [2026-10-31 review](archive/architecture-review.md)).

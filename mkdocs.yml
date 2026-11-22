@@ -10,10 +10,11 @@ repo_name: interval
 edit_uri: edit/main/docs/
 copyright: No accounts, no analytics, no ads.
 
-# docs/ holds the developer docs as well; the sprint plans, the backlog and the archive stay in the repository.
+# docs/ holds the developer docs as well; the sprint plans, the backlog, the product review and the archive stay in the repository.
 exclude_docs: |
   sprint-*.md
   backlog.md
+  product-review.md
   archive/
 not_in_nav: |
   hero.png
