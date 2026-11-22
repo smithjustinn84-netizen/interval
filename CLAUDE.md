@@ -534,12 +534,18 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   (`CountdownClock.kt`) for an interval's last seconds, which the clock pops to and `ProgressRing`'s
   `pulse` swells and flashes to, `Burst` for rings out from a moment (a phase change from the clock, a record's
   row, the week's goal met; Start's launch, one ring of the accent out from the button over `Motion.LAUNCH_MILLIS`,
-  the workout's rise, in `StartButton`), `StreakBadge` for the streak (rolling up with `grew`), `FinishHaptic` for a
+  the workout's rise, in `StartButton`), `Shockwave` (`Shockwave.kt`) for a moment struck: one hard front out from a
+  point and spent in `Motion.SHOCKWAVE_MILLIS`, shorter than a `Burst`, which it leads when the burst is given
+  `shock` (a record's row); alone on the row of a set that tops a ladder (`ladderTops`, lift-domain) and out from the
+  clock to the ring as an EMOM's last set is done (`TimedBlock.landed`), and from the bell a record's figure raises
+  (`Celebration.shockAt`), `StreakBadge` for the streak (rolling up with `grew`), `FinishHaptic` for a
   summary's landing under the thumb. Page transitions are `pageTransition`/`pagePopTransition` (`Navigation.kt`);
   iOS keeps its native slide (`platformPageTransitions`). Looping, decorative motion (lanes, comets,
   the paused hint's breathing) checks `prefersReducedMotion()`; one-shot animations need not, Android
   scales them with the system setting. Haptics go through `LocalHapticFeedback` (steppers tick,
-  picks and toggles confirm, a record lands with two beats, a rest's last seconds tick), never a platform call;
+  picks and toggles confirm, a record lands with two beats, a rest's last seconds tick, a drag along a rep's
+  `PhaseTrack` ticks, `TextHandleMove`, as it clicks onto each of `ExerciseRep.checkpoints`, where two stretches
+  meet), never a platform call;
   the interval workout's buzzes are cues (`Haptic.Countdown/Work/Rest/Finished` through `CuePlayer`), under
   the Vibrate switch, so they play with the screen off and never double a UI haptic. Tests record either:
   `RecordingHaptics` + `WithHaptics` (core-ui-testing) and `RecordingCuePlayer`.
@@ -550,7 +556,8 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   set in the draw phase. `ShaderSourcesTest` (core's `test@jvm`) holds that each compiles: a new shader goes in it,
   since one that doesn't falls back without a word. The ring's band is one (`RingShader.kt`: the arc graded to a
   needle at its head, the dial's ticks, the heat and beat of an interval's last seconds), and the clock's ink
-  (`CLOCK_SKSL`, painted into the digits as a mask). A ring is a dial when handed a `RingDial` (`RingDial.kt`: the
+  (`CLOCK_SKSL`, painted into the digits as a mask), and a `Shockwave`'s front and wake (`SHOCKWAVE_SKSL`, a ring and
+  its echo where there are no shaders). A ring is a dial when handed a `RingDial` (`RingDial.kt`: the
   interval's seconds and whether the ring drains or fills), which gives its ticks (`dialTicks`), the heat of its
   last seconds (`Motion.URGENT_SECONDS`) and their beat, all pure functions of the ring's own progress. Handed a
   `RingZone` (`RingZone.kt`, `rememberRingZone` of the live heart rate) the ring has a bezel too: the ticks on the

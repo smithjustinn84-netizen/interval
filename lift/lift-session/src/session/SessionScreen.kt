@@ -258,7 +258,7 @@ private fun SessionPlanContent(
             celebrating = celebrating,
         )
     }
-    LoggedSets(state.session?.sets.orEmpty(), state.recordSetIds, sets)
+    LoggedSets(state.session?.sets.orEmpty(), state.recordSetIds, sets, state.ladderTopIds)
 }
 
 /**

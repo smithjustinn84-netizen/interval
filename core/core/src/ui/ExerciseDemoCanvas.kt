@@ -31,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.clipRect
@@ -156,7 +157,8 @@ data class ExerciseDemoColors(
  * [rep] rendered on the unified kinematic & organic-silhouette canvas.
  *
  * Runs by itself unless [progress] holds it or [mode] is [DemoDisplayMode.Thumb]. When [celebrating] changes to
- * a non-null key (e.g. a record set's id) on a standing rep, plays a one-shot [Celebration] gesture then resumes.
+ * a non-null key (e.g. a record set's id) on a standing rep, plays a one-shot [Celebration] gesture then resumes;
+ * as the gesture tops out a shockwave sets out behind the figure from the bell it raises ([Celebration.shockAt]).
  */
 @Composable
 fun ExerciseDemoCanvas(
@@ -187,23 +189,37 @@ fun ExerciseDemoCanvas(
     val semanticsModifier = modifier.canvasSemantics(contentDescription, celebrationState, tracksView) {
         inView = it
     }
+    // Compiled as a gesture starts and let go as it ends: a figure in a list of them makes none.
+    val shockwave = remember(celebratingNow) { if (celebratingNow) shaderProgram(SHOCKWAVE_SKSL) else null }
     Spacer(
         semanticsModifier.drawWithCache {
             if (size.minDimension <= 0f) return@drawWithCache onDrawBehind {}
             val stage = DemoStage(activeRep, size, mode, colors.reference, this)
             val faintBell = colors.bell.copy(alpha = PATH_ALPHA)
+            val shockReach = size.minDimension * SHOCK_REACH
+            val shockStroke = Sizes.rowShockwaveStroke.toPx()
+            val hot = colors.joint.luminance() < MID_LUMINANCE
             onDrawBehind {
                 val at = if (celebratingNow) celebration.progress.value else (held ?: position.share)
                 stage.frameFor(at)
                 val beatColor = resolveBeatColor(activeRep, mode, at, colors)
                 drawWithOptionalClip(stage.clipRect) {
                     val joints = stage.jointsAt(at)
+                    if (celebratingNow) {
+                        // Out from what the figure raises, or from the middle of one that bows, behind it.
+                        val origin = stage.place(joints.celebrated(activeRep.hold))
+                        val spent = Celebration.shockAt(at)
+                        drawShockwave(shockwave, spent, beatColor, origin, shockReach, shockStroke, hot)
+                    }
                     drawCanvasScene(activeRep, stage, joints, at, beatColor, faintBell, colors, mode)
                 }
             }
         },
     )
 }
+
+/** Where a celebration's shockwave sets out from: what the figure raises, or the hips of one that bows. */
+private fun BodyFrame.celebrated(hold: RepHold): Offset = if (hold == RepHold.Free) hips else kettlebellCenter
 
 private class CelebrationInterlude(val rep: ExerciseRep?, val progress: Animatable<Float, *>)
 
@@ -325,6 +341,9 @@ private fun RunLoop(rep: ExerciseRep, position: RepPosition, held: Float?, inVie
 
 private const val MILLIS_PER_SECOND = 1000f
 private const val PATH_ALPHA = 0.4f
+
+/** A celebration's shockwave reaches this share of the canvas's shorter side: about the figure's own height. */
+private const val SHOCK_REACH = 0.7f
 private const val BEAT_BLEND_SECONDS = 0.12f
 private const val MAX_BEAT_BLEND = 0.04f
 private const val MID_LUMINANCE = 0.5f

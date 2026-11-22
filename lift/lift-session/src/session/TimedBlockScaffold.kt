@@ -67,6 +67,7 @@ import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.RingDial
 import dev.justinsmith.interval.ui.RingZone
 import dev.justinsmith.interval.ui.SecondaryButton
+import dev.justinsmith.interval.ui.Shockwave
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.TextScaleAtMost
@@ -92,7 +93,8 @@ import org.jetbrains.compose.resources.stringResource
  * Where a timed block stands, worded: what [TimedBlockScaffold] draws of an EMOM or a density block. [color] is
  * the phase's, which the page crossfades to; [beat] changes at each moment a haptic marks (a phase, a minute, a
  * round); [clockKey] at each interval the clock counts down afresh. [working] is while [action] is live, [over]
- * once the block is done and Stop no longer asks.
+ * once the block is done and Stop no longer asks. As it is [landed] (an EMOM's last minute's set done) the ring
+ * is struck: a [Shockwave] out from the clock to the ring, and the beat firmer under the thumb.
  */
 @Immutable
 internal data class TimedBlock(
@@ -110,6 +112,8 @@ internal data class TimedBlock(
     val working: Boolean,
     val over: Boolean,
     val largeAction: Boolean = false,
+    /** Whether its last set is done with time still on the clock: the block is in the bag. */
+    val landed: Boolean = false,
 )
 
 /** The set or round to do, as read aloud ([plain]) and as drawn, its load and reps kept on one line ([drawn]). */
@@ -162,7 +166,8 @@ internal fun TimedBlockScaffold(
     LaunchedEffect(confirmingStop) { if (!confirmingStop) focus.requestFocus() }
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(block.beat) {
-        haptics.performHapticFeedback(if (block.over) HapticFeedbackType.LongPress else HapticFeedbackType.Confirm)
+        val firm = block.over || block.landed
+        haptics.performHapticFeedback(if (firm) HapticFeedbackType.LongPress else HapticFeedbackType.Confirm)
     }
     KeepScreenOn()
     BoxWithConstraints(
@@ -407,6 +412,8 @@ private fun Ring(
     zone: RingZone?,
     content: @Composable (heat: () -> Float) -> Unit,
 ) {
+    // A block already landed as its page opens (one come back to) is not struck again.
+    val landedAtOpen = remember { block.landed }
     Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
         val dial = block.dial
         ProgressRing(
@@ -417,6 +424,8 @@ private fun Ring(
             dial = dial,
             zone = zone,
         )
+        // Out from the clock and spent as it meets the ring, under the readout.
+        if (block.landed && !landedAtOpen) Shockwave(block.color, Modifier.fillMaxSize(), reach = diameter / 2)
         content { dial?.heat(progress()) ?: 0f }
     }
 }

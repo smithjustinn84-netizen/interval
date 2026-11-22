@@ -5,6 +5,7 @@ package dev.justinsmith.lift.session
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
@@ -19,6 +20,8 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.pressKey
+import dev.justinsmith.interval.ui.RecordingHaptics
+import dev.justinsmith.interval.ui.WithHaptics
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import dev.justinsmith.lift.domain.BuiltInExercise
@@ -135,5 +138,29 @@ class EmomScreenTest {
         state = EmomState(EmomPhase.Work, 1, 10, 50, 0.1f)
         onNode(isFocused()).performKeyInput { pressKey(Key.Spacebar) }
         assertEquals(1, setsDone)
+    }
+
+    @Test
+    fun `the last minute's set done lands firmer under the thumb than any minute before it`() = runUiTest {
+        val haptics = RecordingHaptics()
+        var state by mutableStateOf(EmomState(EmomPhase.Work, 9, 10, 45, 0.25f))
+        setThemedContent(dark = true) {
+            WithHaptics(haptics) { EmomScreen(swings, state, onFinishSet = {}, onStop = {}) }
+        }
+        waitForIdle()
+        state = EmomState(EmomPhase.Rest, 9, 10, 30, 0.5f)
+        waitForIdle()
+        state = EmomState(EmomPhase.Work, 10, 10, 60, 0f)
+        waitForIdle()
+        assertEquals(List(3) { HapticFeedbackType.Confirm }, haptics.performed)
+
+        state = EmomState(EmomPhase.Rest, 10, 10, 30, 0.5f)
+        waitForIdle()
+        assertEquals(HapticFeedbackType.LongPress, haptics.performed.last())
+        assertEquals(4, haptics.performed.size)
+        // The ring's shockwave runs out and leaves the page as it was.
+        mainClock.advanceTimeBy(1_000)
+        onNodeWithText("Rest").assertExists()
+        onNodeWithText("Minute 10 of 10").assertExists()
     }
 }

@@ -32,8 +32,9 @@ import org.jetbrains.compose.resources.stringResource
  * An EMOM, in the workout's look ([TimedBlockScaffold]): the phase colour on the band, the ring (the minute going
  * by), the phase word and Set done. Count-in amber, work red until the set is done, then rest green until the
  * next minute, its set shown as next. Under the ring a ghost does the lift ([BlockFigure]), the one every minute
- * is. A haptic marks each change; the beeps come from the view model. [heart] is the live heart rate, at the end
- * of the top row while a sensor is in use.
+ * is. A haptic marks each change; the beeps come from the view model. As the last minute's set is done the EMOM
+ * is landed: the ring is struck by a shockwave and the beat is the firmer one. [heart] is the live heart rate, at
+ * the end of the top row while a sensor is in use.
  */
 @Composable
 fun EmomScreen(
@@ -77,6 +78,7 @@ fun EmomScreen(
         dial = emomDial(state),
         working = state.phase == EmomPhase.Work,
         over = state.phase == EmomPhase.Done,
+        landed = state.phase == EmomPhase.Rest && state.minute == state.minutes,
     )
     TimedBlockScaffold(
         block,

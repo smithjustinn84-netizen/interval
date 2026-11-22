@@ -220,6 +220,13 @@ object Sizes {
     val demoMarkerHeight = 16.dp
     val demoStretchGap = 2.dp
 
+    /**
+     * A checkpoint on a [PhaseTrack]: the bead where two stretches meet, and how near a drag must come for the
+     * marker to click onto it.
+     */
+    val demoNode = 6.dp
+    val demoDetent = 6.dp
+
     /** How tall the fade at the foot of a summary's scrolling column is while more of it lies below. */
     val summaryFade = 48.dp
 
@@ -286,6 +293,10 @@ object Sizes {
 
     /** A [Burst] inside a list row, such as a record's, starts from a thinner stroke. */
     val rowBurstStroke = 6.dp
+
+    /** A [Shockwave]'s front as it sets out: a screen's or a ring's, and a row's or a figure's. */
+    val shockwaveStroke = 3.dp
+    val rowShockwaveStroke = 2.dp
 
     /** The tinted ring round an [EmptyState]'s icon. */
     val emptyIconRing = 56.dp
@@ -428,6 +439,16 @@ object Motion {
 
     /** A [Burst] of rings opens from the centre to past the corners in this long, as the intro's does. */
     const val BURST_MILLIS = 540
+
+    /** A [Shockwave] is out and spent in this long: shorter than a [Burst], which it leads. */
+    const val SHOCKWAVE_MILLIS = 420
+
+    /** A checkpoint on a rep's track lights as the marker clicks onto it, and is back to rest in this long. */
+    const val DETENT_MILLIS = 320
+
+    /** The checkpoint's bead swells to this as it lights, and the ring it sends out goes to this. */
+    const val DETENT_POP_SCALE = 1.9f
+    const val DETENT_RING_SCALE = 4.5f
 
     /**
      * Start's launch: one ring of the accent sets out from the button as the workout rises, and is spent in the

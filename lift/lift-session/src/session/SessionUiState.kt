@@ -31,6 +31,7 @@ import dev.justinsmith.lift.domain.SupersetPlace
 import dev.justinsmith.lift.domain.TestResult
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.builtInPrograms
+import dev.justinsmith.lift.domain.ladderTops
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.offeredExercises
 import dev.justinsmith.lift.domain.recordSetIds
@@ -241,6 +242,8 @@ data class SessionUiState(
     val recordSetIds: Set<Long> = emptySet(),
     /** The last set logged, when it is one of them: the one to announce. */
     val latestRecord: SetLog? = null,
+    /** The sets of this session that topped a ladder of the day's plan: see [ladderTops]. */
+    val ladderTopIds: Set<Long> = emptySet(),
     /** What the sheet's picker offers, the ones done lately first, and how it is narrowed. */
     val library: LibraryList = LibraryList(offeredExercises(emptyList())),
     /** The exercise whose page is open, and the user's history with it. */

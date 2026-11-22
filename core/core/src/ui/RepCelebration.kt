@@ -14,6 +14,16 @@ enum class Celebration {
         /** The whole gesture: there, held, and back. */
         const val MILLIS = 1600
         const val SECONDS = MILLIS / 1000f
+
+        /** How far through the gesture the figure is there: the bell overhead, or the bow at its lowest. */
+        const val TOP = STOOD_WEIGHT + RISE_WEIGHT
+
+        /**
+         * How far through its [Shockwave] a gesture [progress] of the way through is: it sets out as the figure
+         * tops out ([TOP]), from the bell raised or the hips of a bow, and is spent well inside the hold. Under 0
+         * before then and over 1 after, which draw nothing.
+         */
+        fun shockAt(progress: Float): Float = (progress - TOP) * MILLIS / Motion.SHOCKWAVE_MILLIS
     }
 }
 

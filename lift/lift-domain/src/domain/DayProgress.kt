@@ -103,3 +103,27 @@ private fun List<List<PlannedSet>>.starts(): List<Int> = runningFold(0) { at, bl
  */
 fun nextPlanned(planned: List<PlannedSet>, logged: List<SetLog>): Int? =
     plannedDone(planned, logged).indexOfFirst { !it }.takeIf { it >= 0 }
+
+/**
+ * The sets of [logged] that topped a ladder of this day, by id: each the one that did the last set of a ladder's
+ * top rung (its second side, for a lift done a side at a time), as [plannedMatches] pairs the planned with the
+ * done. A ladder of the block is each run of its rungs, so three ladders of 1-2-3 top three times. A block cut
+ * short tops only the ladders it finished, and one swapped part way tops none: its rungs are two lifts'.
+ */
+fun ProgramDay.ladderTops(logged: List<SetLog>): Set<Long> {
+    val done = plannedMatches(plannedSets(), logged)
+    var first = 0
+    return buildSet {
+        today.blocks.forEach { entry ->
+            val sets = entry.plannedSets()
+            val block = entry.block
+            if (block.kind == BlockKind.Ladder && entry.before == null && block.rounds > 0) {
+                val ladder = block.plannedSets().size / block.rounds
+                for (index in sets.indices) {
+                    if (ladder > 0 && (index + 1) % ladder == 0) done[first + index]?.let { add(it.id) }
+                }
+            }
+            first += sets.size
+        }
+    }
+}

@@ -29,6 +29,7 @@ import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RowDivider
+import dev.justinsmith.interval.ui.Shockwave
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.pressScale
@@ -48,14 +49,20 @@ import org.jetbrains.compose.resources.stringResource
 internal class SetActions(val onRemove: (SetLog, removedText: String) -> Unit, val onEdit: (SetLog) -> Unit)
 
 /**
- * The sets logged so far, by lift, those in [recordSetIds] tagged. Given the sets alone, not the session's state,
- * so a change to the draft regroups nothing.
+ * The sets logged so far, by lift, those in [recordSetIds] tagged and those in [ladderTopIds] struck as they land.
+ * Given the sets alone, not the session's state, so a change to the draft regroups nothing.
  */
 @Composable
-internal fun LoggedSets(sets: List<SetLog>, recordSetIds: Set<Long>, actions: SetActions) {
+internal fun LoggedSets(
+    sets: List<SetLog>,
+    recordSetIds: Set<Long>,
+    actions: SetActions,
+    ladderTopIds: Set<Long> = emptySet(),
+) {
     // The sets on show when the screen opened stand still; one logged since rises into its card, and one that
-    // beat a record has its tag stamp in and the accent ring out from behind it. (A set edited into a record
-    // keeps its id, so it is tagged without the ceremony.)
+    // beat a record has its tag stamp in and the accent ring out from behind it, led by a shockwave. (A set
+    // edited into a record keeps its id, so it is tagged without the ceremony.) One that topped a ladder has the
+    // shockwave alone: the ladder climbed is a moment, and no record.
     val atOpen = remember { sets.map { it.id }.toSet() }
     val byLift = remember(sets) { sets.groupBy { it.exercise to it.double } }
     byLift.forEach { (lift, done) ->
@@ -66,11 +73,14 @@ internal fun LoggedSets(sets: List<SetLog>, recordSetIds: Set<Long>, actions: Se
                     AnimatedVisibility(rememberArrival(set.id !in atOpen), enter = risingEnter()) {
                         Column {
                             if (i > 0) RowDivider()
-                            val record = set.id in recordSetIds
+                            val fresh = set.id !in atOpen
                             SetRow(
                                 set,
-                                record = record,
-                                stamp = record && set.id !in atOpen,
+                                mark = when {
+                                    set.id in recordSetIds -> if (fresh) SetMark.RecordNow else SetMark.Record
+                                    fresh && set.id in ladderTopIds -> SetMark.LadderTopped
+                                    else -> SetMark.None
+                                },
                                 onRemove = { actions.onRemove(set, it) },
                                 onEdit = { actions.onEdit(set) },
                             )
@@ -82,18 +92,23 @@ internal fun LoggedSets(sets: List<SetLog>, recordSetIds: Set<Long>, actions: Se
     }
 }
 
+/** What a logged set's row marks: a record standing, one set just now, or a ladder topped just now. */
+private enum class SetMark { None, Record, RecordNow, LadderTopped }
+
 /**
- * A set logged: a tap opens it to change, × removes it; one that set a [record] is tagged, and one that set
- * it just now ([stamp]) has the tag stamp in over a ring of the accent, clipped to its card by design.
+ * A set logged: a tap opens it to change, × removes it; one that set a record is tagged, and one that set it
+ * just now ([SetMark.RecordNow]) has the tag stamp in over a ring of the accent led by its shockwave, clipped to
+ * its card by design. One that topped a ladder just now has the shockwave alone.
  */
 @Composable
 private fun SetRow(
     set: SetLog,
-    record: Boolean,
-    stamp: Boolean,
+    mark: SetMark,
     onRemove: (removedText: String) -> Unit,
     onEdit: () -> Unit,
 ) {
+    val record = mark == SetMark.Record || mark == SetMark.RecordNow
+    val stamp = mark == SetMark.RecordNow
     val line = setLine(set)
     val edit = stringResource(Res.string.session_edit_set_cd, line)
     val removed = stringResource(Res.string.session_set_removed, line)
@@ -105,6 +120,15 @@ private fun SetRow(
                 Modifier.matchParentSize(),
                 delayMillis = Motion.ENTER_MILLIS,
                 stroke = Sizes.rowBurstStroke,
+                shock = true,
+            )
+        }
+        if (mark == SetMark.LadderTopped) {
+            Shockwave(
+                IntervalTheme.palette.accent,
+                Modifier.matchParentSize(),
+                delayMillis = Motion.ENTER_MILLIS,
+                stroke = Sizes.rowShockwaveStroke,
             )
         }
         Row(

@@ -8,6 +8,7 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.ladderTops
 import dev.justinsmith.lift.domain.nextPlanned
 import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.offeredExercises
@@ -112,6 +113,7 @@ internal data class Inputs(
             editing = editing,
             recordSetIds = records,
             latestRecord = sets.lastOrNull()?.takeIf { it.id in records },
+            ladderTopIds = plan?.ladderTops(sets).orEmpty(),
             // The sheet never offers an archived exercise, whatever the library shows.
             library = LibraryList(
                 logged.exercises,

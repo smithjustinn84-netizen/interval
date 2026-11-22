@@ -35,6 +35,11 @@ class ShaderSourcesTest {
     }
 
     @Test
+    fun `the shockwave's shader compiles`() {
+        assertNotNull(shaderProgram(SHOCKWAVE_SKSL))
+    }
+
+    @Test
     fun `a source that is no shader gives none`() {
         assertNull(shaderProgram("half4 main(float2 p) { return nothing; }"))
     }

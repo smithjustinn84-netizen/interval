@@ -257,6 +257,13 @@ data class ExerciseRep(
         }
     }
 
+    /**
+     * The rep's checkpoints, in order: where one stretch of it hands over to the next, which is the stance the
+     * stretch before arrives in (the rack, the lockout). The rep's own start and end are none: nothing is passed
+     * there. A scrub along [PhaseTrack] clicks at each.
+     */
+    val checkpoints: List<Float> = spans.dropLast(1).map { it.until }
+
     /** Props split by draw order: behind the body, overhead/low rails over fists, and bands. */
     internal val propsBehind: List<RepProp> = props.filter { it !is RepRail }
     internal val rails: List<RepRail> = props.filterIsInstance<RepRail>()

@@ -4,7 +4,10 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -14,7 +17,9 @@ import androidx.compose.ui.test.swipeRight
 import androidx.compose.ui.unit.dp
 import dev.justinsmith.interval.ui.KettlebellReps
 import dev.justinsmith.interval.ui.PhaseTrack
+import dev.justinsmith.interval.ui.RecordingHaptics
 import dev.justinsmith.interval.ui.RepPlayer
+import dev.justinsmith.interval.ui.WithHaptics
 import dev.justinsmith.interval.ui.rememberRepPlayer
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
@@ -106,5 +111,67 @@ class DemoTimelineTest {
         }
         assertFalse(player.playing)
         assertEquals(0.6f, player.progress)
+    }
+
+    /** The goblet squat's track, 400dp wide, with the haptics it performs recorded. */
+    private fun DesktopComposeUiTest.squatTrack(haptics: RecordingHaptics): () -> RepPlayer {
+        lateinit var player: RepPlayer
+        setThemedContent {
+            player = rememberRepPlayer(KettlebellReps.GobletSquat)
+            WithHaptics(haptics) {
+                PhaseTrack(
+                    KettlebellReps.GobletSquat,
+                    progress = { player.progress },
+                    onScrub = player::hold,
+                    label = "Where in the rep",
+                    modifier = Modifier.width(400.dp),
+                )
+            }
+        }
+        return { player }
+    }
+
+    @Test
+    fun `a drag ticks once at each checkpoint it comes to`() = runUiTest {
+        val haptics = RecordingHaptics()
+        squatTrack(haptics)
+        val checkpoints = KettlebellReps.GobletSquat.checkpoints
+        // A stop between each checkpoint and the next, so no move passes two.
+        val stops = listOf(0.05f, 0.2f) + checkpoints.zipWithNext { a, b -> (a + b) / 2 } + 0.9f
+        onNodeWithContentDescription("Where in the rep").performTouchInput {
+            down(Offset(width * stops.first(), centerY))
+            stops.drop(1).forEach { moveTo(Offset(width * it, centerY)) }
+            up()
+        }
+        assertEquals(List(checkpoints.size) { HapticFeedbackType.TextHandleMove }, haptics.performed)
+    }
+
+    @Test
+    fun `a drag that stops by a checkpoint clicks onto it and ticks once however it wavers there`() = runUiTest {
+        val haptics = RecordingHaptics()
+        val player = squatTrack(haptics)
+        val bottom = KettlebellReps.GobletSquat.checkpoints.first()
+        onNodeWithContentDescription("Where in the rep").performTouchInput {
+            down(Offset(width * 0.1f, centerY))
+            moveTo(Offset(width * 0.2f, centerY))
+            moveTo(Offset(width * bottom - 3f, centerY))
+            moveTo(Offset(width * bottom + 2f, centerY))
+            moveTo(Offset(width * bottom - 1f, centerY))
+            up()
+        }
+        assertEquals(bottom, player().progress)
+        assertEquals(listOf(HapticFeedbackType.TextHandleMove), haptics.performed)
+    }
+
+    @Test
+    fun `a tap on the track goes where it lands with no tick`() = runUiTest {
+        val haptics = RecordingHaptics()
+        val player = squatTrack(haptics)
+        val bottom = KettlebellReps.GobletSquat.checkpoints.first()
+        onNodeWithContentDescription("Where in the rep").performTouchInput {
+            click(Offset(width * bottom - 3f, centerY))
+        }
+        assertTrue(player().progress < bottom, "The tap lands at ${player().progress}")
+        assertTrue(haptics.performed.isEmpty())
     }
 }

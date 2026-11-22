@@ -57,6 +57,45 @@ class DayProgressTest {
         assertEquals(listOf(false, true), rows.map { it.open })
     }
 
+    private val ladders =
+        Block(BuiltInExercise.GobletSquat, rounds = 2, kind = BlockKind.Ladder, rungs = listOf(1, 2, 3))
+
+    private fun rungs(exercise: Exercise, times: Int, side: (Int) -> Side? = { null }) =
+        (1..times).map { SetLog.of(it.toLong(), exercise, 24.0, 1, side(it), it.toLong()) }
+
+    @Test
+    fun `the set that does a ladder's top rung tops it and each ladder of the block tops once`() {
+        val today = day(ladders)
+        assertEquals(emptySet(), today.ladderTops(rungs(BuiltInExercise.GobletSquat, 2)))
+        assertEquals(setOf(3L), today.ladderTops(rungs(BuiltInExercise.GobletSquat, 3)))
+        assertEquals(setOf(3L), today.ladderTops(rungs(BuiltInExercise.GobletSquat, 5)))
+        assertEquals(setOf(3L, 6L), today.ladderTops(rungs(BuiltInExercise.GobletSquat, 6)))
+    }
+
+    @Test
+    fun `a lift done a side at a time tops its ladder on the second side`() {
+        val presses = ladders.copy(exercise = BuiltInExercise.Press, rounds = 1)
+        val sides: (Int) -> Side? = { if (it % 2 == 1) Side.Left else Side.Right }
+        assertEquals(emptySet(), day(presses).ladderTops(rungs(BuiltInExercise.Press, 5, sides)))
+        assertEquals(setOf(6L), day(presses).ladderTops(rungs(BuiltInExercise.Press, 6, sides)))
+    }
+
+    @Test
+    fun `sets that are no ladder's top none and a ladder after them counts from its own start`() {
+        val today = day(swings, ladders.copy(rounds = 1))
+        val swung = logged(BuiltInExercise.TwoHandSwing, 3)
+        assertEquals(emptySet(), today.ladderTops(swung))
+        val squatted = (4..6).map { SetLog.of(it.toLong(), BuiltInExercise.GobletSquat, 24.0, 1, null, it.toLong()) }
+        assertEquals(setOf(6L), today.ladderTops(swung + squatted))
+    }
+
+    @Test
+    fun `a ladder cut short tops only the ladders it finished`() {
+        val plan = SessionPlan.of(listOf(ladders)).skip(0, done = 4)
+        val today = day(ladders, plan = plan)
+        assertEquals(setOf(3L), today.ladderTops(rungs(BuiltInExercise.GobletSquat, 4)))
+    }
+
     private val medium = Band.of(BandLevel.Medium)
 
     private fun loadFor(
