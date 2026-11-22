@@ -66,6 +66,7 @@ import dev.justinsmith.interval.ui.RollingText
 import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.ui.surfaceButton
@@ -226,16 +227,20 @@ private fun PortraitDensity(
             val diameter = minOf(maxWidth, maxHeight, if (roomy) LiftSizes.ringMaxRoomy else Sizes.ringMax)
             Box(Modifier.size(diameter), contentAlignment = Alignment.Center) {
                 ProgressRing(progress, color, Modifier.fillMaxSize(), glideMillis = Motion.EMOM_RING_GLIDE_MILLIS)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    PhaseWord(state, color)
-                    val type = IntervalTheme.type
-                    ClockText(state, color, diameter, if (roomy) type.clock else type.display)
-                    TaskText(
-                        run,
-                        state,
-                        Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
-                        centered = true,
-                    )
+                // The ring's words keep the size it is drawn for, as the clock does, sized by the ring alone:
+                // larger, the word sits on the stroke and the line under the clock is cut ("24 kg × 10").
+                TextScaleAtMost(1f) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        PhaseWord(state, color)
+                        val type = IntervalTheme.type
+                        ClockText(state, color, diameter, if (roomy) type.clock else type.display)
+                        TaskText(
+                            run,
+                            state,
+                            Modifier.padding(horizontal = Sizes.ring + Spacing.space32),
+                            centered = true,
+                        )
+                    }
                 }
             }
         }

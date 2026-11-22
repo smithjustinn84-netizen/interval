@@ -48,6 +48,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
 import dev.justinsmith.interval.ui.fadeWhenMoreBelow
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.rememberEntrance
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.LiftSession
@@ -152,29 +153,61 @@ fun SummaryScreen(
                 }
             }
         } else {
-            // Upright: one column, as wide as a session's on a tablet.
-            Column(
-                Modifier
-                    .widthIn(max = if (isWideUpright) Sizes.contentWide else Sizes.content)
-                    .fillMaxSize()
-                    .safeDrawingPadding()
-                    .padding(Spacing.space20),
-                verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                // The foot fades while more lies below: a heading cut off above the footer says its card is under it.
-                val scroll = rememberScrollState()
-                Column(
-                    Modifier.weight(1f).fadeWhenMoreBelow(scroll).verticalScroll(scroll),
-                    verticalArrangement = Arrangement.spacedBy(Spacing.space8),
-                ) {
-                    Arrival(entrance, HEADING_STEP) {
-                        SummaryHeading(session.title, Modifier.padding(top = Spacing.space24, bottom = Spacing.space16))
-                    }
-                    SummaryBody(finished, entrance, choices, onKeep, reflection)
+            UprightSummary(
+                finished,
+                entrance,
+                SummaryParts(choices, onKeep, reflection, leave, onShare = { onShare(shareText) }),
+                Modifier.widthIn(max = if (isWideUpright) Sizes.contentWide else Sizes.content),
+            )
+        }
+    }
+}
+
+/** What the summary's parts do, handed to its upright layout as one value. */
+private class SummaryParts(
+    val choices: ChangesChoices,
+    val onKeep: (SaveScope, String, Set<Int>) -> Unit,
+    val reflection: SummaryReflection,
+    val onLeave: () -> Unit,
+    val onShare: () -> Unit,
+)
+
+/**
+ * Upright: one column, as wide as a session's on a tablet. The foot fades while more lies below: a heading cut off
+ * above the footer says its card is under it. With large text the week and Share scroll at the end, and Close alone
+ * stays at the foot.
+ */
+@Composable
+private fun UprightSummary(
+    finished: Finished,
+    entrance: MutableTransitionState<Boolean>,
+    parts: SummaryParts,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier.fillMaxSize().safeDrawingPadding().padding(Spacing.space20),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        val pinned = !isLargeText()
+        val scroll = rememberScrollState()
+        Column(
+            Modifier.weight(1f).fadeWhenMoreBelow(scroll).verticalScroll(scroll),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Arrival(entrance, HEADING_STEP) {
+                SummaryHeading(
+                    finished.session.title,
+                    Modifier.padding(top = Spacing.space24, bottom = Spacing.space16),
+                )
+            }
+            SummaryBody(finished, entrance, parts.choices, parts.onKeep, parts.reflection)
+            if (!pinned) {
+                Arrival(entrance, FOOTER_STEP) {
+                    SummaryStanding(finished, parts.onShare, Modifier.padding(top = Spacing.space16))
                 }
-                Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, leave, onShare = { onShare(shareText) }) }
             }
         }
+        Arrival(entrance, FOOTER_STEP) { SummaryFooter(finished, parts.onLeave, parts.onShare, standing = pinned) }
     }
 }
 
@@ -333,10 +366,22 @@ private fun SummaryHeading(title: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Where the week stands with the session in it, the program it finished if it did, where it went, Share and Done. */
+/**
+ * The way out under the summary: the session's [SummaryStanding] over Close, or with [standing] off Close alone, the
+ * standing then scrolling with the rest (large text, where it would leave the numbers a sliver).
+ */
 @Composable
-private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () -> Unit) {
+private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () -> Unit, standing: Boolean = true) {
     Column(verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+        if (standing) SummaryStanding(finished, onShare)
+        AccentButton(stringResource(Res.string.summary_close), onDone, Modifier.fillMaxWidth())
+    }
+}
+
+/** Where the week stands with the session in it, the program it finished if it did, where it went, and Share. */
+@Composable
+private fun SummaryStanding(finished: Finished, onShare: () -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
         finished.week?.let { week ->
             Text(
                 weekText(week),
@@ -371,7 +416,6 @@ private fun SummaryFooter(finished: Finished, onDone: () -> Unit, onShare: () ->
             modifier = Modifier.fillMaxWidth(),
         )
         QuietTextButton(stringResource(Res.string.summary_share), onShare, Modifier.align(Alignment.CenterHorizontally))
-        AccentButton(stringResource(Res.string.summary_close), onDone, Modifier.fillMaxWidth())
     }
 }
 

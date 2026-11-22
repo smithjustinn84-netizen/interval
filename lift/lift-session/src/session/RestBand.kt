@@ -5,6 +5,7 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.Corners
@@ -37,6 +39,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.enterExpanding
 import dev.justinsmith.interval.ui.exitShrinking
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.session.resources.Res
@@ -97,6 +100,7 @@ private fun RestHeartLine(heart: RestHeart) {
         style = IntervalTheme.type.caption,
         color = ink,
         maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
     )
 }
 
@@ -109,6 +113,7 @@ private fun RestBandContent(
     progress: () -> Float,
 ) {
     val palette = IntervalTheme.palette
+    val large = isLargeText()
     val countingDown = rest.secondsLeft in 1..RestClock.COUNTDOWN
     val haptics = LocalHapticFeedback.current
     LaunchedEffect(rest.secondsLeft) {
@@ -131,13 +136,20 @@ private fun RestBandContent(
             horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
             Column(Modifier.weight(1f)) {
-                Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+                ) {
                     Text(
                         stringResource(Res.string.session_rest),
                         style = IntervalTheme.type.caption,
                         color = palette.textDim,
                     )
-                    heart?.let { RestHeartLine(it) }
+                    // The heart's line takes what is left, cut short before it pushes anything out.
+                    Box(Modifier.weight(1f)) { heart?.let { RestHeartLine(it) } }
+                    // With large text Skip stands up here, so the clock beside − and + keeps its last digit ("0:4").
+                    if (large) QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
                 }
                 CountdownClock(
                     formatClock(rest.secondsLeft),
@@ -160,7 +172,7 @@ private fun RestBandContent(
                 enabled = rest.seconds < RestClock.MAX_SECONDS,
                 onStep = { onStep(1) },
             )
-            QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
+            if (!large) QuietTextButton(stringResource(Res.string.session_rest_skip), onSkip)
         }
         // The bar runs out from the end edge, drawn rather than laid out: it moves every tick.
         val mark = palette.restMark

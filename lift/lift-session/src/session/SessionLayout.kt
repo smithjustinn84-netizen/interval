@@ -38,6 +38,7 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.isLandscape
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.rememberRising
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.session.resources.Res
@@ -181,9 +182,16 @@ private fun TileRow(stats: List<SessionStat>) {
     }
 }
 
-/** The session's numbers on one card, a column each: a third of the height of a tile apiece. */
+/**
+ * The session's numbers on one card, a column each: a third of the height of a tile apiece. With large text a row
+ * each, the caption at the start and the value at the end: a third of the width breaks both ("1280 / kg").
+ */
 @Composable
 private fun StatStrip(stats: List<SessionStat>) {
+    if (isLargeText()) {
+        StatRows(stats)
+        return
+    }
     val palette = IntervalTheme.palette
     Row(
         Modifier
@@ -204,6 +212,40 @@ private fun StatStrip(stats: List<SessionStat>) {
                 if (stat.rank != null) {
                     val rising = rememberRising(stat.rank)
                     RollingText(stat.value, rising = rising, style = IntervalTheme.type.value, color = palette.text)
+                } else {
+                    Text(stat.value, style = IntervalTheme.type.value, color = palette.text)
+                }
+            }
+        }
+    }
+}
+
+/** [StatStrip] with large text: a row a number on one card, its caption at the start and its value at the end. */
+@Composable
+private fun StatRows(stats: List<SessionStat>) {
+    val palette = IntervalTheme.palette
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(Corners.radius18)
+            .background(palette.surface)
+            .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space4),
+    ) {
+        stats.forEach { stat ->
+            Row(
+                Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                Text(stat.label, Modifier.weight(1f), style = IntervalTheme.type.caption, color = palette.textDim)
+                if (stat.rank != null) {
+                    RollingText(
+                        stat.value,
+                        rising = rememberRising(stat.rank),
+                        style = IntervalTheme.type.value,
+                        color = palette.text,
+                    )
                 } else {
                     Text(stat.value, style = IntervalTheme.type.value, color = palette.text)
                 }

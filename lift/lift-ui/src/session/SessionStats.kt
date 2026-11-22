@@ -2,7 +2,7 @@ package dev.justinsmith.lift.session
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -16,6 +16,7 @@ import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ZoneBreakdown
 import dev.justinsmith.interval.ui.countUp
+import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.formatKg
@@ -49,18 +50,16 @@ fun SessionStats(
     maxBpm: Int = DEFAULT_MAX_BPM,
 ) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-            StatTile(
-                stringResource(Res.string.session_time),
-                formatClock(countUp(session.elapsedSeconds(0), countUp)),
-                Modifier.weight(1f),
-            )
-            StatTile(
-                stringResource(Res.string.summary_reps),
-                countUp(session.reps, countUp).toString(),
-                Modifier.weight(1f),
-            )
-        }
+        TilePair(
+            {
+                StatTile(
+                    stringResource(Res.string.session_time),
+                    formatClock(countUp(session.elapsedSeconds(0), countUp)),
+                    it,
+                )
+            },
+            { StatTile(stringResource(Res.string.summary_reps), countUp(session.reps, countUp).toString(), it) },
+        )
         // The kilograms count up whole, and read to the half once they have landed.
         val wholeKg = session.tonnageKg.roundToInt()
         val countedKg = countUp(wholeKg, countUp)
@@ -87,18 +86,22 @@ fun SessionStats(
                     }
                 }
             }
-            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
-                StatTile(
-                    stringResource(Res.string.session_average_heart_rate),
-                    stringResource(Res.string.session_bpm_value, average),
-                    Modifier.weight(1f),
-                )
-                StatTile(
-                    stringResource(Res.string.session_peak_heart_rate),
-                    stringResource(Res.string.session_bpm_value, peak),
-                    Modifier.weight(1f),
-                )
-            }
+            TilePair(
+                {
+                    StatTile(
+                        stringResource(Res.string.session_average_heart_rate),
+                        stringResource(Res.string.session_bpm_value, average),
+                        it,
+                    )
+                },
+                {
+                    StatTile(
+                        stringResource(Res.string.session_peak_heart_rate),
+                        stringResource(Res.string.session_bpm_value, peak),
+                        it,
+                    )
+                },
+            )
         }
         if (records.isNotEmpty()) {
             GroupLabel(stringResource(Res.string.summary_records))
@@ -109,5 +112,22 @@ fun SessionStats(
                 }
             }
         }
+    }
+}
+
+/**
+ * Two tiles side by side, or with large text one over the other, each the whole width: half a phone's width breaks
+ * a clock in two ("25:0 / 0").
+ */
+@Composable
+private fun TilePair(first: @Composable (Modifier) -> Unit, second: @Composable (Modifier) -> Unit) {
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        maxItemsInEachRow = if (isLargeText()) 1 else 2,
+    ) {
+        first(Modifier.weight(1f))
+        second(Modifier.weight(1f))
     }
 }
