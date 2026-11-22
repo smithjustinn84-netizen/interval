@@ -125,7 +125,7 @@
     <string name="sensor_sync">Sync class</string>
     <string name="sensor_working">Reaching the sensor…</string>
     <string name="notice_sensor_no_access">Bluetooth is off, or the app may not use it.</string>
-    <string name="notice_sensor_not_found">Couldn’t find the sensor. Wake it (wear an H10) and keep it close.</string>
+    <string name="notice_sensor_not_found">Couldn’t find the sensor. Wear it and keep it close.</string>
     <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
     <string name="notice_sensor_nothing">Nothing was recorded on the sensor.</string>
 </resources>

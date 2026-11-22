@@ -438,6 +438,8 @@ class RecordingClassSensor(
     var recorded: ClassRecording? = null,
     var failing: SensorFailure? = null,
     private val now: () -> Long = { 0L },
+    /** Whether what a pairing finds only streams the heart rate, as any strap but Polar's does: it records no class. */
+    var streamsOnly: Boolean = false,
 ) : ClassSensor {
     private val _status = MutableStateFlow(initial)
     override val status: MutableStateFlow<SensorStatus> get() = _status
@@ -463,7 +465,7 @@ class RecordingClassSensor(
 
             else -> null.also {
                 val picked = if (found.size == 1) found.single() else choose(found)
-                if (picked != null) _status.value = SensorStatus.Paired(picked.name)
+                if (picked != null) _status.value = SensorStatus.Paired(picked.name, recordsClasses = !streamsOnly)
             }
         }
     }
@@ -479,6 +481,8 @@ class RecordingClassSensor(
             failing != null -> failing
 
             paired == null -> SensorFailure.NotFound
+
+            streamsOnly -> SensorFailure.Failed
 
             else -> null.also {
                 starts++

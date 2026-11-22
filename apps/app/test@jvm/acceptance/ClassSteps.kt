@@ -50,6 +50,30 @@ fun IntervalAcceptanceDriver.pairArmbandAmongTwo() {
 
 private const val STRAP_NAME = "Polar H10 5E6F7A8B"
 
+/** A strap of another make than Polar's: it speaks the standard Heart Rate service, and records nothing. */
+private const val OTHER_STRAP = "HRM-Pro:123456"
+
+/** The device can reach a strap that only streams the heart rate, and none is paired yet. */
+fun IntervalAcceptanceDriver.haveOtherStrapToPair() {
+    sensor.nearby = OTHER_STRAP
+    sensor.streamsOnly = true
+    sensor.status.value = SensorStatus.Unpaired
+}
+
+/** In Settings: pairs the strap, which stands by its name and says its heart rate shows live, not a class. */
+fun IntervalAcceptanceDriver.pairOtherStrap() {
+    scrollTo("Pair a sensor")
+    see("Any heart-rate strap or armband, worn and close by")
+    tap("Pair a sensor")
+    see(OTHER_STRAP)
+    see("Paired. Its heart rate shows live in workouts and sessions.")
+    seeNo("Paired. Record a class from Today on its day.")
+}
+
+/** The title bar has the strap's pulse, reading [bpm] in [zone]. */
+fun IntervalAcceptanceDriver.seeStrapPulse(bpm: Int, zone: Int) =
+    see(hasContentDescription("Heart rate $bpm, zone $zone, $OTHER_STRAP") and hasClickAction())
+
 private val IntervalAcceptanceDriver.heart: FakeLiveHeartRate
     get() = app.koin.koin.get<LiveHeartRate>() as FakeLiveHeartRate
 

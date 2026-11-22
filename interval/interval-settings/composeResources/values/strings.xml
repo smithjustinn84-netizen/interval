@@ -134,9 +134,11 @@
     <string name="settings_health_install_hint">Get it from Google Play to save workouts there</string>
     <!-- The heart-rate sensor a class is recorded on: only where the platform can reach one. -->
     <string name="settings_sensor_pair">Pair a sensor</string>
-    <string name="settings_sensor_pair_hint">A Polar Verity Sense or H10, switched on (an H10 worn) and close by</string>
+    <string name="settings_sensor_pair_hint">Any heart-rate strap or armband, worn and close by</string>
     <string name="settings_sensor_looking">Looking for it…</string>
     <string name="settings_sensor_paired_hint">Paired. Record a class from Today on its day.</string>
+    <!-- A strap that streams the heart rate and records no class: anything but Polar's Verity Sense and H10. -->
+    <string name="settings_sensor_streams_hint">Paired. Its heart rate shows live in workouts and sessions.</string>
     <string name="settings_sensor_recording_hint">Recording a class. Sync it from Today.</string>
     <string name="settings_sensor_battery">Battery %1$d%</string>
     <string name="settings_sensor_battery_low">Battery low, %1$d%: charge it before a class</string>

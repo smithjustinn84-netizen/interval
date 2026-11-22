@@ -81,6 +81,7 @@ import dev.justinsmith.interval.settings.resources.settings_sensor_pair
 import dev.justinsmith.interval.settings.resources.settings_sensor_pair_hint
 import dev.justinsmith.interval.settings.resources.settings_sensor_paired_hint
 import dev.justinsmith.interval.settings.resources.settings_sensor_recording_hint
+import dev.justinsmith.interval.settings.resources.settings_sensor_streams_hint
 import dev.justinsmith.interval.settings.resources.settings_setup
 import dev.justinsmith.interval.settings.resources.settings_setup_hint
 import dev.justinsmith.interval.settings.resources.settings_sound
@@ -300,8 +301,16 @@ private fun SensorRowContent(sensor: SensorRow, modifier: Modifier = Modifier) {
         is SensorStatus.Paired -> PairedSensorRow(
             status.name,
             when (val battery = sensor.battery) {
-                null -> stringResource(Res.string.settings_sensor_paired_hint)
+                null -> stringResource(
+                    if (status.recordsClasses) {
+                        Res.string.settings_sensor_paired_hint
+                    } else {
+                        Res.string.settings_sensor_streams_hint
+                    },
+                )
+
                 in 0 until LOW_SENSOR_BATTERY -> stringResource(Res.string.settings_sensor_battery_low, battery)
+
                 else -> stringResource(Res.string.settings_sensor_battery, battery)
             },
             sensor.onForget,

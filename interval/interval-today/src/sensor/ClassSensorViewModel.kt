@@ -76,8 +76,15 @@ class ClassSensorViewModel(
         )
 
     private fun card(status: SensorStatus, battery: Int?): SensorCard? = when (status) {
-        is SensorStatus.Paired -> SensorCard.Ready(status.name, battery?.takeIf { it < LOW_SENSOR_BATTERY })
+        // A sensor that only streams has no class to record: Today says nothing of it.
+        is SensorStatus.Paired -> if (status.recordsClasses) {
+            SensorCard.Ready(status.name, battery?.takeIf { it < LOW_SENSOR_BATTERY })
+        } else {
+            null
+        }
+
         is SensorStatus.Recording -> SensorCard.Recording(timestamps.time(status.sinceEpochMillis))
+
         SensorStatus.Unavailable, SensorStatus.Unpaired -> null
     }
 

@@ -69,6 +69,12 @@ class ClassSensorViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `a strap that only streams has no card`() {
+        sensor.status.value = SensorStatus.Paired("HRM-Pro:123456", recordsClasses = false)
+        assertNull(viewModel.state.value.card)
+    }
+
+    @Test
     fun `a paired sensor is set recording and says since when`() = runTest {
         assertEquals(SensorCard.Ready(SENSOR_NAME), viewModel.state.value.card)
 

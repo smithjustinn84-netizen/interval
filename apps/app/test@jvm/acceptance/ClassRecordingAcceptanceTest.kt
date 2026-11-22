@@ -37,6 +37,22 @@ class ClassRecordingAcceptanceTest {
     }
 
     @Test
+    fun `a strap that only streams pairs and beats live and is never offered a class`() = acceptanceScenario {
+        haveOtherStrapToPair()
+        openSettings()
+        pairOtherStrap()
+        pressSystemBack()
+
+        openPlanFromToday()
+        planSportEvery("BJJ", weekday = "Thursday")
+        goBack()
+        seeNoSensorOnToday()
+
+        heartBeatsAt(72)
+        seeStrapPulse(bpm = 72, zone = 1)
+    }
+
+    @Test
     fun `with an armband and a strap both nearby pairing asks which`() = acceptanceScenario {
         haveSensorToPair()
         haveStrapNearbyToo()

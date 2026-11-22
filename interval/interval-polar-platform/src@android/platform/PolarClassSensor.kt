@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.platform
 
 import android.Manifest
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.SharedPreferences
@@ -19,43 +20,57 @@ import com.polar.sdk.api.model.PolarDeviceInfo
 import com.polar.sdk.api.model.PolarHealthThermometerData
 import dev.justinsmith.interval.model.ClassRecording
 import dev.justinsmith.interval.storage.catchingFailures
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withTimeoutOrNull
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * A Polar Verity Sense or H10, through Polar's SDK, one paired at a time, which streams the heart rate live and
- * records a class on its own memory, so the phone needs it in reach only to start and to sync. The armband records
- * the heart rate and its accelerometer (the SDK's offline recording); the chest strap its one exercise, the heart
- * rate a second alone (the SDK's H10 exercise recording), so its class's rounds go by the heart rate. Which sensor is
- * the app's, and since when it records, is kept in preferences of its own, since the app may well be closed for
- * the class. The sensor takes one connection, so the live stream gives way to a recording's start or its sync and
- * comes back after. Android 12 brought Bluetooth permissions that ask nothing of location; below it this is unavailable
- * rather than ask for that.
+ * The heart-rate sensor paired, one at a time: any strap or armband that speaks Bluetooth's standard Heart Rate
+ * service streams the heart rate live through Android's own Bluetooth ([AndroidHeartRateLink], a [HeartRateStream]),
+ * and a Polar Verity Sense or H10 also records a class on its own memory through Polar's SDK, so the phone needs it
+ * in reach only to start and to sync. The armband records the heart rate and its accelerometer (the SDK's offline
+ * recording); the chest strap its one exercise, the heart rate a second alone (the SDK's H10 exercise recording), so
+ * its class's rounds go by the heart rate. Which sensor is the app's, and since when it records, is kept in
+ * preferences of its own, since the app may well be closed for the class. The sensor takes one connection, so the
+ * live stream gives way to a recording's start or its sync and comes back after. A sensor is kept by its Bluetooth
+ * address, which both the stream and the SDK connect by; one paired by an older build under Polar's own id is found
+ * again by its name the first time it is streamed from. Android 12 brought Bluetooth permissions that ask nothing of
+ * location; below it this is unavailable rather than ask for that.
  *
  * Run against a Verity Sense on 2026-11-18 (SDK 8.6.0): pairing, a recording of the heart rate, a reading a
  * second, and the accelerometer, and its sync. A stop before the start answers "already in state", passed over.
  * An H10 on 2026-11-19: pairing, and the heart rate live through a conditioning workout, its zones after. Its
- * class recording has not yet been run on a real strap.
+ * class recording has not yet been run on a real strap. The live heart rate over Android's own Bluetooth, and
+ * pairing by its scan, have met no sensor yet.
  */
+@Suppress("detekt.TooManyFunctions") // The port's calls, and the Bluetooth each needs beneath it.
 internal class PolarClassSensor(private val context: Context, private val clock: WallClock) :
     ClassSensor,
     LiveHeartRate {
     private val log = Logger.withTag("PolarClassSensor")
     private val paired = PairedSensor(context.getSharedPreferences(PREFERENCES, Context.MODE_PRIVATE))
 
-    /** What each sensor connected has said it is ready for. */
-    private val ready: ReadySensors = MutableStateFlow(emptyMap())
+    /** What each sensor connected has said it is ready for, by Polar's own id for it. */
+    private val ready = MutableStateFlow(emptyMap<String, Set<PolarBleSdkFeature>>())
+
+    /** Polar's own id of each sensor the SDK has connected to, by its Bluetooth address, which the app keeps. */
+    private val polarIds = MutableStateFlow(emptyMap<String, String>())
 
     /** One piece of work with the sensor at a time: a pairing, a recording's start, a sync, a forgetting. */
     private val working = Mutex()
@@ -64,7 +79,6 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         PolarBleApiDefaultImpl.defaultImplementation(
             context,
             setOf(
-                PolarBleSdkFeature.FEATURE_HR,
                 PolarBleSdkFeature.FEATURE_POLAR_OFFLINE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_H10_EXERCISE_RECORDING,
                 PolarBleSdkFeature.FEATURE_POLAR_DEVICE_TIME_SETUP,
@@ -76,17 +90,18 @@ internal class PolarClassSensor(private val context: Context, private val clock:
                     ready.update { it + (identifier to (it[identifier].orEmpty() + feature)) }
                 }
 
+                override fun deviceConnected(polarDeviceInfo: PolarDeviceInfo) {
+                    polarIds.update { it + (polarDeviceInfo.address to polarDeviceInfo.deviceId) }
+                }
+
                 override fun deviceDisconnected(polarDeviceInfo: PolarDeviceInfo, info: PolarBleDisconnectInfo) {
                     ready.update { it - polarDeviceInfo.deviceId }
-                    stream.dropped()
                 }
 
                 // Said by the sensor each time it connects, and as it changes while it stays connected.
                 override fun batteryLevelReceived(identifier: String, level: Int) {
-                    if (identifier == paired.sensor?.id) {
-                        paired.battery = level
-                        _battery.value = paired.battery
-                    }
+                    val id = paired.sensor?.id
+                    if (identifier == id || identifier == polarIds.value[id]) heardBattery(level)
                 }
 
                 override fun disInformationReceived(identifier: String, disInfo: DisInfo) = Unit
@@ -106,16 +121,55 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     private val _battery = MutableStateFlow(paired.battery)
     override val battery: StateFlow<Int?> = _battery.asStateFlow()
 
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val link = AndroidHeartRateLink(context)
+
     /** Live from the paired sensor, unless Bluetooth isn't allowed or the sensor is recording a class. */
-    private val stream = PolarHeartStream(
-        api = { api },
-        ready = ready,
-        log = log,
-        sensorId = { paired.sensor?.id?.takeIf { paired.since == null && supported && mayUseBluetooth() } },
+    private val stream = HeartRateStream(
+        link,
+        sensorId = { streamable() },
         idle = { if (stored() is SensorStatus.Paired) LiveHeartRateState.Idle else LiveHeartRateState.Unavailable },
+        scope = scope,
+        onBattery = ::heardBattery,
+        log = log,
     )
     override val reading: StateFlow<LiveHeartRateState> get() = stream.reading
     override val readings: Flow<Int> get() = stream.readings
+
+    /** Whether an older pairing's address is being looked for: once at a time. */
+    private val finding = AtomicBoolean(false)
+
+    /**
+     * The address to stream from, null while none may be: no sensor paired, it records a class, Bluetooth isn't
+     * allowed, or it was paired under Polar's own id and its address is still being found.
+     */
+    private fun streamable(): String? {
+        val sensor = paired.sensor?.takeIf { paired.since == null && supported && mayUseBluetooth() } ?: return null
+        if (BluetoothAdapter.checkBluetoothAddress(sensor.id)) return sensor.id
+        findAddress(sensor)
+        return null
+    }
+
+    /** Finds a sensor paired under Polar's id by the name it advertises, and keeps it by its address from then on. */
+    private fun findAddress(sensor: PairedSensor.Sensor) {
+        if (!finding.compareAndSet(false, true)) return
+        scope.launch {
+            try {
+                val heard = withTimeoutOrNull(SCAN_MILLIS) { link.scan().first { it.name == sensor.name } }
+                if (heard != null && paired.sensor?.id == sensor.id) {
+                    paired.pair(heard.address, sensor.name, keepBattery = true)
+                    stream.settle()
+                }
+            } finally {
+                finding.set(false)
+            }
+        }
+    }
+
+    private fun heardBattery(level: Int) {
+        paired.battery = level
+        _battery.value = paired.battery
+    }
 
     private val supported: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
@@ -124,7 +178,8 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     private fun stored(): SensorStatus {
         if (!supported) return SensorStatus.Unavailable
         val sensor = paired.sensor ?: return SensorStatus.Unpaired
-        return paired.since?.let { SensorStatus.Recording(sensor.name, it) } ?: SensorStatus.Paired(sensor.name)
+        return paired.since?.let { SensorStatus.Recording(sensor.name, it) }
+            ?: SensorStatus.Paired(sensor.name, recordsClasses = recordsClasses(sensor))
     }
 
     private fun mayUseBluetooth(): Boolean {
@@ -134,8 +189,16 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         return granted && context.getSystemService(BluetoothManager::class.java)?.adapter?.isEnabled == true
     }
 
-    /** The H10 says so in its name; anything else pairing takes is a Verity Sense. */
-    private fun recorderOf(sensor: PairedSensor.Sensor): PolarRecorder = if (H10_NAME in sensor.name) h10 else verity
+    /** Whether the sensor records a class, by its name alone: asking builds nothing of Polar's SDK. */
+    private fun recordsClasses(sensor: PairedSensor.Sensor): Boolean =
+        POLAR in sensor.name && (H10_NAME in sensor.name || VERITY_NAME in sensor.name)
+
+    /** Which of Polar's recordings the sensor makes, by its name; null for any other, which only streams. */
+    private fun recorderOf(sensor: PairedSensor.Sensor): PolarRecorder? = when {
+        !recordsClasses(sensor) -> null
+        H10_NAME in sensor.name -> h10
+        else -> verity
+    }
 
     override suspend fun pair(choose: suspend (List<NearbySensor>) -> NearbySensor?): SensorFailure? = attempt {
         val nearby = nearby()
@@ -151,69 +214,56 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         paired.pair(picked.id, picked.name)
         _battery.value = null
         _status.value = stored()
+        stream.settle()
         null
     }
 
     /**
-     * Every sensor heard nearby, the nearest first: the scan goes on a few seconds past the first one, since
-     * another may be in reach beside it. Empty when none was heard in time.
-     *
-     * The SDK's search opens with every sensor it knows of, heard or not (it asks for known devices: each one
-     * bonded to the phone, and each it has met since the app started), once each, before any advertisement. So
-     * a strap left at home was "found" at once, and paired in place of the armband on the arm. A sensor counts
-     * here only from the second time the search names it, which is an advertisement heard in this scan.
+     * Every heart-rate sensor heard nearby, the nearest first: the scan goes on a few seconds past the first one,
+     * since another may be in reach beside it. Empty when none was heard in time. Android's own scan hears only
+     * what advertises now, so a strap left at home is never "found".
      */
     private suspend fun nearby(): List<NearbySensor> = coroutineScope {
-        val named = MutableStateFlow(emptyMap<String, Named>())
-        val scan = launch {
-            api.searchForDevice()
-                .filter { found -> SENSOR_NAMES.any { it in found.name } }
-                // Its latest signal is the one kept.
-                .collect { found ->
-                    named.update { it + (found.deviceId to Named(found, times = (it[found.deviceId]?.times ?: 0) + 1)) }
-                }
-        }
-        val heard = withTimeoutOrNull(SCAN_MILLIS) { named.first { names -> names.values.any { it.heard } } }
-        if (heard != null) delay(SETTLE_MILLIS)
+        // Each by its address, its latest signal kept.
+        val heard = MutableStateFlow(emptyMap<String, HeardSensor>())
+        val scan = launch { link.scan().collect { sensor -> heard.update { it + (sensor.address to sensor) } } }
+        val first = withTimeoutOrNull(SCAN_MILLIS) { heard.first { it.isNotEmpty() } }
+        if (first != null) delay(SETTLE_MILLIS)
         scan.cancel()
-        named.value.values.filter { it.heard }.map { it.sensor }.sortedByDescending { it.rssi }
-            .map { NearbySensor(it.deviceId, it.name) }
-    }
-
-    /** A sensor the search has named [times] over: [heard] once that is more than the SDK's own opening mention. */
-    private class Named(val sensor: PolarDeviceInfo, val times: Int) {
-        val heard: Boolean get() = times > 1
+        heard.value.values.sortedByDescending { it.rssi }.map { NearbySensor(it.address, it.name) }
     }
 
     override suspend fun forget() = working.withLock {
         paired.clear()
         _battery.value = null
         _status.value = stored()
-        stream.stopAll()
+        stream.settle()
     }
 
     override suspend fun startRecording(): SensorFailure? = attempt {
         val sensor = paired.sensor ?: return@attempt SensorFailure.NotFound
-        val recorder = recorderOf(sensor)
-        connected(sensor.id, recorder.feature) {
-            recorder.start(sensor.id, clock.nowMillis())
+        val recorder = recorderOf(sensor) ?: return@attempt SensorFailure.Failed
+        connected(sensor.id, recorder.feature) { polarId ->
+            recorder.start(polarId, clock.nowMillis())
             paired.since = clock.nowMillis()
             _status.value = stored()
+            stream.settle()
             null
         }
     }
 
     override suspend fun sync(keep: suspend (ClassRecording) -> Unit): SensorFailure? = attempt {
         val sensor = paired.sensor ?: return@attempt SensorFailure.NotFound
-        val recorder = recorderOf(sensor)
-        connected(sensor.id, recorder.feature) {
-            val fetched = recorder.fetch(sensor.id, paired.since, clock::nowMillis)
+        val recorder = recorderOf(sensor) ?: return@attempt SensorFailure.NothingRecorded
+        connected(sensor.id, recorder.feature) { polarId ->
+            val fetched = recorder.fetch(polarId, paired.since, clock::nowMillis)
             // Kept before it is cleared: a class the app couldn't store throws from here, and is on the sensor still.
             fetched?.let { keep(it.recording) }
             fetched?.clear?.invoke()
             // With nothing on it there is nothing to wait for either: it stands ready again.
             paired.since = null
             _status.value = stored()
+            stream.settle()
             if (fetched == null) SensorFailure.NothingRecorded else null
         }
     }
@@ -222,16 +272,25 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     override fun stop(user: Any) = stream.stop(user)
 
-    /** [work] with the sensor connected and ready for [feature], or that it never came; let go after, either way. */
+    /**
+     * [work] with the sensor at [id] (its address, or Polar's id where an older build kept that) connected and
+     * ready for [feature], handed Polar's id for it, which the SDK's work goes by; or that it never came. Let go
+     * after, either way.
+     */
     private suspend fun connected(
         id: String,
         feature: PolarBleSdkFeature,
-        work: suspend () -> SensorFailure?,
+        work: suspend (polarId: String) -> SensorFailure?,
     ): SensorFailure? {
         api.connectToDevice(id)
         try {
-            withTimeoutOrNull(CONNECT_MILLIS) { ready.first { it.has(id, feature) } } ?: return SensorFailure.NotFound
-            return work()
+            val polarId = withTimeoutOrNull(CONNECT_MILLIS) {
+                // Under Polar's id for it, or the address it was reached by, whichever the SDK says it under.
+                combine(ready, polarIds) { ready, ids ->
+                    listOfNotNull(ids[id], id).firstOrNull { ready[it]?.contains(feature) == true }
+                }.filterNotNull().first()
+            } ?: return SensorFailure.NotFound
+            return work(polarId)
         } finally {
             quietly(log, "letting the sensor go") { api.disconnectFromDevice(id) }
         }
@@ -261,7 +320,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
 
     /** Lets everything go as the container closes: the stream, and the SDK if it was ever made. */
     fun close() {
-        stream.close()
+        scope.cancel()
         if (sdk.isInitialized()) quietly(log, "shutting the SDK down") { api.shutDown() }
     }
 
@@ -280,8 +339,9 @@ internal class PolarClassSensor(private val context: Context, private val clock:
         private const val PREFERENCES = "class-sensor"
 
         /** A Verity Sense advertises as "Polar Sense" and its id, an H10 as "Polar H10" and its. */
+        private const val POLAR = "Polar"
         private const val H10_NAME = "H10"
-        private val SENSOR_NAMES = listOf("Sense", H10_NAME)
+        private const val VERITY_NAME = "Sense"
         private const val SCAN_MILLIS = 20_000L
 
         /** How long the scan goes on once it has heard a sensor, for another beside it to be heard too. */
@@ -319,13 +379,15 @@ private class PairedSensor(private val preferences: SharedPreferences) {
 
     /**
      * Takes the sensor [id] as the app's: whatever the last one recorded is no longer waited on, and its battery
-     * was another sensor's.
+     * was another sensor's, unless it is the same sensor kept by its address now ([keepBattery]).
      */
-    fun pair(id: String, name: String) = preferences.edit {
+    fun pair(id: String, name: String, keepBattery: Boolean = false) = preferences.edit {
         putString(KEY_ID, id)
         putString(KEY_NAME, name)
-        remove(KEY_SINCE)
-        remove(KEY_BATTERY)
+        if (!keepBattery) {
+            remove(KEY_SINCE)
+            remove(KEY_BATTERY)
+        }
     }
 
     fun clear() = preferences.edit { clear() }

@@ -11,8 +11,12 @@ sealed interface SensorStatus {
 
     data object Unpaired : SensorStatus
 
-    /** One is paired, by the [name] it goes by, and records nothing for the app. */
-    data class Paired(val name: String) : SensorStatus
+    /**
+     * One is paired, by the [name] it goes by, and records nothing for the app. Without [recordsClasses] it is a strap
+     * or armband that only streams the heart rate live (any but Polar's Verity Sense and H10): no class is set
+     * recording on it.
+     */
+    data class Paired(val name: String, val recordsClasses: Boolean = true) : SensorStatus
 
     /** It was set recording at [sinceEpochMillis], and the class is on it still, to be synced. */
     data class Recording(val name: String, val sinceEpochMillis: Long) : SensorStatus
