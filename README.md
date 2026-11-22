@@ -174,8 +174,7 @@ interval/
 │   └── lint-plugin/     # ktlint checks & formatting
 │
 ├── journeys/            # End-to-end on-device user flows (android CLI)
-├── scripts/             # Headless Blender storefront device mockup renderer (render_store_frames.py)
-└── tools/               # 2D/3D icon generators, module boundary, iOS shard, version parity & docs hook scripts
+└── tools/               # 2D/3D icon generators, storefront device renders, module boundary, iOS shard, version parity & docs hook scripts
 ```
 
 ### Key Libraries & Tools

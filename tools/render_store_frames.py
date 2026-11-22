@@ -8,7 +8,7 @@ glass overlays.
 
 Usage (headless Blender CLI):
     /Applications/Blender.app/Contents/MacOS/Blender --background \\
-        --python scripts/render_store_frames.py
+        --python tools/render_store_frames.py
 
 Optional arguments (after `--`):
     --only hero_timer dual_today_workout companion_tablet_phone

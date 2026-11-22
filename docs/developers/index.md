@@ -88,7 +88,7 @@ The 3D kettlebell app icon and framed storefront mockups are rendered headlessly
 ```sh
 uv run --with pillow tools/render_icon_3d.py     # iOS app icon & Android adaptive foreground
 /Applications/Blender.app/Contents/MacOS/Blender --background \
-  --python scripts/render_store_frames.py        # transparent portrait & landscape device renders
+  --python tools/render_store_frames.py        # transparent portrait & landscape device renders
 ```
 
 ## Version control
