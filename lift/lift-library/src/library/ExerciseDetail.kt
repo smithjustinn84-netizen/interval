@@ -2,16 +2,21 @@ package dev.justinsmith.lift.library
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.foundation.LocalIndication
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,11 +31,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.interval.ui.ExerciseDiagram
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.QuietTextButton
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
@@ -51,6 +58,8 @@ import dev.justinsmith.lift.domain.faults
 import dev.justinsmith.lift.domain.formatKg
 import dev.justinsmith.lift.domain.formatPace
 import dev.justinsmith.lift.library.resources.Res
+import dev.justinsmith.lift.library.resources.detail_bell_path
+import dev.justinsmith.lift.library.resources.detail_bell_path_cd
 import dev.justinsmith.lift.library.resources.detail_best
 import dev.justinsmith.lift.library.resources.detail_best_pace
 import dev.justinsmith.lift.library.resources.detail_done
@@ -71,6 +80,7 @@ import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.cues
 import dev.justinsmith.lift.ui.demo.demo
+import dev.justinsmith.lift.ui.demo.diagram
 import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.focusName
@@ -204,6 +214,7 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
             } else {
                 Demonstration(demo, exerciseName(exercise), cues, faults = exercise.faults)
             }
+            BellPath(exercise, exerciseName(exercise))
             Works(exercise)
         }
 
@@ -219,6 +230,7 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
             } else {
                 Cues(listOf(exercise.cues))
             }
+            BellPath(exercise, exercise.name)
             Works(exercise)
         }
 
@@ -241,6 +253,23 @@ private fun Cues(lines: List<String>) {
                 modifier = Modifier.padding(Spacing.space16),
             )
         }
+    }
+}
+
+/**
+ * [exercise] drawn from the side with the path its bell takes, under the name of the part of the rep it is in:
+ * for a lift a diagram is drawn for ([diagram]), and nothing for the rest.
+ */
+@Composable
+private fun BellPath(exercise: Exercise, name: String) {
+    val rep = exercise.diagram ?: return
+    GroupLabel(stringResource(Res.string.detail_bell_path))
+    ListCard(fill = IntervalTheme.palette.surfaceVariant) {
+        ExerciseDiagram(
+            rep,
+            Modifier.fillMaxWidth().height(Sizes.figurePage).padding(Spacing.space12),
+            contentDescription = stringResource(Res.string.detail_bell_path_cd, name),
+        )
     }
 }
 
@@ -362,6 +391,23 @@ private fun PastSessionCard(dated: DatedSession, onOpen: ((uid: String) -> Unit)
                     modifier = Modifier.size(Sizes.icon),
                 )
             }
+        }
+    }
+}
+
+/** A lift's page scrolled down to the diagram of its bell's path, under its figure's card. */
+@PreviewFormFactors
+@Composable
+private fun ExerciseDetailBellPathPreview() {
+    IntervalTheme {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(IntervalTheme.palette.surface)
+                .verticalScroll(rememberScrollState(initial = Int.MAX_VALUE))
+                .padding(Spacing.space16),
+        ) {
+            ExerciseDetailContent(ExerciseDetailUiState(BuiltInExercise.Snatch), onEdit = null, onOpenSession = null)
         }
     }
 }

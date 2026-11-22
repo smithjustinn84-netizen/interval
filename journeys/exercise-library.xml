@@ -29,7 +29,7 @@
     <action>Tap "Save exercise"</action>
     <action>Verify that the library is shown, the sheet gone, still searching "Copenhagen plank", with "1 exercise": a card headed "Yours · 1" with "Copenhagen plank" over "Bodyweight · Time a side · Core" and a chevron</action>
     <action>Tap "Copenhagen plank"</action>
-    <action>Verify that its page opens in a sheet: "Copenhagen plank" over "Bodyweight · Time a side · Core", "Cues" with "Top knee on the bench", an "Edit" button, no figure, and under "Your history" "Not logged yet. Its sets will show here."</action>
+    <action>Verify that its page opens in a sheet: "Copenhagen plank" over "Bodyweight · Time a side · Core", "Cues" with "Top knee on the bench", an "Edit" button, no figure and no "Bell path", and under "Your history" "Not logged yet. Its sets will show here."</action>
     <action>Tap "Edit"</action>
     <action>Verify that the same sheet shows "Equipment" and "Measured by" chips, and "Archive exercise"</action>
     <action>Tap "Back" to close the sheet</action>
@@ -52,6 +52,7 @@
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
     <action>Verify that a card shows a figure holding a kettlebell at its chest: first standing still a moment with "Hold the bell by the horns at your chest, elbows down" lit under "Set up", then squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar whose short first stretch (the set-up) stands apart from the rest, with a marker moving along it in step and staying in the rep once the set-up is done; and under "Each rep" the other two cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
+    <action>Verify that under the figure's card "Bell path" heads a card drawing the lifter from the side, with the floor, a dashed plumb line up from the ankle and the bell's dashed path, squatting and standing again and again, and over the drawing the name of the part of the rep it is in, changing in step: "Sit down", "Bottom", "Drive up", "Stand tall"</action>
     <action>Tap "Pause"</action>
     <action>Verify that the figure and the marker stop where they were and the button reads "Play"</action>
     <action>Drag the marker along the bar from left to right</action>
@@ -68,7 +69,7 @@
     <action>Verify that the list closes and the row reads "Goblet squat" with its figure's still; then tap "Bodyweight"</action>
     <action>Verify that the row reads "No figure" again; tap "Kettlebell", then "Change" and "Goblet squat" again, then "Save exercise"</action>
     <action>Tap "Pause goblet squat"</action>
-    <action>Verify that its page shows a card with a figure squatting with a bell at its chest, its timeline under it and no cues lit in the card, then "Cues" with "Two seconds at the bottom", and no "Watch for"</action>
+    <action>Verify that its page shows a card with a figure squatting with a bell at its chest, its timeline under it and no cues lit in the card, then "Bell path" with the squat drawn from the side, then "Cues" with "Two seconds at the bottom", and no "Watch for"</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

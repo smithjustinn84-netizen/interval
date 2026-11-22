@@ -81,6 +81,7 @@ class ThemeContrastTest {
             listOf(p.background, p.surface, p.surfaceVariant).forEach { ground ->
                 assertContrast(4.5, demo.body, ground, "$theme demo body on $ground")
                 assertContrast(3.0, demo.bell, ground, "$theme demo bell on $ground")
+                assertContrast(3.0, demo.far, ground, "$theme demo far side on $ground")
                 assertTrue(
                     contrast(demo.reference, ground) < contrast(demo.bell, ground),
                     "$theme demo reference lines are louder than the bell on $ground",

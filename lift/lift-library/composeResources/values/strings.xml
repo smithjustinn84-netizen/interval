@@ -23,6 +23,8 @@
     <string name="library_owned_only">Only what I own</string>
     <string name="library_archived">Archived</string>
     <string name="library_new">New exercise</string>
+    <string name="detail_bell_path">Bell path</string>
+    <string name="detail_bell_path_cd">%1$s from the side, with the path its bell takes</string>
     <string name="detail_works">Works</string>
     <string name="detail_works_focus">From its focus: %1$s</string>
     <string name="detail_also">Also %1$s</string>

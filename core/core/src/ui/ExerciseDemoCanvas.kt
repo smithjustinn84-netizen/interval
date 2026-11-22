@@ -1,6 +1,5 @@
 package dev.justinsmith.interval.ui
 
-import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.withInfiniteAnimationFrameMillis
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +23,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,350 +47,35 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Density
 import dev.justinsmith.interval.platform.prefersReducedMotion
-import kotlin.math.abs
 import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.sign
-import kotlin.math.sin
 
-// A lift shown as a diagram: a figure in profile worked from its joints' angles, the floor and a plumb line
-// to read it against, and the path the bell takes through the rep. Everything is measured in shares of the
-// figure's standing height and scaled to the canvas, so nothing here is a size of its own.
+// A lift shown as a diagram: a figure in profile worked from its joints' angles (BodyPose.kt), the floor and a
+// plumb line to read it against, and the path the bell takes through the rep (ExerciseRep.kt). Everything is
+// measured in shares of the figure's standing height and scaled to the canvas, so nothing here is a size of its own.
 
 /**
- * How long each part of the figure is, as a share of its standing height: the floor is 0 and the top of the head
- * 1. The lengths are fixed, so a pose can only turn the joints between them, never stretch a limb.
- */
-internal object BodyProportions {
-    const val ANKLE = 0.04f
-    const val SHIN = 0.24f
-    const val THIGH = 0.245f
-    const val TORSO = 0.29f
-
-    /** From the shoulder to the head's centre, and the head's radius. */
-    const val NECK = 0.115f
-    const val HEAD = 0.07f
-    const val UPPER_ARM = 0.17f
-    const val FOREARM = 0.15f
-
-    /** From the wrist to the middle of the grip. */
-    const val HAND = 0.045f
-
-    /** The bell: from the grip to the top of its body, the body's radius, and half the handle's width. */
-    const val BELL_HANDLE = 0.052f
-    const val BELL_RADIUS = 0.068f
-    const val BELL_GRIP = 0.044f
-
-    /** The foot along the floor, behind and ahead of the ankle, and how high its middle is. */
-    const val HEEL = 0.035f
-    const val TOE = 0.12f
-    const val SOLE = 0.02f
-
-    /** The room a joint's limbs take round it, when the figure is fitted to its canvas. */
-    const val JOINT_REACH = 0.06f
-}
-
-/**
- * Where a [BodyPose] puts each joint, in shares of the figure's standing height: x is ahead of the ankle, the way
- * the figure faces, and y is up from the floor. [kettlebellAnchor] is the middle of the grip, where the handle
- * sits in the hand; [kettlebellCenter] the middle of the bell's body, which is what its path follows.
+ * The colours a demonstration is drawn in: the [body], its [far] leg and arm where they show behind it, the dot at
+ * each of its joints, the [reference] lines it is read against (the floor and the plumb line), and the [bell] with
+ * its path.
  */
 @Immutable
-data class BodyJoints(
-    val ankle: Offset,
-    val knee: Offset,
-    val hip: Offset,
-    val shoulder: Offset,
-    val elbow: Offset,
-    val wrist: Offset,
-    val headCenter: Offset,
-    val kettlebellAnchor: Offset,
-    val kettlebellCenter: Offset,
+data class ExerciseDemoColors(
+    val body: Color,
+    val far: Color,
+    val joint: Color,
+    val reference: Color,
+    val bell: Color,
 ) {
-    /** Each point the figure reaches to with the room it takes there, for fitting it to a canvas. */
-    internal inline fun forEachReach(reach: (point: Offset, room: Float) -> Unit) {
-        reach(knee, BodyProportions.JOINT_REACH)
-        reach(hip, BodyProportions.JOINT_REACH)
-        reach(shoulder, BodyProportions.JOINT_REACH)
-        reach(elbow, BodyProportions.JOINT_REACH)
-        reach(kettlebellAnchor, BodyProportions.JOINT_REACH)
-        reach(headCenter, BodyProportions.HEAD)
-        reach(kettlebellCenter, BodyProportions.BELL_RADIUS)
-    }
-}
-
-/**
- * A lifter's stance at one moment of a rep, seen from the side and facing right, as the angles of its joints in
- * degrees. Each is the joint's own bend, so standing tall with the arm hanging is every angle at zero:
- *
- * - [torsoAngleDeg]: how far the trunk leans forward from upright.
- * - [hipAngleDeg]: how far the hip is folded, the thigh from the trunk's line. A hinge is a big fold under a
- *   trunk that leans, which sends the hips back.
- * - [kneeAngleDeg]: how far the knee is bent, the shin from the thigh's line.
- * - [shoulderAngleDeg]: how far the arm is raised ahead, from hanging along the trunk to overhead in line with it
- *   (a half turn).
- * - [elbowAngleDeg]: how far the elbow is bent, the forearm folding up toward the shoulder.
- * - [bellAngleDeg]: how far the bell is turned in the hand from the forearm's line: none while it is swung, most of
- *   a half turn back once it rests on the forearm in the rack or locked out.
- *
- * The joints are worked out from these by [joints], along limbs of fixed length. So two poses are blended by their
- * angles ([blend]), never by where their joints are, and a limb keeps its length all the way between them.
- */
-@Immutable
-data class BodyPose(
-    val hipAngleDeg: Float = 0f,
-    val kneeAngleDeg: Float = 0f,
-    val torsoAngleDeg: Float = 0f,
-    val shoulderAngleDeg: Float = 0f,
-    val elbowAngleDeg: Float = 0f,
-    val bellAngleDeg: Float = 0f,
-) {
-    /** Where the joints are: up the leg from the ankle, which never leaves its place, then out along the arm. */
-    fun joints(): BodyJoints {
-        val thighLean = torsoAngleDeg - hipAngleDeg
-        val armSwing = shoulderAngleDeg - torsoAngleDeg
-        val forearmSwing = armSwing + elbowAngleDeg
-        val ankle = Offset(0f, BodyProportions.ANKLE)
-        val knee = ankle + rising(thighLean + kneeAngleDeg) * BodyProportions.SHIN
-        val hip = knee + rising(thighLean) * BodyProportions.THIGH
-        val shoulder = hip + rising(torsoAngleDeg) * BodyProportions.TORSO
-        val elbow = shoulder + hanging(armSwing) * BodyProportions.UPPER_ARM
-        val wrist = elbow + hanging(forearmSwing) * BodyProportions.FOREARM
-        val grip = wrist + hanging(forearmSwing) * BodyProportions.HAND
-        val bell = hanging(forearmSwing + bellAngleDeg) * (BodyProportions.BELL_HANDLE + BodyProportions.BELL_RADIUS)
-        return BodyJoints(
-            ankle = ankle,
-            knee = knee,
-            hip = hip,
-            shoulder = shoulder,
-            elbow = elbow,
-            wrist = wrist,
-            headCenter = shoulder + rising(torsoAngleDeg) * BodyProportions.NECK,
-            kettlebellAnchor = grip,
-            kettlebellCenter = grip + bell,
-        )
-    }
-
-    /** This pose [share] of the way to [to], from 0 to 1, every joint turning at once. */
-    fun blend(to: BodyPose, share: Float): BodyPose {
-        val from = angles()
-        val toward = to.angles()
-        return of(FloatArray(JOINTS) { from[it] + (toward[it] - from[it]) * share })
-    }
-
-    internal fun angles(): FloatArray =
-        floatArrayOf(hipAngleDeg, kneeAngleDeg, torsoAngleDeg, shoulderAngleDeg, elbowAngleDeg, bellAngleDeg)
-
-    internal companion object {
-        const val JOINTS = 6
-
-        /** The pose whose joints are [angles], in the order [BodyPose.angles] gives them. */
-        fun of(angles: FloatArray): BodyPose {
-            @Suppress("detekt.MagicNumber") // Each joint's place in the array.
-            return BodyPose(
-                hipAngleDeg = angles[0],
-                kneeAngleDeg = angles[1],
-                torsoAngleDeg = angles[2],
-                shoulderAngleDeg = angles[3],
-                elbowAngleDeg = angles[4],
-                bellAngleDeg = angles[5],
-            )
-        }
-
-        /** The way a part standing on its joint points, leaning [leanDeg] forward from straight up. */
-        private fun rising(leanDeg: Float): Offset = Angles.radians(leanDeg).let { Offset(sin(it), cos(it)) }
-
-        /** The way a part hanging from its joint points, swung [swingDeg] forward from straight down. */
-        private fun hanging(swingDeg: Float): Offset = Angles.radians(swingDeg).let { Offset(sin(it), -cos(it)) }
-    }
-}
-
-/** The stances a kettlebell lift rests in or passes through, which a rep is put together from. */
-object KettlebellPoses {
-    /** The bottom of the hinge: hips back, shins upright, the bell swung back between the legs. */
-    val Hinge = BodyPose(hipAngleDeg = 82f, kneeAngleDeg = 25f, torsoAngleDeg = 60f, shoulderAngleDeg = 10f)
-
-    /** The hips through: standing tall already, the arm only now leaving the body. A swing passes through it. */
-    val Drive = BodyPose(shoulderAngleDeg = 24f)
-
-    /** The top of a swing: standing tall, the bell floating at the end of a long arm. */
-    val Floating = BodyPose(shoulderAngleDeg = 84f, elbowAngleDeg = 6f)
-
-    /**
-     * The pull of a clean: the elbow drawn back past the ribs and half bent, so the bell comes up close to the
-     * body rather than swinging out round the elbow. A clean passes through it.
-     */
-    val Pull = BodyPose(shoulderAngleDeg = -25f, elbowAngleDeg = 75f, bellAngleDeg = -50f)
-
-    /** The rack: the elbow tucked, the fist under the chin, the bell resting on the forearm. */
-    val Rack = BodyPose(shoulderAngleDeg = 8f, elbowAngleDeg = 152f, bellAngleDeg = -160f)
-
-    /**
-     * Halfway up a press: the elbow as high as the shoulder and the forearm tipped back over it, so the bell goes
-     * up past the face, over the feet, rather than out ahead of them. A press passes through it.
-     */
-    val Press = BodyPose(shoulderAngleDeg = 100f, elbowAngleDeg = 110f, bellAngleDeg = -225f)
-
-    /** Locked out overhead: the arm straight up beside the ear, the bell lying on the back of the forearm. */
-    val Lockout = BodyPose(shoulderAngleDeg = Angles.HALF_TURN, bellAngleDeg = -205f)
-}
-
-/**
- * One stance of a rep: the figure is in [pose] when the rep is [at] this share of the way through, and comes to
- * rest there unless it is [passing] through on its way to the next it rests in. [easing] is the pace of the whole
- * stretch into a stance from the one it last rested in, however many it passes through on the way; a stance
- * passed through has no pace of its own.
- */
-@Immutable
-data class PoseKey(
-    val at: Float,
-    val pose: BodyPose,
-    val easing: Easing = StandardEasing,
-    val passing: Boolean = false,
-)
-
-/**
- * A rep as the stances it goes through, in order, from the first at 0 round to the first again at 1, over
- * [seconds] when it runs by itself. [still] is where it stands when it mustn't move: its most telling moment.
- *
- * Between two stances it rests in, each joint's angle runs along a smooth curve through the stances passed on the
- * way, one that never swings past them: a joint turns no further than a stance says.
- */
-@Immutable
-data class ExerciseRep(val keys: List<PoseKey>, val seconds: Float, val still: Float = 0f) {
-    init {
-        require(keys.size >= 2 && keys.first().at == 0f && !keys.first().passing) {
-            "A rep is two stances or more, the first a rest at 0"
-        }
-        require(keys.zipWithNext().all { (a, b) -> a.at < b.at } && keys.last().at < 1f) {
-            "A rep's stances come in order, the last before 1"
-        }
-    }
-
-    /** The rep cut at each stance it rests in, the last stretch coming round to the first stance again. */
-    private val stretches: List<Stretch> = (keys + keys.first().copy(at = 1f)).let { round ->
-        round.indices.filter { !round[it].passing }.zipWithNext { from, to -> Stretch(round.subList(from, to + 1)) }
-    }
-
-    /**
-     * The stance [progress] of the way through the rep. A rep goes round, so 1 is 0 again and anything past
-     * either end wraps.
-     */
-    fun poseAt(progress: Float): BodyPose {
-        val at = progress - floor(progress)
-        return stretches.last { it.from <= at }.poseAt(at)
-    }
-
     companion object {
         /**
-         * A swing: the hips drive out of the hinge, then the bell floats; it falls, then the hips fold. The way
-         * down mirrors the way up, so the bell comes back along one arc.
-         */
-        val Swing = ExerciseRep(
-            keys = listOf(
-                PoseKey(at = 0f, pose = KettlebellPoses.Hinge),
-                PoseKey(at = 0.17f, pose = KettlebellPoses.Drive, passing = true),
-                PoseKey(at = 0.42f, pose = KettlebellPoses.Floating),
-                PoseKey(at = 0.765f, pose = KettlebellPoses.Drive, passing = true),
-            ),
-            seconds = 1.8f,
-            still = 0.42f,
-        )
-
-        /** A clean and press: from the hinge to the rack, pressed to the lockout, and back the way it came. */
-        val CleanAndPress = ExerciseRep(
-            keys = listOf(
-                PoseKey(at = 0f, pose = KettlebellPoses.Hinge),
-                PoseKey(at = 0.16f, pose = KettlebellPoses.Pull, passing = true),
-                PoseKey(at = 0.26f, pose = KettlebellPoses.Rack),
-                PoseKey(at = 0.39f, pose = KettlebellPoses.Press, passing = true),
-                PoseKey(at = 0.52f, pose = KettlebellPoses.Lockout),
-                PoseKey(at = 0.64f, pose = KettlebellPoses.Press, passing = true),
-                PoseKey(at = 0.76f, pose = KettlebellPoses.Rack),
-                PoseKey(at = 0.852f, pose = KettlebellPoses.Pull, passing = true),
-            ),
-            seconds = 4.2f,
-            still = 0.52f,
-        )
-    }
-}
-
-/**
- * A rep from one stance it rests in to the next, through [keys]: the first and last are the rests, any between
- * are passed through. The last one's easing paces the whole of it.
- */
-private class Stretch(keys: List<PoseKey>) {
-    val from = keys.first().at
-    private val to = keys.last().at
-    private val easing = keys.last().easing
-    private val times = FloatArray(keys.size) { keys[it].at }
-    private val angles = keys.map { it.pose.angles() }
-
-    /** How fast each joint is turning as it goes through each stance: by joint, then by stance. */
-    private val slopes = List(BodyPose.JOINTS) { joint -> slopes(FloatArray(keys.size) { angles[it][joint] }) }
-
-    fun poseAt(at: Float): BodyPose {
-        val paced = from + easing.transform((at - from) / (to - from)).coerceIn(0f, 1f) * (to - from)
-        val index = times.indexOfLast { it <= paced }.coerceIn(0, times.size - 2)
-        val span = times[index + 1] - times[index]
-        val share = (paced - times[index]) / span
-        return BodyPose.of(
-            FloatArray(BodyPose.JOINTS) { joint ->
-                hermite(
-                    from = angles[index][joint],
-                    leaving = slopes[joint][index] * span,
-                    to = angles[index + 1][joint],
-                    arriving = slopes[joint][index + 1] * span,
-                    share = share,
-                )
-            },
-        )
-    }
-
-    /**
-     * How fast a joint whose angle is [values] at each stance turns through each: the plain rate between two at
-     * either end, and in the middle Steffen's choice, the most that still keeps the curve from swinging past a
-     * stance (none at all where the joint turns back, or stays put on one side).
-     */
-    private fun slopes(values: FloatArray): FloatArray {
-        val rates = FloatArray(values.size - 1) { (values[it + 1] - values[it]) / (times[it + 1] - times[it]) }
-        return FloatArray(values.size) { index ->
-            if (index == 0 || index == values.lastIndex) return@FloatArray rates[index.coerceAtMost(rates.lastIndex)]
-            val before = rates[index - 1]
-            val after = rates[index]
-            val sinceLast = times[index] - times[index - 1]
-            val untilNext = times[index + 1] - times[index]
-            val mean = (before * untilNext + after * sinceLast) / (sinceLast + untilNext)
-            (sign(before) + sign(after)) * minOf(abs(before), abs(after), abs(mean) / 2)
-        }
-    }
-
-    /** The cubic [from] one value [to] the next that is [leaving] the first and [arriving] at the second so fast. */
-    @Suppress("detekt.MagicNumber") // Hermite's four cubics, as they are written everywhere.
-    private fun hermite(from: Float, leaving: Float, to: Float, arriving: Float, share: Float): Float {
-        val squared = share * share
-        val cubed = squared * share
-        return (2 * cubed - 3 * squared + 1) * from + (cubed - 2 * squared + share) * leaving +
-            (3 * squared - 2 * cubed) * to + (cubed - squared) * arriving
-    }
-}
-
-/**
- * The colours a demonstration is drawn in: the [body], the dot at each of its joints, the [reference] lines it is
- * read against (the floor and the plumb line), and the [bell] with its path.
- */
-@Immutable
-data class ExerciseDemoColors(val body: Color, val joint: Color, val reference: Color, val bell: Color) {
-    companion object {
-        /**
-         * [palette]'s: the body in the text's colour, the references in the outline's, quiet enough to sit behind
-         * it, and the bell in the accent.
+         * [palette]'s: the body in the text's colour and its far side in the dimmer text's, the references in the
+         * outline's, quiet enough to sit behind it, and the bell in the accent.
          */
         internal fun of(palette: IntervalPalette) = ExerciseDemoColors(
             body = palette.text,
+            far = palette.textDim,
             joint = palette.background,
             reference = palette.line,
             bell = palette.accent,
@@ -414,7 +99,8 @@ data class ExerciseDemoColors(val body: Color, val joint: Color, val reference: 
  * With the system's reduced motion it stands at [ExerciseRep.still] and only moves where it is held.
  *
  * It fills the room [modifier] gives it, the whole rep fitted inside, so the figure never moves about its frame.
- * [contentDescription] says what it shows, for a screen reader.
+ * [contentDescription] says what it shows, for a screen reader. [onPhase] is told the part of the rep it is in
+ * ([ExerciseRep.phaseAt]) as that changes, for a label that follows it: [ExerciseDiagram] is the two together.
  */
 @Composable
 fun ExerciseDemoCanvas(
@@ -423,10 +109,13 @@ fun ExerciseDemoCanvas(
     progress: Float? = null,
     colors: ExerciseDemoColors = ExerciseDemoColors.theme(),
     contentDescription: String? = null,
+    onPhase: ((RepPhase?) -> Unit)? = null,
 ) {
     val held by rememberUpdatedState(progress?.coerceIn(0f, 1f))
     var inView by remember { mutableStateOf(true) }
     val loop = rememberLoopProgress(rep, progress, inView)
+    val report by rememberUpdatedState(onPhase)
+    LaunchedEffect(rep) { snapshotFlow { rep.phaseAt(held ?: loop.floatValue) }.collect { report?.invoke(it) } }
     val described = if (contentDescription == null) {
         Modifier
     } else {
@@ -446,7 +135,10 @@ fun ExerciseDemoCanvas(
                     val at = held ?: loop.floatValue
                     drawReferences(stage, colors.reference)
                     drawTrajectory(stage, at, colors.bell)
-                    drawFigure(stage, rep.poseAt(at).joints(), colors)
+                    val pose = rep.poseAt(at)
+                    val joints = pose.joints()
+                    if (pose.showsFarSide) drawFarSide(stage, joints, colors)
+                    drawFigure(stage, joints, colors)
                 }
             },
     )
@@ -482,6 +174,9 @@ private enum class Limb(val from: Float, val to: Float) {
     UpperArm(from = 0.06f, to = 0.05f),
     Forearm(from = 0.048f, to = 0.036f),
     Hand(from = 0.036f, to = 0.046f),
+
+    /** A forearm with no hand drawn beyond it: it ends in the fist. */
+    Fist(from = 0.048f, to = 0.046f),
 }
 
 /**
@@ -543,7 +238,7 @@ private class DemoStage(rep: ExerciseRep, size: Size, density: Density) {
         floor = size.height / 2 + height * scale / 2
         top = floor - height * scale
         datums = BodyPose().joints().let { listOf(place(it.hip).y, place(it.shoulder).y) }
-        keyMarks = rep.keys.filterNot { it.passing }.map { place(it.pose.joints().kettlebellCenter) }
+        keyMarks = rep.keyframes.filterNot { it.passing }.map { place(it.pose.joints().kettlebellCenter) }.distinct()
         val handle = BodyProportions.BELL_HANDLE * HANDLE_STROKE * scale
         val corner = PathEffect.cornerPathEffect(handle)
         handleStyle = Stroke(handle, cap = StrokeCap.Round, join = StrokeJoin.Round, pathEffect = corner)
@@ -634,6 +329,44 @@ private fun DrawScope.drawTrajectory(stage: DemoStage, progress: Float, color: C
     stage.keyMarks.forEach { drawCircle(faint, stage.halo * KEY_MARK, it, style = stage.markStyle) }
     drawPath(stage.trailTo(progress, TRAIL_SHARE), faint, style = stage.trailStyle)
     drawPath(stage.trailTo(progress, TRAIL_SHARE / 2), color, style = stage.trailStyle)
+}
+
+/**
+ * The far leg and arm, behind the body: each limb and a dot a joint in the far side's colour, then a gap cut out of
+ * them round where the near leg, the trunk and the head are about to be drawn, so the body stands off them.
+ */
+private fun DrawScope.drawFarSide(stage: DemoStage, joints: BodyJoints, colors: ExerciseDemoColors) {
+    val hip = stage.place(joints.hip)
+    val shoulder = stage.place(joints.shoulder)
+    val knee = stage.place(joints.farKnee)
+    val ankle = stage.place(joints.farAnkle)
+    val elbow = stage.place(joints.farElbow)
+    val wrist = stage.place(joints.farWrist)
+    drawLine(
+        colors.far,
+        stage.place(joints.farHeel),
+        stage.place(joints.farToe),
+        strokeWidth = BodyProportions.SOLE * 2 * stage.scale,
+        cap = StrokeCap.Round,
+    )
+    drawLimb(Limb.Shin, knee, ankle, stage, colors.far)
+    drawLimb(Limb.Thigh, hip, knee, stage, colors.far)
+    drawLimb(Limb.UpperArm, shoulder, elbow, stage, colors.far)
+    drawLimb(Limb.Fist, elbow, wrist, stage, colors.far)
+    val dot = BodyProportions.JOINT_REACH * JOINT_DOT * stage.scale
+    drawCircle(colors.joint, dot, knee)
+    drawCircle(colors.joint, dot, ankle)
+    drawCircle(colors.joint, dot, elbow)
+    drawCircle(colors.joint, dot, wrist)
+    drawLimb(Limb.Shin, stage.place(joints.knee), stage.place(joints.ankle), stage, colors.far, cutOut = true)
+    drawLimb(Limb.Thigh, hip, stage.place(joints.knee), stage, colors.far, cutOut = true)
+    drawLimb(Limb.Torso, hip, shoulder, stage, colors.far, cutOut = true)
+    drawCircle(
+        colors.far,
+        BodyProportions.HEAD * stage.scale + stage.halo,
+        stage.place(joints.headCenter),
+        blendMode = BlendMode.Clear,
+    )
 }
 
 /**
@@ -801,8 +534,8 @@ private fun DemoPhases(vararg phases: DemoPhase) {
 @Composable
 private fun ExerciseDemoBottomHingePreview() {
     DemoPhases(
-        DemoPhase("Clean and press: the bottom of the hinge", ExerciseRep.CleanAndPress, at = 0f),
-        DemoPhase("Swing: out of the hinge, the hips ahead of the arm", ExerciseRep.Swing, at = 0.12f),
+        DemoPhase("Swing: the hike pass, hips back and shins upright", KettlebellReps.Swing, at = 0f),
+        DemoPhase("Goblet squat: the bottom, hips down between the heels", KettlebellReps.GobletSquat, at = 0.4f),
     )
 }
 
@@ -810,8 +543,8 @@ private fun ExerciseDemoBottomHingePreview() {
 @Composable
 private fun ExerciseDemoRackFloatPreview() {
     DemoPhases(
-        DemoPhase("Clean and press: the rack", ExerciseRep.CleanAndPress, at = 0.26f),
-        DemoPhase("Swing: the float", ExerciseRep.Swing, at = ExerciseRep.Swing.still),
+        DemoPhase("Clean: the rack", KettlebellReps.Clean, at = KettlebellReps.Clean.still),
+        DemoPhase("Swing: the float", KettlebellReps.Swing, at = KettlebellReps.Swing.still),
     )
 }
 
@@ -819,7 +552,7 @@ private fun ExerciseDemoRackFloatPreview() {
 @Composable
 private fun ExerciseDemoLockoutPreview() {
     DemoPhases(
-        DemoPhase("Clean and press: the lockout", ExerciseRep.CleanAndPress, at = ExerciseRep.CleanAndPress.still),
-        DemoPhase("Clean and press: halfway up the press", ExerciseRep.CleanAndPress, at = 0.39f),
+        DemoPhase("Snatch: the lockout", KettlebellReps.Snatch, at = KettlebellReps.Snatch.still),
+        DemoPhase("Half-kneeling press: on the way up", KettlebellReps.HalfKneelingPress, at = 0.12f),
     )
 }

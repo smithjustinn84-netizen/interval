@@ -464,6 +464,15 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun seeNoDemonstration() = seeNo(hasContentDescription("shown by a figure", substring = true))
 
+    /** [exercise]'s page draws it from the side with its bell's path, under what that part of the rep is called. */
+    fun seeBellPath(exercise: String, phase: String) {
+        see("Bell path")
+        see(hasContentDescription("$exercise from the side, with the path its bell takes"))
+        see(phase)
+    }
+
+    fun seeNoBellPath() = seeNo("Bell path")
+
     fun pauseDemonstration() {
         tap("Pause")
         see("Play")
