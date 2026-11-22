@@ -129,9 +129,17 @@ data class ExerciseRep(val keyframes: List<ExerciseKeyframe>, val seconds: Float
      * The stance [progress] of the way through the rep. A rep goes round, so 1 is 0 again and anything past
      * either end wraps.
      */
-    fun poseAt(progress: Float): BodyPose {
+    fun poseAt(progress: Float): BodyPose = BodyPose.of(FloatArray(BodyPose.JOINTS).also { anglesAt(progress, it) })
+
+    /**
+     * Fills [into] with each joint's angle [progress] of the way through the rep, in [BodyPose.angles]' order:
+     * [poseAt] for a diagram that runs, which keeps one array and makes nothing a frame.
+     */
+    internal fun anglesAt(progress: Float, into: FloatArray) {
         val at = progress - floor(progress)
-        return stretches.last { it.from <= at }.poseAt(at)
+        var index = stretches.lastIndex
+        while (index > 0 && stretches[index].from > at) index--
+        stretches[index].anglesAt(at, into)
     }
 
     /**
@@ -141,8 +149,12 @@ data class ExerciseRep(val keyframes: List<ExerciseKeyframe>, val seconds: Float
      */
     fun phaseAt(progress: Float): RepPhase? {
         val at = progress - floor(progress)
-        val span = phases.firstOrNull { at <= it.until } ?: return null
-        return span.phase.takeIf { at > span.from || (at == 0f && span.from == 0f) }
+        // By its place, not an iterator: this is asked every frame a rep runs.
+        for (index in phases.indices) {
+            val span = phases[index]
+            if (at <= span.until) return span.phase.takeIf { at > span.from || (at == 0f && span.from == 0f) }
+        }
+        return null
     }
 }
 
@@ -158,22 +170,22 @@ private class Stretch(poses: List<BodyPose>, private val times: FloatArray, priv
     /** How fast each joint is turning as it goes through each stance: by joint, then by stance. */
     private val slopes = List(BodyPose.JOINTS) { joint -> slopes(FloatArray(poses.size) { angles[it][joint] }) }
 
-    fun poseAt(at: Float): BodyPose {
+    /** Fills [into] with each joint's angle [at] this share of the rep, which is within this stretch. */
+    fun anglesAt(at: Float, into: FloatArray) {
         val paced = from + easing.transform((at - from) / (to - from)).coerceIn(0f, 1f) * (to - from)
-        val index = times.indexOfLast { it <= paced }.coerceIn(0, times.size - 2)
+        var index = times.size - 2
+        while (index > 0 && times[index] > paced) index--
         val span = times[index + 1] - times[index]
         val share = (paced - times[index]) / span
-        return BodyPose.of(
-            FloatArray(BodyPose.JOINTS) { joint ->
-                hermite(
-                    from = angles[index][joint],
-                    leaving = slopes[joint][index] * span,
-                    to = angles[index + 1][joint],
-                    arriving = slopes[joint][index + 1] * span,
-                    share = share,
-                )
-            },
-        )
+        for (joint in 0 until BodyPose.JOINTS) {
+            into[joint] = hermite(
+                from = angles[index][joint],
+                leaving = slopes[joint][index] * span,
+                to = angles[index + 1][joint],
+                arriving = slopes[joint][index + 1] * span,
+                share = share,
+            )
+        }
     }
 
     /**

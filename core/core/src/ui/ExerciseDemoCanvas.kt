@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onVisibilityChanged
 import androidx.compose.ui.semantics.contentDescription
@@ -95,14 +96,18 @@ data class ExerciseDemoColors(
  * along drawn solid behind it.
  *
  * It runs round by itself, a rep each [ExerciseRep.seconds], unless [progress] holds it: 0 to 1 through the rep,
- * for a slider or a list of the rep's phases to scrub it. Let go ([progress] null again) it runs on from there.
- * With the system's reduced motion it stands at [ExerciseRep.still] and only moves where it is held.
+ * for a slider or a list of the rep's phases to scrub it. Let go ([progress] null again) it runs on from there,
+ * at [speed] times its own pace: half, say, for a quick lift to be followed. With the system's reduced motion it
+ * stands at [ExerciseRep.still] and only moves where it is held.
  *
  * It fills the room [modifier] gives it, the whole rep fitted inside, so the figure never moves about its frame.
  * [contentDescription] says what it shows, for a screen reader. [onPhase] is told the part of the rep it is in
  * ([ExerciseRep.phaseAt]) as that changes, for a label that follows it: [ExerciseDiagram] is the two together.
  * [position] is where it keeps how far through the rep it has run, for a caller that draws that too (a marker on
  * a [PhaseTrack]).
+ *
+ * A frame works the stance out into what the canvas keeps from the frame before and draws it: nothing is made
+ * while it runs.
  */
 @Composable
 fun ExerciseDemoCanvas(
@@ -113,10 +118,11 @@ fun ExerciseDemoCanvas(
     contentDescription: String? = null,
     onPhase: ((RepPhase?) -> Unit)? = null,
     position: RepPosition = rememberRepPosition(rep),
+    speed: Float = 1f,
 ) {
     val held by rememberUpdatedState(progress?.coerceIn(0f, 1f))
     var inView by remember { mutableStateOf(true) }
-    RunLoop(rep, position, progress, inView)
+    RunLoop(rep, position, progress, inView, speed)
     if (onPhase != null) {
         val report by rememberUpdatedState(onPhase)
         LaunchedEffect(rep, position) { snapshotFlow { rep.phaseAt(held ?: position.share) }.collect { report(it) } }
@@ -135,14 +141,14 @@ fun ExerciseDemoCanvas(
             .drawWithCache {
                 if (size.minDimension <= 0f) return@drawWithCache onDrawBehind {}
                 val stage = DemoStage(rep, size, this)
+                val faint = colors.bell.copy(alpha = PATH_ALPHA)
                 onDrawBehind {
                     // Read here, so a frame redraws the figure and recomposes nothing.
                     val at = held ?: position.share
                     drawReferences(stage, colors.reference)
-                    drawTrajectory(stage, at, colors.bell)
-                    val pose = rep.poseAt(at)
-                    val joints = pose.joints()
-                    if (pose.showsFarSide) drawFarSide(stage, joints, colors)
+                    drawTrajectory(stage, at, colors.bell, faint)
+                    val joints = stage.jointsAt(at)
+                    if (joints.showsFarSide) drawFarSide(stage, joints, colors)
                     drawFigure(stage, joints, colors)
                 }
             },
@@ -164,21 +170,22 @@ class RepPosition internal constructor(start: Float) {
 fun rememberRepPosition(rep: ExerciseRep): RepPosition = remember(rep) { RepPosition(rep.still) }
 
 /**
- * Runs [position] through [rep] by itself. It stands where [held] has it while it is held, so it runs on from
- * there, stands still under reduced motion, and takes no frames while it is scrolled out of view ([inView]). The
- * frames come from an infinite animation, which a UI test cancels rather than waits on.
+ * Runs [position] through [rep] by itself, at [speed] times the rep's own pace. It stands where [held] has it
+ * while it is held, so it runs on from there, stands still under reduced motion, and takes no frames while it is
+ * scrolled out of view ([inView]). A change of speed starts the run again from where it is, so it never jumps.
+ * The frames come from an infinite animation, which a UI test cancels rather than waits on.
  */
 @Composable
-private fun RunLoop(rep: ExerciseRep, position: RepPosition, held: Float?, inView: Boolean) {
+private fun RunLoop(rep: ExerciseRep, position: RepPosition, held: Float?, inView: Boolean, speed: Float) {
     val still = prefersReducedMotion()
-    LaunchedEffect(rep, position, held, still, inView) {
+    LaunchedEffect(rep, position, held, still, inView, speed) {
         if (held != null) position.share = held.coerceIn(0f, 1f)
         if (held != null || still || !inView) return@LaunchedEffect
         val from = position.share
         val start = withInfiniteAnimationFrameMillis { it }
         while (true) {
             val elapsed = withInfiniteAnimationFrameMillis { it } - start
-            position.share = (from + elapsed / (rep.seconds * MILLIS_PER_SECOND)).mod(1f)
+            position.share = (from + elapsed * speed / (rep.seconds * MILLIS_PER_SECOND)).mod(1f)
         }
     }
 }
@@ -200,7 +207,7 @@ private enum class Limb(val from: Float, val to: Float) {
  * [rep] fitted to a canvas of [size]: the scale and the place of the floor and the plumb line, the bell's path
  * through the rep, and the strokes everything is drawn with. Worked out once a size, not once a frame.
  */
-private class DemoStage(rep: ExerciseRep, size: Size, density: Density) {
+private class DemoStage(private val rep: ExerciseRep, size: Size, density: Density) {
     /** Pixels to the figure's standing height. */
     val scale: Float
 
@@ -210,7 +217,7 @@ private class DemoStage(rep: ExerciseRep, size: Size, density: Density) {
     val top: Float
 
     /** The y of the standing figure's hip and shoulder: the ticks on the plumb line. */
-    val datums: List<Float>
+    val datums: FloatArray
 
     /** The bell's path where it is drawn dashed: each stretch once, though the bell comes back along it. */
     val trajectory = Path()
@@ -228,10 +235,16 @@ private class DemoStage(rep: ExerciseRep, size: Size, density: Density) {
     val handleStyle: Stroke
     val handleHalo: Stroke
 
-    /** Paths a frame draws through and leaves for the next, so none is made while it runs. */
+    /** A path a frame draws through and leaves for the next, so none is made while it runs. */
     val scratch = Path()
-    val bellBody = Path()
     private val trail = Path()
+
+    /** The bell's body hanging straight down from a grip over the origin: a frame moves and turns it. */
+    val bellBody = Path()
+
+    /** The joints' angles and places a frame works out, kept for the next for the same reason. */
+    private val angles = FloatArray(BodyPose.JOINTS)
+    private val frame = BodyFrame()
 
     /** The whole path, as the bell goes along it, and how far along it the bell is at each sample. */
     private val measure = PathMeasure()
@@ -254,13 +267,28 @@ private class DemoStage(rep: ExerciseRep, size: Size, density: Density) {
         plumb = size.width / 2 - (left + right) / 2 * scale
         floor = size.height / 2 + height * scale / 2
         top = floor - height * scale
-        datums = BodyPose().joints().let { listOf(place(it.hip).y, place(it.shoulder).y) }
+        datums = BodyPose().joints().let { floatArrayOf(place(it.hip).y, place(it.shoulder).y) }
         keyMarks = rep.keyframes.filterNot { it.passing }.map { place(it.pose.joints().kettlebellCenter) }.distinct()
         val handle = BodyProportions.BELL_HANDLE * HANDLE_STROKE * scale
         val corner = PathEffect.cornerPathEffect(handle)
         handleStyle = Stroke(handle, cap = StrokeCap.Round, join = StrokeJoin.Round, pathEffect = corner)
         handleHalo = Stroke(handle + halo * 2, cap = StrokeCap.Round, join = StrokeJoin.Round, pathEffect = corner)
+        val radius = BodyProportions.BELL_RADIUS * scale
+        bellBody.arcTo(
+            Rect(Offset.Zero, radius),
+            Angles.QUARTER_TURN + BASE_HALF_DEGREES,
+            Angles.FULL_TURN - BASE_HALF_DEGREES * 2,
+            forceMoveTo = true,
+        )
+        bellBody.close()
         layPath(samples.map { place(it.kettlebellCenter) })
+    }
+
+    /** Where the joints are [progress] of the way through the rep. The one frame, moved: read it before the next. */
+    fun jointsAt(progress: Float): BodyFrame {
+        rep.anglesAt(progress, angles)
+        frame.place(angles)
+        return frame
     }
 
     /** A point of the figure's own measure on the canvas. */
@@ -331,19 +359,21 @@ private fun DrawScope.drawReferences(stage: DemoStage, color: Color) {
         pathEffect = stage.dashes,
     )
     val tick = BodyProportions.JOINT_REACH * stage.scale
-    stage.datums.forEach { y ->
+    for (y in stage.datums) {
         drawLine(color, Offset(stage.plumb - tick, y), Offset(stage.plumb + tick, y), stage.hairline)
     }
 }
 
 /**
  * The bell's path through the whole rep, dashed and faint, a ring where each stance it rests in has it, and over
- * that the stretch it has just come along at [progress], fading away behind it.
+ * that the stretch it has just come along at [progress], fading away behind it: in [color], and [faint], the same
+ * thinned.
  */
-private fun DrawScope.drawTrajectory(stage: DemoStage, progress: Float, color: Color) {
-    val faint = color.copy(alpha = PATH_ALPHA)
+private fun DrawScope.drawTrajectory(stage: DemoStage, progress: Float, color: Color, faint: Color) {
     drawPath(stage.trajectory, faint, style = stage.pathStyle)
-    stage.keyMarks.forEach { drawCircle(faint, stage.halo * KEY_MARK, it, style = stage.markStyle) }
+    for (index in stage.keyMarks.indices) {
+        drawCircle(faint, stage.halo * KEY_MARK, stage.keyMarks[index], style = stage.markStyle)
+    }
     drawPath(stage.trailTo(progress, TRAIL_SHARE), faint, style = stage.trailStyle)
     drawPath(stage.trailTo(progress, TRAIL_SHARE / 2), color, style = stage.trailStyle)
 }
@@ -352,7 +382,7 @@ private fun DrawScope.drawTrajectory(stage: DemoStage, progress: Float, color: C
  * The far leg and arm, behind the body: each limb and a dot a joint in the far side's colour, then a gap cut out of
  * them round where the near leg, the trunk and the head are about to be drawn, so the body stands off them.
  */
-private fun DrawScope.drawFarSide(stage: DemoStage, joints: BodyJoints, colors: ExerciseDemoColors) {
+private fun DrawScope.drawFarSide(stage: DemoStage, joints: BodyFrame, colors: ExerciseDemoColors) {
     val hip = stage.place(joints.hip)
     val shoulder = stage.place(joints.shoulder)
     val knee = stage.place(joints.farKnee)
@@ -390,7 +420,7 @@ private fun DrawScope.drawFarSide(stage: DemoStage, joints: BodyJoints, colors: 
  * The figure with its [joints] where they are: the leg, the trunk and the head, then the arm as a piece of its own
  * with a gap cut round it, the bell likewise, the hand closed over the bell's handle, and a dot at each joint.
  */
-private fun DrawScope.drawFigure(stage: DemoStage, joints: BodyJoints, colors: ExerciseDemoColors) {
+private fun DrawScope.drawFigure(stage: DemoStage, joints: BodyFrame, colors: ExerciseDemoColors) {
     val ankle = stage.place(joints.ankle)
     val knee = stage.place(joints.knee)
     val hip = stage.place(joints.hip)
@@ -462,7 +492,7 @@ private fun DrawScope.drawLimb(
  * disc with a flat base, hanging from the hand the way its pose turns it. A gap is cut round it first, so it
  * stands off the arm and the chest it rests on, and a hole at its centre marks the point its path follows.
  */
-private fun DrawScope.drawKettlebell(stage: DemoStage, joints: BodyJoints, color: Color) {
+private fun DrawScope.drawKettlebell(stage: DemoStage, joints: BodyFrame, color: Color) {
     val grip = stage.place(joints.kettlebellAnchor)
     val centre = stage.place(joints.kettlebellCenter)
     val hang = (centre - grip) / (centre - grip).getDistance()
@@ -475,15 +505,13 @@ private fun DrawScope.drawKettlebell(stage: DemoStage, joints: BodyJoints, color
     handle.lineTo(grip.x - half.x, grip.y - half.y)
     handle.lineTo(grip.x + half.x, grip.y + half.y)
     handle.lineTo(seat.x + half.x, seat.y + half.y)
-    val base = Angles.degrees(atan2(hang.y, hang.x))
-    val body = stage.bellBody
-    body.rewind()
-    body.arcTo(Rect(centre, radius), base + BASE_HALF_DEGREES, Angles.FULL_TURN - BASE_HALF_DEGREES * 2, true)
-    body.close()
     drawPath(handle, color, style = stage.handleHalo, blendMode = BlendMode.Clear)
     drawCircle(color, radius + stage.halo, centre, blendMode = BlendMode.Clear)
     drawPath(handle, color, style = stage.handleStyle)
-    drawPath(body, color)
+    withTransform({
+        translate(centre.x, centre.y)
+        rotate(Angles.degrees(atan2(hang.y, hang.x)) - Angles.QUARTER_TURN, pivot = Offset.Zero)
+    }) { drawPath(stage.bellBody, color) }
     drawCircle(color, radius * BELL_MARK, centre, blendMode = BlendMode.Clear)
 }
 

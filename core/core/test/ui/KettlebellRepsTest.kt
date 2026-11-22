@@ -408,6 +408,23 @@ class KettlebellRepsTest {
     }
 
     @Test
+    fun `a frame placed again and again is where a stance's joints are`() {
+        val frame = BodyFrame()
+        val angles = FloatArray(BodyPose.JOINTS)
+        // One frame through every rep in turn, as a diagram keeps it: nothing of the stance before is left in it.
+        reps.forEach { (name, rep) ->
+            (0..40).forEach { step ->
+                val at = step / 40f
+                rep.anglesAt(at, angles)
+                frame.place(angles)
+                val pose = rep.poseAt(at)
+                assertEquals(pose.joints(), frame.joints(), "$name at $at")
+                assertEquals(pose.showsFarSide, frame.showsFarSide, "$name's far side at $at")
+            }
+        }
+    }
+
+    @Test
     fun `a pose blends by its angles`() {
         val blended = BodyPose().blend(KettlebellPoses.Hinge, share = 0.5f)
         assertEquals(35f, blended.hipAngleDeg)

@@ -27,11 +27,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.justinsmith.interval.ui.ExerciseDiagram
+import dev.justinsmith.interval.ui.ExerciseRep
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSheet
@@ -75,6 +78,7 @@ import dev.justinsmith.lift.library.resources.exercise_archived_note
 import dev.justinsmith.lift.library.resources.exercise_cues
 import dev.justinsmith.lift.library.resources.exercise_editor_edit
 import dev.justinsmith.lift.ui.Demonstration
+import dev.justinsmith.lift.ui.LiftSizes
 import dev.justinsmith.lift.ui.MusclesWorkedCard
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.cues
@@ -110,11 +114,11 @@ data class ExerciseDetailUiState(
 )
 
 /**
- * An exercise's page, as a sheet over the library, beside it on a tablet: its name and facts, its cues, then
- * the user's history with it, their best, their best each session, and the sessions it was in, each opening
- * on [onOpenSession] when there
- * is one. One of the user's own offers Edit while [editable], which turns the sheet into its form until it is
- * saved or archived: not from a session, whose sets and plan hold the exercise as it is.
+ * An exercise's page, as a sheet over the library, beside it on a tablet: its name and facts, for a lift one is
+ * drawn for the diagram of its bell's path, its figure and cues, then the user's history with it, their best,
+ * their best each session, and the sessions it was in, each opening on [onOpenSession] when there is one. One of
+ * the user's own offers Edit while [editable], which turns the sheet into its form until it is saved or archived:
+ * not from a session, whose sets and plan hold the exercise as it is.
  */
 @Composable
 fun ExerciseDetailSheet(
@@ -183,7 +187,8 @@ fun ExerciseDetailContent(
 
 /**
  * The exercise's name over its facts, with Edit beside them for one of the user's own ([onEdit]); a note if
- * archived; then its cues, or a hint to add some, and for a built-in what it works.
+ * archived; then the diagram of its bell's path, if it has one, with its figure and cues, or a hint to add some
+ * ([PathAndNotes]), and what it works.
  */
 @Composable
 private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) {
@@ -207,34 +212,80 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
         is BuiltInExercise -> {
             val cues = stringArrayResource(exercise.cues())
             val demo = exercise.demo
-            if (demo ==
-                null
-            ) {
-                Cues(cues)
-            } else {
-                Demonstration(demo, exerciseName(exercise), cues, faults = exercise.faults)
+            PathAndNotes(exercise, exerciseName(exercise)) {
+                if (demo == null) {
+                    Cues(cues)
+                } else {
+                    Demonstration(demo, exerciseName(exercise), cues, faults = exercise.faults)
+                }
             }
-            BellPath(exercise, exerciseName(exercise))
             Works(exercise)
         }
 
         is CustomExercise -> {
-            // The built-in's cues and faults are not the user's: the figure alone, its own cues under it.
-            exercise.demo?.let { Demonstration(it, exercise.name, cues = emptyList()) }
-            if (exercise.cues.isBlank()) {
-                Text(
-                    stringResource(Res.string.detail_no_cues),
-                    style = IntervalTheme.type.meta,
-                    color = palette.textDim,
-                )
-            } else {
-                Cues(listOf(exercise.cues))
+            PathAndNotes(exercise, exercise.name) {
+                // The built-in's cues and faults are not the user's: the figure alone, its own cues under it.
+                exercise.demo?.let { Demonstration(it, exercise.name, cues = emptyList()) }
+                if (exercise.cues.isBlank()) {
+                    Text(
+                        stringResource(Res.string.detail_no_cues),
+                        style = IntervalTheme.type.meta,
+                        color = palette.textDim,
+                    )
+                } else {
+                    Cues(listOf(exercise.cues))
+                }
             }
-            BellPath(exercise, exercise.name)
             Works(exercise)
         }
 
         is UnknownExercise -> Unit
+    }
+}
+
+/**
+ * What leads [exercise]'s page: the diagram of its bell's path, for a lift one is drawn for, over its [notes] (the
+ * figure's card and the cues), or beside them where the page is wide enough for both ([LiftSizes.pathBesideNotes]:
+ * a sheet across a phone on its side, never the side sheet a tablet opens it in), the two cards' tops level under
+ * the diagram's heading. With no diagram, the notes alone.
+ */
+@Composable
+private fun PathAndNotes(exercise: Exercise, name: String, notes: @Composable ColumnScope.() -> Unit) {
+    val rep = exercise.diagram
+    val rows = Arrangement.spacedBy(Spacing.space8)
+    if (rep == null) {
+        Column(verticalArrangement = rows, content = notes)
+        return
+    }
+    Layout(
+        contents = listOf(
+            { GroupLabel(stringResource(Res.string.detail_bell_path)) },
+            { BellPath(rep, name) },
+            { Column(verticalArrangement = rows, content = notes) },
+        ),
+    ) { (headings, paths, rest), constraints ->
+        val width = constraints.maxWidth
+        val beside = constraints.hasBoundedWidth && width >= LiftSizes.pathBesideNotes.roundToPx()
+        val row = Spacing.space8.roundToPx()
+        val gap = if (beside) Spacing.space16.roundToPx() else row
+        val each = Constraints.fixedWidth(if (beside) (width - gap) / 2 else width)
+        val heading = headings.first().measure(each)
+        val path = paths.first().measure(each)
+        val others = rest.first().measure(each)
+        val top = heading.height + row
+        val height = top + if (beside) maxOf(path.height, others.height) else path.height + gap + others.height
+        layout(width, height) {
+            heading.placeRelative(0, 0)
+            path.placeRelative(0, top)
+            if (beside) {
+                others.placeRelative(
+                    path.width + gap,
+                    top,
+                )
+            } else {
+                others.placeRelative(0, top + path.height + gap)
+            }
+        }
     }
 }
 
@@ -257,20 +308,21 @@ private fun Cues(lines: List<String>) {
 }
 
 /**
- * [exercise] drawn from the side with the path its bell takes, under the name of the part of the rep it is in and
- * over a bar of the rep's parts to go through it by hand: for a lift a diagram is drawn for ([diagram]), and
- * nothing for the rest.
+ * [rep], a lift's, drawn from the side with the path its bell takes, under the name of the part of the rep it is in
+ * and the cue for it, with a speed and Pause beside the name and a bar of the rep's parts under the drawing to go
+ * through it by hand.
  */
 @Composable
-private fun BellPath(exercise: Exercise, name: String) {
-    val rep = exercise.diagram ?: return
-    GroupLabel(stringResource(Res.string.detail_bell_path))
+private fun BellPath(rep: ExerciseRep, name: String) {
     ListCard(fill = IntervalTheme.palette.surfaceVariant) {
         ExerciseDiagram(
             rep,
-            Modifier.fillMaxWidth().height(Sizes.figurePage + Sizes.iconButton).padding(Spacing.space12),
+            Modifier
+                .fillMaxWidth()
+                .height(Sizes.figurePage + Sizes.iconButton * 2)
+                .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
             contentDescription = stringResource(Res.string.detail_bell_path_cd, name),
-            scrubbable = true,
+            controls = true,
         )
     }
 }
@@ -401,7 +453,7 @@ private fun PastSessionCard(dated: DatedSession, onOpen: ((uid: String) -> Unit)
     }
 }
 
-/** A lift's page scrolled down to the diagram of its bell's path, under its figure's card. */
+/** A lift's page, led by the diagram of its bell's path: over its figure's card, or beside it on a wide page. */
 @PreviewFormFactors
 @Composable
 private fun ExerciseDetailBellPathPreview() {
@@ -410,7 +462,7 @@ private fun ExerciseDetailBellPathPreview() {
             Modifier
                 .fillMaxSize()
                 .background(IntervalTheme.palette.surface)
-                .verticalScroll(rememberScrollState(initial = Int.MAX_VALUE))
+                .verticalScroll(rememberScrollState())
                 .padding(Spacing.space16),
         ) {
             ExerciseDetailContent(ExerciseDetailUiState(BuiltInExercise.Snatch), onEdit = null, onOpenSession = null)

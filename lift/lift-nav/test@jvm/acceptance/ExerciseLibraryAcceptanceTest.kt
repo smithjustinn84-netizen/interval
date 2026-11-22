@@ -5,8 +5,9 @@ import kotlin.test.Test
 
 /**
  * `journeys/exercise-library.xml`: search and narrow the library, add an exercise from a search that finds
- * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by a figure;
- * one of the user's own shown by a built-in's figure.
+ * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by its bell's
+ * path, played, paused, slowed and gone through by hand, over a figure; one of the user's own shown by a built-in's
+ * figure.
  */
 class ExerciseLibraryAcceptanceTest {
     @Test
@@ -87,7 +88,8 @@ class ExerciseLibraryAcceptanceTest {
         seeMatches("Kettlebell · Reps · Lower body", "Not logged yet. Its sets will show here.")
         seeNo("Edit")
         seeDemonstration("Goblet squat")
-        seeBellPath("Goblet squat", phase = "Bottom")
+        seeBellPath("Goblet squat", phase = "Bottom", cue = "Elbows inside the knees, spine long")
+        seeBellPathLeads("Goblet squat")
         pauseDemonstration()
         showCuePart("Push the knees out and drive up through the whole foot")
         showCuePart("Sit between your heels with the chest up")
@@ -100,10 +102,14 @@ class ExerciseLibraryAcceptanceTest {
         openExerciseLibrary()
         scrollTo("Two-hand swing")
         openExercise("Two-hand swing")
-        seeBellPath("Two-hand swing", phase = "Float")
-        scrubBellPath(at = 0.9f, phase = "Hike pass")
-        scrubBellPath(at = 0.05f, phase = "Hip snap")
-        resumeBellPath()
+        seeBellPath("Two-hand swing", phase = "Float", cue = "Standing plank, let the bell float")
+        scrubBellPath(at = 0.9f, phase = "Hike pass", cue = "Hinge back, shins vertical")
+        scrubBellPath(at = 0.05f, phase = "Hip snap", cue = "Snap the hips, glutes and abs tight")
+        playBellPath()
+        pauseBellPath()
+        playBellPath()
+        slowBellPath()
+        fullSpeedBellPath()
         slowDemonstration()
         stepDemonstration(to = "Let it float to chest height, then wait until your upper arms touch your ribs to hinge")
         stepDemonstration(to = "Set the bell a foot in front, hinge at the hips and hike it high between your legs")
@@ -129,7 +135,7 @@ class ExerciseLibraryAcceptanceTest {
 
         openExercise("Pause goblet squat")
         seeDemonstration("Pause goblet squat")
-        seeBellPath("Pause goblet squat", phase = "Bottom")
+        seeBellPath("Pause goblet squat", phase = "Bottom", cue = "Elbows inside the knees, spine long")
         see("Two seconds at the bottom")
         seeNo("Watch for")
         tap("Edit")

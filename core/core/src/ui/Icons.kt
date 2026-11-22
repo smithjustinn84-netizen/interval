@@ -101,6 +101,16 @@ object IntervalIcons {
             fill = SolidColor(Color.Black),
         )
     }.build()
+
+    /** Two filled bars: what holds something that runs by itself, where [Play] sets it going. */
+    val Pause: ImageVector = ImageVector.Builder("Pause", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
+        listOf(6f, 14f).forEach { x ->
+            addPath(
+                addPathNodes("M${x + 1} 4.5h2a1 1 0 0 1 1 1v13a1 1 0 0 1 -1 1h-2a1 1 0 0 1 -1 -1v-13a1 1 0 0 1 1 -1z"),
+                fill = SolidColor(Color.Black),
+            )
+        }
+    }.build()
     val More: ImageVector = ImageVector.Builder("More", Sizes.icon, Sizes.icon, VIEWPORT, VIEWPORT).apply {
         listOf(5f, 12f, 19f).forEach { y ->
             addPath(addPathNodes("M14 ${y}a2 2 0 1 1 -4 0a2 2 0 1 1 4 0"), fill = SolidColor(Color.Black))

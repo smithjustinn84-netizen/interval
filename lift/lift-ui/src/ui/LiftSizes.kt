@@ -41,6 +41,13 @@ object LiftSizes {
     val sparklineMark = 1.dp
     val sparklineLabels = 18.dp
 
+    /**
+     * The narrowest an exercise's page lays the diagram of its bell's path beside its figure and cues rather than
+     * over them: room for two cards a phone's sheet wide at their narrowest. A sheet across a phone on its side is
+     * that wide; the side sheet a tablet opens the page in is not.
+     */
+    val pathBesideNotes = 560.dp
+
     /** The grip's four weeks on Lift's Grip card: short bars under its lines. */
     val gripChart = 48.dp
 }

@@ -51,11 +51,16 @@
     <action>Tap "Back" to close the sheet</action>
     <action>Clear the search and tap "Goblet squat"</action>
     <action>Verify that its page shows "Goblet squat" over "Kettlebell · Reps · Lower body", no "Edit" button, and "Not logged yet. Its sets will show here."</action>
-    <action>Verify that a card shows a figure holding a kettlebell at its chest: first standing still a moment with "Hold the bell by the horns at your chest, elbows down" lit under "Set up", then squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar whose short first stretch (the set-up) stands apart from the rest, with a marker moving along it in step and staying in the rep once the set-up is done; and under "Each rep" the other two cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
-    <action>Verify that under the figure's card "Bell path" heads a card drawing the lifter from the side, with the floor, a dashed plumb line up from the ankle and the bell's dashed path, squatting and standing again and again, and over the drawing the name of the part of the rep it is in, changing in step: "Sit down", "Bottom", "Drive up", "Stand tall"</action>
+    <action>Verify that "Bell path" heads the page's first card, drawing the lifter from the side, with the floor, a dashed plumb line up from the ankle and the bell's dashed path, squatting and standing again and again; over the drawing a tag naming the part of the rep it is in and under the tag the cue for it, changing in step: "Sit down" with "Sit between the heels, chest up", "Bottom" with "Elbows inside the knees, spine long", "Drive up" with "Knees out, push through the whole foot", "Stand tall" with "Hips through, glutes tight"; and beside the tag "1×" and a pause button</action>
+    <action>Tap "1×"</action>
+    <action>Verify that it reads "0.5×" and the lifter squats at half the speed; tap "0.5×" and verify that it reads "1×" again</action>
+    <action>Tap the pause button beside it</action>
+    <action>Verify that the lifter stops where it is and the button is a play button</action>
     <action>Drag along the bar under the drawing</action>
-    <action>Verify that the lifter stops and follows the finger down into the squat and up again, the name over the drawing and the lit stretch of the bar changing with it, and that "Resume" shows in the drawing's corner</action>
-    <action>Tap "Resume"</action>
+    <action>Verify that the lifter follows the finger down into the squat and up again, the tag, the cue and the lit stretch of the bar changing with it</action>
+    <action>Tap the play button</action>
+    <action>Verify that the lifter squats and stands by itself again, from where it was left</action>
+    <action>Verify that the card under it (beside it with the phone on its side) shows a figure holding a kettlebell at its chest: first standing still a moment with "Hold the bell by the horns at your chest, elbows down" lit under "Set up", then squatting down and standing up again and again, its bell changing colour as it goes, with "Pause" in the card's corner; under it a bar whose short first stretch (the set-up) stands apart from the rest, with a marker moving along it in step and staying in the rep once the set-up is done; and under "Each rep" the other two cues, the one the figure is doing lit with a bar of the bell's colour and the others dim</action>
     <action>Verify that the lifter squats and stands by itself again from where it was held, and "Resume" is gone</action>
     <action>Tap "Pause"</action>
     <action>Verify that the figure and the marker stop where they were and the button reads "Play"</action>
@@ -73,7 +78,7 @@
     <action>Verify that the list closes and the row reads "Goblet squat" with its figure's still; then tap "Bodyweight"</action>
     <action>Verify that the row reads "No figure" again; tap "Kettlebell", then "Change" and "Goblet squat" again, then "Save exercise"</action>
     <action>Tap "Pause goblet squat"</action>
-    <action>Verify that its page shows a card with a figure squatting with a bell at its chest, its timeline under it and no cues lit in the card, then "Bell path" with the squat drawn from the side, then "Cues" with "Two seconds at the bottom", and no "Watch for"</action>
+    <action>Verify that its page shows "Bell path" with the squat drawn from the side, then a card with a figure squatting with a bell at its chest, its timeline under it and no cues lit in the card, then "Cues" with "Two seconds at the bottom", and no "Watch for"</action>
     <action>Tap "Back" to close the sheet, then "Back" to return to Train's Strength pillar</action>
   </actions>
 </journey>

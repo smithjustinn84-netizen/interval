@@ -247,8 +247,10 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      lift's `faults`, squatting the hinge shown done wrong by `ExerciseDemo.doneWrong`), which the exercise page and a
                      flow's move both show; the diagram the flagship kettlebell lifts are also drawn by, from the side with the
                      bell's path and the rep's phase named (`Exercise.diagram`, `diagramOf(key)`, `Diagrams.kt`: core's
-                     `ExerciseRep` of `ExerciseKeyframe`s, the lifts in `KettlebellReps`, drawn by `ExerciseDiagram`; null
-                     for a lift with none yet), which the exercise page shows under Bell path; most of Lift's strings
+                     `ExerciseRep` of `ExerciseKeyframe`s, the lifts in `KettlebellReps`, drawn by `ExerciseDiagram` under the
+                     phase's name and its cue, `RepPhase.cue`, with a speed, Pause and a `PhaseTrack` to scrub it; null
+                     for a lift with none yet), which leads the exercise page under Bell path, over the figure's card or
+                     beside it where the page is wide enough (`PathAndNotes`); most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`

@@ -136,41 +136,9 @@ data class BodyPose(
      * to the bell, then down the far leg from the hip and along the far arm from the shoulder.
      */
     fun joints(): BodyJoints {
-        val thighLean = torsoAngleDeg - hipAngleDeg
-        val armSwing = shoulderAngleDeg - torsoAngleDeg
-        val forearmSwing = armSwing + elbowAngleDeg
-        val ankle = Offset(0f, BodyProportions.ANKLE)
-        val knee = ankle + rising(thighLean + kneeAngleDeg) * BodyProportions.SHIN
-        val hip = knee + rising(thighLean) * BodyProportions.THIGH
-        val shoulder = hip + rising(torsoAngleDeg) * BodyProportions.TORSO
-        val elbow = shoulder + hanging(armSwing) * BodyProportions.UPPER_ARM
-        val wrist = elbow + hanging(forearmSwing) * BodyProportions.FOREARM
-        val grip = wrist + hanging(forearmSwing) * BodyProportions.HAND
-        val bell = hanging(forearmSwing + bellAngleDeg) * (BodyProportions.BELL_HANDLE + BodyProportions.BELL_RADIUS)
-        val farThighSwing = farHipAngleDeg - torsoAngleDeg
-        val farShin = hanging(farThighSwing - farKneeAngleDeg)
-        val farKnee = hip + hanging(farThighSwing) * BodyProportions.THIGH
-        val farAnkle = farKnee + farShin * BodyProportions.SHIN
-        val farFoot = footFrom(farAnkle, farShin)
-        val farArmSwing = farShoulderAngleDeg - torsoAngleDeg
-        val farElbow = shoulder + hanging(farArmSwing) * BodyProportions.UPPER_ARM
-        return BodyJoints(
-            ankle = ankle,
-            knee = knee,
-            hip = hip,
-            shoulder = shoulder,
-            elbow = elbow,
-            wrist = wrist,
-            headCenter = shoulder + rising(torsoAngleDeg) * BodyProportions.NECK,
-            kettlebellAnchor = grip,
-            kettlebellCenter = grip + bell,
-            farKnee = farKnee,
-            farAnkle = farAnkle,
-            farHeel = farAnkle - farFoot * BodyProportions.HEEL + farFoot.sole() * SOLE_DROP,
-            farToe = farAnkle + farFoot * BodyProportions.TOE + farFoot.sole() * SOLE_DROP,
-            farElbow = farElbow,
-            farWrist = farElbow + hanging(farArmSwing + farElbowAngleDeg) * BodyProportions.FOREARM,
-        )
+        val frame = BodyFrame()
+        frame.place(angles())
+        return frame.joints()
     }
 
     /** This pose [share] of the way to [to], from 0 to 1, every joint turning at once. */
@@ -196,57 +164,164 @@ data class BodyPose(
     internal companion object {
         const val JOINTS = 10
 
-        /** How far under the ankle the middle of the sole is. */
-        private const val SOLE_DROP = BodyProportions.ANKLE - BodyProportions.SOLE
+        /** Each joint's place among [angles]. */
+        const val HIP = 0
+        const val KNEE = 1
+        const val TORSO = 2
+        const val SHOULDER = 3
+        const val ELBOW = 4
+        const val BELL = 5
+        const val FAR_HIP = 6
+        const val FAR_KNEE = 7
+        const val FAR_SHOULDER = 8
+        const val FAR_ELBOW = 9
 
         /** The pose whose joints are [angles], in the order [BodyPose.angles] gives them. */
-        fun of(angles: FloatArray): BodyPose {
-            @Suppress("detekt.MagicNumber") // Each joint's place in the array.
-            return BodyPose(
-                hipAngleDeg = angles[0],
-                kneeAngleDeg = angles[1],
-                torsoAngleDeg = angles[2],
-                shoulderAngleDeg = angles[3],
-                elbowAngleDeg = angles[4],
-                bellAngleDeg = angles[5],
-                farHipAngleDeg = angles[6],
-                farKneeAngleDeg = angles[7],
-                farShoulderAngleDeg = angles[8],
-                farElbowAngleDeg = angles[9],
-            )
-        }
-
-        /** The way a part standing on its joint points, leaning [leanDeg] forward from straight up. */
-        private fun rising(leanDeg: Float): Offset = Angles.radians(leanDeg).let { Offset(sin(it), cos(it)) }
-
-        /** The way a part hanging from its joint points, swung [swingDeg] forward from straight down. */
-        private fun hanging(swingDeg: Float): Offset = Angles.radians(swingDeg).let { Offset(sin(it), -cos(it)) }
-
-        /** The side of a foot pointing this way that its sole is on. */
-        private fun Offset.sole(): Offset = Offset(y, -x)
-
-        /**
-         * The way the foot at [ankle] points, under a shin that comes down to it along [shin]: square to the shin,
-         * as it stands, unless that would put its toes through the floor. Then it points as far that way as the
-         * floor lets it: a knee down behind lays the foot along the floor, its sole up.
-         */
-        private fun footFrom(ankle: Offset, shin: Offset): Offset {
-            val square = Offset(-shin.y, shin.x)
-            val toes = ankle.y + square.y * BodyProportions.TOE + square.sole().y * SOLE_DROP
-            if (toes >= BodyProportions.SOLE - FLOOR_SLACK) return square
-            // The toes' height is the ankle's plus a sine of the foot's angle: the two angles that put them on
-            // the floor, and of those the one nearer to square.
-            val reach = hypot(BodyProportions.TOE, SOLE_DROP)
-            val tilt = atan2(SOLE_DROP, BodyProportions.TOE)
-            val down = asin(((BodyProportions.SOLE - ankle.y) / reach).coerceIn(-1f, 1f))
-            val squareAngle = atan2(square.y, square.x)
-            val angle = listOf(down + tilt, PI.toFloat() - down + tilt).minBy { turn(it - squareAngle) }
-            return Offset(cos(angle), sin(angle))
-        }
-
-        /** How far apart two directions [radians] apart are, the short way round. */
-        private fun turn(radians: Float): Float = abs(atan2(sin(radians), cos(radians)))
-
-        private const val FLOOR_SLACK = 0.001f
+        fun of(angles: FloatArray): BodyPose = BodyPose(
+            hipAngleDeg = angles[HIP],
+            kneeAngleDeg = angles[KNEE],
+            torsoAngleDeg = angles[TORSO],
+            shoulderAngleDeg = angles[SHOULDER],
+            elbowAngleDeg = angles[ELBOW],
+            bellAngleDeg = angles[BELL],
+            farHipAngleDeg = angles[FAR_HIP],
+            farKneeAngleDeg = angles[FAR_KNEE],
+            farShoulderAngleDeg = angles[FAR_SHOULDER],
+            farElbowAngleDeg = angles[FAR_ELBOW],
+        )
     }
 }
+
+/**
+ * Where a stance's joints are, worked out in place: [place] moves each to where a stance's angles put it and makes
+ * nothing new, so a diagram that runs keeps one of these and places it again every frame. [joints] is the same as
+ * a value, for whatever keeps it.
+ */
+internal class BodyFrame {
+    val ankle = Offset(0f, BodyProportions.ANKLE)
+    var knee = Offset.Zero
+        private set
+    var hip = Offset.Zero
+        private set
+    var shoulder = Offset.Zero
+        private set
+    var elbow = Offset.Zero
+        private set
+    var wrist = Offset.Zero
+        private set
+    var headCenter = Offset.Zero
+        private set
+    var kettlebellAnchor = Offset.Zero
+        private set
+    var kettlebellCenter = Offset.Zero
+        private set
+    var farKnee = Offset.Zero
+        private set
+    var farAnkle = Offset.Zero
+        private set
+    var farHeel = Offset.Zero
+        private set
+    var farToe = Offset.Zero
+        private set
+    var farElbow = Offset.Zero
+        private set
+    var farWrist = Offset.Zero
+        private set
+
+    /** Whether the far leg or arm is anywhere but behind the near one ([BodyPose.showsFarSide]). */
+    var showsFarSide = false
+        private set
+
+    /**
+     * Puts the joints where [angles] have them ([BodyPose.angles]' order): up the near leg from its ankle, which
+     * never leaves its place, out along the near arm to the bell, then down the far leg from the hip and along
+     * the far arm from the shoulder.
+     */
+    fun place(angles: FloatArray) {
+        val torso = angles[BodyPose.TORSO]
+        val thighLean = torso - angles[BodyPose.HIP]
+        val armSwing = angles[BodyPose.SHOULDER] - torso
+        val forearmSwing = armSwing + angles[BodyPose.ELBOW]
+        knee = ankle + rising(thighLean + angles[BodyPose.KNEE]) * BodyProportions.SHIN
+        hip = knee + rising(thighLean) * BodyProportions.THIGH
+        shoulder = hip + rising(torso) * BodyProportions.TORSO
+        elbow = shoulder + hanging(armSwing) * BodyProportions.UPPER_ARM
+        wrist = elbow + hanging(forearmSwing) * BodyProportions.FOREARM
+        headCenter = shoulder + rising(torso) * BodyProportions.NECK
+        kettlebellAnchor = wrist + hanging(forearmSwing) * BodyProportions.HAND
+        kettlebellCenter = kettlebellAnchor +
+            hanging(forearmSwing + angles[BodyPose.BELL]) * (BodyProportions.BELL_HANDLE + BodyProportions.BELL_RADIUS)
+        val farThighSwing = angles[BodyPose.FAR_HIP] - torso
+        val farShin = hanging(farThighSwing - angles[BodyPose.FAR_KNEE])
+        farKnee = hip + hanging(farThighSwing) * BodyProportions.THIGH
+        farAnkle = farKnee + farShin * BodyProportions.SHIN
+        val farFoot = footFrom(farAnkle, farShin)
+        farHeel = farAnkle - farFoot * BodyProportions.HEEL + farFoot.sole() * SOLE_DROP
+        farToe = farAnkle + farFoot * BodyProportions.TOE + farFoot.sole() * SOLE_DROP
+        val farArmSwing = angles[BodyPose.FAR_SHOULDER] - torso
+        farElbow = shoulder + hanging(farArmSwing) * BodyProportions.UPPER_ARM
+        farWrist = farElbow + hanging(farArmSwing + angles[BodyPose.FAR_ELBOW]) * BodyProportions.FOREARM
+        showsFarSide = angles[BodyPose.FAR_HIP] != angles[BodyPose.HIP] ||
+            angles[BodyPose.FAR_KNEE] != angles[BodyPose.KNEE] ||
+            angles[BodyPose.FAR_SHOULDER] != angles[BodyPose.SHOULDER] ||
+            angles[BodyPose.FAR_ELBOW] != angles[BodyPose.ELBOW]
+    }
+
+    /** The joints where they now are, as a value. */
+    fun joints() = BodyJoints(
+        ankle = ankle,
+        knee = knee,
+        hip = hip,
+        shoulder = shoulder,
+        elbow = elbow,
+        wrist = wrist,
+        headCenter = headCenter,
+        kettlebellAnchor = kettlebellAnchor,
+        kettlebellCenter = kettlebellCenter,
+        farKnee = farKnee,
+        farAnkle = farAnkle,
+        farHeel = farHeel,
+        farToe = farToe,
+        farElbow = farElbow,
+        farWrist = farWrist,
+    )
+}
+
+/** How far under the ankle the middle of the sole is. */
+private const val SOLE_DROP = BodyProportions.ANKLE - BodyProportions.SOLE
+
+/** How near the floor a foot's toes may come before it is laid along it. */
+private const val FLOOR_SLACK = 0.001f
+
+/** The way a part standing on its joint points, leaning [leanDeg] forward from straight up. */
+private fun rising(leanDeg: Float): Offset = Angles.radians(leanDeg).let { Offset(sin(it), cos(it)) }
+
+/** The way a part hanging from its joint points, swung [swingDeg] forward from straight down. */
+private fun hanging(swingDeg: Float): Offset = Angles.radians(swingDeg).let { Offset(sin(it), -cos(it)) }
+
+/** The side of a foot pointing this way that its sole is on. */
+private fun Offset.sole(): Offset = Offset(y, -x)
+
+/**
+ * The way the foot at [ankle] points, under a shin that comes down to it along [shin]: square to the shin, as it
+ * stands, unless that would put its toes through the floor. Then it points as far that way as the floor lets it:
+ * a knee down behind lays the foot along the floor, its sole up.
+ */
+private fun footFrom(ankle: Offset, shin: Offset): Offset {
+    val square = Offset(-shin.y, shin.x)
+    val toes = ankle.y + square.y * BodyProportions.TOE + square.sole().y * SOLE_DROP
+    if (toes >= BodyProportions.SOLE - FLOOR_SLACK) return square
+    // The toes' height is the ankle's plus a sine of the foot's angle: the two angles that put them on the floor,
+    // and of those the one nearer to square.
+    val reach = hypot(BodyProportions.TOE, SOLE_DROP)
+    val tilt = atan2(SOLE_DROP, BodyProportions.TOE)
+    val down = asin(((BodyProportions.SOLE - ankle.y) / reach).coerceIn(-1f, 1f))
+    val squareAngle = atan2(square.y, square.x)
+    val near = down + tilt
+    val far = PI.toFloat() - down + tilt
+    val angle = if (turn(near - squareAngle) <= turn(far - squareAngle)) near else far
+    return Offset(cos(angle), sin(angle))
+}
+
+/** How far apart two directions [radians] apart are, the short way round. */
+private fun turn(radians: Float): Float = abs(atan2(sin(radians), cos(radians)))

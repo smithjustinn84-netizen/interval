@@ -27,6 +27,7 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.LiftAppFixture
 import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * Lift's acceptance tests in the words of its journeys (the `lift-*` and `exercise-library` files in
@@ -466,27 +467,63 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     fun seeNoDemonstration() = seeNo(hasContentDescription("shown by a figure", substring = true))
 
-    /** [exercise]'s page draws it from the side with its bell's path, under what that part of the rep is called. */
-    fun seeBellPath(exercise: String, phase: String) {
+    /**
+     * [exercise]'s page draws it from the side with its bell's path, under what that part of the rep is called and
+     * the [cue] for it.
+     */
+    fun seeBellPath(exercise: String, phase: String, cue: String) {
         see("Bell path")
         see(hasContentDescription("$exercise from the side, with the path its bell takes"))
         see(phase)
+        see(cue)
     }
 
     fun seeNoBellPath() = seeNo("Bell path")
 
-    /** Touching the bar under the bell's path [at] that share of the way along holds the rep in [phase]. */
-    fun scrubBellPath(at: Float, phase: String) {
+    /** The bell's path leads [exercise]'s page: its card is over the figure's. */
+    fun seeBellPathLeads(exercise: String) {
+        val path = ui.onNode(hasContentDescription("$exercise from the side, with the path its bell takes"))
+        val figure = ui.onNode(hasContentDescription("$exercise, shown by a figure"))
+        assertTrue(
+            path.fetchSemanticsNode().boundsInRoot.top < figure.fetchSemanticsNode().boundsInRoot.top,
+            "The bell's path is over the figure",
+        )
+    }
+
+    /**
+     * Touching the bar under the bell's path [at] that share of the way along holds the rep in [phase], with its
+     * [cue], and offers to play it on.
+     */
+    fun scrubBellPath(at: Float, phase: String, cue: String) {
         ui.onNode(hasContentDescription("Where in the bell's path"))
             .performSemanticsAction(SemanticsActions.SetProgress) { it(at) }
         see(phase)
-        see("Resume")
+        see(cue)
+        see(hasContentDescription("Play the bell path"))
     }
 
-    /** Resume sets the held rep running again. */
-    fun resumeBellPath() {
-        tap("Resume")
-        seeNo("Resume")
+    /** Play sets the held rep running again. */
+    fun playBellPath() {
+        tapDescribed("Play the bell path")
+        see(hasContentDescription("Pause the bell path"))
+        seeNo(hasContentDescription("Play the bell path"))
+    }
+
+    /** Pause holds the rep where it is. */
+    fun pauseBellPath() {
+        tapDescribed("Pause the bell path")
+        see(hasContentDescription("Play the bell path"))
+    }
+
+    /** The bell's path runs at half speed, for a form check, and at its own again. */
+    fun slowBellPath() {
+        tap("1×")
+        see("0.5×")
+    }
+
+    fun fullSpeedBellPath() {
+        tap("0.5×")
+        see("1×")
     }
 
     fun pauseDemonstration() {
