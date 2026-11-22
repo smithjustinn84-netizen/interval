@@ -34,6 +34,7 @@
     <string name="log_title">Add to the session</string>
     <string name="log_edit_title">Change the set</string>
     <string name="log_edit_save">Save set</string>
+    <string name="log_edit_remove">Remove set</string>
     <string name="session_edit_set_cd">Change %1$s</string>
     <string name="log_kind_set">A set</string>
     <string name="log_kind_emom">An EMOM</string>

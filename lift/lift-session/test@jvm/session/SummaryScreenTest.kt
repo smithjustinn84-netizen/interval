@@ -159,12 +159,13 @@ class SummaryScreenTest {
     }
 
     @Test
-    fun `a session's page says how it went once something was said`() = runUiTest {
-        var shown by mutableStateOf(LiftDetailUiState(session, "Saturday", "1:21 PM"))
+    fun `a session's page shows how it went for inline editing`() = runUiTest {
+        val shown = LiftDetailUiState(
+            session.copy(effort = PerceivedEffort.Steady, note = "Grip went"),
+            "Saturday",
+            "1:21 PM",
+        )
         setThemedContent(dark = true) { LiftDetailScreen(shown, onDelete = {}, onBack = {}) }
-        onNodeWithText("How it went").assertDoesNotExist()
-
-        shown = shown.copy(session = session.copy(effort = PerceivedEffort.Steady, note = "Grip went"))
         onNodeWithText("How it went").assertExists()
         onNodeWithText("Steady").assertExists()
         onNodeWithText("Grip went").assertExists()

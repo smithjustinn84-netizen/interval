@@ -12,6 +12,7 @@ import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.LoggedWorkout
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
@@ -31,6 +32,7 @@ import dev.justinsmith.interval.timer.monthStartAfter
 import dev.justinsmith.interval.timer.monthStartOf
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.data.LiftLogging
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.ProgramKey
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +52,8 @@ private const val KEY_MONTH_OFFSET = "history_month_offset"
 private const val KEY_OPEN_DAY = "history_open_day"
 private const val KEY_MOVING = "history_moving"
 private const val KEY_MOVING_FROM = "history_moving_from"
+private const val KEY_FILTER = "history_filter"
+private const val KEY_QUERY = "history_query"
 
 private fun SavedStateHandle.restoredView() = HistoryView(
     range = TrainingRange.entries.firstOrNull { it.name == get<String>(KEY_RANGE) } ?: TrainingRange.Week,
@@ -57,6 +61,8 @@ private fun SavedStateHandle.restoredView() = HistoryView(
     openDay = get<Long>(KEY_OPEN_DAY),
     moving = get<Long>(KEY_MOVING),
     movingFrom = get<Long>(KEY_MOVING_FROM),
+    filter = LogFilter.entries.firstOrNull { it.name == get<String>(KEY_FILTER) },
+    query = get<String>(KEY_QUERY).orEmpty(),
 )
 
 private fun SavedStateHandle.keep(view: HistoryView) {
@@ -65,12 +71,14 @@ private fun SavedStateHandle.keep(view: HistoryView) {
     this[KEY_OPEN_DAY] = view.openDay
     this[KEY_MOVING] = view.moving
     this[KEY_MOVING_FROM] = view.movingFrom
+    this[KEY_FILTER] = view.filter?.name
+    this[KEY_QUERY] = view.query
 }
 
 /**
- * What the screen is looking at, apart from the data: the range, the month, the open day and the plan being moved,
- * each kept in the entry's saved state so that they outlive the process. The locale is the screen's, set again as it
- * shows.
+ * What the screen is looking at, apart from the data: the range, the month, the open day, the plan being moved,
+ * and All time's filter and search query, each kept in the entry's saved state so that they outlive the process.
+ * The locale is the screen's, set again as it shows.
  */
 private data class HistoryView(
     val range: TrainingRange = TrainingRange.Week,
@@ -80,6 +88,8 @@ private data class HistoryView(
     val moving: Long? = null,
     val movingFrom: Long? = null,
     val locale: String? = null,
+    val filter: LogFilter? = null,
+    val query: String = "",
 )
 
 /**
@@ -142,6 +152,21 @@ class HistoryViewModel(
 
     fun setRange(range: TrainingRange) {
         changeView { it.copy(range = range) }
+    }
+
+    /** Narrows the All-time log to [filter], or clears the kind filter with null. */
+    fun setFilter(filter: LogFilter?) {
+        changeView { it.copy(filter = filter) }
+    }
+
+    /** Narrows the All-time log to rows matching [query]. */
+    fun setQuery(query: String) {
+        changeView { it.copy(query = query) }
+    }
+
+    /** Clears both the All-time filter chip and search query. */
+    fun clearFilters() {
+        changeView { it.copy(filter = null, query = "") }
     }
 
     /** Moves the calendar [months] months on, or back when negative. */
@@ -276,11 +301,18 @@ class HistoryViewModel(
         val classes = logged.classes.groupBy({ it.epochDay }) {
             ClassRow(it.startedAtEpochMillis, it.sport, it.rounds.size, formatClock(it.seconds))
         }
-        val sections = timestamps.sections(loggedWorkouts(history, lifts), sports, classes, log, today) {
+        val sessionsByUid = lifting.sessions.associateBy { it.uid }
+        val prUids = prSessionUids(lifting.sessions)
+        val allSections = timestamps.sections(loggedWorkouts(history, lifts), sports, classes, log, today) {
                 workout,
                 plans,
             ->
-            timestamps.item(workout, names, body, plans)
+            timestamps.item(workout, names, body, plans, sessionsByUid, prUids)
+        }
+        val sections = if (view.range == TrainingRange.AllTime && (view.filter != null || view.query.isNotBlank())) {
+            filterSections(allSections, view.filter, view.query, sessionsByUid)
+        } else {
+            allSections
         }
 
         val monthOf = monthStartAfter(today, view.monthOffset)
@@ -327,12 +359,15 @@ class HistoryViewModel(
             daySheet = view.openDay?.let { day ->
                 val training = log.day(day)
                 daySheet(training, timestamps.heading(day, today), past = day < today) {
-                    timestamps.item(it, names, body, training.plans)
+                    timestamps.item(it, names, body, training.plans, sessionsByUid, prUids)
                 }.copy(liftDay = liftLog?.on(day), classes = classes[day].orEmpty())
             },
             moveSheet = view.movingFrom?.let { from ->
                 planned.firstOrNull { it.id == view.moving }?.let { moveSheet(it, from, today, log) }
             },
+            filter = view.filter,
+            query = view.query,
+            hasHistory = allSections.isNotEmpty(),
         )
     }
 
@@ -365,6 +400,8 @@ private fun TimestampFormatter.item(
     names: WorkoutNames,
     body: BodySettings,
     plans: List<DayPlan>,
+    sessionsByUid: Map<String, LiftSession>,
+    prUids: Set<String>,
 ) =
     when (workout) {
         is LoggedWorkout.Interval -> workout.entry.let { entry ->
@@ -384,6 +421,7 @@ private fun TimestampFormatter.item(
         }
 
         is LoggedWorkout.Lift -> workout.workout.let { lift ->
+            val session = sessionsByUid[lift.uid]
             HistoryItem(
                 presetName = lift.title,
                 config = IntervalConfig(activity = Activity.Kettlebell),
@@ -393,6 +431,9 @@ private fun TimestampFormatter.item(
                 calories = lift.calories(body),
                 planned = plans.any { it.liftUid == lift.uid },
                 liftUid = lift.uid,
+                effort = PerceivedEffort.of(session?.effort?.level),
+                note = session?.note,
+                hasPr = lift.uid in prUids,
             )
         }
     }

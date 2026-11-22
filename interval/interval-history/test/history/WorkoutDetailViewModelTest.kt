@@ -12,6 +12,7 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CapRound
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.model.asPlan
@@ -283,5 +284,25 @@ class WorkoutDetailViewModelTest : MainDispatcherTest() {
 
         assertNull(workout.recovery)
         assertNull(workout.heartLoad)
+    }
+
+    @Test
+    fun `editing effort and note on the detail page persists to history`() {
+        repository.history.recordWorkout(hiit.config, elapsedSeconds = 580)
+        val viewModel = viewModel()
+
+        viewModel.setEffort(PerceivedEffort.Hard)
+        assertEquals(PerceivedEffort.Hard, viewModel.state.value.workout?.effort)
+
+        viewModel.setNote("Kept steady pace")
+        assertEquals("Kept steady pace", viewModel.state.value.workout?.note)
+        assertEquals(PerceivedEffort.Hard, viewModel.state.value.workout?.effort)
+
+        viewModel.setEffort(null)
+        assertNull(viewModel.state.value.workout?.effort)
+        assertEquals("Kept steady pace", viewModel.state.value.workout?.note)
+
+        viewModel.setNote("   ")
+        assertNull(viewModel.state.value.workout?.note)
     }
 }

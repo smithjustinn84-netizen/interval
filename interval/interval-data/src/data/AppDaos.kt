@@ -39,6 +39,10 @@ interface HistoryDao {
     @Query("UPDATE history SET effort = :effort, note = :note, updated_at = :now WHERE uid = :uid")
     suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long)
 
+    /** As [reflect], for the workout stored under [id]. */
+    @Query("UPDATE history SET effort = :effort, note = :note, updated_at = :now WHERE id = :id")
+    suspend fun reflectOf(id: Long, effort: Int?, note: String?, now: Long)
+
     /** Keeps the heart rate of the workout [uid], at [now], unless it has one: the first found stays. */
     @Query(
         "UPDATE history SET average_bpm = :average, peak_bpm = :peak, updated_at = :now " +

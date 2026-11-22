@@ -67,6 +67,7 @@ class InMemoryDataStore(initial: Preferences = emptyPreferences()) : DataStore<P
 }
 
 /** A [HistoryDao] over a list, newest first like the real query. */
+@Suppress("detekt.TooManyFunctions")
 class FakeHistoryDao : HistoryDao {
     private val rows = MutableStateFlow(emptyList<HistoryEntity>())
     private val ids = AutoIds()
@@ -113,9 +114,15 @@ class FakeHistoryDao : HistoryDao {
         }
     }
 
-    override suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long) {
+    override suspend fun reflect(uid: String, effort: Int?, note: String?, now: Long) =
+        reflectWhere(effort, note, now) { it.uid == uid }
+
+    override suspend fun reflectOf(id: Long, effort: Int?, note: String?, now: Long) =
+        reflectWhere(effort, note, now) { it.id == id }
+
+    private fun reflectWhere(effort: Int?, note: String?, now: Long, which: (HistoryEntity) -> Boolean) {
         rows.update { all ->
-            all.map { if (it.uid == uid) it.copy(effort = effort, note = note, updatedAtEpochMillis = now) else it }
+            all.map { if (which(it)) it.copy(effort = effort, note = note, updatedAtEpochMillis = now) else it }
         }
     }
 

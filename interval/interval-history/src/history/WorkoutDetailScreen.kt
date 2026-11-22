@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -35,6 +36,7 @@ import dev.justinsmith.interval.history.resources.detail_delete_menu
 import dev.justinsmith.interval.history.resources.detail_delete_text
 import dev.justinsmith.interval.history.resources.detail_delete_title
 import dev.justinsmith.interval.history.resources.detail_how_it_went
+import dev.justinsmith.interval.history.resources.detail_note_placeholder
 import dev.justinsmith.interval.history.resources.detail_plan_again
 import dev.justinsmith.interval.history.resources.detail_planned_done
 import dev.justinsmith.interval.history.resources.detail_repeat
@@ -67,6 +69,7 @@ import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.HeartRateChart
 import dev.justinsmith.interval.ui.HeartReading
+import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IconAction
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalMenu
@@ -139,6 +142,8 @@ fun WorkoutDetailRoute(
         inPane = inPane,
         onShare = sharer::shareText,
         onCountSnatches = viewModel::countSnatches,
+        onEffortChange = viewModel::setEffort,
+        onNoteChange = viewModel::setNote,
     )
 }
 
@@ -161,6 +166,8 @@ fun WorkoutDetailScreen(
     onShare: (String) -> Unit = {},
     onCountSnatches: (SnatchCount?) -> Unit = {},
     onUseMax: (Int) -> Unit = {},
+    onEffortChange: (PerceivedEffort?) -> Unit = {},
+    onNoteChange: (String) -> Unit = {},
 ) {
     val workout = state.workout ?: return
     var menu by rememberSaveable { mutableStateOf(false) }
@@ -201,7 +208,7 @@ fun WorkoutDetailScreen(
         },
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(Spacing.space16)) {
-            DetailFigures(workout, onUseMax)
+            DetailFigures(workout, onUseMax, onEffortChange, onNoteChange)
             workout.snatches?.let { ask -> SummaryCard { SnatchQuestion(ask, onCountSnatches) } }
             AccentButton(stringResource(Res.string.detail_repeat), onRepeat, Modifier.fillMaxWidth())
             SecondaryButton(stringResource(Res.string.detail_plan_again), { planning = true }, Modifier.fillMaxWidth())
@@ -235,7 +242,12 @@ fun WorkoutDetailScreen(
 
 /** When it was, its shape, its total with any badge, its timeline and its figures. */
 @Composable
-private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
+private fun DetailFigures(
+    workout: FinishedWorkout,
+    onUseMax: (Int) -> Unit,
+    onEffortChange: (PerceivedEffort?) -> Unit,
+    onNoteChange: (String) -> Unit,
+) {
     val palette = IntervalTheme.palette
     Column(Modifier.padding(horizontal = Spacing.space4)) {
         Text(
@@ -290,15 +302,19 @@ private fun DetailFigures(workout: FinishedWorkout, onUseMax: (Int) -> Unit) {
         HeartInsights(heartRate.peakBpm, workout.recovery, workout.heartLoad)
         workout.peakAboveMax?.let { peak -> MaxNudge(peak, workout.maxHeartRate, onUse = { onUseMax(peak) }) }
     }
-    if (workout.effort != null || workout.note != null) {
-        SummaryCard {
-            Text(
-                stringResource(Res.string.detail_how_it_went),
-                style = IntervalTheme.type.caption,
-                color = palette.textDim,
+    SummaryCard {
+        key(workout.id) {
+            HowWasIt(
+                title = stringResource(Res.string.detail_how_it_went),
+                efforts = PerceivedEffort.entries,
+                effort = workout.effort,
+                effortLabel = { effortWord(it.level) },
+                onEffortChange = { picked -> onEffortChange(if (picked == workout.effort) null else picked) },
+                note = workout.note.orEmpty(),
+                onNoteChange = onNoteChange,
+                notePlaceholder = stringResource(Res.string.detail_note_placeholder),
+                noteMaxLength = PerceivedEffort.NOTE_MAX_LENGTH,
             )
-            workout.effort?.let { Text(effortWord(it.level), style = IntervalTheme.type.value, color = palette.text) }
-            workout.note?.let { Text(it, style = IntervalTheme.type.body, color = palette.text) }
         }
     }
 }

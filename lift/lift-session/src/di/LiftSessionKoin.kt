@@ -56,5 +56,5 @@ val liftSessionModule: Module = module {
         ProgramEditorViewModel(get(), get(), get(), get(), get(), uid, get(), copy)
     }
     viewModelOf(::ProgramProgressViewModel)
-    viewModel { (uid: String) -> LiftDetailViewModel(uid, get(), get(), get(), get(), get()) }
+    viewModel { (uid: String) -> LiftDetailViewModel(uid, get(), get(), get(), get(), get(), get(), get()) }
 }

@@ -9,6 +9,9 @@ import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.interval.timer.Flow as MobilityFlow
 
+/** A kind or milestone filter on the All-time log. */
+enum class LogFilter { Strength, Conditioning, Mobility, Sport, Prs }
+
 data class HistoryItem(
     /** The matching preset's name, or null for a workout no preset has; the row then leads with its shape. */
     val presetName: String?,
@@ -33,6 +36,8 @@ data class HistoryItem(
     val note: String? = null,
     /** The rounds done in its time caps, as they were counted; null for a workout with none counted. */
     val capRounds: Int? = null,
+    /** Whether this Lift session set at least one personal record against earlier sessions. */
+    val hasPr: Boolean = false,
 )
 
 /** A class recorded on a sensor, as its sport's row says it: found again by the moment it started. */
@@ -243,15 +248,27 @@ data class HistoryUiState(
     val liftLog: LiftLog? = null,
     /** Not built yet: the screen waits rather than taking it for the first run. */
     val loading: Boolean = false,
+    /** Active kind/milestone filter on All time; null shows everything. */
+    val filter: LogFilter? = null,
+    /** Active text search query on All time; blank shows everything. */
+    val query: String = "",
+    /** True when the unfiltered log has at least one entry, even if the active filter hides them all. */
+    val hasHistory: Boolean = sections.isNotEmpty(),
 ) {
     /** Nothing done and nothing planned: the first run. */
-    val isEmpty: Boolean get() = !loading && sections.isEmpty() && !hasPlans
+    val isEmpty: Boolean get() = !loading && !hasHistory && !hasPlans
+
+    /** Whether All time's log is currently narrowed by a filter chip or search query. */
+    val isFiltered: Boolean get() = range == TrainingRange.AllTime && (filter != null || query.isNotBlank())
+
+    /** True when the user has logged history, but the active All-time filter/query matched nothing. */
+    val filteredEmpty: Boolean get() = !loading && hasHistory && sections.isEmpty() && isFiltered
 
     /** This week's count, goal and streak together, as the goal row takes them. */
     val weekGoal: WeekGoal get() = WeekGoal(weekCount, weekLifts, goal, streak, weekSports, weekMobility, weekIntervals)
 
     companion object {
         /** What the screen shows until the first state is built. */
-        val Loading = HistoryUiState(sections = emptyList(), loading = true)
+        val Loading = HistoryUiState(sections = emptyList(), loading = true, hasHistory = false)
     }
 }

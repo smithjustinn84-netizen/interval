@@ -13,6 +13,7 @@ import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.BodySettings
+import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
@@ -118,6 +119,7 @@ class HistoryViewModelTest : MainDispatcherTest() {
                 time = "at ${TODAY * DAY_MILLIS + DAY_MILLIS / 4}",
                 total = "26:10",
                 liftUid = "b1",
+                hasPr = true,
             ),
             swings,
         )
@@ -647,5 +649,97 @@ class HistoryViewModelTest : MainDispatcherTest() {
         val upNext = viewModel.state.value.upNext
         assertIs<UpNextItem.SportDay>(upNext.first())
         assertIs<UpNextItem.Lift>(upNext.last())
+    }
+
+    @Test
+    fun `all time filters by kind PRs and text search and restores from saved state`() {
+        val flow = builtInFlows.first()
+        at(TODAY - 2)
+        val uid = repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        repository.history.reflectOnWorkout(uid, PerceivedEffort.Hard, "Crispy sprints")
+        lift.finished("l1", "Swings", noonOf(TODAY - 2), noonOf(TODAY - 2) + 600_000, 24.0 to 10)
+
+        at(TODAY - 1)
+        repository.history.recordWorkout(flow.config(prepSeconds = 3), elapsedSeconds = 400)
+        // Lighter than l1: not a PR.
+        lift.finished("l2", "Light swings", noonOf(TODAY - 1), noonOf(TODAY - 1) + 600_000, 16.0 to 5)
+        viewModel.logSport(Sport.Bjj, TODAY - 1)
+
+        at(TODAY)
+        viewModel.setRange(TrainingRange.AllTime)
+        assertEquals(2, viewModel.state.value.sections.size)
+
+        viewModel.setFilter(LogFilter.Strength)
+        assertEquals(
+            listOf("Light swings", "Swings"),
+            viewModel.state.value.sections.flatMap { it.items }.map { it.presetName },
+        )
+        assertTrue(viewModel.state.value.sections.all { it.sports.isEmpty() })
+
+        viewModel.setFilter(LogFilter.Prs)
+        assertEquals(listOf("Swings"), viewModel.state.value.sections.flatMap { it.items }.map { it.presetName })
+        assertTrue(viewModel.state.value.sections.single().items.single().hasPr)
+
+        viewModel.setFilter(LogFilter.Conditioning)
+        assertEquals(listOf("Tabata"), viewModel.state.value.sections.flatMap { it.items }.map { it.presetName })
+
+        viewModel.setFilter(LogFilter.Mobility)
+        assertEquals(listOf(flow.name), viewModel.state.value.sections.flatMap { it.items }.map { it.presetName })
+
+        viewModel.setFilter(LogFilter.Sport)
+        assertEquals(listOf(Sport.Bjj), viewModel.state.value.sections.flatMap { it.sports })
+        assertTrue(viewModel.state.value.sections.all { it.items.isEmpty() })
+
+        // Text search matches notes, sport names, and Lift exercise keys.
+        viewModel.clearFilters()
+        viewModel.setQuery("crispy")
+        assertEquals(listOf("Tabata"), viewModel.state.value.sections.flatMap { it.items }.map { it.presetName })
+
+        viewModel.setQuery("bjj")
+        assertEquals(listOf(Sport.Bjj), viewModel.state.value.sections.flatMap { it.sports })
+
+        viewModel.setQuery("nothing matches this")
+        assertTrue(viewModel.state.value.filteredEmpty)
+        assertFalse(viewModel.state.value.isEmpty)
+
+        // Switching back to Week ignores the All-time filter.
+        viewModel.setRange(TrainingRange.Week)
+        assertEquals(2, viewModel.state.value.sections.size)
+        assertFalse(viewModel.state.value.filteredEmpty)
+
+        // SavedStateHandle restores filter and query.
+        val saved = SavedStateHandle()
+        val first = HistoryViewModel(
+            repository.history,
+            repository.presets,
+            repository.flows,
+            repository.plans,
+            repository.settings,
+            bells.sessions,
+            bells.sessions,
+            FixedTimestampFormatter,
+            { clock },
+            savedState = saved,
+            computation = UnconfinedTestDispatcher(),
+        )
+        first.setRange(TrainingRange.AllTime)
+        first.setFilter(LogFilter.Strength)
+        first.setQuery("light")
+        val restored = HistoryViewModel(
+            repository.history,
+            repository.presets,
+            repository.flows,
+            repository.plans,
+            repository.settings,
+            bells.sessions,
+            bells.sessions,
+            FixedTimestampFormatter,
+            { clock },
+            savedState = saved,
+            computation = UnconfinedTestDispatcher(),
+        )
+        assertEquals(LogFilter.Strength, restored.state.value.filter)
+        assertEquals("light", restored.state.value.query)
+        assertEquals(listOf("Light swings"), restored.state.value.sections.flatMap { it.items }.map { it.presetName })
     }
 }

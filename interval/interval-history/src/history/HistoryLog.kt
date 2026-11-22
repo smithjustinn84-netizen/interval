@@ -38,6 +38,7 @@ import dev.justinsmith.interval.history.resources.history_ended_early
 import dev.justinsmith.interval.history.resources.history_kind_conditioning
 import dev.justinsmith.interval.history.resources.history_kind_mobility
 import dev.justinsmith.interval.history.resources.history_kind_strength
+import dev.justinsmith.interval.history.resources.history_pr
 import dev.justinsmith.interval.history.resources.history_remove_cd
 import dev.justinsmith.interval.history.resources.history_sport_logged
 import dev.justinsmith.interval.history.resources.notice_plan_removed
@@ -329,6 +330,7 @@ private fun HistoryRowText(item: HistoryItem, name: String, day: DayMark?) {
         Column(Modifier.weight(1f)) {
             val detail = listOfNotNull(
                 kindLead(item),
+                stringResource(Res.string.history_pr).takeIf { item.hasPr },
                 item.capRounds?.let { pluralStringResource(Res.plurals.history_cap_rounds, it, it) },
                 stringResource(Res.string.history_ended_early).takeIf { item.endedEarly },
                 item.effort?.let { effortWord(it.level) },

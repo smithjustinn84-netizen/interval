@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
@@ -135,72 +136,111 @@ fun HistoryRoute(
     val notices = LocalNotices.current
     val undo = stringResource(Res.string.notice_undo)
     val actions = remember(viewModel, notices, undo) {
-        // Every way off the day sheet to another page closes it first, so it isn't open on the way back.
-        fun leavingSheet(go: () -> Unit) {
-            viewModel.openDay(null)
-            go()
-        }
-        HistoryActions(
-            onRange = viewModel::setRange,
-            onShiftMonth = viewModel::shiftMonth,
-            onOpenDay = viewModel::openDay,
-            onStart = { name, config ->
-                val flow = flowKeyOf(config, flows.flows.value)
-                if (flow == null) viewModel.putOnTimer(name, config)
-                leavingSheet { startWorkout(flow) }
-            },
-            onRemovePlanned = { planId, removedText ->
-                viewModel.removePlanned(planId)?.let { plan ->
-                    notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(plan) })
-                }
-            },
-            onOpenMove = viewModel::openMove,
-            onCloseMove = { viewModel.openMove(null) },
-            onMovePlanned = { toDay, movedText ->
-                viewModel.movePlanned(toDay)?.let { move ->
-                    notices.show(movedText, NoticeAction(undo) { viewModel.unmovePlanned(move) })
-                }
-            },
-            onLogSport = { sport, day, loggedText ->
-                viewModel.logSport(sport, day)
-                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
-            },
-            onLogWorkout = { config, day, loggedText ->
-                val uid = viewModel.logWorkout(config, day)
-                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogWorkout(uid) })
-            },
-            onLogLift = { title, day, loggedText ->
-                viewModel.logLiftDay(title, day)?.let { uid ->
-                    notices.show(loggedText, NoticeAction(undo) { viewModel.unlogLiftDay(uid) })
-                }
-            },
-            onUnlogSport = { sport, day, removedText ->
-                viewModel.unlogSport(sport, day)
-                notices.show(removedText, NoticeAction(undo) { viewModel.logSport(sport, day) })
-            },
-            onPlanWeekly = viewModel::planWeekly,
-            onPlanOnce = viewModel::planOnce,
-            onOpenWorkout = { leavingSheet { openWorkout(it) } },
-            onPlan = { leavingSheet(plan) },
-            onShowTimer = { showTimer() },
-            onOpenLift = { leavingSheet { openLift(it) } },
-            onOpenClass = { leavingSheet { openClass(it) } },
-            onStartLift = { program ->
-                // Lift starts nothing while a session is in progress, so with one under way this resumes it.
-                viewModel.startLift(program)
-                leavingSheet(startSession)
-            },
-            onOpenSettings = { openSettings() },
-            onSetup = { setup() },
+        historyActions(
+            viewModel = viewModel,
+            flows = flows,
+            notices = notices,
+            undo = undo,
+            startWorkout = { startWorkout(it) },
+            openWorkout = { openWorkout(it) },
+            openLift = { openLift(it) },
+            openClass = { openClass(it) },
+            plan = { plan() },
+            showTimer = { showTimer() },
+            startSession = { startSession() },
+            openSettings = { openSettings() },
+            setup = { setup() },
         )
     }
     HistoryScreen(state, actions, modifier, selectedWorkout, selectedLift)
+}
+
+@Suppress("detekt.LongParameterList")
+private fun historyActions(
+    viewModel: HistoryViewModel,
+    flows: FlowStore,
+    notices: dev.justinsmith.interval.ui.Notices,
+    undo: String,
+    startWorkout: (String?) -> Unit,
+    openWorkout: (Long) -> Unit,
+    openLift: (String) -> Unit,
+    openClass: (Long) -> Unit,
+    plan: () -> Unit,
+    showTimer: () -> Unit,
+    startSession: () -> Unit,
+    openSettings: () -> Unit,
+    setup: () -> Unit,
+): HistoryActions {
+    // Every way off the day sheet to another page closes it first, so it isn't open on the way back.
+    fun leavingSheet(go: () -> Unit) {
+        viewModel.openDay(null)
+        go()
+    }
+    return HistoryActions(
+        onRange = viewModel::setRange,
+        onFilter = viewModel::setFilter,
+        onQuery = viewModel::setQuery,
+        onClearFilters = viewModel::clearFilters,
+        onShiftMonth = viewModel::shiftMonth,
+        onOpenDay = viewModel::openDay,
+        onStart = { name, config ->
+            val flow = flowKeyOf(config, flows.flows.value)
+            if (flow == null) viewModel.putOnTimer(name, config)
+            leavingSheet { startWorkout(flow) }
+        },
+        onRemovePlanned = { planId, removedText ->
+            viewModel.removePlanned(planId)?.let { planned ->
+                notices.show(removedText, NoticeAction(undo) { viewModel.restorePlanned(planned) })
+            }
+        },
+        onOpenMove = viewModel::openMove,
+        onCloseMove = { viewModel.openMove(null) },
+        onMovePlanned = { toDay, movedText ->
+            viewModel.movePlanned(toDay)?.let { move ->
+                notices.show(movedText, NoticeAction(undo) { viewModel.unmovePlanned(move) })
+            }
+        },
+        onLogSport = { sport, day, loggedText ->
+            viewModel.logSport(sport, day)
+            notices.show(loggedText, NoticeAction(undo) { viewModel.unlogSport(sport, day) })
+        },
+        onLogWorkout = { config, day, loggedText ->
+            val uid = viewModel.logWorkout(config, day)
+            notices.show(loggedText, NoticeAction(undo) { viewModel.unlogWorkout(uid) })
+        },
+        onLogLift = { title, day, loggedText ->
+            viewModel.logLiftDay(title, day)?.let { uid ->
+                notices.show(loggedText, NoticeAction(undo) { viewModel.unlogLiftDay(uid) })
+            }
+        },
+        onUnlogSport = { sport, day, removedText ->
+            viewModel.unlogSport(sport, day)
+            notices.show(removedText, NoticeAction(undo) { viewModel.logSport(sport, day) })
+        },
+        onPlanWeekly = viewModel::planWeekly,
+        onPlanOnce = viewModel::planOnce,
+        onOpenWorkout = { leavingSheet { openWorkout(it) } },
+        onPlan = { leavingSheet(plan) },
+        onShowTimer = showTimer,
+        onOpenLift = { leavingSheet { openLift(it) } },
+        onOpenClass = { leavingSheet { openClass(it) } },
+        onStartLift = { program ->
+            // Lift starts nothing while a session is in progress, so with one under way this resumes it.
+            viewModel.startLift(program)
+            leavingSheet(startSession)
+        },
+        onOpenSettings = openSettings,
+        onSetup = setup,
+    )
 }
 
 /** What the History tab's controls do. Each defaults to nothing, so a preview or test sets only its own. */
 @Immutable
 class HistoryActions(
     val onRange: (TrainingRange) -> Unit = {},
+    val onFilter: (LogFilter?) -> Unit = {},
+    val onQuery: (String) -> Unit = {},
+    val onClearFilters: () -> Unit = {},
     val onShiftMonth: (Int) -> Unit = {},
     /** Opens the day sheet on an epoch day, or closes it with null. */
     val onOpenDay: (Long?) -> Unit = {},
@@ -282,7 +322,7 @@ fun HistoryScreen(
     }
     val groups = remember(state.range, state.sections, state.weekStart) { state.logGroups() }
     BoxWithConstraints(modifier.fillMaxSize()) {
-        if (maxWidth >= Sizes.listColumn * 2 && state.sections.isNotEmpty()) {
+        if (maxWidth >= Sizes.listColumn * 2 && state.hasHistory) {
             SummaryBesideLog(title, titleActions, state, groups, actions, selected, onLook = { looking = it })
         } else {
             TabGrid(title, actions = titleActions) {
@@ -294,7 +334,7 @@ fun HistoryScreen(
                 } else if (!state.loading) {
                     summaryItems(state, actions, onLook = { looking = it })
                 }
-                logItems(groups, actions, selected)
+                filterAndLogItems(state, groups, actions, selected)
             }
         }
     }
@@ -428,25 +468,80 @@ private fun SummaryBesideLog(
                     Modifier.weight(1f).fillMaxHeight(),
                     contentPadding = PaddingValues(bottom = Spacing.space24),
                 ) {
-                    groups.forEach { (heading, sections) ->
-                        heading?.let {
-                            item(key = it.name, contentType = it) {
-                                LogHeading(it, Modifier.animateItem().then(Gutter))
-                            }
-                        }
-                        if (heading == LogGroup.ThisWeek) {
-                            item(key = DONE_WEEK, contentType = DONE_WEEK) {
-                                WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
-                            }
-                        } else {
-                            items(sections, key = { it.dayNumber }, contentType = { DAY_SECTION }) { section ->
-                                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
-                            }
-                        }
-                    }
+                    logColumnItems(state, groups, actions, selected)
                 }
             }
         }
+    }
+}
+
+private fun LazyListScope.logColumnItems(
+    state: HistoryUiState,
+    groups: List<Pair<LogGroup?, List<HistorySection>>>,
+    actions: HistoryActions,
+    selected: (HistoryItem) -> Boolean,
+) {
+    if (state.showsFilterBar) {
+        item(key = "filterBar", contentType = "filterBar") {
+            LogFilterBar(
+                filter = state.filter,
+                query = state.query,
+                onFilter = actions.onFilter,
+                onQuery = actions.onQuery,
+                onClear = actions.onClearFilters,
+                modifier = Modifier.animateItem().then(Gutter).padding(bottom = Spacing.space12),
+            )
+        }
+    }
+    if (state.filteredEmpty) {
+        item(key = "filteredEmpty", contentType = "filteredEmpty") {
+            FilteredEmptyCard(onClear = actions.onClearFilters, modifier = Modifier.animateItem().then(Gutter))
+        }
+        return
+    }
+    groups.forEach { (heading, sections) ->
+        heading?.let {
+            item(key = it.name, contentType = it) { LogHeading(it, Modifier.animateItem().then(Gutter)) }
+        }
+        if (heading == LogGroup.ThisWeek) {
+            item(key = DONE_WEEK, contentType = DONE_WEEK) {
+                WeekDoneCard(sections, actions, selected, Modifier.animateItem().then(DoneWeekCard))
+            }
+        } else {
+            items(sections, key = { it.dayNumber }, contentType = { DAY_SECTION }) { section ->
+                DaySection(section, actions, selected, Modifier.animateItem().then(Gutter))
+            }
+        }
+    }
+}
+
+private fun LazyStaggeredGridScope.filterAndLogItems(
+    state: HistoryUiState,
+    groups: List<Pair<LogGroup?, List<HistorySection>>>,
+    actions: HistoryActions,
+    selected: (HistoryItem) -> Boolean,
+) {
+    if (state.showsFilterBar) {
+        item(key = "filterBar", span = StaggeredGridItemSpan.FullLine) {
+            LogFilterBar(
+                filter = state.filter,
+                query = state.query,
+                onFilter = actions.onFilter,
+                onQuery = actions.onQuery,
+                onClear = actions.onClearFilters,
+                modifier = Modifier.animateItem().then(Gutter).padding(top = Spacing.space16),
+            )
+        }
+    }
+    if (state.filteredEmpty) {
+        item(key = "filteredEmpty", span = StaggeredGridItemSpan.FullLine) {
+            FilteredEmptyCard(
+                onClear = actions.onClearFilters,
+                modifier = Modifier.animateItem().then(Gutter).padding(top = Spacing.space12),
+            )
+        }
+    } else {
+        logItems(groups, actions, selected)
     }
 }
 
@@ -606,6 +701,10 @@ private fun LogHeading(group: LogGroup, modifier: Modifier = Modifier) {
 /** All time lists the shapes done most, once there are any. */
 private val HistoryUiState.showsMostDone: Boolean
     get() = range == TrainingRange.AllTime && mostDone.isNotEmpty()
+
+/** All time shows the search and filter bar once there is at least one logged entry. */
+private val HistoryUiState.showsFilterBar: Boolean
+    get() = !loading && range == TrainingRange.AllTime && hasHistory
 
 /**
  * Before anything is done or planned: what History keeps, and the ways to begin, as Today's empty card has them:

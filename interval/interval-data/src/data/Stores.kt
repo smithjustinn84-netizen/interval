@@ -96,6 +96,9 @@ interface HistoryStore {
 
     fun reflectOnWorkout(uid: String, effort: PerceivedEffort?, note: String)
 
+    /** As [reflectOnWorkout], for the workout stored under [id]: from its page in the Log. */
+    fun reflectOnWorkoutOf(id: Long, effort: PerceivedEffort?, note: String)
+
     /** Keeps the [heartRate] of the workout [uid] unless it has one: the first found stays. */
     fun keepHeartRate(uid: String, heartRate: HeartRate)
 

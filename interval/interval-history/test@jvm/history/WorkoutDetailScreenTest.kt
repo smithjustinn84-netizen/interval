@@ -8,10 +8,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
@@ -48,7 +50,12 @@ class WorkoutDetailScreenTest {
     private val events = mutableListOf<String>()
 
     @Composable
-    private fun Screen(state: WorkoutDetailUiState, inPane: Boolean = false) {
+    private fun Screen(
+        state: WorkoutDetailUiState,
+        inPane: Boolean = false,
+        onEffortChange: (PerceivedEffort?) -> Unit = { events += "effort $it" },
+        onNoteChange: (String) -> Unit = { events += "note $it" },
+    ) {
         WorkoutDetailScreen(
             state = state,
             onBack = { events += "back" },
@@ -61,6 +68,8 @@ class WorkoutDetailScreenTest {
             onPlanOnce = { workout, day -> events += "once ${(workout as PlanWorkout.Interval).name} $day" },
             inPane = inPane,
             onShare = { events += "share $it" },
+            onEffortChange = onEffortChange,
+            onNoteChange = onNoteChange,
         )
     }
 
@@ -92,15 +101,32 @@ class WorkoutDetailScreenTest {
     }
 
     @Test
-    fun `how it went shows only once something was said and its note is shared`() = runUiTest {
+    fun `how it went edits effort and note inline and shares the note`() = runUiTest {
         var shown by mutableStateOf(state)
-        setThemedContent { Screen(shown) }
-        onNodeWithText("How it went").assertDoesNotExist()
-
-        shown = state.copy(workout = workout.copy(effort = PerceivedEffort.VeryHard, note = "Legs heavy"))
+        setThemedContent {
+            Screen(
+                shown,
+                onEffortChange = {
+                    events += "effort $it"
+                    shown = shown.copy(workout = shown.workout?.copy(effort = it))
+                },
+                onNoteChange = {
+                    events += "note $it"
+                    shown = shown.copy(workout = shown.workout?.copy(note = it.trim().ifEmpty { null }))
+                },
+            )
+        }
         onNodeWithText("How it went").assertExists()
-        onNodeWithText("Very hard").assertExists()
-        onNodeWithText("Legs heavy").assertExists()
+        onNodeWithText("Very hard").performClick()
+        assertEquals(listOf("effort VeryHard"), events)
+
+        // Tapping the selected effort again clears it.
+        onNodeWithText("Very hard").performClick()
+        assertEquals(listOf("effort VeryHard", "effort null"), events)
+
+        onNode(hasSetTextAction()).performTextInput("Legs heavy")
+        waitForIdle()
+        events.clear()
         onNodeWithContentDescription("More options").performClick()
         onNodeWithText("Share workout").performClick()
         assertEquals(

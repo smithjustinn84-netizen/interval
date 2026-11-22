@@ -30,6 +30,8 @@ import kotlinx.coroutines.launch
  * here that is waited on ([keepClass]). Written through [writer], the queue every interval repository shares, so
  * how a workout felt never lands before the workout.
  */
+// One repository, as HistoryStore is one: timed workouts, hand-logged workouts, sport days and classes.
+@Suppress("detekt.TooManyFunctions")
 class HistoryRepository(
     private val historyDao: HistoryDao,
     private val sportLogDao: SportLogDao,
@@ -121,6 +123,12 @@ class HistoryRepository(
         val now = clock.nowMillis()
         val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
         writer.persist { historyDao.reflect(uid, effort?.level, kept, now) }
+    }
+
+    override fun reflectOnWorkoutOf(id: Long, effort: PerceivedEffort?, note: String) {
+        val now = clock.nowMillis()
+        val kept = note.trim().take(PerceivedEffort.NOTE_MAX_LENGTH).ifEmpty { null }
+        writer.persist { historyDao.reflectOf(id, effort?.level, kept, now) }
     }
 
     /** In order after the write that recorded the workout, so it never lands first. */

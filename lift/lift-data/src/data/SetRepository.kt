@@ -104,6 +104,11 @@ class SetRepository(
         }
     }
 
+    /** Puts back [set], just removed, into the session stored under [sessionUid], in its place among the others. */
+    override fun restoreSetTo(sessionUid: String, set: SetLog) {
+        writer.persist { sessionDao.insert(set.toEntity(sessionUid, id = set.id)) }
+    }
+
     /**
      * Changes the day the session in progress is to what [change] makes of it, or leaves it with null. Worked out
      * in the write, from the session as stored behind every write before it: so a change made straight after

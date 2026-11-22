@@ -6,6 +6,9 @@ import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.RecordingHealthStore
 import dev.justinsmith.interval.platform.HealthStatus
 import dev.justinsmith.interval.platform.HeartRate
+import dev.justinsmith.lift.domain.BuiltInExercise
+import dev.justinsmith.lift.domain.Load
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -40,6 +43,8 @@ class LiftDetailViewModelTest {
     private fun viewModel(uid: String) = LiftDetailViewModel(
         uid,
         repository.sessions,
+        repository.sets,
+        repository.gear,
         repository.programs,
         FixedTimestampFormatter,
         health,
@@ -113,5 +118,80 @@ class LiftDetailViewModelTest {
         storage.finished("a", "Swings", 0, 60_000, 16.0 to 10)
         viewModel("a").readHeartRate()
         assertNull(viewModel("a").state.value.session?.averageBpm)
+    }
+
+    @Test
+    fun `editing effort and note updates the finished session`() {
+        storage.finished("a", "Swings", 0, 60_000, 16.0 to 10)
+        val viewModel = viewModel("a")
+
+        viewModel.setEffort(PerceivedEffort.Hard)
+        assertEquals(PerceivedEffort.Hard, viewModel.state.value.session?.effort)
+
+        viewModel.setNote("Crisp hinge")
+        assertEquals("Crisp hinge", viewModel.state.value.session?.note)
+        assertEquals(PerceivedEffort.Hard, viewModel.state.value.session?.effort)
+
+        viewModel.setEffort(null)
+        assertNull(viewModel.state.value.session?.effort)
+        assertEquals("Crisp hinge", viewModel.state.value.session?.note)
+
+        viewModel.setNote("   ")
+        assertNull(viewModel.state.value.session?.note)
+    }
+
+    @Test
+    fun `editing a logged set updates its load and reps and recalculates records`() {
+        var now = 0L
+        val timed = storage.repository(now = { now })
+        storage.finished("a", "Swings", 0, 60_000, 16.0 to 10)
+        now = DAY
+        timed.sessions.startSession()
+        timed.sets.logSet(BuiltInExercise.TwoHandSwing, Load.Bell(16.0), reps = 5, side = null)
+        now = DAY + 60_000
+        timed.sessions.finishSession("Swings")
+        val uid = timed.sessions.sessions.value.first().uid
+        val viewModel = LiftDetailViewModel(
+            uid,
+            timed.sessions,
+            timed.sets,
+            timed.gear,
+            timed.programs,
+            FixedTimestampFormatter,
+            health,
+            intervals,
+        )
+        assertEquals(emptyList(), viewModel.state.value.records)
+
+        val set = requireNotNull(viewModel.state.value.session?.sets?.single())
+        viewModel.updateSet(set.copy(load = Load.Bell(24.0), reps = 10))
+
+        val updated = requireNotNull(viewModel.state.value.session?.sets?.single())
+        assertEquals(24.0, updated.load.kg)
+        assertEquals(10, updated.reps)
+        assertEquals(listOf(24.0), viewModel.state.value.records.map { (it as PersonalRecord.Weighted).heaviestKg })
+    }
+
+    @Test
+    fun `removing a logged set takes it off and restoring brings it back while keeping the last set`() {
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, Load.Bell(16.0), reps = 10, side = null)
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, Load.Bell(24.0), reps = 5, side = null)
+        repository.sessions.finishSession("Swings")
+        val uid = repository.sessions.sessions.value.single().uid
+        val viewModel = viewModel(uid)
+        val second = viewModel.state.value.session!!.sets[1]
+
+        val removed = viewModel.removeSet(second.id)
+        assertEquals(second, removed)
+        assertEquals(1, viewModel.state.value.session?.sets?.size)
+
+        // The last remaining set cannot be removed.
+        val remaining = viewModel.state.value.session!!.sets.single()
+        assertNull(viewModel.removeSet(remaining.id))
+        assertEquals(1, viewModel.state.value.session?.sets?.size)
+
+        viewModel.restoreSet(second)
+        assertEquals(2, viewModel.state.value.session?.sets?.size)
     }
 }

@@ -5,14 +5,21 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
+import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.PerceivedEffort
 import dev.justinsmith.lift.domain.PersonalRecord
 import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.newRecords
+import dev.justinsmith.lift.domain.offeredBands
 import dev.justinsmith.lift.domain.shippedPrograms
+import dev.justinsmith.lift.domain.standardBells
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -31,23 +38,43 @@ data class LiftDetailUiState(
     val maxHeartRate: Int = DEFAULT_MAX_BPM,
     /** The program it was a day of, while that program is still there. */
     val program: Program? = null,
+    /** Gear offered when editing a logged set on the detail page. */
+    val bells: List<Double> = standardBells,
+    val ownsBells: Boolean = false,
+    val bar: Double? = null,
+    val bands: List<Band> = offeredBands(emptyList()),
 )
 
-/** The session stored under [uid], as History opens it, with what it set and a way to delete it. */
+private data class GearSnapshot(
+    val bells: List<Double>,
+    val bar: Double?,
+    val bands: List<Band>,
+)
+
+/** The session stored under [uid], as History opens it, with inline editing and deletion. */
 class LiftDetailViewModel(
     private val uid: String,
     private val sessionStore: SessionStore,
+    private val setStore: SetStore,
+    private val gearStore: GearStore,
     private val programStore: ProgramStore,
     private val timestamps: TimestampFormatter,
     private val health: HealthStore,
     private val intervals: IntervalActivity,
 ) : ViewModel() {
+    private val gear = combine(gearStore.bells, gearStore.bar, gearStore.bands, ::GearSnapshot)
+
     val state: StateFlow<LiftDetailUiState> =
-        combine(sessionStore.sessions, programStore.customPrograms, intervals.maxHeartRate, ::build)
+        combine(sessionStore.sessions, programStore.customPrograms, intervals.maxHeartRate, gear, ::build)
             .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
-                build(sessionStore.sessions.value, programStore.customPrograms.value, intervals.maxHeartRate.value),
+                build(
+                    sessionStore.sessions.value,
+                    programStore.customPrograms.value,
+                    intervals.maxHeartRate.value,
+                    GearSnapshot(gearStore.bells.value, gearStore.bar.value, gearStore.bands.value),
+                ),
             )
 
     /**
@@ -63,6 +90,40 @@ class LiftDetailViewModel(
         }
     }
 
+    /** How hard the session felt, edited here after its summary; null clears it. */
+    fun setEffort(effort: PerceivedEffort?) {
+        val session = sessionStore.sessions.value.firstOrNull { it.uid == uid } ?: return
+        sessionStore.reflectOnSession(uid, effort, session.note.orEmpty())
+    }
+
+    /** A note on the session, edited here after its summary; blank clears it. */
+    fun setNote(note: String) {
+        val session = sessionStore.sessions.value.firstOrNull { it.uid == uid } ?: return
+        sessionStore.reflectOnSession(uid, session.effort, note)
+    }
+
+    /** Updates one logged set in this session: its load, reps or seconds, and side. */
+    fun updateSet(set: SetLog) {
+        setStore.updateSet(set)
+    }
+
+    /**
+     * Removes one logged set from this session, returning it for Undo ([restoreSet]); null when not found or
+     * when it is the session's only remaining set.
+     */
+    fun removeSet(id: Long): SetLog? {
+        val session = sessionStore.sessions.value.firstOrNull { it.uid == uid } ?: return null
+        if (session.sets.size <= 1) return null
+        val set = session.sets.firstOrNull { it.id == id } ?: return null
+        setStore.removeSet(id)
+        return set
+    }
+
+    /** Brings back a set removed by [removeSet]: Undo. */
+    fun restoreSet(set: SetLog) {
+        setStore.restoreSetTo(uid, set)
+    }
+
     fun delete() {
         sessionStore.deleteSession(uid)
     }
@@ -71,7 +132,12 @@ class LiftDetailViewModel(
         sessionStore.restoreSession(uid)
     }
 
-    private fun build(sessions: List<LiftSession>, custom: List<Program>, maxHeartRate: Int?): LiftDetailUiState {
+    private fun build(
+        sessions: List<LiftSession>,
+        custom: List<Program>,
+        maxHeartRate: Int?,
+        gear: GearSnapshot,
+    ): LiftDetailUiState {
         val session = sessions.firstOrNull { it.uid == uid } ?: return LiftDetailUiState()
         val at = session.finishedAtEpochMillis ?: session.startedAtEpochMillis
         // Newest first, so the ones finished before it are those after it in the list.
@@ -83,6 +149,10 @@ class LiftDetailViewModel(
             records = newRecords(before, session),
             maxHeartRate = maxHeartRate ?: DEFAULT_MAX_BPM,
             program = session.program?.let { key -> (shippedPrograms + custom).firstOrNull { it.key == key } },
+            bells = gear.bells.ifEmpty { standardBells },
+            ownsBells = gear.bells.isNotEmpty(),
+            bar = gear.bar,
+            bands = offeredBands(gear.bands),
         )
     }
 }

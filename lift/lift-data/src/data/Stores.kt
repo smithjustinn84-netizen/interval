@@ -78,6 +78,9 @@ interface SetStore {
 
     fun restoreSet(set: SetLog)
 
+    /** Puts back [set], just removed, into the session stored under [sessionUid], in its place among the others. */
+    fun restoreSetTo(sessionUid: String, set: SetLog)
+
     fun changeSessionPlan(change: (LiftSession) -> SessionPlan?)
 
     /** Makes the session in progress day [day] of [program], its plan as programmed: a free session taking a day. */

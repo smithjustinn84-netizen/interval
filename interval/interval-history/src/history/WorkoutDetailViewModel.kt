@@ -166,6 +166,18 @@ class WorkoutDetailViewModel(
         historyStore.countSnatchesOf(id, count)
     }
 
+    /** How hard the workout felt, edited here after its summary; null clears it. */
+    fun setEffort(effort: PerceivedEffort?) {
+        val current = historyStore.history.value.firstOrNull { it.id == id } ?: return
+        historyStore.reflectOnWorkoutOf(id, effort, current.note.orEmpty())
+    }
+
+    /** A note on the workout, edited here after its summary; blank clears it. */
+    fun setNote(note: String) {
+        val current = historyStore.history.value.firstOrNull { it.id == id } ?: return
+        historyStore.reflectOnWorkoutOf(id, current.effort, note)
+    }
+
     /** Undo on [delete]. */
     fun restore() {
         historyStore.restoreWorkout(id)
