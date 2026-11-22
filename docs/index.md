@@ -5,8 +5,21 @@ hide:
   - toc
 ---
 
-<div class="hero" markdown>
-![Interval: conditioning, strength and mobility](hero.png)
+<div class="hero">
+  <div class="hero__frame">
+    <img
+      class="hero__img"
+      src="hero.png"
+      alt="Overhead studio view of a matte black kettlebell beside an industrial chronograph timer dial"
+      width="1376"
+      height="688"
+      fetchpriority="high"
+    />
+    <div class="hero__copy">
+      <h1 class="hero__title">Interval</h1>
+      <p class="hero__tagline">Conditioning · Strength · Mobility</p>
+    </div>
+  </div>
 </div>
 
 **A training companion for interval conditioning, kettlebell strength, guided mobility and the week's plan,

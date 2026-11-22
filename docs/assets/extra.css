@@ -45,9 +45,157 @@
   margin-top: 0.4rem;
 }
 
-.hero img {
-  width: 100%;
+.hero {
+  clear: both;
+  container-type: inline-size;
+  margin-bottom: 1.5rem;
+}
+
+.hero__frame {
+  display: grid;
+  background-color: #11171a;
   border-radius: 0.6rem;
+  overflow: hidden;
+}
+
+.md-typeset .hero__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+}
+
+.hero__copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 1.25rem 1.5rem;
+  box-sizing: border-box;
+  color: #f7f3e9;
+}
+
+.md-typeset .hero__title {
+  margin: 0;
+  color: #f7f3e9;
+  font-size: clamp(1.75rem, 1.1rem + 3vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+
+.md-typeset .hero__tagline {
+  margin: 0;
+  color: #d2dad6;
+  font-size: clamp(0.85rem, 0.65rem + 0.8vw, 1.05rem);
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-wrap: balance;
+}
+
+.md-typeset .hero__tagline::before {
+  content: "";
+  display: block;
+  width: 2.25rem;
+  height: 2px;
+  margin-bottom: 0.55rem;
+  background-color: #e5a910;
+  border-radius: 1px;
+}
+
+@supports (font-size: 1cqi) {
+  .md-typeset .hero__title {
+    font-size: clamp(1.75rem, 1.1rem + 3.2cqi, 3.25rem);
+  }
+
+  .md-typeset .hero__tagline {
+    font-size: clamp(0.85rem, 0.6rem + 0.9cqi, 1.05rem);
+  }
+}
+
+/* Fallback overlay for browsers without container query support. */
+@media (min-width: 48rem) {
+  .md-typeset .hero__img,
+  .hero__copy {
+    grid-area: 1 / 1;
+  }
+
+  .md-typeset .hero__img {
+    height: 100%;
+    object-fit: cover;
+    object-position: right center;
+  }
+
+  .hero__copy {
+    z-index: 1;
+    align-self: center;
+    max-inline-size: 34%;
+    padding: clamp(1.25rem, 4vw, 3rem) clamp(0.75rem, 2vw, 1.5rem) clamp(1.25rem, 4vw, 3rem) clamp(1.25rem, 4.5vw, 3.25rem);
+  }
+}
+
+/* Prefer size-aware container queries over viewport width when supported. */
+@supports (container-type: inline-size) {
+  @media (min-width: 48rem) {
+    .md-typeset .hero__img,
+    .hero__copy {
+      grid-area: auto;
+    }
+
+    .md-typeset .hero__img {
+      height: auto;
+      object-fit: initial;
+      object-position: initial;
+    }
+
+    .hero__copy {
+      z-index: auto;
+      align-self: auto;
+      max-inline-size: none;
+      padding: 1.25rem 1.5rem;
+    }
+  }
+
+  @container (min-width: 36rem) {
+    .md-typeset .hero__img,
+    .hero__copy {
+      grid-area: 1 / 1;
+    }
+
+    .md-typeset .hero__img {
+      height: 100%;
+      object-fit: cover;
+      object-position: right center;
+    }
+
+    .hero__copy {
+      z-index: 1;
+      align-self: center;
+      max-inline-size: 34%;
+      padding: clamp(1.25rem, 4cqi, 3rem) clamp(0.75rem, 2cqi, 1.5rem) clamp(1.25rem, 4cqi, 3rem) clamp(1.25rem, 4.5cqi, 3.25rem);
+    }
+  }
+}
+
+@media (forced-colors: active) {
+  .hero__frame {
+    border: 1px solid CanvasText;
+  }
+
+  .hero__copy {
+    background-color: Canvas;
+    color: CanvasText;
+  }
+
+  .md-typeset .hero__title,
+  .md-typeset .hero__tagline {
+    color: CanvasText;
+  }
+
+  .md-typeset .hero__tagline::before {
+    background-color: CanvasText;
+  }
 }
 
 /* The work, rest and done colours of the timer, for the guide's small legends. */
