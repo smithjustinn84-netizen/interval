@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.widthIn
@@ -114,8 +113,7 @@ fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier
             Modifier
                 .widthIn(max = Sizes.content)
                 .fillMaxSize()
-                .safeDrawingPadding()
-                .imePadding(),
+                .safeDrawingPadding(),
         ) {
             TitleBar(
                 stringResource(Res.string.setup_title),

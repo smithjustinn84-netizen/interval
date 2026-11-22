@@ -6,15 +6,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridScope
@@ -28,6 +31,9 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.common_back
 import dev.justinsmith.core.resources.common_settings
@@ -48,15 +54,18 @@ fun ScrollPage(
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val safe = WindowInsets.safeDrawing
-    val foot = safe.asPaddingValues().calculateBottomPadding()
+    val insets = safe.asPaddingValues()
+    val top = insets.calculateTopPadding()
+    val foot = insets.calculateBottomPadding()
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
         Column(
             Modifier
                 .widthIn(max = Sizes.content)
                 .fillMaxSize()
-                .windowInsetsPadding(safe.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top))
+                .windowInsetsPadding(safe.only(WindowInsetsSides.Horizontal))
                 .imePadding()
-                .verticalScroll(rememberScrollState()),
+                .verticalScroll(rememberScrollState())
+                .padding(top = top),
         ) {
             TitleBar(title, navigation = navigation, actions = actions)
             Column(
@@ -65,6 +74,7 @@ fun ScrollPage(
                 content = content,
             )
         }
+        StatusBarProtection(Modifier.align(Alignment.TopCenter))
     }
 }
 
@@ -111,16 +121,16 @@ fun TabGrid(
     val safe = WindowInsets.safeDrawing
     // With nothing pinned under it, the grid runs to the window's foot and keeps the inset as padding instead.
     val under = bottomBar == null
-    val foot = safe.asPaddingValues().calculateBottomPadding()
+    val insets = safe.asPaddingValues()
+    val top = insets.calculateTopPadding()
+    val foot = insets.calculateBottomPadding()
     Box(modifier.fillMaxSize().background(IntervalTheme.palette.background), contentAlignment = Alignment.TopCenter) {
         SetupLanes(Modifier.matchParentSize())
         Column(
             Modifier
                 .widthIn(max = Sizes.listMax)
                 .fillMaxSize()
-                .windowInsetsPadding(
-                    if (under) safe.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top) else safe,
-                ),
+                .windowInsetsPadding(safe.only(WindowInsetsSides.Horizontal)),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             val gridState = rememberLazyStaggeredGridState()
@@ -131,7 +141,10 @@ fun TabGrid(
                     .fillMaxWidth()
                     .weight(1f)
                     .then(if (bottomBar != null) Modifier.fadeWhenMoreBelow(gridState) else Modifier),
-                contentPadding = PaddingValues(bottom = if (under) Spacing.space24 + foot else Spacing.space24),
+                contentPadding = PaddingValues(
+                    top = top,
+                    bottom = if (under) Spacing.space24 + foot else Spacing.space24,
+                ),
             ) {
                 eyebrow?.let { item(key = "tab-eyebrow", span = StaggeredGridItemSpan.FullLine) { it() } }
                 item(key = "title", span = StaggeredGridItemSpan.FullLine) {
@@ -142,7 +155,10 @@ fun TabGrid(
             }
             bottomBar?.let { bar ->
                 Column(
-                    Modifier.fillMaxWidth().background(IntervalTheme.palette.background),
+                    Modifier
+                        .fillMaxWidth()
+                        .background(IntervalTheme.palette.background)
+                        .windowInsetsPadding(safe.only(WindowInsetsSides.Bottom)),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     HorizontalDivider(color = IntervalTheme.palette.line, thickness = Sizes.hairline)
@@ -150,5 +166,32 @@ fun TabGrid(
                 }
             }
         }
+        StatusBarProtection(Modifier.align(Alignment.TopCenter))
     }
 }
+
+/**
+ * A translucent gradient scrim covering the status bar so system icons stay legible as content scrolls behind it.
+ * Draws nothing when the window has no status bar inset (desktop, headless tests).
+ */
+@Composable
+fun StatusBarProtection(
+    modifier: Modifier = Modifier,
+    color: Color = IntervalTheme.palette.background,
+) {
+    val top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    if (top <= 0.dp) return
+    Spacer(
+        modifier
+            .fillMaxWidth()
+            .height(top * STATUS_BAR_PROTECTION_SCALE)
+            .background(
+                Brush.verticalGradient(
+                    listOf(color, color.copy(alpha = STATUS_BAR_MID_ALPHA), Color.Transparent),
+                ),
+            ),
+    )
+}
+
+private const val STATUS_BAR_PROTECTION_SCALE = 1.2f
+private const val STATUS_BAR_MID_ALPHA = 0.8f

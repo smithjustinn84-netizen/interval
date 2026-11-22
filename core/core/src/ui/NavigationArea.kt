@@ -70,11 +70,15 @@ class NavigationArea internal constructor(type: NavigationSuiteType) {
     var thickness: Int by mutableIntStateOf(0)
         internal set
 
-    /** What a tab's scene keeps inside: the system's insets on the sides the area leaves open, plus the area. */
+    /**
+     * What a tab's scene keeps inside: on a phone ([bar]), the horizontal safe area and the bar's own height
+     * (leaving the top status bar open so [TabGrid] draws its lanes and scrolls content edge-to-edge behind it);
+     * on a wider window with a rail, the vertical and end safe areas plus the rail's width.
+     */
     @Composable
     fun tabInsets(): WindowInsets = if (bar) {
         WindowInsets.safeDrawing
-            .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
+            .only(WindowInsetsSides.Horizontal)
             .add(WindowInsets(bottom = thickness))
     } else {
         WindowInsets.safeDrawing
