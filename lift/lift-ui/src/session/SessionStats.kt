@@ -5,13 +5,18 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.ui.GroupLabel
 import dev.justinsmith.interval.ui.HeartRateChart
+import dev.justinsmith.interval.ui.HeartReading
+import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.ListCard
+import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.ZoneBreakdown
@@ -24,10 +29,8 @@ import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.StatTile
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.kg_value
-import dev.justinsmith.lift.ui.resources.session_average_heart_rate
-import dev.justinsmith.lift.ui.resources.session_bpm_value
+import dev.justinsmith.lift.ui.resources.session_heart_average_peak
 import dev.justinsmith.lift.ui.resources.session_moved
-import dev.justinsmith.lift.ui.resources.session_peak_heart_rate
 import dev.justinsmith.lift.ui.resources.session_time
 import dev.justinsmith.lift.ui.resources.summary_records
 import dev.justinsmith.lift.ui.resources.summary_reps
@@ -74,33 +77,31 @@ fun SessionStats(
         val average = session.averageBpm
         val peak = session.peakBpm
         if (average != null && peak != null) {
-            val samples = session.heartRateSamples
-            if (!samples.isNullOrEmpty()) {
-                ListCard {
-                    Column(
-                        Modifier.padding(Spacing.space16),
-                        verticalArrangement = Arrangement.spacedBy(Spacing.space12),
-                    ) {
+            // As the live heart card reads: the average with its zone, its dot held still since the session is
+            // over, then the session's heart rate and its time in each zone, and the peak under the card.
+            ListCard {
+                Column(
+                    Modifier.padding(Spacing.space16),
+                    verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+                ) {
+                    HeartReading(
+                        average,
+                        heartRateZone(average, maxBpm, LocalRestingHeartRate.current),
+                        onWorkoutGround = false,
+                        beating = false,
+                    )
+                    val samples = session.heartRateSamples
+                    if (!samples.isNullOrEmpty()) {
                         HeartRateChart(samples, maxBpm = maxBpm)
                         ZoneBreakdown(samples, maxBpm = maxBpm)
                     }
                 }
             }
-            TilePair(
-                {
-                    StatTile(
-                        stringResource(Res.string.session_average_heart_rate),
-                        stringResource(Res.string.session_bpm_value, average),
-                        it,
-                    )
-                },
-                {
-                    StatTile(
-                        stringResource(Res.string.session_peak_heart_rate),
-                        stringResource(Res.string.session_bpm_value, peak),
-                        it,
-                    )
-                },
+            Text(
+                stringResource(Res.string.session_heart_average_peak, peak),
+                Modifier.padding(horizontal = Spacing.space4),
+                style = IntervalTheme.type.meta,
+                color = IntervalTheme.palette.textDim,
             )
         }
         if (records.isNotEmpty()) {

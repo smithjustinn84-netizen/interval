@@ -468,3 +468,24 @@ private fun SummaryScreenPreview() {
         )
     }
 }
+
+@PreviewFormFactors
+@Composable
+private fun SummaryScreenHeartPreview() {
+    val session = LiftSession(
+        "s",
+        startedAtEpochMillis = 0,
+        finishedAtEpochMillis = 1_500_000,
+        title = "Swings and squats",
+        sets = previewSets,
+        averageBpm = previewHeart.average().toInt(),
+        peakBpm = previewHeart.max(),
+        heartRateSamples = previewHeart,
+    )
+    IntervalTheme {
+        SummaryScreen(Finished(session, emptyList()), onDone = {})
+    }
+}
+
+/** A watch's heart rate over the preview's session: up through each set, down through each rest. */
+private val previewHeart = listOf(92, 118, 141, 152, 128, 112, 139, 156, 131, 114, 143, 160, 134, 118, 128, 109)

@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -173,11 +174,11 @@ class SummaryScreenTest {
     fun `a watch's heart rate shows on the summary and the session's page once it is read`() = runUiTest {
         var finished by mutableStateOf(Finished(session, emptyList()))
         setThemedContent(dark = true) { SummaryScreen(finished, onDone = {}) }
-        onNodeWithText("Avg heart rate").assertDoesNotExist()
+        onNodeWithText("Average · ", substring = true).assertDoesNotExist()
 
         finished = Finished(session.copy(averageBpm = 128, peakBpm = 160), emptyList())
-        onNodeWithText("128 bpm").assertExists()
-        onNodeWithText("160 bpm").assertExists()
+        onNodeWithContentDescription("128 beats per minute", substring = true).assertExists()
+        onNodeWithText("Average · 160 peak").assertExists()
     }
 
     @Test
@@ -186,7 +187,7 @@ class SummaryScreenTest {
         setThemedContent(dark = true) {
             LiftDetailScreen(LiftDetailUiState(read, "Saturday", "1:21 PM"), onDelete = {}, onBack = {})
         }
-        onNodeWithText("Avg heart rate").assertExists()
-        onNodeWithText("128 bpm").assertExists()
+        onNodeWithContentDescription("128 beats per minute", substring = true).assertExists()
+        onNodeWithText("Average · 160 peak").assertExists()
     }
 }
