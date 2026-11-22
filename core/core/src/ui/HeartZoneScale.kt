@@ -81,14 +81,22 @@ fun HeartZoneScale(state: LiveHeartRateState, modifier: Modifier = Modifier, max
 }
 
 /**
- * The heart rate read out as one line: a dot in [zone]'s colour beating with it, the beats a minute over BPM, and
- * the zone by number and name dim at the right. On the workout's ground ([onWorkoutGround]) the line keeps its
- * height, so the ring over it never moves: with large text it says the zone by number alone and its words grow no
- * further than large text begins, since squeezed they break mid-word ("Zon / e 4"). Anywhere else large text
- * puts the zone, in full, on a line of its own under the number. Either way it is read as one description.
+ * The heart rate read out as one line: a dot in [zone]'s colour beating with it (still, unless [beating]), the
+ * beats a minute over BPM, and the zone by number and name dim at the right, in the workout's colours
+ * [onWorkoutGround] or the app's. Where the line [keepsHeight] (under the workout's ring, so the ring never moves)
+ * large text says the zone by number alone and its words grow no further than large text begins, since squeezed
+ * they break mid-word ("Zon / e 4"). Anywhere else large text puts the zone, in full, on a line of its own under
+ * the number. Either way it is read as one description.
  */
 @Composable
-fun HeartReading(bpm: Int, zone: HeartRateZone, onWorkoutGround: Boolean, modifier: Modifier = Modifier) {
+fun HeartReading(
+    bpm: Int,
+    zone: HeartRateZone,
+    onWorkoutGround: Boolean,
+    modifier: Modifier = Modifier,
+    beating: Boolean = true,
+    keepsHeight: Boolean = onWorkoutGround,
+) {
     val text = if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text
     val dim = if (onWorkoutGround) IntervalTheme.workout.onGroundDim else IntervalTheme.palette.textDim
     val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
@@ -97,11 +105,12 @@ fun HeartReading(bpm: Int, zone: HeartRateZone, onWorkoutGround: Boolean, modifi
         tween(Motion.STATE_MILLIS, easing = StandardEasing),
         label = "zone",
     )
-    val scale = rememberHeartPulseScale(bpm)
+    // A heart rate read now beats; one summed up afterwards (a workout's average) holds still.
+    val scale = if (beating) rememberHeartPulseScale(bpm) else STILL
     val name = heartRateZoneName(zone)
     val description = stringResource(Res.string.heart_rate_scale_cd, bpm, zone.number, name)
     val large = isLargeText()
-    val zoneWords = if (large && onWorkoutGround) {
+    val zoneWords = if (large && keepsHeight) {
         stringResource(Res.string.heart_rate_zone_number, zone.number)
     } else {
         stringResource(Res.string.heart_rate_zone_named, zone.number, name)
@@ -135,7 +144,7 @@ fun HeartReading(bpm: Int, zone: HeartRateZone, onWorkoutGround: Boolean, modifi
     }
     val described = modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = description }
     when {
-        onWorkoutGround -> TextScaleAtMost(LARGE_FONT_SCALE) {
+        keepsHeight -> TextScaleAtMost(LARGE_FONT_SCALE) {
             Row(
                 described,
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -229,6 +238,8 @@ fun HeartZoneBars(zone: HeartRateZone?, onWorkoutGround: Boolean, modifier: Modi
 }
 
 private const val ZONES = 5
+
+private val STILL: () -> Float = { 1f }
 
 @PreviewFormFactors
 @Composable

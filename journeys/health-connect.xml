@@ -22,7 +22,7 @@
     <action>Tap "Done" and verify that "Body weight" reads "82 kg"</action>
     <action>Tap "Back"</action>
     <action>Tap "Start workout", skip to the first rest with "Skip to next interval" twice, tap "End workout" and confirm</action>
-    <action>Verify that the summary says "Ended" and shows no "Heart rate" line (no watch recorded one)</action>
+    <action>Verify that the summary says "Ended" and shows no heart-rate card nor "Average · … peak" (no watch recorded one)</action>
     <action>Under "How was it?" tap "Hard" and type "Felt strong" in the note field</action>
     <action>Tap "Close", then open Health Connect (Settings > Security and privacy > Health Connect > Data and access > Exercise) and verify that an Interval entry of high intensity interval training is listed for today, with segments and the notes "Hard · Felt strong"</action>
     <action>Return to Interval, tap "Back" on the Timer, tap the "Log" tab and verify that today's workout reads "Hard" and "Felt strong"; then tap the "Train" tab, "Conditioning", "Timer" and the Timer's "Settings" button</action>

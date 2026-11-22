@@ -23,13 +23,13 @@ On iOS, refusing on Apple Health's sheet sends you to the Health app to change i
 
 ## Live heart rate (Android)
 
-With a Polar sensor paired, a workout shows your heart rate as a scale of the five zones under the ring: the
-beats a minute, the zone by name and number, a marker where in it you are, and the heart rates the zone changes
-at. A Lift session shows it as a badge in its title bar, and its summary draws the session's heart rate and the
+With a Polar sensor paired, a workout shows your heart rate on a card under the ring: a dot beating in your
+zone's colour, the beats a minute, the zone by number and name, and the five zones as bars in their colours, the
+one you are in lit. A Lift session shows it as a badge in its title bar, and its summary draws the session's heart rate and the
 time in each zone. The zones are worked out from the max heart rate set in Settings, the same on both.
 
-Tap the scale and it turns into your heart rate so far, drawn over the zones with each work interval shaded;
-tap again for the scale. In a Lift session the heart has a card of its own under the session's numbers, with the
+Tap the card and the bars turn into your heart rate so far, drawn over the zones with each work interval shaded;
+tap again for the bars. In a Lift session the heart has a card of its own under the session's numbers, with the
 session so far as a line, and a rest says how the heart stands: *high*, *easing* or *ready* once it is back
 in an easy zone. It only advises; the rest's clock stays yours.
 

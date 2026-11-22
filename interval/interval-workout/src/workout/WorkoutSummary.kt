@@ -42,6 +42,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.Recovery
+import dev.justinsmith.interval.platform.heartRateZone
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.presets.PresetDraft
 import dev.justinsmith.interval.presets.PresetEditorHost
@@ -54,11 +55,13 @@ import dev.justinsmith.interval.ui.Corners
 import dev.justinsmith.interval.ui.EnterEasing
 import dev.justinsmith.interval.ui.FinishHaptic
 import dev.justinsmith.interval.ui.HeartRateChart
+import dev.justinsmith.interval.ui.HeartReading
 import dev.justinsmith.interval.ui.HowWasIt
 import dev.justinsmith.interval.ui.IntervalIcons
 import dev.justinsmith.interval.ui.IntervalSizes
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.JoinedText
+import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
@@ -89,8 +92,8 @@ import dev.justinsmith.interval.workout.resources.summary_week_of_goal
 import dev.justinsmith.interval.workout.resources.workout_close
 import dev.justinsmith.interval.workout.resources.workout_done
 import dev.justinsmith.interval.workout.resources.workout_ended
+import dev.justinsmith.interval.workout.resources.workout_heart_average_peak
 import dev.justinsmith.interval.workout.resources.workout_heart_load
-import dev.justinsmith.interval.workout.resources.workout_heart_rate
 import dev.justinsmith.interval.workout.resources.workout_heart_recovery
 import dev.justinsmith.interval.workout.resources.workout_repeat
 import dev.justinsmith.interval.workout.resources.workout_save_preset
@@ -408,8 +411,10 @@ private fun SummaryDetails(
 }
 
 /**
- * The workout's heart rate, "Heart rate 142 avg · 171 peak", once read from the health store, if a watch recorded it:
- * it arrives after the rest. One line, not a row of tiles, so "How was it?" still fits above the actions on a phone.
+ * The workout's heart rate once read from the health store, if a watch recorded it (it arrives after the rest),
+ * on the card the live heart rate takes: the average read out as the workout's card reads it, held still, with
+ * its zone, then the heart rate over the workout and its time in each zone, and under the card the peak, how far
+ * it fell after work and the load.
  */
 @Composable
 private fun ColumnScope.HeartRateLine(
@@ -421,32 +426,44 @@ private fun ColumnScope.HeartRateLine(
 ) {
     AnimatedVisibility(heartRate != null, enter = risingEnter()) {
         val shown = heartRate ?: return@AnimatedVisibility
+        val workout = IntervalTheme.workout
         Column(
             Modifier.padding(top = Spacing.space12).widthIn(max = Sizes.content),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
         ) {
-            Text(
-                stringResource(Res.string.workout_heart_rate, shown.averageBpm, shown.peakBpm),
-                style = IntervalTheme.type.meta,
-                color = IntervalTheme.workout.onGround,
-                textAlign = TextAlign.Center,
-            )
-            if (!samples.isNullOrEmpty()) {
-                HeartRateChart(samples, maxBpm = maxBpm, onWorkoutGround = true)
-                ZoneBreakdown(samples, maxBpm = maxBpm, onWorkoutGround = true)
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(Corners.radius18)
+                    .background(workout.control)
+                    .border(Sizes.hairline, workout.upcoming, Corners.radius18)
+                    // Tighter than the live card's: How was it? still fits above the actions on a phone.
+                    .padding(horizontal = Spacing.space16, vertical = Spacing.space8),
+                verticalArrangement = Arrangement.spacedBy(Spacing.space12),
+            ) {
+                HeartReading(
+                    shown.averageBpm,
+                    heartRateZone(shown.averageBpm, maxBpm, LocalRestingHeartRate.current),
+                    onWorkoutGround = true,
+                    beating = false,
+                    keepsHeight = false,
+                )
+                if (!samples.isNullOrEmpty()) {
+                    HeartRateChart(samples, maxBpm = maxBpm, onWorkoutGround = true)
+                    ZoneBreakdown(samples, maxBpm = maxBpm, onWorkoutGround = true)
+                }
             }
             val read = listOfNotNull(
+                stringResource(Res.string.workout_heart_average_peak, shown.peakBpm),
                 recovery?.let { stringResource(Res.string.workout_heart_recovery, it.average, it.seconds) },
                 load?.let { stringResource(Res.string.workout_heart_load, it) },
             )
-            if (read.isNotEmpty()) {
-                JoinedText(
-                    read.joinToString(JOINED),
-                    style = IntervalTheme.type.meta,
-                    color = IntervalTheme.workout.onGroundDim,
-                )
-            }
+            JoinedText(
+                read.joinToString(JOINED),
+                style = IntervalTheme.type.meta,
+                color = workout.onGroundDim,
+            )
         }
     }
 }

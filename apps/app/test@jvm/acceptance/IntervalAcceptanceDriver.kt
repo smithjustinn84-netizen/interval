@@ -832,10 +832,13 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         healthStore.heartRate = HeartRate(average, peak)
     }
 
-    /** The summary shows the workout's heart rate, its average and peak. */
-    fun seeSummaryHeartRate(average: Int, peak: Int) = see("Heart rate $average avg · $peak peak")
+    /** The summary shows the workout's heart rate: the average read out on its card, the peak under it. */
+    fun seeSummaryHeartRate(average: Int, peak: Int) {
+        see(hasContentDescription("$average beats per minute", substring = true))
+        see("Average · $peak peak")
+    }
 
-    fun seeNoSummaryHeartRate() = seeNo(hasText("Heart rate", substring = true))
+    fun seeNoSummaryHeartRate() = seeNo(hasText("Average · ", substring = true))
 
     /** A finished workout's page shows its heart rate, average and peak, and History has kept it. */
     fun seeWorkoutHeartRate(average: Int, peak: Int) {

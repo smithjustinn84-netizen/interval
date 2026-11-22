@@ -52,8 +52,10 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationBackHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import dev.justinsmith.interval.platform.AskToShowNotifications
+import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.platform.Recovery
 import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.inUse
 import dev.justinsmith.interval.timer.IntervalConfig
@@ -543,3 +545,24 @@ private fun WorkoutScreenSummaryPreview() {
         .first { it.isDone }
     WorkoutPreview(done.toUiState(running = false, elapsedSeconds = done.config.totalSeconds))
 }
+
+@PreviewFormFactors
+@Composable
+private fun WorkoutScreenSummaryHeartPreview() {
+    val done = generateSequence(WorkoutEngine.start(IntervalConfig()).state) { WorkoutEngine.advance(it).state }
+        .first { it.isDone }
+    val samples = listOf(96, 118, 142, 157, 163, 149, 131, 152, 166, 171, 154, 136, 158, 168, 150, 128)
+    WorkoutPreview(
+        done.toUiState(running = false, elapsedSeconds = done.config.totalSeconds).copy(
+            heartRate = HeartRate(averageBpm = samples.average().toInt(), peakBpm = samples.max()),
+            heartRateSamples = samples,
+            recovery = previewRecovery,
+            heartLoad = PREVIEW_HEART_LOAD,
+        ),
+    )
+}
+
+/** A watch's heart rate over the preview's workout, falling a little less after each work. */
+private val previewRecovery = Recovery(drops = listOf(24, 21, 19), seconds = 60)
+
+private const val PREVIEW_HEART_LOAD = 42

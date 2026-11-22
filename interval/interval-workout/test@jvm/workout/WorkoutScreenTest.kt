@@ -350,9 +350,10 @@ class WorkoutScreenTest {
     fun `the summary shows a watch's heart rate once it is read`() = runUiTest {
         var state by mutableStateOf(done.toUiState(running = false))
         setThemedContent { Screen(state) }
-        onNodeWithText("Heart rate", substring = true).assertDoesNotExist()
+        onNodeWithText("Average · ", substring = true).assertDoesNotExist()
         state = state.copy(heartRate = HeartRate(averageBpm = 148, peakBpm = 175))
-        onNodeWithText("Heart rate 148 avg · 175 peak").assertExists()
+        onNodeWithContentDescription("148 beats per minute", substring = true).assertExists()
+        onNodeWithText("Average · 175 peak").assertExists()
     }
 
     @Test

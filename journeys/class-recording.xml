@@ -13,8 +13,8 @@
     <action>With a second Polar sensor awake nearby (an H10 worn beside a Verity Sense): verify that a sheet asks "Which sensor?" with both names, the nearest first, and tap the one meant; with only one, no sheet shows</action>
     <action>Verify that the row reads "Looking for it…", then the sensor's name ("Polar Sense" and its id) over "Paired. Record a class from Today on its day." with "Forget" beside it</action>
     <action>Go back to "Today", tap "Plan your week", add "BJJ" from "Sport" on today's weekday row, and tap "Back"</action>
-    <action>With the sensor worn: verify that beside the gear on "Today" a heart beats in a pill with the heart rate, and that "Train" (each of its three pillars) and "Log" show the same</action>
-    <action>Tap the heart and verify that a sheet shows the sensor's name, the heart rate over "Zone" with its number and name, "Battery" with a percentage, and "Sensor settings"; close it</action>
+    <action>With the sensor worn: verify that beside the gear on "Today" a dot beats in a pill with the heart rate and "BPM", and that "Train" (each of its three pillars) and "Log" show the same</action>
+    <action>Tap the heart and verify that a sheet shows the sensor's name, a dot, the heart rate, "BPM" and "Zone" with its number and name, five coloured bars with one lit, "Battery" with a percentage, and "Sensor settings"; close it</action>
     <action>Take the sensor off and verify that within a minute the pill becomes a dim, still heart with no number; put it back on and verify that the number returns</action>
     <action>Verify that under the day's card a card reads "Record the class" with the sensor's name and a "Record class" button</action>
     <action>Tap "Record class"</action>
