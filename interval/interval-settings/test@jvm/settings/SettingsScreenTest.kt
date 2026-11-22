@@ -12,6 +12,7 @@ import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
@@ -24,6 +25,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTouchInput
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.BodySettings
 import dev.justinsmith.interval.model.CueSettings
@@ -308,14 +310,33 @@ class SettingsScreenTest {
         setThemedContent { Screen(appIcon = AppIcon.Kettlebell) }
         scrollToText("App icon")
         onNodeWithText("Kettlebell").assertIsSelected()
+        onNodeWithText("Ring").assertIsNotSelected()
+        onAllNodesWithText("Interval closes to change its icon").assertCountEquals(0)
         onNodeWithText("Ring").performScrollTo().performClick()
         assertEquals(listOf<Any>(AppIcon.Ring), calls)
+    }
+
+    @Test
+    fun `a finger dragged across an icon's card leans it and picks nothing`() = runUiTest {
+        setThemedContent { Screen(appIcon = AppIcon.Kettlebell) }
+        scrollToText("App icon")
+        onNodeWithText("Ring").performScrollTo().performTouchInput {
+            down(center)
+            moveTo(topRight)
+            moveTo(bottomLeft)
+            cancel()
+        }
+        waitForIdle()
+        assertEquals(emptyList<Any>(), calls)
+        onNodeWithText("Kettlebell").assertIsSelected()
     }
 
     @Test
     fun `where the app closes to change its icon the pick is asked about first`() = runUiTest {
         setThemedContent { Screen(appIcon = AppIcon.Kettlebell, iconClosesApp = true) }
         scrollToText("App icon")
+        // Said on the card before anything is picked, and asked again as one is.
+        onNodeWithText("Interval closes to change its icon").assertExists()
         onNodeWithText("Ring").performScrollTo().performClick()
         onNodeWithText("Change the app icon?").assertExists()
         onNodeWithText("Cancel").performClick()

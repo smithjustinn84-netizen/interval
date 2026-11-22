@@ -30,6 +30,15 @@ object IntervalSizes {
     /** The largest a Timer stepper value grows to when the row has room; it never shrinks below a stat. */
     val stepperValueMax = 72.sp
 
+    /**
+     * An app icon's card in Settings: the squircle, the ring round the one worn and the gap between them, and the
+     * tick by its name.
+     */
+    val appIconCard = 72.dp
+    val appIconRing = 2.dp
+    val appIconRingGap = 3.dp
+    val appIconCheck = 16.dp
+
     /** A value in its phase-tinted pill on the Timer. */
     val valuePill = 48.dp
 

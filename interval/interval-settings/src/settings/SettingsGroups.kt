@@ -30,10 +30,6 @@ import dev.justinsmith.interval.settings.resources.effort_max
 import dev.justinsmith.interval.settings.resources.effort_steady
 import dev.justinsmith.interval.settings.resources.settings_about_app
 import dev.justinsmith.interval.settings.resources.settings_about_app_hint
-import dev.justinsmith.interval.settings.resources.settings_app_icon
-import dev.justinsmith.interval.settings.resources.settings_app_icon_hint
-import dev.justinsmith.interval.settings.resources.settings_app_icon_kettlebell
-import dev.justinsmith.interval.settings.resources.settings_app_icon_ring
 import dev.justinsmith.interval.settings.resources.settings_appearance
 import dev.justinsmith.interval.settings.resources.settings_body
 import dev.justinsmith.interval.settings.resources.settings_clear_log
@@ -180,8 +176,7 @@ internal fun settingsGroups(
     onEditRestingHeartRate: () -> Unit,
     onSetEffort: (Effort) -> Unit,
     onSetTheme: (ThemeMode) -> Unit,
-    appIcon: AppIcon?,
-    onSetAppIcon: (AppIcon) -> Unit,
+    appIcon: AppIconRow,
     exports: ExportActions,
     onImport: () -> Unit,
     onClearLog: () -> Unit,
@@ -206,7 +201,7 @@ internal fun settingsGroups(
     },
     SettingsGroup("appearance") {
         GroupLabel(stringResource(Res.string.settings_appearance))
-        AppearanceCard(state.app.theme, onSetTheme, appIcon, onSetAppIcon)
+        AppearanceCard(state.app.theme, onSetTheme, appIcon)
     },
     SettingsGroup("data") {
         GroupLabel(stringResource(Res.string.settings_data))
@@ -498,13 +493,15 @@ private fun PlanCard(
     }
 }
 
-/** How the app looks: its theme, and under it the icon it wears where the platform has more than one. */
+/**
+ * How the app looks: its theme, and under it the icon it wears where the platform has more than one, each as the
+ * card the Home Screen shows ([AppIconPicker]).
+ */
 @Composable
 private fun AppearanceCard(
     theme: ThemeMode,
     onSetTheme: (ThemeMode) -> Unit,
-    appIcon: AppIcon?,
-    onSetAppIcon: (AppIcon) -> Unit,
+    appIcon: AppIconRow,
     modifier: Modifier = Modifier,
 ) {
     ListCard(modifier) {
@@ -516,16 +513,9 @@ private fun AppearanceCard(
             label = { stringResource(it.labelRes) },
             onSelect = onSetTheme,
         )
-        if (appIcon != null) {
+        appIcon.icon?.let { worn ->
             RowDivider()
-            ChoiceRow(
-                stringResource(Res.string.settings_app_icon),
-                stringResource(Res.string.settings_app_icon_hint),
-                AppIcon.entries,
-                appIcon,
-                label = { stringResource(it.labelRes) },
-                onSelect = onSetAppIcon,
-            )
+            AppIconPicker(worn, appIcon.closesApp, appIcon.onPick)
         }
     }
 }
@@ -657,12 +647,6 @@ private val Effort.labelRes: StringResource
     }
 
 /** How the theme picker names each mode; [ThemeMode.name] is what is stored. */
-private val AppIcon.labelRes: StringResource
-    get() = when (this) {
-        AppIcon.Kettlebell -> Res.string.settings_app_icon_kettlebell
-        AppIcon.Ring -> Res.string.settings_app_icon_ring
-    }
-
 private val ThemeMode.labelRes: StringResource
     get() = when (this) {
         ThemeMode.System -> Res.string.theme_system

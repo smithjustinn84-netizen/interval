@@ -5,6 +5,8 @@
 Every icon but iOS's primary app icon and the foreground of Android's launcher icon, which
 `tools/render_icon_3d.py` renders in Blender. The flat mark is each platform's other icon, picked in Settings: iOS's
 alternate icon set (`AppIconRing`) and Android's `ic_launcher_ring`, whose foreground is the splash screen's too.
+Settings shows the two as cards: the mark it draws in code, and the bell from a copy of the render's foreground made
+here (`app_icon_kettlebell.png`, interval-settings).
 
 The mark is the workout's phase ring: three round-capped arcs in the phase colours (Get ready, Work,
 Rest), with a clock hand pointing up through the gap at the top. Its geometry lives here and in
@@ -41,6 +43,9 @@ GROUND_GLOW = "1C3129"  # The lighter centre of the icon's background
 TINTED_ARCS = ["C8C8C8", "FFFFFF", "9A9A9A"]
 
 SUPERSAMPLE = 4
+
+LAUNCHER_CROP = 72  # Of the 108 canvas, the middle a launcher shows of an adaptive icon
+SETTINGS_ICON_PX = 288  # Settings' icon card, 96 dp at three pixels a dp
 
 NOTIFICATION_DP = 24  # Android's small-icon size
 NOTIFICATION_MARGIN = 4  # On the 108 canvas: the mark's strokes stay clear of the icon's edge
@@ -239,6 +244,19 @@ def main():
     for factor in (1, 2, 3):
         suffix = "" if factor == 1 else f"@{factor}x"
         save(launch / f"launch-mark{suffix}.png", render(288 * factor, 1.0, background=False))
+
+    settings_icon(ROOT / "interval/interval-settings/composeResources/drawable")
+
+
+def settings_icon(drawable):
+    """The rendered bell as Settings' "App icon" card shows it: `render_icon_3d.py`'s foreground, the part of it
+    a launcher shows, on no ground (the card draws the icon's own). The Ring's card draws the mark in code."""
+    master = Image.open(ROOT / "tools/icon3d/ic_launcher_foreground_3d.png")
+    edge = round(master.width * (1 - LAUNCHER_CROP / CANVAS) / 2)
+    shown = master.crop((edge, edge, master.width - edge, master.height - edge))
+    # Scaled with its alpha multiplied in, so the bell's edge takes no colour from the clear pixels round it.
+    scaled = shown.convert("RGBa").resize((SETTINGS_ICON_PX, SETTINGS_ICON_PX), Image.LANCZOS).convert("RGBA")
+    save(drawable / "app_icon_kettlebell.png", scaled)
 
 
 def ios_icons(catalog, scale, draw):

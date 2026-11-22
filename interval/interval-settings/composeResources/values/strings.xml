@@ -33,6 +33,7 @@
     <string name="settings_app_icon_hint">The one on your Home Screen</string>
     <string name="settings_app_icon_kettlebell">Kettlebell</string>
     <string name="settings_app_icon_ring">Ring</string>
+    <string name="settings_app_icon_closes">Interval closes to change its icon</string>
     <string name="settings_app_icon_confirm_title">Change the app icon?</string>
     <string name="settings_app_icon_confirm_text">Interval closes to change it. Open it again from its new icon.</string>
     <string name="settings_app_icon_confirm">Change</string>

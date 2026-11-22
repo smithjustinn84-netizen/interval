@@ -338,6 +338,9 @@ object Opacity {
     /** Fine printed registration marks and grid lines on a `ShareCard`. */
     const val SHARE_GRID = 0.22f
 
+    /** A [sheen]'s band of light at its brightest: seen, and never a glare over what it lies on. */
+    const val SHEEN = 0.34f
+
     /** Translucent dark pine telemetry module surface on a `ShareCard`, letting the watermark breathe beneath. */
     const val SHARE_TELEMETRY_PANEL = 0.78f
 }

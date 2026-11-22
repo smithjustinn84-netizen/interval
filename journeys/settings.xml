@@ -32,7 +32,8 @@
     <action>Tap "Voice", scroll to "Appearance" and tap "Dark" under "Theme"</action>
     <action>Go back with the system's Back</action>
     <action>Verify that the Timer is shown</action>
-    <action>Tap the Timer's "Settings" button, scroll to "Appearance" and verify that "Kettlebell" is selected under "App icon", the icon a fresh install wears</action>
+    <action>Tap the Timer's "Settings" button, scroll to "Appearance" and verify that under "App icon" the two icons show as cards, "Kettlebell" ringed and ticked, the icon a fresh install wears, and that a pill under them says "Interval closes to change its icon"</action>
+    <action>Press and hold the "Ring" card, drag the finger round it and verify that the card leans under the finger with a sheen sliding across it, then lift off outside it and verify that it settles flat and "Kettlebell" is still selected</action>
     <action>Tap "Ring" and verify that a dialog asks "Change the app icon?" and says the app closes to change it; tap "Cancel" and verify that "Kettlebell" is still selected</action>
     <action>Tap "Ring" again, then "Change", and verify that the app closes to the launcher within a few seconds</action>
     <action>Open the app drawer and verify that Interval's icon is the flat ring of three arcs, not the kettlebell; tap it and verify that the app opens on Today</action>
