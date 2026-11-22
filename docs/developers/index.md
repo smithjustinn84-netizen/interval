@@ -1,7 +1,7 @@
 # Developers
 
 Interval is a Compose Multiplatform app for Android, iOS and desktop (JVM), built with the
-[Kotlin Toolchain](https://kotlin-toolchain.org/0.13/) (Amper). **There is no Gradle**: build configuration lives
+[Kotlin Toolchain](https://kotlin-toolchain.org/0.14/) (Amper). **There is no Gradle**: build configuration lives
 in `project.yaml` and each module's `module.yaml`.
 
 ## Prerequisites
@@ -50,7 +50,7 @@ Avoid a bare `./kotlin check` locally: it also links every module's iOS tests in
 
 ## The code
 
-32 modules in five folders: `core/` (what both sides build on), `interval/` (conditioning, mobility, Today and
+35 modules in five folders: `core/` (what both sides build on), `interval/` (conditioning, mobility, Today and
 the Log), `lift/` (Lift, the strength side), `apps/` (the app and its three hosts) and `tooling/`. Dependencies
 point toward `core/`, and `tools/check_module_rules.py` keeps them that way in CI.
 
@@ -59,6 +59,10 @@ point toward `core/`, and `tools/check_module_rules.py` keeps them that way in C
 -   **[Architecture](../architecture.md)**
 
     The layers, the modules, Navigation 3, Koin, storage, and the workout off screen.
+
+-   **[ADR-0001: KMP app choices](../adr/0001-kmp-app-choices.md)**
+
+    Why one Compose Multiplatform codebase, Navigation 3, Room KMP and the Kotlin Toolchain.
 
 -   **[Testing](../testing.md)**
 
@@ -76,6 +80,16 @@ point toward `core/`, and `tools/check_module_rules.py` keeps them that way in C
 
 The conventions in full are in
 [CLAUDE.md](https://github.com/smithjustinn84-netizen/interval/blob/main/CLAUDE.md).
+
+## Icons & storefront renders
+
+The 3D kettlebell app icon and framed storefront mockups are rendered headlessly in Blender:
+
+```sh
+uv run --with pillow tools/render_icon_3d.py     # iOS app icon & Android adaptive foreground
+/Applications/Blender.app/Contents/MacOS/Blender --background \
+  --python scripts/render_store_frames.py        # transparent portrait & landscape device renders
+```
 
 ## Version control
 

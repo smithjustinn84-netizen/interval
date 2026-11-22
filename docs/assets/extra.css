@@ -18,6 +18,32 @@
   --md-typeset-a-color: #e5a910;
 }
 
+/* Two-up transparent 3D device showcase renders on the home page. */
+.showcase {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1.5rem;
+  align-items: end;
+  margin: 1.5rem 0 2rem;
+}
+
+.showcase figure {
+  margin: 0;
+  text-align: center;
+}
+
+.showcase img {
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(0 14px 28px rgb(0 0 0 / 28%));
+}
+
+.showcase figcaption {
+  font-size: 0.75rem;
+  color: var(--md-default-fg-color--light);
+  margin-top: 0.5rem;
+}
+
 /* A row of phone screenshots that wraps on a narrow window. */
 .shots {
   display: flex;

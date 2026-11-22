@@ -23,10 +23,12 @@ On iOS, refusing on Apple Health's sheet sends you to the Health app to change i
 
 ## Live heart rate (Android)
 
-With a Polar sensor paired, a workout shows your heart rate on a card under the ring: a dot beating in your
+With a Polar sensor paired, a live pulse badge sits beside the gear on every tab (tap it for the sensor's sheet,
+battery and Forget). During a workout your heart rate shows on a card under the ring: a dot beating in your
 zone's colour, the beats a minute, the zone by number and name, and the five zones as bars in their colours, the
-one you are in lit. A Lift session shows it as a badge in its title bar, and its summary draws the session's heart rate and the
-time in each zone. The zones are worked out from the max heart rate set in Settings, the same on both.
+one you are in lit. A Lift session shows it as a badge in its title bar and on its EMOM and density clocks, and
+its summary draws the session's heart rate and the time in each zone. The zones are worked out from the max heart
+rate set in Settings, the same on both.
 
 Tap the card and the bars turn into your heart rate so far, drawn over the zones with each work interval shaded;
 tap again for the bars. In a Lift session the heart has a card of its own under the session's numbers, with the

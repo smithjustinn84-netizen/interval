@@ -12,9 +12,10 @@ The **Log** tab (History, in the code) is everything done and everything planned
 - **This week**: each kind of training (strength, conditioning, mobility, sport days) done against its plan,
   and what is coming up as a schedule.
 - **The month**: a calendar of done, planned and missed days. Tap a day for its sheet.
-- **Totals, weekly goals and streaks**, all time.
-- **Each workout and session**: its page, with its rounds or sets, how hard it was, your note, and the heart
-  rate from a watch if Health Connect or Apple Health has one.
+- **Totals, 12-week heatmap, weekly goals and streaks**, all time.
+- **Each workout, session and recorded class**: its page, with its rounds or sets, how hard it was, your note,
+  and a dedicated heart-rate card (average, peak, zone-banded chart, time in each zone, 60-second recovery and
+  heart load when recorded on a sensor or read from Health Connect / Apple Health).
 
 ## Sport days
 

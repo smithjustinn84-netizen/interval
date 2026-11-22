@@ -74,6 +74,11 @@ on Android, iOS and desktop.** Everything stays on your device: no account, no a
 
 ## A look around
 
+<div class="showcase" markdown>
+<figure markdown>![Today and active workout timer in chamfered phone frames](assets/store/dual_today_workout_landscape.png)<figcaption>Today & the live chronograph ring</figcaption></figure>
+<figure markdown>![Tablet Today view paired with phone Exercise library](assets/store/companion_tablet_phone_landscape.png)<figcaption>Tablet & phone, offline together</figcaption></figure>
+</div>
+
 <div class="shots" markdown>
 <figure markdown>![Today](screenshots/01_today.png)<figcaption>Today</figcaption></figure>
 <figure markdown>![Set up](screenshots/02_setup.png)<figcaption>Set up</figcaption></figure>
@@ -84,6 +89,7 @@ on Android, iOS and desktop.** Everything stays on your device: no account, no a
 <figure markdown>![A workout running](screenshots/09_workout.png)<figcaption>A workout running</figcaption></figure>
 <figure markdown>![An EMOM in a Lift session](screenshots/11_lift_emom.png)<figcaption>An EMOM in Lift</figcaption></figure>
 <figure markdown>![The Log](screenshots/12_log_week.png)<figcaption>The Log</figcaption></figure>
+<figure markdown>![An exercise shown by a figure](screenshots/15_exercise.png)<figcaption>Exercises & body map</figcaption></figure>
 </div>
 
 ## Where it runs

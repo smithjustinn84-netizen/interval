@@ -2,9 +2,9 @@
 
 ## The welcome
 
-A fresh install opens once on four short pages: what the app is, then a page each for **Today**, **Train** and
-**Log**, each drawn from the tab's own parts. Skip, or the last page, takes you to Set up. If you had the app
-before, or there is anything in it already, it opens straight on Today.
+A fresh install opens once on four short pages: what the app is, then an illustrated page each for **Today**,
+**Train** and **Log**, each drawn on the pine panel from the tab's own parts. Skip, or the last page, takes you to
+Set up. If you had the app before, or there is anything in it already, it opens straight on Today.
 
 ## Set up
 

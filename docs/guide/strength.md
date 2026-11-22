@@ -22,7 +22,8 @@ your own.
 :   A free session, the library and your gear.
 
 **Lately**
-:   Your last session and a four-week balance across seven muscle groups, primary and assisting work apart.
+:   Your last session and a four-week balance across seven muscle groups — with a front-and-back body map separating
+    primary and assisting work.
 
 ## Programs
 
@@ -39,8 +40,10 @@ sets, each lift's pace and your rest between sets.
 
 ## A session
 
-Log each set's load (one bell or two, barbell plates, bodyweight plus a load, a band) and reps; the rest timer
-starts on its own. A block can be:
+Log each set's load (a visual kettlebell rack for one bell or two, a barbell plate loader, bodyweight plus a load,
+or a band) and reps; the rest timer starts on its own. With a Polar sensor paired on Android, a live heart-rate
+card sits under the session's numbers and rests read whether your heart is *high*, *easing* or *ready*. A block
+can be:
 
 **EMOM**
 :   Every minute on the minute, timed and beeped.
@@ -59,9 +62,10 @@ as you go (heaviest, most reps, longest carry), and the next lift's figure raise
 
 134 lifts across kettlebell (with 18, 22, 26 and 30 kg competition bells, half snatches, push presses, and
 farmer's, suitcase, rack and bottoms-up carries), barbell, bodyweight, band and mat Pilates. Every one is shown by
-an animated figure doing a rep, its cues lit in turn. Each exercise's page draws your best set each session
-(weight × reps) over your latest 24, a dashed rule at each move to another bell, with lifetime totals and best
-pace. Add your own exercises too.
+a full-body animated figure doing a rep (with **Step**, **Slow** and **Pause**, its cues lit in turn) and a
+front-and-back muscle body map. Each exercise's page draws your best set each session (weight × reps) over your
+latest 24, a dashed rule at each move to another bell, with lifetime totals and best pace. Add your own exercises
+too, and pick any built-in figure to show them by.
 
 ## Gear, challenges and tests
 
