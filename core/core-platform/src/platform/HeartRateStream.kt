@@ -36,6 +36,21 @@ fun interface HeartRateLink {
     fun connect(id: String): Flow<HeartRateFrame>
 }
 
+/** A sensor heard nearby: the platform's own [id] for it, the [name] it advertises and how strong it was heard. */
+data class HeardSensor(val id: String, val name: String, val rssi: Int)
+
+/**
+ * A [HeartRateLink] that can also look for sensors: Android's GATT and iOS's CoreBluetooth. The platform's id for a
+ * sensor is its Bluetooth address on Android and the peripheral's identifier on iOS, the same one each time.
+ */
+interface HeartRateRadio : HeartRateLink {
+    /**
+     * Every sensor heard nearby that speaks the Heart Rate service, or that goes by a Polar sensor's name, as it is
+     * heard: the same one again each time it advertises, its signal then. Scanning while collected.
+     */
+    fun scan(): Flow<HeardSensor>
+}
+
 /**
  * The heart rate live from the paired sensor over [link], for a workout or a Lift session: a connection held while
  * anyone holds the stream ([start] to [stop], each by its user), tried again whenever it drops, after a wait that

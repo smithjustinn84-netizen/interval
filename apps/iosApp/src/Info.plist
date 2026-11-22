@@ -39,6 +39,10 @@
 	<string>Interval reads your latest body weight, to offer it for the calorie estimate, and your heart rate during a workout you finished, to show on its summary.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Interval saves each workout and Lift session you finish to Apple Health, with its calorie estimate.</string>
+	<!-- A heart-rate strap or armband paired in Settings (IosHeartRateLink, in core-platform): without it the app is
+	     ended as Bluetooth is first used. Foreground only: no bluetooth-central background mode. -->
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Interval uses Bluetooth to read your heart rate live from a strap or armband you pair.</string>
 	<!-- The share sheet's Save Image, for a summary shared as a picture (IosSharer.shareImage, in core): without
 	     it the app is ended as the picture is saved. -->
 	<key>NSPhotoLibraryAddUsageDescription</key>

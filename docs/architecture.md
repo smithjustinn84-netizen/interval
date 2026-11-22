@@ -489,7 +489,7 @@ flowchart TD
   `HeartRateStream` over `AndroidHeartRateLink`, the bytes read by `HeartRateService`), and drives a Polar Verity
   Sense's offline recording, or an H10's exercise recording (the heart rate alone), through Polar's SDK; any other
   strap records no class;
-  iOS and desktop bind `NoClassSensor`. A sync hands a `ClassRecording` of five-second `ClassSample`s to its
+  iOS binds `StreamingSensor` (interval-platform: any strap live over core-platform's `IosHeartRateLink`, CoreBluetooth, recording no class) and desktop `NoClassSensor`. A sync hands a `ClassRecording` of five-second `ClassSample`s to its
   `keep`, which stores it with `HistoryStore.keepClass` (`sport_class`, the one write that is waited on) before the
   sensor is cleared, so a class that couldn't be stored is on the sensor still; it is read back as a `SportClass` whose rounds `detectRounds`
   (`interval-domain`) finds afresh each time. Today records and syncs (`ClassSensorCard`), Settings pairs, and

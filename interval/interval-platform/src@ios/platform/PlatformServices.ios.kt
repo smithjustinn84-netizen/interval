@@ -76,8 +76,12 @@ fun platformModule(): Module = module {
         onClose { (it as? IosBackgroundWorkout)?.release() }
     }
     single<PlanReminders> { IosPlanReminders(get()) }
-    single<ClassSensor> { NoClassSensor }
-    single<LiveHeartRate> { NoLiveHeartRate }
+    // Any strap or armband, live over CoreBluetooth: the Bluetooth prompt waits for the first pairing.
+    single { iosStreamingSensor() }.withOptions {
+        onClose { it?.close() }
+    }
+    single<ClassSensor> { get<StreamingSensor>() }
+    single<LiveHeartRate> { get<StreamingSensor>() }
 }
 
 /**

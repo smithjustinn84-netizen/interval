@@ -63,8 +63,15 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   sensor. To try: pairing an H10 and a Verity Sense, and a strap of another make; the live heart rate through a
   workout on each (Android 12, and 13 and up, take different callbacks); a Verity paired by a build before this one
   found again by its name; a class recorded and synced on each Polar sensor, the SDK now connecting by address;
-  the battery read over GATT. *Brings it in:* the sensors in hand. iOS's CoreBluetooth side is the next piece of
-  F1: it streams nothing yet, and needs `NSBluetoothAlwaysUsageDescription` and a real ask for Bluetooth.
+  the battery read over GATT. *Brings it in:* the sensors in hand.
+- **Live heart rate on iOS** (F1, 2026-11-22). Any strap pairs and streams over CoreBluetooth (`IosHeartRateLink`,
+  under interval-platform's common `StreamingSensor`), tested against fakes alone: the simulator has no Bluetooth, so
+  only the prompt's wiring and the notice were seen there. To try (`journeys/live-heart-rate-strap-ios.xml`): the
+  prompt on the first pairing, a strap and a Polar sensor found and streamed, two in reach, the battery, a drop and
+  its return. Foreground only, by choice: the app declares no `bluetooth-central` background mode, so with the
+  phone locked the connection goes as iOS suspends the app, the trace holds zeros for the gap, and the stream
+  connects again on return. Keeping it would wake the app for each reading, running the workout off screen, which
+  the iOS design leaves to notifications and the Live Activity. *Brings it in:* an iPhone and a strap.
 - **The heart rate read, on a real strap** (2026-11-19). The trace under the ring, Lift's heart card and its
   rest's "ready", recovery and heart load on the summary and in the Log, the zones by heart-rate reserve, the
   sensor's battery, and heart load in readiness are all built against fakes. None has met a sensor: the battery
@@ -92,9 +99,9 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   knows how long it was rolled for.
 - **The class in Health Connect.** Written as a martial-arts session with its heart rate; `HealthWorkoutKind` has
   no such kind yet, and the write would add a heart-rate permission to Play's declaration.
-- **The sensor on iOS.** Polar's iOS SDK is Swift alone: a `swiftPackage` dependency of `iosApp` and a bridge
-  handed into Kotlin as `startWidgetFeed`'s closure is, implementing `ClassSensor` (`interval-platform-api`),
-  with `NSBluetoothAlwaysUsageDescription`. iOS binds `NoClassSensor` until then.
+- **A class recorded on iOS.** Polar's iOS SDK is Swift alone: a `swiftPackage` dependency of `iosApp` and a bridge
+  handed into Kotlin as `startWidgetFeed`'s closure is, recording and syncing beside `StreamingSensor`'s live
+  stream. Until then iOS streams any sensor and records no class on it.
 
 ### From the 2026-11-22 product review ([product-review.md](product-review.md))
 

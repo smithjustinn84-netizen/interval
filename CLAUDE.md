@@ -108,7 +108,8 @@ core/
                      `AppInfo`, `Sharer` (a file, a picture's PNG, or text), the live heart rate (`LiveHeartRate.kt`;
                      `HeartRateService.kt`, Bluetooth's standard Heart Rate service's ids and bytes read;
                      `HeartRateStream.kt`, the stream held, given way and tried again over any `HeartRateLink`;
-                     Android's `AndroidHeartRateLink`, its GATT connection and scan), `AppIconSwitcher` (`AppIcon.kt`:
+                     the `HeartRateRadio` a scan is heard over, `HeardSensor`; Android's `AndroidHeartRateLink`, its GATT connection and
+                     scan; iOS's `IosHeartRateLink`, CoreBluetooth's), `AppIconSwitcher` (`AppIcon.kt`:
                      which icon the app wears, the kettlebell
                      or the ring, and each platform's way to change it), `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
                      iOS's Lock Screen and Dynamic Island, worded and timed, and the `LiveActivityRelay` iosApp points
@@ -161,8 +162,10 @@ interval/            the interval timer
                      Polar sensor's class through the SDK), `PolarRecorders` and `polarSensorModule`, over Polar's SDK
                      (from JitPack, which the module names as a repository), so the SDK and what it brings (RxJava,
                      Retrofit, Protobuf) are held to one module. Only `app`'s Android side depends on it, folding
-                     `polarSensorModule` into the interval platform's (`AppKoin.android.kt`); the other platforms bind
-                     `NoClassSensor` in their `platformModule`
+                     `polarSensorModule` into the interval platform's (`AppKoin.android.kt`); iOS binds
+                     `interval-platform`'s `StreamingSensor` (common: any strap paired and streamed over a
+                     `HeartRateRadio`, recording no class; over `IosHeartRateLink`, CoreBluetooth, and the user
+                     defaults), the desktop `NoClassSensor`
   interval-ui        the workout's shared words and widgets (`ConfigText`, `FieldRow`, `ValueSheet`, `Timeline`,
                      `WeekdayForm`, `WeekdayPicker`, `ActivitySheet`, `StartButton`, `DescribeHint`, `SnatchQuestion`:
                      "About how many snatches a set?", the summary's and the Log page's, over `lift-domain`'s bell
@@ -716,10 +719,14 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart
   rate a second alone, so its rounds go by the heart rate, started when Record is tapped; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
   Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
-  location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
+  location, and takes out the companion-device permissions the SDK declares). iOS binds `StreamingSensor`
+  (`interval-platform`, common, its tests over a fake radio): any strap paired by CoreBluetooth's scan and streamed
+  over `IosHeartRateLink` (`core-platform/src@ios`), known by its peripheral's identifier, `Paired(recordsClasses =
+  false)` whatever it is, foreground only (no Bluetooth background mode, so locked it drops and connects again on
+  return), its prompt raised by the first pairing (`NSBluetoothAlwaysUsageDescription`); desktop binds
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
   `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10 through Polar's SDK, its class recording not yet tried; the live heart
-  rate over Android's own GATT, and pairing by its scan, have met no sensor (docs/backlog.md). A sync hands its `keep`
+  rate over Android's own GATT, and pairing by its scan, have met no sensor, nor has iOS's (docs/backlog.md). A sync hands its `keep`
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,

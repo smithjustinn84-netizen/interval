@@ -14,6 +14,9 @@ import dev.justinsmith.core.resources.apple_health
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.StringResource
+import platform.CoreBluetooth.CBManager
+import platform.CoreBluetooth.CBManagerAuthorizationDenied
+import platform.CoreBluetooth.CBManagerAuthorizationRestricted
 import platform.Foundation.NSURL
 import platform.UIKit.UIAccessibilityIsReduceMotionEnabled
 import platform.UIKit.UIApplication
@@ -124,6 +127,13 @@ private fun openHealthApp() {
 
 private const val HEALTH_APP = "x-apple-health://"
 
-/** Nothing to ask here: no sensor is offered, and iOS asks for Bluetooth itself as it is first used. */
+/**
+ * iOS asks for Bluetooth itself as it is first used, a pairing's scan, so nothing is asked here: only refused once
+ * (or barred by a profile) it answers no at once, which the caller says as any other failure to reach the sensor.
+ * The access is given back in the Settings app.
+ */
 @Composable
-actual fun rememberBluetoothAccess(): BluetoothAccess = BluetoothAccess { then -> then(true) }
+actual fun rememberBluetoothAccess(): BluetoothAccess = BluetoothAccess { then ->
+    val authorization = CBManager.authorization
+    then(authorization != CBManagerAuthorizationDenied && authorization != CBManagerAuthorizationRestricted)
+}

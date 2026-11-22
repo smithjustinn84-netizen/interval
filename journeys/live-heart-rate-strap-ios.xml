@@ -1,0 +1,19 @@
+<journey name="Live heart rate on any strap, on iOS">
+  <description>
+    A heart-rate strap or armband of any make, Polar's too, pairs in Settings on an iPhone and shows the heart rate
+    live in a workout and a Lift session over CoreBluetooth; none records a class on iOS. Needs a real iPhone with
+    Bluetooth on and a strap charged and worn: the simulator has no Bluetooth (there, Pair only raises the prompt and
+    then says Bluetooth is off), so this one is run by hand on a fresh install.
+  </description>
+  <actions>
+    <action>Open the app; verify that no Bluetooth prompt shows at launch. On the welcome tap "Skip to Set up", then "Skip for now"</action>
+    <action>Tap the gear on "Today" and scroll to "Body and heart rate"; verify that the sensor's row reads "Pair a sensor"</action>
+    <action>With the strap worn, tap "Pair a sensor" and allow Bluetooth when iOS asks; verify that the row reads "Looking for it…", then the strap's name over "Paired. Its heart rate shows live in workouts and sessions."</action>
+    <action>Go back to "Today" and verify that beside the gear a dot beats with the heart rate within a few seconds, and that no card offers "Record class" on a day with BJJ planned</action>
+    <action>Start a workout from "Train", "Conditioning"; verify that the heart-rate card under the ring reads the heart rate and, tapped, draws a trace</action>
+    <action>Lock the phone for a minute, then unlock it and return to the app: verify that the number returns within half a minute, and that the trace shows the gap</action>
+    <action>End the workout and verify that its summary shows the heart rate's average and peak; start a free session from "Train", "Strength" and verify that its heart card reads the heart rate</action>
+    <action>With a second sensor worn beside the first, tap "Forget", then "Pair a sensor": verify that "Which sensor?" lists both, the nearer first</action>
+    <action>In the iPhone's Settings, turn Bluetooth off for Interval, come back and tap "Pair a sensor": verify the notice "Bluetooth is off, or the app may not use it."</action>
+  </actions>
+</journey>

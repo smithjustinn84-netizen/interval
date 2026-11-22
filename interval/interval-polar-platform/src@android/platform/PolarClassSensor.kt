@@ -157,7 +157,7 @@ internal class PolarClassSensor(private val context: Context, private val clock:
             try {
                 val heard = withTimeoutOrNull(SCAN_MILLIS) { link.scan().first { it.name == sensor.name } }
                 if (heard != null && paired.sensor?.id == sensor.id) {
-                    paired.pair(heard.address, sensor.name, keepBattery = true)
+                    paired.pair(heard.id, sensor.name, keepBattery = true)
                     stream.settle()
                 }
             } finally {
@@ -226,11 +226,11 @@ internal class PolarClassSensor(private val context: Context, private val clock:
     private suspend fun nearby(): List<NearbySensor> = coroutineScope {
         // Each by its address, its latest signal kept.
         val heard = MutableStateFlow(emptyMap<String, HeardSensor>())
-        val scan = launch { link.scan().collect { sensor -> heard.update { it + (sensor.address to sensor) } } }
+        val scan = launch { link.scan().collect { sensor -> heard.update { it + (sensor.id to sensor) } } }
         val first = withTimeoutOrNull(SCAN_MILLIS) { heard.first { it.isNotEmpty() } }
         if (first != null) delay(SETTLE_MILLIS)
         scan.cancel()
-        heard.value.values.sortedByDescending { it.rssi }.map { NearbySensor(it.address, it.name) }
+        heard.value.values.sortedByDescending { it.rssi }.map { NearbySensor(it.id, it.name) }
     }
 
     override suspend fun forget() = working.withLock {

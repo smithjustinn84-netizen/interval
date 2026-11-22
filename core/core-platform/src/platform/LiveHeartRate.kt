@@ -50,7 +50,8 @@ sealed interface LiveHeartRateState {
  * Streams live heart-rate readings from the user's paired sensor during an active workout or Lift session. The
  * one stream is shared: it runs while anyone holds it, each user starting and stopping it for itself.
  * Both sides consume this contract from `core-platform`; Android's `PolarClassSensor` implements it beside
- * offline class recording, while iOS and desktop bind [NoLiveHeartRate].
+ * offline class recording, iOS's `StreamingSensor` (interval-platform) over CoreBluetooth, and desktop binds
+ * [NoLiveHeartRate].
  */
 interface LiveHeartRate {
     /** Where the stream stands, for showing: a number the same as the last is no change here. */

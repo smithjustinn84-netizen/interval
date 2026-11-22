@@ -32,7 +32,7 @@ import java.util.UUID
  * The caller holds Bluetooth's permissions (`BLUETOOTH_SCAN`, `BLUETOOTH_CONNECT`, Android 12's) before it asks.
  */
 @SuppressLint("MissingPermission")
-class AndroidHeartRateLink(private val context: Context) : HeartRateLink {
+class AndroidHeartRateLink(private val context: Context) : HeartRateRadio {
     private val adapter: BluetoothAdapter?
         get() = context.getSystemService(BluetoothManager::class.java)?.adapter
 
@@ -140,17 +140,13 @@ class AndroidHeartRateLink(private val context: Context) : HeartRateLink {
         }
     }
 
-    /**
-     * Every sensor heard nearby that speaks the Heart Rate service, or that goes by a Polar sensor's name, as it is
-     * heard: the same one again each time it advertises, its signal then. Scanning while collected.
-     */
-    fun scan(): Flow<HeardSensor> = callbackFlow {
+    override fun scan(): Flow<HeardSensor> = callbackFlow {
         val scanner = adapter?.bluetoothLeScanner ?: throw IllegalStateException("No Bluetooth")
         val callback = object : ScanCallback() {
             override fun onScanResult(callbackType: Int, result: ScanResult) {
                 val name = result.scanRecord?.deviceName ?: result.device.name ?: return
                 val serves = result.scanRecord?.serviceUuids?.contains(ParcelUuid(SERVICE)) == true
-                if (serves || POLAR_NAMES.any { it in name }) {
+                if (serves || HeartRateService.isPolarSensor(name)) {
                     trySend(HeardSensor(result.device.address, name, result.rssi))
                 }
             }
@@ -211,16 +207,7 @@ class AndroidHeartRateLink(private val context: Context) : HeartRateLink {
         val BATTERY_LEVEL: UUID = UUID.fromString(HeartRateService.BATTERY_LEVEL)
         val NOTIFICATIONS: UUID = UUID.fromString(HeartRateService.NOTIFICATIONS)
 
-        /**
-         * Polar's heart-rate sensors' names, heard even from one that leaves the service out of its advertisement:
-         * not Polar's watches, which stream no heart rate unless set to.
-         */
-        val POLAR_NAMES = listOf("Polar H10", "Polar H9", "Polar Sense", "Polar OH1")
-
         /** How long a connection has to come and be set up: Android gives up on its own at about 30 s. */
         const val SET_UP_MILLIS = 35_000L
     }
 }
-
-/** A sensor heard nearby: its Bluetooth address, the [name] it advertises and how strong it was heard. */
-data class HeardSensor(val address: String, val name: String, val rssi: Int)

@@ -16,6 +16,12 @@ object HeartRateService {
     const val BATTERY_SERVICE: String = "0000180f-0000-1000-8000-00805f9b34fb"
     const val BATTERY_LEVEL: String = "00002a19-0000-1000-8000-00805f9b34fb"
 
+    /** The same ids by their 16 bits, as CoreBluetooth names them. */
+    const val SERVICE_SHORT: String = "180D"
+    const val MEASUREMENT_SHORT: String = "2A37"
+    const val BATTERY_SERVICE_SHORT: String = "180F"
+    const val BATTERY_LEVEL_SHORT: String = "2A19"
+
     /** The descriptor a characteristic's notifications are switched on by: 0x2902. */
     const val NOTIFICATIONS: String = "00002902-0000-1000-8000-00805f9b34fb"
 
@@ -38,6 +44,14 @@ object HeartRateService {
         val contact = bpm in HeartRate.BPM_RANGE && (touching || !told)
         return LiveHeartRateState.Reading(bpm = if (contact) bpm else 0, contact = contact)
     }
+
+    /**
+     * Whether [name] is one of Polar's heart-rate sensors', heard even when it leaves the service out of its
+     * advertisement: not Polar's watches, which stream no heart rate unless set to.
+     */
+    fun isPolarSensor(name: String): Boolean = POLAR_NAMES.any { it in name }
+
+    private val POLAR_NAMES = listOf("Polar H10", "Polar H9", "Polar Sense", "Polar OH1")
 
     /** A Battery Level's [bytes] as a percentage, null when there is none or it is past 100. */
     fun batteryLevel(bytes: ByteArray): Int? = bytes.firstOrNull()?.toInt()?.and(BYTE)?.takeIf { it <= FULL }
