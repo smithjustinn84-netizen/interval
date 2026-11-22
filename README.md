@@ -5,9 +5,9 @@
 # ⏱️ Interval
 
 **An offline-first, privacy-focused training companion for interval conditioning, kettlebell & strength training, guided mobility flows, and weekly planning.**  
-Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JVM)**, powered by the **Kotlin Toolchain** (Amper-based).
+Built with **Compose Multiplatform** for **Android** and **iOS**, powered by the **Kotlin Toolchain** (Amper-based). A desktop (JVM) host is kept for development only: Compose Hot Reload and UI checks.
 
-[![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-Android_|_iOS_|_Desktop-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/docs/multiplatform.html)
+[![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin_Multiplatform-Android_|_iOS-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org/docs/multiplatform.html)
 [![Compose Multiplatform](https://img.shields.io/badge/Compose_Multiplatform-1.13.0--rc01-4285F4?logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
 [![Build System](https://img.shields.io/badge/Build_System-Kotlin_Toolchain_0.14_(Amper)-0095D5)](https://kotlin-toolchain.org/0.14/)
 [![Zero Gradle](https://img.shields.io/badge/Gradle-Zero_Daemon_|_Zero_Scripts-brightgreen)](#prerequisites)
@@ -58,7 +58,7 @@ Built with **Compose Multiplatform** for **Android**, **iOS**, and **Desktop (JV
 | <img src="docs/screenshots/07_timer.png" width="200" alt="Timer"/> | <img src="docs/screenshots/08_cap.png" width="200" alt="A time cap running"/> | <img src="docs/screenshots/09_workout.png" width="200" alt="Running workout"/> | <img src="docs/screenshots/10_summary.png" width="200" alt="Workout summary"/> |
 | *Work, rest, rounds, sets, warm-up and cool-down, with the total and a calorie estimate* | *As many rounds as you can: tap Round done, with the pace of the round under way* | *The phase, the clock, the round and what comes next* | *Time, rounds and calories, then "How was it?" and a note* |
 
-| Lift: an EMOM running | Exercise library | An exercise shown by a figure | Tablet & desktop |
+| Lift: an EMOM running | Exercise library | An exercise shown by a figure | Tablet |
 |:---:|:---:|:---:|:---:|
 | <img src="docs/screenshots/11_lift_emom.png" width="200" alt="EMOM in a Lift session"/> | <img src="docs/screenshots/14_library.png" width="200" alt="Exercise library"/> | <img src="docs/screenshots/15_exercise.png" width="200" alt="Turkish get-up, shown by a figure"/> | <img src="docs/screenshots/16_tablet_today.png" width="320" alt="Today on a tablet"/> |
 | *The Armor Building Complex, a pair of bells every minute* | *134 lifts across kettlebell, barbell, bodyweight, band and mat* | *A rep animated beside its cues, step by step* | *A navigation rail and two columns on a wide window* |
@@ -131,7 +131,7 @@ interval/
 ├── apps/                # The app and its hosts
 │   ├── app/             # Composition root: Navigation 3 back stack, AppKoin, About, export/import, Set up
 │   ├── androidApp/      # Android host, manifest, launcher shortcuts & Glance home-screen widget
-│   ├── desktopApp/      # Desktop JVM host (Compose Hot Reload ready)
+│   ├── desktopApp/      # Developer harness: Compose Hot Reload & UI checks (not shipped)
 │   └── iosApp/          # iOS Swift host, Home Screen quick actions & Xcode wrapper
 │
 ├── core/                # What both sides build on
@@ -178,7 +178,7 @@ interval/
 ```
 
 ### Key Libraries & Tools
-- **UI Framework**: [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Desktop, Android, iOS) + [AndroidX Glance](https://developer.android.com/develop/ui/compose/glance) for the Android home-screen widget
+- **UI Framework**: [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform) (Android, iOS; the JVM for the dev harness) + [AndroidX Glance](https://developer.android.com/develop/ui/compose/glance) for the Android home-screen widget
 - **Navigation**: [Jetpack Navigation 3](https://developer.android.com/guide/navigation) with adaptive multi-pane layouts and pillar transitions
 - **Dependency Injection**: [Koin](https://insert-koin.io/) & `koin-compose` with process-scoped initialization, narrow store ports, feature modules, and compile-time verification (`VerifyAppModulesTest`)
 - **Database & Persistence**: [Room KMP](https://developer.android.com/kotlin/multiplatform/room) with bundled SQLite driver + AndroidX DataStore
@@ -194,7 +194,7 @@ interval/
 
 The repository includes self-bootstrapping wrappers (`./kotlin` for macOS/Linux, `kotlin.bat` for Windows) for the **Kotlin Toolchain**. The wrapper automatically provisions the pinned toolchain version, Java runtime, and core dependencies on its first run.
 
-- **Desktop (JVM) & Android**: JDK and Android SDK components are auto-provisioned by the toolchain.
+- **Android and the JVM** (tests and the desktop harness): JDK and Android SDK components are auto-provisioned by the toolchain.
 - **iOS**: Requires macOS with Xcode installed to compile Kotlin/Native frameworks.
 - **Tools**: Python 3 is required for architecture rule validation (`tools/check_module_rules.py`), iOS test shard checks (`tools/check_ios_shards.py`), and version parity checks (`tools/check_versions.py`).
 
@@ -228,15 +228,6 @@ python3 tools/check_versions.py
 
 ## 🏃 Running the Apps
 
-### Desktop (JVM)
-```sh
-# Standard run
-./kotlin run -m desktopApp
-
-# Fast UI development with Compose Hot Reload (updates code on save without restarting)
-./kotlin run -m desktopApp --compose-hot-reload
-```
-
 ### Android
 ```sh
 # Run on a connected Android device or running emulator
@@ -251,6 +242,14 @@ android run --apks=build/tasks/_androidApp_buildAndroidDebug/gradle-project-debu
 ```sh
 # Build and run the iOS app on an iOS simulator
 ./kotlin run -m iosApp
+```
+
+### Desktop (developer harness)
+The desktop window is for working on the UI, not a supported or released platform: it has no health store,
+sensor, notifications, widget or icon choice, and owes the phone apps no feature parity.
+```sh
+# Fast UI development with Compose Hot Reload (updates code on save without restarting)
+./kotlin run -m desktopApp --compose-hot-reload
 ```
 
 ---

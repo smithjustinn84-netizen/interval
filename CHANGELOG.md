@@ -16,7 +16,7 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   that classes on the mat will tune. The class's row in the Log says its rounds and opens it again; its page
   deletes the recording and leaves the day logged. Classes go in the export (schema 14) and stay on the device.
   Run against a Verity Sense on a Pixel for a few minutes (pairing, recording, sync), not yet through a class.
-  iOS and desktop offer no sensor yet.
+  iOS offers no sensor yet.
 - A time cap on the Timer: as many rounds as you can in so many minutes. Work's sheet makes the workout one, and
   the editor makes any block of a sequence one ("10 min cap, 2 min rest, 10 min cap"). It runs as one countdown
   with a big Round done under the ring, which counts the rounds as you tap it, with the best of the same workout
@@ -160,6 +160,8 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   block's count-in), and a session opening before its first set says the one due at once.
 
 ### Changed
+- The desktop is no longer offered as a platform. Its window stays as the developer harness for Compose
+  Hot Reload and UI checks; Android and iOS are the apps.
 - A new look: Track & Chalk. Dark mode is the pine of a track's infield after dark, light mode chalk, with a
   varsity gold for the accent (Start, the selected tab, a strength day, a day done), clay red for work, the
   infield's green for rest and a warm amber for get-ready. In light the gold that fills a button is bright with dark

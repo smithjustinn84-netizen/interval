@@ -23,7 +23,7 @@ hide:
 </div>
 
 **A training companion for interval conditioning, kettlebell strength, guided mobility and the week's plan,
-on Android, iOS and desktop.** Everything stays on your device: no account, no analytics, no ads.
+on Android and iOS.** Everything stays on your device: no account, no analytics, no ads.
 
 [Get started](guide/getting-started.md){ .md-button .md-button--primary }
 [Read the guide](guide/index.md){ .md-button }
@@ -98,6 +98,5 @@ on Android, iOS and desktop.** Everything stays on your device: no account, no a
 |---|---|
 | **Android** | The whole app, Health Connect, Live Updates on Android 16, a home-screen widget, shortcuts, a Polar heart-rate sensor (Android 12+) |
 | **iOS** | The whole app, Apple Health, Live Activities on the Lock Screen and in the Dynamic Island, Home Screen and Lock Screen widgets, quick actions |
-| **Desktop** | The whole app in a window, for planning and the log; nothing runs with the window closed |
 
 Building it yourself? See [Developers](developers/index.md).

@@ -1,4 +1,4 @@
-description: "Desktop (JVM) host"
+description: "Developer harness: Compose Hot Reload and UI checks (not a shipped platform)"
 product: jvm/app
 
 apply:

@@ -22,6 +22,11 @@ import kotlin.system.exitProcess
 private val InitialSize = DpSize(1024.dp, 720.dp)
 private val MinimumSize = Dimension(360, 560)
 
+/**
+ * The desktop window: the developer harness for Compose Hot Reload and UI checks, not a platform the app ships on.
+ * It binds the platform's no-ops (no health store, sensor, notifications, widget or icon choice) and owes the phone
+ * apps no feature parity.
+ */
 fun main() {
     val koin = initAppKoin()
     application(exitProcessOnExit = false) {

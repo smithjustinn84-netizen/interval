@@ -1,6 +1,7 @@
 # Architecture
 
-Interval is a Compose Multiplatform application for Android, iOS, and Desktop (JVM), built with the
+Interval is a Compose Multiplatform application for Android and iOS, with a desktop (JVM) host kept as the
+development harness, built with the
 [Kotlin Toolchain](https://kotlin-toolchain.org/0.14/) (Amper-based). The architecture emphasizes strict layer
 separation, compile-time modularity, unidirectional data flow, and offline-first local persistence.
 

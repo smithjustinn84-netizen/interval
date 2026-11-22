@@ -197,3 +197,9 @@ toolchain in exchange.
    and an Apple team").
 4. [ ] Screenshot tests and coverage, once the toolchain supports them (backlog).
 5. [ ] Bump `navigation3-ui` to match the runtime once JetBrains ships 1.2.1 (`libs.versions.toml`).
+
+## Update, 2026-11-22
+
+The desktop stays a target, for the JVM loop this decision leans on (hot reload, previews, the acceptance specs),
+but no longer a product: the 2026-11-22 product review's C4 took its Option A, so it is the developer harness, not
+offered to users, and a platform feature needs no desktop actual beyond a no-op.

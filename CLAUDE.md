@@ -1,6 +1,6 @@
 # interval — Claude Code Guide
 
-Compose Multiplatform app for **Android, iOS and desktop (JVM)**, built with the **Kotlin Toolchain**
+Compose Multiplatform app for **Android and iOS**, with a desktop (JVM) host kept for development, built with the **Kotlin Toolchain**
 (`./kotlin`, Amper-based, version pinned in the `kotlin` wrapper). Docs: https://kotlin-toolchain.org/0.14/
 Full architecture guide: [docs/architecture.md](docs/architecture.md). The current sprint: [docs/sprint-0.6.md](docs/sprint-0.6.md);
 what no sprint holds yet, and why: [docs/backlog.md](docs/backlog.md); the 2026-11-22 product review and `1.0` roadmap:
@@ -275,7 +275,8 @@ apps/
                      on a bitmap in `PhaseColors`, `WidgetSizes`, `WidgetDayAlarm` for the day's turn, `WidgetPreview`
                      publishing the picker's preview once a version on Android 15+; its words in
                      `res/values/strings.xml`)
-  desktopApp         Desktop host application: main.kt entry point, Swing integration, window sizing
+  desktopApp         the development harness, not a shipped platform (Hot Reload, QA): main.kt entry point, Swing
+                     integration, window sizing. It owes the phone apps no feature parity
   iosApp             iOS host application: ViewController.kt (and `openShortcut`, the quick actions' and the widget's
                      links'), iosApp.swift, Xcode project, Info.plist (the quick actions, as `UIApplicationShortcutItems`;
                      the `interval://` scheme), Assets, and the Home Screen and Lock Screen widget:
@@ -536,7 +537,8 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   (`interval/interval-ui/src/splash/`) draws the same mark in code (`IntervalMark.kt`, keep its numbers in step) and
   opens on exactly Android's splash and iOS's launch screen, so the hand-off is seamless.
 - **Platform code**: `expect`/`actual` in `src/` + `src@<platform>/`. Prefer an interface injected via Koin
-  over `expect class`.
+  over `expect class`. The desktop is the development harness, not a platform users get: a platform feature (health, sensors,
+  notifications, widgets, the app icon) needs no desktop actual beyond a no-op (`NoHealthStore`, `NoClassSensor`).
 - **The workout off screen**: the running workout is `WorkoutSession` (`interval-workout`, a Koin single), not
   its ViewModel, which only maps `WorkoutSession.state` (a `WorkoutRun`, pure, its changes worked out there) to
   `WorkoutUiState`. Its `WorkoutTicker` ticks from `realElapsedTime` (counts through sleep) and

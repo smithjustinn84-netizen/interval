@@ -70,6 +70,9 @@ Reduce maintenance drag before it calcifies after `1.0`.
 ### C4. Make an explicit call on `desktopApp`
 - **Where**: `apps/desktopApp/src/main.kt` (43 lines), `README.md`, `docs/index.md`
 - **Issue**: Desktop lacks Health sync, HR sensors, notifications, widgets, and app-icon switching, yet is advertised alongside Android and iOS.
+- **Decided 2026-11-22: Option A.** The desktop is the developer harness; README, the docs site and `mkdocs.yml`
+  no longer offer it to users, and a platform feature needs no desktop actual beyond a no-op. Option B is kept
+  below as declined.
 - **Action**: Choose one clear identity instead of staying in limbo:
   - **Option A (Lean)**: Position `desktopApp` explicitly as a developer Hot Reload & UI-testing harness, removing user-facing desktop promises from `README.md` and the docs homepage.
   - **Option B (Product)**: Make it a purposeful desk/gym-TV companion—keyboard shortcuts across Timer and Lift, compact always-on-top timer window, full-screen Gym TV mode, and CSV export.

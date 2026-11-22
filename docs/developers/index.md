@@ -1,6 +1,7 @@
 # Developers
 
-Interval is a Compose Multiplatform app for Android, iOS and desktop (JVM), built with the
+Interval is a Compose Multiplatform app for Android and iOS, with a desktop (JVM) host kept as the development
+harness, built with the
 [Kotlin Toolchain](https://kotlin-toolchain.org/0.14/) (Amper). **There is no Gradle**: build configuration lives
 in `project.yaml` and each module's `module.yaml`.
 
@@ -34,7 +35,8 @@ Avoid a bare `./kotlin check` locally: it also links every module's iOS tests in
     ./kotlin run -m desktopApp --compose-hot-reload
     ```
 
-    Each save swaps the code in place: the quickest way to work on the UI.
+    Each save swaps the code in place: the quickest way to work on the UI. The desktop is this harness, not a
+    shipped platform: it has no health store, sensor, notifications or widget, and owes the phone apps no parity.
 
 === "Android"
 
