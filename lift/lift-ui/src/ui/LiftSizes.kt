@@ -50,4 +50,25 @@ object LiftSizes {
 
     /** The grip's four weeks on Lift's Grip card: short bars under its lines. */
     val gripChart = 48.dp
+
+    /** Strength's Following card movement hero plate, its top accent ribbon, and its corner registration ticks. */
+    val programHeroHeight = 104.dp
+    val programHeroAccentStrip = 2.dp
+    val programHeroCornerTick = 8.dp
+    val programHeroFigureWidth = 148.dp
+
+    /** Leading movement icon tile on program blocks and recap lift rows. */
+    val liftTile = 34.dp
+
+    /** Circular benchmark progress dial beside each challenge on Strength. */
+    val challengeGauge = 44.dp
+    val challengeGaugeStroke = 3.5.dp
+
+    /** Program completion recap hero plate, its completion ring dial, and lift progression track. */
+    val recapHeroHeight = 120.dp
+    val recapDial = 76.dp
+    val recapDialStroke = 6.dp
+    val recapTrackHeight = 14.dp
+    val recapTrackStroke = 3.dp
+    val recapTrackNode = 4.dp
 }

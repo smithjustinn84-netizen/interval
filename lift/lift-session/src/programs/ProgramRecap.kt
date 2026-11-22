@@ -2,10 +2,12 @@ package dev.justinsmith.lift.programs
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -67,6 +69,7 @@ internal fun NextCycleCard(recap: ProgramRecap, actions: ProgramProgressActions,
     Column(modifier) {
         GroupLabel(stringResource(Res.string.recap_next_cycle))
         ListCard {
+            RecapHeroBand(recap)
             Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space8)) {
                 Text(
                     stringResource(
@@ -161,17 +164,25 @@ internal fun LiftChanges(lifts: List<LiftChange>, modifier: Modifier = Modifier)
         ListCard {
             lifts.forEachIndexed { i, lift ->
                 if (i > 0) RowDivider()
-                Column(Modifier.padding(horizontal = Spacing.space16, vertical = Spacing.space12)) {
-                    Text(
-                        liftName(lift.exercise, lift.double),
-                        style = IntervalTheme.type.label,
-                        color = IntervalTheme.palette.text,
-                    )
-                    Text(
-                        stringResource(Res.string.recap_lift_change, setLine(lift.first), setLine(lift.last)),
-                        style = IntervalTheme.type.meta,
-                        color = IntervalTheme.palette.textDim,
-                    )
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = Spacing.space16, vertical = Spacing.space12),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
+                ) {
+                    RecapLiftTile(lift.exercise, lift.double)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+                        Text(
+                            liftName(lift.exercise, lift.double),
+                            style = IntervalTheme.type.label,
+                            color = IntervalTheme.palette.text,
+                        )
+                        Text(
+                            stringResource(Res.string.recap_lift_change, setLine(lift.first), setLine(lift.last)),
+                            style = IntervalTheme.type.meta,
+                            color = IntervalTheme.palette.textDim,
+                        )
+                        LiftChangeTrack(lift, Modifier.padding(top = Spacing.space4))
+                    }
                 }
             }
         }

@@ -49,7 +49,9 @@ import dev.justinsmith.interval.ui.TabGrid
 import dev.justinsmith.interval.ui.ToggleRow
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.pressScale
+import dev.justinsmith.lift.domain.AbcProtocol
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.Challenge
 import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.LiftSession
@@ -367,6 +369,7 @@ private fun ProgramCard(
         return
     }
     ListCard(modifier) {
+        ProgramHeroBand(state.programDay)
         ProgramHeader(following, state.programDay, state.dayMinutes, onOpenProgram)
         val done = state.programDay?.let { it.number - 1 } ?: following.totalDays
         val described = stringResource(Res.string.today_progress_cd, done, following.totalDays)
@@ -447,7 +450,9 @@ private fun BlockRow(block: Block, state: TodayUiState, modifier: Modifier = Mod
             .semantics(mergeDescendants = true) {}
             .padding(horizontal = Spacing.space16, vertical = Spacing.space12),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        LiftIconTile(block.exercise, block.double)
         Column(Modifier.weight(1f)) {
             Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
             // A bell's or a bar's load shows beside it, as planned or as last used.
@@ -632,6 +637,10 @@ private fun TodayScreenPreview() {
                 lastWhen = "7:42 AM",
                 following = active,
                 programDay = active.dayAfter(2),
+                challenges = listOf(
+                    Challenge.ArmorBuilding(best = 15, protocol = AbcProtocol.OnTheMinute),
+                    Challenge.BodyweightGetUp(kg = 16.0, share = 0.23),
+                ),
             ),
             onStartSession = {},
             onChooseProgram = {},
