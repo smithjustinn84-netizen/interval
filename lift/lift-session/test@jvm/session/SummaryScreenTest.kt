@@ -118,6 +118,9 @@ class SummaryScreenTest {
         onNodeWithText("Share").performClick()
         onNodeWithText("Two-hand swing").assertExists()
         onNodeWithText("1 set").assertExists()
+        onNodeWithText("Figure").assertExists()
+        onNodeWithText("Pose").assertExists()
+        onNodeWithText("Pose").performClick()
         onNodeWithText("Share picture").performClick()
         waitUntil { picture != null }
         val image = Image.makeFromEncoded(checkNotNull(picture))

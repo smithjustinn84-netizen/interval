@@ -116,4 +116,16 @@
     <string name="share_card_cd">The picture that will be shared</string>
     <!-- The app's name at the foot of a shared picture. -->
     <string name="share_card_mark">Interval</string>
+    <!-- Industrial telemetry readout labels and interactive layer controls on `ShareCard` / `ShareCardSheet`. -->
+    <string name="share_card_heart_rate">Heart rate</string>
+    <string name="share_card_hr_peak">Peak %1$d</string>
+    <string name="share_card_hr_avg_peak">Avg %1$d · Peak %2$d</string>
+    <string name="share_card_week">Week</string>
+    <string name="share_card_week_standing">%1$d/%2$d</string>
+    <string name="share_card_week_streak">%1$dw streak</string>
+    <string name="share_card_week_goal_met">Goal met</string>
+    <string name="share_card_toggle_hr">HR</string>
+    <string name="share_card_toggle_week">Week</string>
+    <string name="share_card_toggle_figure">Figure</string>
+    <string name="share_card_cycle_pose">Pose</string>
 </resources>

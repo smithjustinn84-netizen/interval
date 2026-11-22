@@ -30,6 +30,7 @@ import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.SnatchCount
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Phase
 import dev.justinsmith.interval.timer.WeekStanding
@@ -198,10 +199,42 @@ class WorkoutScreenTest {
 
     @Test
     fun `sideways the share sheet keeps both its buttons on screen`() = runUiTest(Window.PhoneSideways) {
-        setThemedContent { Screen(done.toUiState(running = false).copy(elapsedSeconds = 355, calories = 62)) }
+        val rich = done.toUiState(running = false, week = WeekStanding(3, goal = 4, streak = 2)).copy(
+            elapsedSeconds = 355,
+            workSeconds = 240,
+            calories = 62,
+            heartRateSamples = listOf(112, 138, 156, 172, 164, 148),
+            config = IntervalConfig(workSeconds = 15, restSeconds = 15, rounds = 10, activity = Activity.Kettlebell),
+        )
+        setThemedContent { Screen(rich) }
         onNodeWithText("Share").performClick()
+        onNodeWithText("HR").assertIsDisplayed()
+        onNodeWithText("Week").assertIsDisplayed()
+        onNodeWithText("Figure").assertIsDisplayed()
+        onNodeWithText("Pose").assertIsDisplayed()
         onNodeWithText("Share picture").assertIsDisplayed()
         onNodeWithText("Share as text").assertIsDisplayed()
+    }
+
+    @Test
+    fun `interactive share layer toggles update the preview and still export a 4 to 5 PNG`() = runUiTest {
+        val rich = done.toUiState(running = false, week = WeekStanding(3, goal = 4, streak = 2)).copy(
+            elapsedSeconds = 355,
+            workSeconds = 240,
+            heartRateSamples = listOf(112, 138, 156, 172, 164, 148),
+            config = IntervalConfig(workSeconds = 15, restSeconds = 15, rounds = 10, activity = Activity.Kettlebell),
+        )
+        setThemedContent { Screen(rich) }
+        onNodeWithText("Share").performClick()
+        onNodeWithText("Pose").performClick()
+        onNodeWithText("HR").performClick()
+        onNodeWithText("Week").performClick()
+        onNodeWithText("Figure").performClick()
+        onNodeWithText("Pose").assertDoesNotExist()
+        onNodeWithText("Share picture").performClick()
+        waitUntil { picture != null }
+        val image = Image.makeFromEncoded(checkNotNull(picture))
+        assertEquals(1080 to 1350, image.width to image.height)
     }
 
     @Test

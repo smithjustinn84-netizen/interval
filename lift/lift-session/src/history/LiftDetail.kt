@@ -230,7 +230,17 @@ private fun LiftDetailShare(
 ) {
     val moment = stringResource(Res.string.common_joined, state.date, state.time)
     val text = sessionShareText(session, state.records, moment)
-    SessionShareSheet(moment, session, state.records, text, onShare, onSharePicture, onDismiss)
+    SessionShareSheet(
+        eyebrow = moment,
+        session = session,
+        records = state.records,
+        text = text,
+        onShareText = onShare,
+        onSharePicture = onSharePicture,
+        onDismiss = onDismiss,
+        week = state.week,
+        maxHeartRate = state.maxHeartRate,
+    )
 }
 
 @Composable

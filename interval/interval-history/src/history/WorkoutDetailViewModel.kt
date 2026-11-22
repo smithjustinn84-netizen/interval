@@ -10,6 +10,7 @@ import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CapScore
 import dev.justinsmith.interval.model.HistoryEntry
+import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PerceivedEffort
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
@@ -30,13 +31,21 @@ import dev.justinsmith.interval.platform.days
 import dev.justinsmith.interval.platform.heartLoad
 import dev.justinsmith.interval.platform.peakAbove
 import dev.justinsmith.interval.platform.recovery
+import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
+import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.defaultPresetName
 import dev.justinsmith.interval.timer.formatClock
+import dev.justinsmith.interval.timer.matching
+import dev.justinsmith.interval.timer.weekStanding
 import dev.justinsmith.interval.timer.weekdayOf
+import dev.justinsmith.interval.ui.ExerciseRep
 import dev.justinsmith.interval.ui.SnatchAsk
+import dev.justinsmith.interval.ui.rep
+import dev.justinsmith.interval.ui.workoutShareMovement
 import dev.justinsmith.lift.data.LiftActivity
+import dev.justinsmith.lift.domain.LiftSession
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -78,6 +87,10 @@ data class FinishedWorkout(
     val snatches: SnatchAsk? = null,
     /** Its time caps, each with the rounds done in it; empty for a workout with none counted. */
     val caps: List<CapScore> = emptyList(),
+    /** Where the workout's week stood with it in, for its share card's standing badge. */
+    val week: WeekStanding? = null,
+    /** Primary movement silhouette for its share card watermark; null when none applies. */
+    val movement: ExerciseRep? = null,
 ) {
     /** What it is planned or repeated as: its preset's name, or its shape's. */
     val name: String get() = presetName ?: config.defaultPresetName()
@@ -111,26 +124,29 @@ class WorkoutDetailViewModel(
     // Read again each midnight, so "Today" turns to "Yesterday" with the page open.
     val state: StateFlow<WorkoutDetailUiState> =
         combine(
-            historyStore.history,
+            combine(historyStore.history, historyStore.sportDays, lift.sessions, ::Triple),
             planStore.planned,
-            combine(presetStore.presets, flowStore.flows, ::WorkoutNames),
+            combine(presetStore.presets, flowStore.flows, ::Pair),
             combine(settingsStore.appSettings, lift.bells, ::Pair),
             clock.days(timestamps, dayCheckMillis),
         ) {
-                history,
+                (history, sportDays, sessions),
                 planned,
-                names,
+                (presets, flows),
                 (app, bells),
                 _,
             ->
-            buildState(history, planned, names, app, bells)
+            buildState(history, sportDays, sessions, planned, presets, flows, app, bells)
         }.stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
             buildState(
                 historyStore.history.value,
+                historyStore.sportDays.value,
+                lift.sessions.value,
                 planStore.planned.value,
-                WorkoutNames(presetStore.presets.value, flowStore.flows.value),
+                presetStore.presets.value,
+                flowStore.flows.value,
                 settingsStore.appSettings.value,
                 lift.bells.value,
             ),
@@ -195,19 +211,29 @@ class WorkoutDetailViewModel(
         planStore.planOnce(workout, epochDay)
     }
 
+    @Suppress("detekt.LongParameterList")
     private fun buildState(
         history: List<HistoryEntry>,
+        sportDays: List<LoggedSport>,
+        sessions: List<LiftSession>,
         planned: List<PlannedWorkout>,
-        names: WorkoutNames,
+        presets: List<Preset>,
+        flows: List<Flow>,
         app: AppSettings,
         bells: List<Double>,
     ): WorkoutDetailUiState {
         val today = timestamps.dayNumber(clock.nowMillis())
+        val names = WorkoutNames(presets, flows)
         val workout = history.firstOrNull { it.id == id }?.let { entry ->
             val day = timestamps.dayNumber(entry.finishedAtEpochMillis)
             val log = TrainingLog(history, planned, today, dayOf = timestamps::dayNumber)
             val maxBpm = app.body.maxHeartRate ?: DEFAULT_MAX_BPM
             val samples = entry.heartRateSamples
+            val asksSnatches = names.asksSnatches(entry.config)
+            val flowRep = flows.matching(entry.config)?.moves?.firstNotNullOfOrNull { it.rep }
+            val trainedDays = history.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+                sessions.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+                sportDays.map { it.epochDay }
             FinishedWorkout(
                 id = id,
                 presetName = names.of(entry.config),
@@ -229,8 +255,10 @@ class WorkoutDetailViewModel(
                     ?.let { heartLoad(it, maxBpm, restingBpm = app.body.restingHeartRate) }
                     ?.takeIf { it > 0 },
                 peakAboveMax = samples?.let { peakAbove(it, maxBpm) },
-                snatches = if (names.asksSnatches(entry.config)) SnatchAsk.of(entry.snatches, history, bells) else null,
+                snatches = if (asksSnatches) SnatchAsk.of(entry.snatches, history, bells) else null,
                 caps = entry.capRounds?.scores(entry.config).orEmpty(),
+                week = weekStanding(trainedDays, day, app.weeklyGoal),
+                movement = workoutShareMovement(entry.config, asksSnatches = asksSnatches, flowRep = flowRep),
             )
         }
         return WorkoutDetailUiState(workout, dayChoices(today), weekdayOf(today))

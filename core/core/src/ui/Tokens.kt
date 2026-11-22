@@ -115,10 +115,22 @@ object Sizes {
 
     /**
      * A summary shared as a picture (`ShareCard`): laid out at this size in a density of its own, so it is
-     * 1080 by 1350 pixels wherever it is drawn.
+     * 1080 by 1350 pixels wherever it is drawn, with its telemetry header strip, corner registration marks,
+     * standing badge ring, heart-rate chart module, movement silhouette watermark, and interactive layer pills.
      */
     val shareCardWidth = 360.dp
     val shareCardHeight = 450.dp
+    val shareHeaderRule = 3.dp
+    val shareCornerTick = 10.dp
+    val shareWeekRing = 56.dp
+    val shareWeekRingStroke = 5.5.dp
+    val shareWeekRingOuterGap = 3.dp
+    val shareHeartChart = 68.dp
+    val shareZoneStrip = 3.dp
+    val shareStatDividerHeight = 36.dp
+    val shareWatermarkWidth = 236.dp
+    val shareWatermarkHeight = 256.dp
+    val shareToggleHeight = 32.dp
 
     /** The workout/session heart-rate line chart height and stroke, and each zone bar's height. */
     val heartChart = 112.dp
@@ -318,6 +330,15 @@ object Opacity {
 
     /** The lighter share of a bar: on the Lift tab's balance, the sets that only assisted a muscle. */
     const val LIGHT_SHARE = 0.4f
+
+    /** The subtle movement silhouette watermark on a printed telemetry `ShareCard`. */
+    const val SHARE_WATERMARK = 0.17f
+
+    /** Fine printed registration marks and grid lines on a `ShareCard`. */
+    const val SHARE_GRID = 0.22f
+
+    /** Translucent dark pine telemetry module surface on a `ShareCard`, letting the watermark breathe beneath. */
+    const val SHARE_TELEMETRY_PANEL = 0.78f
 }
 
 /**

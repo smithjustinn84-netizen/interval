@@ -5,11 +5,15 @@ import androidx.lifecycle.viewModelScope
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
 import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.TimestampFormatter
+import dev.justinsmith.interval.timer.WeekStanding
+import dev.justinsmith.interval.timer.weekStanding
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.IntervalActivity
+import dev.justinsmith.lift.data.IntervalWorkout
 import dev.justinsmith.lift.data.ProgramStore
 import dev.justinsmith.lift.data.SessionStore
 import dev.justinsmith.lift.data.SetStore
+import dev.justinsmith.lift.data.SportDay
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.PerceivedEffort
@@ -43,12 +47,21 @@ data class LiftDetailUiState(
     val ownsBells: Boolean = false,
     val bar: Double? = null,
     val bands: List<Band> = offeredBands(emptyList()),
+    /** Where the session's week stood with it in, for its share card's standing badge. */
+    val week: WeekStanding? = null,
 )
 
 private data class GearSnapshot(
     val bells: List<Double>,
     val bar: Double?,
     val bands: List<Band>,
+)
+
+private data class IntervalSnapshot(
+    val maxHeartRate: Int?,
+    val workouts: List<IntervalWorkout>,
+    val sportDays: List<SportDay>,
+    val weeklyGoal: Int?,
 )
 
 /** The session stored under [uid], as History opens it, with inline editing and deletion. */
@@ -63,16 +76,28 @@ class LiftDetailViewModel(
     private val intervals: IntervalActivity,
 ) : ViewModel() {
     private val gear = combine(gearStore.bells, gearStore.bar, gearStore.bands, ::GearSnapshot)
+    private val intervalSnapshot = combine(
+        intervals.maxHeartRate,
+        intervals.workouts,
+        intervals.sportDays,
+        intervals.weeklyGoal,
+        ::IntervalSnapshot,
+    )
 
     val state: StateFlow<LiftDetailUiState> =
-        combine(sessionStore.sessions, programStore.customPrograms, intervals.maxHeartRate, gear, ::build)
+        combine(sessionStore.sessions, programStore.customPrograms, intervalSnapshot, gear, ::build)
             .stateIn(
                 viewModelScope,
                 SharingStarted.Eagerly,
                 build(
                     sessionStore.sessions.value,
                     programStore.customPrograms.value,
-                    intervals.maxHeartRate.value,
+                    IntervalSnapshot(
+                        intervals.maxHeartRate.value,
+                        intervals.workouts.value,
+                        intervals.sportDays.value,
+                        intervals.weeklyGoal.value,
+                    ),
                     GearSnapshot(gearStore.bells.value, gearStore.bar.value, gearStore.bands.value),
                 ),
             )
@@ -135,11 +160,15 @@ class LiftDetailViewModel(
     private fun build(
         sessions: List<LiftSession>,
         custom: List<Program>,
-        maxHeartRate: Int?,
+        interval: IntervalSnapshot,
         gear: GearSnapshot,
     ): LiftDetailUiState {
         val session = sessions.firstOrNull { it.uid == uid } ?: return LiftDetailUiState()
         val at = session.finishedAtEpochMillis ?: session.startedAtEpochMillis
+        val sessionDay = timestamps.dayNumber(at)
+        val trainedDays = sessions.mapNotNull { it.finishedAtEpochMillis }.map(timestamps::dayNumber) +
+            interval.workouts.map { timestamps.dayNumber(it.finishedAtEpochMillis) } +
+            interval.sportDays.map { it.epochDay }
         // Newest first, so the ones finished before it are those after it in the list.
         val before = sessions.dropWhile { it.uid != uid }.drop(1).flatMap { it.sets }
         return LiftDetailUiState(
@@ -147,12 +176,13 @@ class LiftDetailViewModel(
             date = timestamps.date(at),
             time = timestamps.time(at),
             records = newRecords(before, session),
-            maxHeartRate = maxHeartRate ?: DEFAULT_MAX_BPM,
+            maxHeartRate = interval.maxHeartRate ?: DEFAULT_MAX_BPM,
             program = session.program?.let { key -> (shippedPrograms + custom).firstOrNull { it.key == key } },
             bells = gear.bells.ifEmpty { standardBells },
             ownsBells = gear.bells.isNotEmpty(),
             bar = gear.bar,
             bands = offeredBands(gear.bands),
+            week = weekStanding(trainedDays, sessionDay, interval.weeklyGoal),
         )
     }
 }

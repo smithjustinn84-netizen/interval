@@ -167,7 +167,10 @@ fun SummaryScreen(
     }
     if (sharing) {
         val done = stringResource(Res.string.summary_done)
-        SessionShareSheet(done, session, finished.records, shareText, onShare, onSharePicture) { sharing = false }
+        SessionShareSheet(
+            done, session, finished.records, shareText, onShare, onSharePicture,
+            onDismiss = { sharing = false }, week = finished.week, maxHeartRate = finished.maxHeartRate,
+        )
     }
 }
 

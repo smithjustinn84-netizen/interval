@@ -360,6 +360,9 @@
          records or lifts past those it has room for. -->
     <string name="record_tag">Record</string>
     <string name="share_card_moved">%1$s moved</string>
+    <string name="share_card_volume">Volume</string>
+    <string name="share_card_peak_bpm">Peak BPM</string>
+    <string name="share_card_tut">Tension</string>
     <plurals name="share_card_sets">
         <item quantity="one">%1$d set</item>
         <item quantity="other">%1$d sets</item>

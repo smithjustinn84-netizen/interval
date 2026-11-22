@@ -176,6 +176,8 @@
     <string name="plan_describe_no_day">No day, so it stays off the plan</string>
     <string name="detail_total">Total</string>
     <string name="detail_work">Work</string>
+    <string name="detail_peak_bpm">Peak BPM</string>
+    <string name="detail_kcal_unit">kcal</string>
     <!-- A finished time cap's figures: its rounds in its minutes, the average round, the fastest and slowest. -->
     <string name="detail_cap_rounds">Rounds in %1$d min</string>
     <string name="detail_cap_pace">A round</string>

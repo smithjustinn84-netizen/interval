@@ -67,7 +67,6 @@ import dev.justinsmith.interval.ui.LocalRestingHeartRate
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.ProgressRing
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.ShareCardSheet
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.StreakBadge
@@ -203,7 +202,7 @@ internal fun SummaryLayout(
         presets = state.presets,
         onSave = { _, preset -> onSavePreset(preset) },
     )
-    if (sharing) ShareCardSheet(shareText, onShare, onSharePicture, { sharing = false }) { SummaryShareCard(state) }
+    if (sharing) SummaryShareSheet(state, shareText, onShare, onSharePicture) { sharing = false }
 }
 
 @Composable

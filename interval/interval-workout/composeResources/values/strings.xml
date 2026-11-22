@@ -112,8 +112,11 @@
     </plurals>
     <string name="workout_stat_moves">Moves</string>
     <string name="workout_stat_time">Time</string>
+    <string name="workout_stat_work">Work</string>
     <string name="workout_stat_rounds">Rounds</string>
     <string name="workout_stat_calories">Calories</string>
+    <string name="workout_stat_peak_bpm">Peak BPM</string>
+    <string name="workout_stat_kcal_unit">kcal</string>
     <!-- Under the summary's heart card, whose number is the workout's average. -->
     <string name="workout_heart_average_peak">Average · %1$d peak</string>
     <string name="workout_heart_recovery">Down %1$d in %2$d s after work</string>

@@ -120,4 +120,51 @@ class EstimateTest {
         assertEquals(20, day(abcs).estimatedMinutes(rest))
         assertEquals(30, day(abcs, swingsOnTheMinute).estimatedMinutes(rest))
     }
+
+    @Test
+    fun `time under tension sums logged holds and rep pace without warm-ups`() {
+        val session = LiftSession(
+            uid = "s1",
+            startedAtEpochMillis = 0,
+            finishedAtEpochMillis = 600_000,
+            title = "Swings and hang",
+            sets = listOf(
+                SetLog.of(1, BuiltInExercise.TwoHandSwing, kg = 12.0, reps = 10, side = null, 0, warmUp = true),
+                SetLog.of(2, BuiltInExercise.TwoHandSwing, kg = 24.0, reps = 10, side = null, 60_000),
+                SetLog.of(3, BuiltInExercise.GobletSquat, kg = 24.0, reps = 5, side = null, 120_000),
+                SetLog.of(4, BuiltInExercise.Plank, kg = 0.0, reps = 1, side = null, 180_000, seconds = 45),
+            ),
+        )
+        // 10 swings * 2s + 5 goblet squats * 3s + 45s hold = 80s (warm-up excluded).
+        assertEquals(80, session.timeUnderTensionSeconds)
+    }
+
+    @Test
+    fun `primary exercise picks highest working tonnage or most sets when unloaded`() {
+        val weighted = LiftSession(
+            uid = "s2",
+            startedAtEpochMillis = 0,
+            finishedAtEpochMillis = 600_000,
+            title = "Strength",
+            sets = listOf(
+                SetLog.of(1, BuiltInExercise.Press, kg = 16.0, reps = 5, side = null, 0),
+                SetLog.of(2, BuiltInExercise.TwoHandSwing, kg = 24.0, reps = 10, side = null, 60_000),
+                SetLog.of(3, BuiltInExercise.TwoHandSwing, kg = 24.0, reps = 10, side = null, 120_000),
+            ),
+        )
+        assertEquals(BuiltInExercise.TwoHandSwing, weighted.primaryExercise)
+
+        val unloaded = LiftSession(
+            uid = "s3",
+            startedAtEpochMillis = 0,
+            finishedAtEpochMillis = 300_000,
+            title = "Bodyweight",
+            sets = listOf(
+                SetLog.of(1, BuiltInExercise.PushUp, kg = 0.0, reps = 10, side = null, 0),
+                SetLog.of(2, BuiltInExercise.Plank, kg = 0.0, reps = 1, side = null, 60_000, seconds = 30),
+                SetLog.of(3, BuiltInExercise.Plank, kg = 0.0, reps = 1, side = null, 120_000, seconds = 30),
+            ),
+        )
+        assertEquals(BuiltInExercise.Plank, unloaded.primaryExercise)
+    }
 }

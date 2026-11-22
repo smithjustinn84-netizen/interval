@@ -246,6 +246,7 @@ data class WorkoutRun(
             effort = effort,
             note = note,
         ).copy(
+            workSeconds = workSeconds,
             heartRate = heartRate,
             heartRateSamples = heartRateSamples,
             maxHeartRate = maxHeartRate,

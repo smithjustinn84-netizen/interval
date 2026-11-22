@@ -20,6 +20,7 @@ import dev.justinsmith.interval.timer.formatClock
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAfter
 import dev.justinsmith.interval.timer.stepAt
+import dev.justinsmith.interval.ui.ExerciseRep
 import dev.justinsmith.interval.ui.SnatchAsk
 import dev.justinsmith.interval.ui.rep
 
@@ -70,6 +71,8 @@ data class FlowNow(
     val step: FlowStep?,
     val next: FlowStep?,
     val figures: Boolean = false,
+    /** The flow's leading Lift figure, for its summary share card watermark; null when none has one. */
+    val primaryRep: ExerciseRep? = null,
 )
 
 /**
@@ -130,6 +133,8 @@ data class WorkoutUiState(
     val calories: Int? = null,
     /** The time the timer has run, in seconds, behind [elapsed]. */
     val elapsedSeconds: Int = 0,
+    /** Active work seconds completed in the workout, for telemetry export; 0 until recorded. */
+    val workSeconds: Int = 0,
     /** Where the week stands with this workout in it, once it is recorded. */
     val week: WeekStanding? = null,
     /** Ended from off screen (the notification's End) with no round done: nothing to keep, so the screen leaves. */
@@ -275,6 +280,7 @@ private fun WorkoutState.flowNow(flow: Flow): FlowNow {
         step = step,
         next = step?.takeIf { phase == Phase.Work }?.let(flow::stepAfter),
         figures = flow.moves.any { it.rep != null },
+        primaryRep = flow.moves.firstNotNullOfOrNull { it.rep },
     )
 }
 

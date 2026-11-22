@@ -25,6 +25,11 @@ class ShaderSourcesTest {
     }
 
     @Test
+    fun `the heart rate chart's shader compiles`() {
+        assertNotNull(shaderProgram(HEART_RATE_CHART_SHADER))
+    }
+
+    @Test
     fun `a source that is no shader gives none`() {
         assertNull(shaderProgram("half4 main(float2 p) { return nothing; }"))
     }

@@ -48,6 +48,35 @@ fun ProgramDay.estimatedMinutes(restSeconds: Int): Int {
     }
 }
 
+/**
+ * Estimated active time under tension across the session's working sets, in seconds: timed holds count their
+ * logged [SetLog.seconds], and rep-based sets estimate active work from each lift's pace ([secondsPerRep]).
+ */
+val LiftSession.timeUnderTensionSeconds: Int
+    get() = workingSets.sumOf { set ->
+        when {
+            set.seconds != null -> set.seconds
+            set.exercise.measure == Measure.Time -> set.reps
+            else -> set.reps * set.exercise.secondsPerRep
+        }
+    }
+
+/**
+ * The session's primary movement: among working sets, the lift with the greatest total weight moved (or the most
+ * sets when the session is unloaded), falling back to the first logged exercise when every set is a warm-up.
+ */
+val LiftSession.primaryExercise: Exercise?
+    get() {
+        val grouped = workingSets.groupBy { it.exercise }
+        if (grouped.isEmpty()) return sets.firstOrNull()?.exercise
+        val byTonnage = grouped.maxByOrNull { (_, sets) -> sets.sumOf { it.tonnageKg } }
+        return if (byTonnage != null && byTonnage.value.sumOf { it.tonnageKg } > 0.0) {
+            byTonnage.key
+        } else {
+            grouped.maxByOrNull { (_, sets) -> sets.size }?.key
+        }
+    }
+
 /** About how long this program's days take, the shortest of them to the longest, in minutes. */
 fun Program.dayMinutes(restSeconds: Int): IntRange {
     val minutes = days.indices.map { day(it + 1).estimatedMinutes(restSeconds) }

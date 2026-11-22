@@ -81,7 +81,6 @@ import dev.justinsmith.interval.ui.NoticeAction
 import dev.justinsmith.interval.ui.PreviewFormFactors
 import dev.justinsmith.interval.ui.ScrollPage
 import dev.justinsmith.interval.ui.SecondaryButton
-import dev.justinsmith.interval.ui.ShareCardSheet
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.SnatchQuestion
 import dev.justinsmith.interval.ui.Spacing
@@ -227,11 +226,7 @@ fun WorkoutDetailScreen(
             weekday = state.todayWeekday,
         )
     }
-    if (sharing) {
-        ShareCardSheet(shareText, onShare, onSharePicture, onDismiss = { sharing = false }) {
-            DetailShareCard(workout)
-        }
-    }
+    if (sharing) DetailShareSheet(workout, shareText, onShare, onSharePicture) { sharing = false }
     if (confirming) {
         ConfirmDialog(
             title = stringResource(Res.string.detail_delete_title),
