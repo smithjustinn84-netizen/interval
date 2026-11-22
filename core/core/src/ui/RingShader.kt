@@ -20,6 +20,11 @@ import androidx.compose.ui.graphics.drawscope.Stroke
  * - `heat` (0 to 1) is the interval's last seconds: the tail's fade lifts, the arc is exposed brighter
  *   ([SKSL_LIGHT]) and the needle grows to the band's width. `beat` (0 to 1) flashes it the same way, most at
  *   the head.
+ * - `zone` is the live heart rate's zone, its colour and in its alpha how hard the heart is working (0 with no
+ *   heart read, when nothing of it is drawn): the ticks on the track are etched in it, bolder the higher the
+ *   zone, and outside the band runs a bezel of it, a faint hairline round the band that each tick is carried on
+ *   from as a mark, across the `rim` pixels between the band and its lane, longer the higher the zone. The arc
+ *   stays the time's alone, so the bezel reads at any sweep.
  *
  * Colours are sRGB with their alpha apart; coordinates are pixels.
  */
@@ -37,6 +42,8 @@ uniform float4 accent;
 uniform float4 track;
 uniform float4 etch;
 uniform float4 mark;
+uniform float4 zone;
+uniform float rim;
 
 const float TAU = 6.28318530718;
 
@@ -52,6 +59,7 @@ half4 main(float2 p) {
     float band = cover(abs(off) - halfWidth);
 
     float tick = 0.0;
+    float stub = 0.0;
     if (count > 0.0) {
         float at = turn * count;
         float nearest = min(floor(at + 0.5), floor(count + 0.001));
@@ -66,7 +74,14 @@ half4 main(float2 p) {
         float across = away / count * TAU * r;
         tick = cover(across - hair * mix(0.5, 0.8, isMajor)) * cover(abs(off - middle) - reach * 0.5)
             * mix(0.6, 1.0, isMajor);
+        float room = rim - 2.0 * hair;
+        float stretch = room * mix(0.45, 1.0, zone.a) * mix(0.6, 1.0, isMajor);
+        float beyond = off - halfWidth - hair - stretch * 0.5;
+        stub = cover(across - hair * mix(0.7, 1.0, isMajor)) * cover(abs(beyond) - stretch * 0.5)
+            * step(0.5, room);
     }
+    float lit = smoothstep(0.0, 0.3, zone.a);
+    float foot = cover(abs(off - halfWidth - hair * 1.5) - hair * 0.5) * step(0.5, rim);
 
     float angle = sweep * TAU;
     float2 ray = float2(sin(angle), -cos(angle));
@@ -96,10 +111,13 @@ half4 main(float2 p) {
     float needle = cover(length(float2(sideways, max(abs(outward) - span, 0.0))) - hair * 0.75);
     ink = mix(ink, mark.rgb, 0.92 * needle * mark.a);
 
-    float3 bed = mix(track.rgb, etch.rgb, 0.3 * tick * etch.a);
+    float3 etched = mix(etch.rgb, zone.rgb, lit);
+    float bite = mix(0.3 * etch.a, mix(0.45, 0.9, zone.a), lit);
+    float3 bed = mix(track.rgb, etched, bite * tick);
     float bedAlpha = track.a * band * (1.0 - arc);
-    float alpha = arc + bedAlpha;
-    float3 color = ink * arc + bed * bedAlpha;
+    float bezel = max(stub, 0.5 * foot) * lit * mix(0.6, 1.0, zone.a);
+    float alpha = arc + bedAlpha + bezel;
+    float3 color = ink * arc + bed * bedAlpha + zone.rgb * bezel;
     color = clamp(color + grain(p) / 255.0 * alpha, 0.0, alpha);
     return half4(color.r, color.g, color.b, alpha);
 }
@@ -111,6 +129,7 @@ half4 main(float2 p) {
  */
 internal class RingShaderPaint(private val program: ShaderProgram, private val hairline: Float) {
     private var stroke = Stroke(0f)
+    private var rim = 0f
 
     /** The dial's [ticks], or none. */
     fun dial(ticks: DialTicks?) {
@@ -135,10 +154,23 @@ internal class RingShaderPaint(private val program: ShaderProgram, private val h
         program.set("mark", mark)
     }
 
+    /**
+     * The live heart rate's [zone] as the bezel shows it: the ticks on the track in its colour, and each carried
+     * on outside the band by up to [reach] pixels, all of it by its strength (0 to 1: none of it, to the top
+     * zone's). None, or one that reads no heart, draws nothing of it.
+     */
+    fun zone(zone: RingZone?, reach: Float) {
+        val strength = zone?.strength?.coerceIn(0f, 1f) ?: 0f
+        rim = if (strength > 0f) reach else 0f
+        program.set("zone", (zone?.color ?: Color.Transparent).copy(alpha = strength))
+        program.set("rim", rim)
+    }
+
     /** The band [width] wide round a circle of [radius] about [center], filled to [sweep] of a turn. */
     fun DrawScope.drawBand(center: Offset, radius: Float, width: Float, sweep: Float) {
-        // A pixel wider than the band on each side: the shader ramps its own edges, inside the stroke's.
-        val painted = width + EDGE_PIXELS * 2
+        // A pixel wider than the band on each side: the shader ramps its own edges, inside the stroke's. With a
+        // zone the bezel's marks too, which stand outside the band (and the same inside is painted clear).
+        val painted = width + (EDGE_PIXELS + rim) * 2
         if (painted != stroke.width) stroke = Stroke(painted)
         program.set("center", center.x, center.y)
         program.set("radius", radius)

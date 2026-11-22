@@ -61,6 +61,7 @@ import dev.justinsmith.interval.ui.StandardEasing
 import dev.justinsmith.interval.ui.TextScaleAtMost
 import dev.justinsmith.interval.ui.of
 import dev.justinsmith.interval.ui.rememberCountdownPulse
+import dev.justinsmith.interval.ui.rememberRingZone
 import dev.justinsmith.interval.ui.ringClockSize
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.next_block
@@ -217,6 +218,7 @@ internal fun RingReadout(
             pulse = rememberCountdownPulse(state.clock, state.countingDown),
             laps = { ringLaps(state) },
             dial = dial,
+            zone = rememberRingZone(state.liveHeartRate, state.maxHeartRate),
         )
         // Inside the ring its words keep the size the ring is drawn for, as the clock does, sized by the ring alone:
         // the clock fills it, so larger they run into the ring. Over the ring the round line says it at full size.
@@ -267,6 +269,7 @@ internal fun LandscapeReadout(
                 pulse = rememberCountdownPulse(state.clock, state.countingDown),
                 laps = { ringLaps(state) },
                 dial = dial,
+                zone = rememberRingZone(state.liveHeartRate, state.maxHeartRate),
             )
             val size = ringClockSize(diameter, state.clock.length, IntervalTheme.type.clock.fontSize)
             Clock(state, accent, size, heat = { dial?.heat(progress()) ?: 0f })

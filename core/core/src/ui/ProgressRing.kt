@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.tooling.preview.Preview
+import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.timer.formatClock
 import kotlinx.coroutines.flow.collectLatest
@@ -68,6 +69,12 @@ class RingLaps(val count: Int, val done: Int, val active: Int?) {
  * needle at its head, and with a [dial] ticks cut across it, a second or a rounder step each, and the heat of
  * the interval's last seconds, when the arc brightens and beats (not under reduced motion, which keeps the
  * heat alone). Where there is none (Android before 13) it is the plain arc over its track.
+ *
+ * With a [zone] (a [rememberRingZone] of the live heart rate) the ring has a bezel too, a hairline in the zone's
+ * colour just outside the band, and with a [dial] its ticks are part of it: those on the track etched in the
+ * zone's colour, and each carried on outside the band toward the lane, bolder and longer the higher the zone. So
+ * the arc says the time left and the marks round it how hard the heart is working. Without the shader the bezel
+ * is the hairline alone.
  */
 @Composable
 fun ProgressRing(
@@ -79,6 +86,7 @@ fun ProgressRing(
     pulse: () -> Float = { 0f },
     laps: (() -> RingLaps?)? = null,
     dial: RingDial? = null,
+    zone: RingZone? = null,
 ) {
     val latest by rememberUpdatedState(progress)
     val shown = remember { Animatable(progress()) }
@@ -110,6 +118,7 @@ fun ProgressRing(
                 ),
                 lap = Stroke(width = Sizes.ringLap.toPx()),
                 lapGap = Sizes.ringLapGap.toPx(),
+                bezel = Stroke(width = Sizes.hairline.toPx()),
             )
             val shader = program?.let { RingShaderPaint(it, Sizes.hairline.toPx()) }
             shader?.dial(ticks)
@@ -126,10 +135,12 @@ fun ProgressRing(
                     val soft = if (beats) beatAt(left, urgent) * (SOFT_BEAT + (1f - SOFT_BEAT) * heat) else 0f
                     shader.urgency(heat, maxOf(beat, soft))
                     shader.colors(ink, colors.track, etch = colors.onGround, mark = workout.onFill(ink))
+                    shader.zone(zone, reach = strokes.outerGap)
                     with(shader) { drawBand(center, diameter / 2, width, sweep) }
                 } else {
                     strokes.widen(width)
                     drawBand(sweep, ink, diameter, strokes, colors.track)
+                    drawBezel(zone, diameter + width + strokes.outerGap, strokes)
                 }
             }
         },
@@ -144,10 +155,16 @@ private class RingColors(val track: Color, val lane: Color, val onGround: Color)
 
 /**
  * The ring's strokes: the outer lane's (dashed, or a [lap] each with [lapGap] between) [outerGap] out from the
- * ring, and the two of a ring drawn without its shader, made again only when the width changes (a swell), not
- * on every frame.
+ * ring, the [bezel]'s hairline between them, and the two of a ring drawn without its shader, made again only
+ * when the width changes (a swell), not on every frame.
  */
-private class RingStrokes(val outerGap: Float, val dashed: Stroke, val lap: Stroke, val lapGap: Float) {
+private class RingStrokes(
+    val outerGap: Float,
+    val dashed: Stroke,
+    val lap: Stroke,
+    val lapGap: Float,
+    val bezel: Stroke,
+) {
     var track = Stroke(0f)
         private set
     var arc = Stroke(0f, cap = StrokeCap.Round)
@@ -192,6 +209,18 @@ private fun DrawScope.drawBand(sweep: Float, accent: Color, diameter: Float, str
     if (sweep > 0f) {
         drawArc(accent, Angles.TWELVE_O_CLOCK, Angles.FULL_TURN * sweep, false, topLeft, arc, style = strokes.arc)
     }
+}
+
+/**
+ * The bezel without its shader: a hairline round a circle [diameter] across, midway between the band and its
+ * lane, in the [zone]'s colour and as strong as the zone is.
+ */
+private fun DrawScope.drawBezel(zone: RingZone?, diameter: Float, strokes: RingStrokes) {
+    val strength = zone?.strength ?: 0f
+    if (zone == null || strength <= 0f) return
+    val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
+    val color = zone.color.copy(alpha = strength)
+    drawArc(color, 0f, Angles.FULL_TURN, useCenter = false, topLeft, Size(diameter, diameter), style = strokes.bezel)
 }
 
 /** The outer lane with no laps: a dashed hairline round a circle [diameter] across, centred. */
@@ -276,3 +305,52 @@ private fun ProgressRingPreview() {
 }
 
 private class PreviewRing(val progress: Float, val dial: RingDial?, val accent: Color, val laps: RingLaps? = null)
+
+/**
+ * The ring as a bezel of the live heart rate, a ring a zone from the easiest to the hardest: the ticks on the
+ * track and the marks outside the band in the zone's colour, there too with the arc still full.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Preview
+@Composable
+private fun ProgressRingZonesPreview() {
+    IntervalTheme(darkTheme = true) {
+        val workout = IntervalTheme.workout
+        val dial = RingDial(seconds = 30, draining = true)
+        val rings = listOf(
+            PreviewZone(bpm = 100, progress = 0.2f, workout.rest),
+            PreviewZone(bpm = 125, progress = 0.9f, workout.work),
+            PreviewZone(bpm = 145, progress = 0.6f, workout.work),
+            PreviewZone(bpm = 162, progress = 0.35f, workout.work),
+            PreviewZone(bpm = 182, progress = 1f, workout.work),
+        )
+        FlowRow(
+            Modifier.fillMaxSize().background(workout.ground).padding(Spacing.space16),
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space16),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space16),
+        ) {
+            for (ring in rings) {
+                Box(Modifier.size(Sizes.figurePage), contentAlignment = Alignment.Center) {
+                    ProgressRing(
+                        { ring.progress },
+                        { ring.accent },
+                        Modifier.fillMaxSize(),
+                        glide = false,
+                        laps = { RingLaps(count = 8, done = 3, active = 4) },
+                        dial = dial,
+                        zone = rememberRingZone(LiveHeartRateState.Reading(ring.bpm)),
+                    )
+                    CountdownClock(
+                        formatClock(ceil(dial.secondsLeft(ring.progress)).toInt()),
+                        intervalKey = Unit,
+                        countingDown = false,
+                        accent = ring.accent,
+                        style = IntervalTheme.type.display,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private class PreviewZone(val bpm: Int, val progress: Float, val accent: Color)

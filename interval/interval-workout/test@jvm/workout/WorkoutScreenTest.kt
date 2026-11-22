@@ -7,10 +7,13 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.ComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
@@ -20,6 +23,7 @@ import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performKeyInput
 import androidx.compose.ui.test.performScrollTo
@@ -55,6 +59,10 @@ private val states: List<WorkoutState> = generateSequence(WorkoutEngine.start(In
 private val firstWork = states.first { it.phase == Phase.Work }
 private val firstRest = states.first { it.phase == Phase.Rest }
 private val done = states.last()
+
+/** How far a pixel's blue stands over its red and its green to count as blue: zone 1's, on the workout's ground. */
+private const val BLUE_OVER_RED = 0.12f
+private const val BLUE_OVER_GREEN = 0.04f
 
 class WorkoutScreenTest {
     private val calls = mutableListOf<String>()
@@ -105,6 +113,39 @@ class WorkoutScreenTest {
         state = state.copy(liveHeartRate = LiveHeartRateState.Disconnected)
         onNodeWithText("No signal").assertExists()
         onNodeWithText("Last 120 bpm").assertExists()
+    }
+
+    @Test
+    fun `a heart read by the sensor rings the dial in its zone's colour`() = runUiTest {
+        var state by mutableStateOf(firstWork.toUiState(running = true))
+        setThemedContent { Screen(state) }
+        assertEquals(0, blueOverTheClock(state.clock), "nothing of the workout's own is blue")
+
+        // Zone 1's blue: the bezel round the band, where no other colour of a work interval is.
+        state = state.copy(liveHeartRate = LiveHeartRateState.Reading(bpm = 100), maxHeartRate = 190)
+        waitForIdle()
+        assertTrue(blueOverTheClock(state.clock) > 0, "the bezel is drawn in the zone's colour")
+
+        state = state.copy(liveHeartRate = LiveHeartRateState.Disconnected)
+        waitForIdle()
+        assertEquals(0, blueOverTheClock(state.clock), "a sensor lost leaves no bezel")
+    }
+
+    /**
+     * How many pixels from the top of the screen to the foot of the [clock] are blue: the ring's upper half and all
+     * over it, clear of the zone scale under the ring, which has every zone's colour on it.
+     */
+    private fun ComposeUiTest.blueOverTheClock(clock: String): Int {
+        val foot = onNodeWithText(clock).fetchSemanticsNode().boundsInRoot.bottom.toInt()
+        val pixels = onRoot().captureToImage().toPixelMap()
+        var blue = 0
+        for (y in 0 until minOf(foot, pixels.height)) {
+            for (x in 0 until pixels.width) {
+                val color = pixels[x, y]
+                if (color.blue > color.red + BLUE_OVER_RED && color.blue > color.green + BLUE_OVER_GREEN) blue++
+            }
+        }
+        return blue
     }
 
     @Test
