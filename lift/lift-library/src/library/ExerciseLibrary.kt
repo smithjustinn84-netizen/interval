@@ -34,6 +34,7 @@ import dev.justinsmith.lift.library.resources.library_recent
 import dev.justinsmith.lift.library.resources.library_title
 import dev.justinsmith.lift.library.resources.library_yours
 import dev.justinsmith.lift.ui.equipmentName
+import dev.justinsmith.lift.ui.iconRes
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -111,7 +112,10 @@ fun ExerciseLibraryScreen(
             val exercises = byEquipment[equipment] ?: return@forEach
             item(key = "group-${equipment.name}") {
                 Column(card) {
-                    GroupLabel(stringResource(Res.string.library_group, equipmentName(equipment), exercises.size))
+                    GroupLabel(
+                        stringResource(Res.string.library_group, equipmentName(equipment), exercises.size),
+                        icon = equipment.iconRes(),
+                    )
                     ExerciseList(exercises, matches.names, null, onPick, canPick, opens = true, equipment = false)
                 }
             }

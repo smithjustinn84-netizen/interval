@@ -24,6 +24,8 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
+import dev.justinsmith.core.resources.ic_equip_jump_rope
+import dev.justinsmith.core.resources.ic_equip_kettlebell
 import dev.justinsmith.interval.timer.Activity
 import dev.justinsmith.interval.ui.resources.Res
 import dev.justinsmith.interval.ui.resources.activity_barbell
@@ -50,8 +52,11 @@ import dev.justinsmith.interval.ui.resources.activity_sheet_note
 import dev.justinsmith.interval.ui.resources.activity_ski_erg
 import dev.justinsmith.interval.ui.resources.activity_ski_erg_hint
 import dev.justinsmith.interval.ui.resources.activity_title
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
+import dev.justinsmith.core.resources.Res as CoreRes
 
 /**
  * Picks what the work intervals are spent doing, which the calorie estimate depends on: one row per
@@ -99,7 +104,20 @@ private fun ActivityRow(activity: Activity, selected: Boolean, onClick: () -> Un
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(activity.labelRes), style = IntervalTheme.type.label, color = palette.text)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                Text(stringResource(activity.labelRes), style = IntervalTheme.type.label, color = palette.text)
+                activity.iconRes?.let { glyph ->
+                    Icon(
+                        vectorResource(glyph),
+                        contentDescription = null,
+                        tint = if (selected) palette.accent else palette.textDim,
+                        modifier = Modifier.size(Sizes.iconInline),
+                    )
+                }
+            }
             Text(stringResource(activity.hintRes), style = IntervalTheme.type.meta, color = palette.textDim)
         }
         val check by animateFloatAsState(if (selected) 1f else 0f, tween(Motion.STATE_MILLIS), label = "check")
@@ -126,6 +144,14 @@ val Activity.labelRes: StringResource
         Activity.Barbell -> Res.string.activity_barbell
         Activity.Climbing -> Res.string.activity_climbing
         Activity.Mobility -> Res.string.activity_mobility
+    }
+
+/** Optional equipment glyph for activities that have one in the shared icon set. */
+private val Activity.iconRes: DrawableResource?
+    get() = when (this) {
+        Activity.JumpRope -> CoreRes.drawable.ic_equip_jump_rope
+        Activity.Kettlebell -> CoreRes.drawable.ic_equip_kettlebell
+        else -> null
     }
 
 /** The line under an activity's name in the picker, saying what it covers. */

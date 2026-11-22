@@ -19,6 +19,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import dev.justinsmith.core.resources.ic_equip_double_kb
+import dev.justinsmith.core.resources.ic_equip_kettlebell
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.plan.sportName
@@ -66,6 +68,7 @@ import dev.justinsmith.lift.ui.estimateLine
 import dev.justinsmith.lift.ui.programName
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import dev.justinsmith.core.resources.Res as CoreRes
 
 // Set up's four questions and the week they come to.
 
@@ -112,7 +115,7 @@ internal fun DaysQuestion(weekdays: Int, onChange: (Int) -> Unit) {
 /** The bells owned, each a size in kg to tick. */
 @Composable
 internal fun BellsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) {
-    GroupLabel(stringResource(Res.string.setup_bells))
+    GroupLabel(stringResource(Res.string.setup_bells), icon = CoreRes.drawable.ic_equip_kettlebell)
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
@@ -135,7 +138,7 @@ internal fun BellsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) 
 @Composable
 internal fun PairsQuestion(state: WeekSetupUiState, onToggle: (Double) -> Unit) {
     Column {
-        GroupLabel(stringResource(Res.string.setup_pairs))
+        GroupLabel(stringResource(Res.string.setup_pairs), icon = CoreRes.drawable.ic_equip_double_kb)
         FlowRow(
             horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
             verticalArrangement = Arrangement.spacedBy(Spacing.space8),

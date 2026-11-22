@@ -86,9 +86,12 @@ import dev.justinsmith.lift.ui.equipmentName
 import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.focusName
+import dev.justinsmith.lift.ui.iconRes
 import dev.justinsmith.lift.ui.measureName
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.pluralStringResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 /**
  * What the library lists: [exercises] in the catalogue's order, the [recents] first, narrowed by [filters],
@@ -250,7 +253,7 @@ fun PickerHeader(
             maxLength = SEARCH_LENGTH,
             imeAction = ImeAction.Search,
         )
-        FilterChips(Equipment.entries, filters.equipment, { equipmentName(it) }) { e ->
+        FilterChips(Equipment.entries, filters.equipment, { equipmentName(it) }, icon = { it.iconRes() }) { e ->
             onFilters { it.copy(equipment = it.equipment.toggled(e)) }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -324,12 +327,20 @@ private fun MoreFilters(
 /** A chip for each of [options], any number of them on. */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun <T> FilterChips(options: List<T>, on: Set<T>, label: @Composable (T) -> String, onToggle: (T) -> Unit) {
+private fun <T> FilterChips(
+    options: List<T>,
+    on: Set<T>,
+    label: @Composable (T) -> String,
+    icon: (T) -> DrawableResource? = { null },
+    onToggle: (T) -> Unit,
+) {
     FlowRow(
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        options.forEach { option -> Choice(label(option), option in on, { onToggle(option) }, role = Role.Checkbox) }
+        options.forEach { option ->
+            Choice(label(option), option in on, { onToggle(option) }, role = Role.Checkbox, icon = icon(option))
+        }
     }
 }
 
@@ -412,6 +423,14 @@ private fun ExerciseRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
+        exercise.iconRes()?.let { glyph ->
+            Icon(
+                vectorResource(glyph),
+                contentDescription = null,
+                tint = if (selected) palette.accent else palette.textDim,
+                modifier = Modifier.size(Sizes.icon),
+            )
+        }
         Column(Modifier.weight(1f)) {
             Text(name, style = IntervalTheme.type.label, color = palette.text)
             Text(exerciseFacts(exercise, equipment), style = IntervalTheme.type.meta, color = palette.textDim)

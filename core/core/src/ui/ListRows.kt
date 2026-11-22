@@ -44,18 +44,39 @@ import androidx.compose.ui.unit.dp
 import com.composeunstyled.Thumb
 import com.composeunstyled.Track
 import com.composeunstyled.UnstyledSwitch
+import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.vectorResource
 
-/** The label over a group of list rows: "Built-in", "Today", "Cues". */
+/** The label over a group of list rows: "Built-in", "Today", "Cues", with an optional leading [icon]. */
 @Composable
-fun GroupLabel(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = IntervalTheme.type.label,
-        color = IntervalTheme.palette.textDim,
-        modifier = modifier
-            .padding(start = Spacing.space4, top = Spacing.space12, bottom = Spacing.space8)
-            .semantics { heading() },
-    )
+fun GroupLabel(text: String, modifier: Modifier = Modifier, icon: DrawableResource? = null) {
+    val labelModifier = modifier.padding(start = Spacing.space4, top = Spacing.space12, bottom = Spacing.space8)
+    if (icon == null) {
+        Text(
+            text,
+            style = IntervalTheme.type.label,
+            color = IntervalTheme.palette.textDim,
+            modifier = labelModifier.semantics { heading() },
+        )
+    } else {
+        Row(
+            labelModifier.semantics(mergeDescendants = true) { heading() },
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Icon(
+                vectorResource(icon),
+                contentDescription = null,
+                tint = IntervalTheme.palette.textDim,
+                modifier = Modifier.size(Sizes.iconInline),
+            )
+            Text(
+                text,
+                style = IntervalTheme.type.label,
+                color = IntervalTheme.palette.textDim,
+            )
+        }
+    }
 }
 
 /**

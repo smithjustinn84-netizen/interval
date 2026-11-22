@@ -10,9 +10,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,7 +55,9 @@ import dev.justinsmith.lift.ui.resources.session_title_more
 import dev.justinsmith.lift.ui.resources.session_title_two
 import dev.justinsmith.lift.ui.resources.side_left
 import dev.justinsmith.lift.ui.resources.side_right
+import org.jetbrains.compose.resources.DrawableResource
 import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.vectorResource
 
 /** An exercise's name: "Two-hand swing". */
 @Composable
@@ -107,6 +112,7 @@ fun Choice(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     role: Role = Role.RadioButton,
+    icon: DrawableResource? = null,
 ) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
@@ -133,7 +139,22 @@ fun Choice(
             .padding(horizontal = Spacing.space16, vertical = Spacing.space4),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text, style = IntervalTheme.type.label, color = palette.text)
+        if (icon == null) {
+            Text(text, style = IntervalTheme.type.label, color = palette.text)
+        } else {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+            ) {
+                Icon(
+                    vectorResource(icon),
+                    contentDescription = null,
+                    tint = if (selected) palette.accent else palette.textDim,
+                    modifier = Modifier.size(Sizes.iconInline),
+                )
+                Text(text, style = IntervalTheme.type.label, color = palette.text)
+            }
+        }
     }
 }
 
@@ -166,13 +187,16 @@ fun <T> ChoiceRow(
     label: @Composable (T) -> String,
     onSelect: (T) -> Unit,
     modifier: Modifier = Modifier,
+    icon: (T) -> DrawableResource? = { null },
 ) {
     FlowRow(
         modifier.selectableGroup(),
         horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
         verticalArrangement = Arrangement.spacedBy(Spacing.space8),
     ) {
-        options.forEach { option -> Choice(label(option), option == selected, onClick = { onSelect(option) }) }
+        options.forEach { option ->
+            Choice(label(option), option == selected, onClick = { onSelect(option) }, icon = icon(option))
+        }
     }
 }
 

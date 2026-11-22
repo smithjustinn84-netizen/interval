@@ -229,6 +229,9 @@ object Sizes {
     /** Line icons: tabs and top-bar actions. */
     val icon = 24.dp
 
+    /** Compact inline glyphs paired with a label inside a chip, group heading, or row. */
+    val iconInline = 18.dp
+
     /** The heart of the sensor's pulse in a title bar, and the dot on it while the battery is low. */
     val sensorPulseHeart = 20.dp
     val sensorPulseDot = 8.dp

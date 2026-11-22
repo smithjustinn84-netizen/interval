@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import dev.justinsmith.core.resources.ic_equip_bands
+import dev.justinsmith.core.resources.ic_equip_kettlebell
 import dev.justinsmith.interval.ui.AccentButton
 import dev.justinsmith.interval.ui.BackAction
 import dev.justinsmith.interval.ui.GroupLabel
@@ -77,6 +79,7 @@ import dev.justinsmith.lift.ui.bandColourName
 import dev.justinsmith.lift.ui.bandName
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
+import dev.justinsmith.core.resources.Res as CoreRes
 
 /** What the page does with a band: changes it, moves it, removes or restores it. */
 class BandActions(
@@ -168,7 +171,7 @@ fun GearScreen(
 @Composable
 private fun BellsSection(owned: Set<Double>, onToggle: (Double) -> Unit, modifier: Modifier = Modifier) {
     Column(modifier) {
-        GroupLabel(stringResource(Res.string.bells_owned))
+        GroupLabel(stringResource(Res.string.bells_owned), icon = CoreRes.drawable.ic_equip_kettlebell)
         ListCard {
             Column(
                 Modifier.padding(Spacing.space16),
@@ -239,7 +242,7 @@ private fun BarSection(bar: Double?, onBar: (Double?) -> Unit, modifier: Modifie
 @Composable
 private fun BandsSection(bands: List<Band>, onOpen: (Band) -> Unit, onAdd: () -> Unit, modifier: Modifier = Modifier) {
     Column(modifier) {
-        GroupLabel(stringResource(Res.string.bands_owned))
+        GroupLabel(stringResource(Res.string.bands_owned), icon = CoreRes.drawable.ic_equip_bands)
         BandList(offeredBands(bands), onOpen)
         Text(
             stringResource(Res.string.bands_owned_hint),

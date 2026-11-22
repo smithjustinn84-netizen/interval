@@ -55,6 +55,7 @@ import dev.justinsmith.lift.library.resources.notice_exercise_saved
 import dev.justinsmith.lift.ui.ChoiceRow
 import dev.justinsmith.lift.ui.equipmentName
 import dev.justinsmith.lift.ui.focusName
+import dev.justinsmith.lift.ui.iconRes
 import dev.justinsmith.lift.ui.measureName
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
@@ -154,7 +155,7 @@ fun ExerciseEditorForm(
         } else {
             ChoiceRow(Equipment.entries, draft.equipment, { equipmentName(it) }, { e ->
                 onChange { it.withEquipment(e) }
-            })
+            }, icon = { it.iconRes() })
             GroupLabel(stringResource(Res.string.library_measured))
             ChoiceRow(Measure.entries, draft.measure, { measureName(it) }, { m -> onChange { it.copy(measure = m) } })
         }
