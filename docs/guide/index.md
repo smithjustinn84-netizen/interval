@@ -22,7 +22,7 @@ New here? Start with [Getting started](getting-started.md).
 
 | Page | What it covers |
 |---|---|
-| [Getting started](getting-started.md) | The welcome, Set up's four questions, the First week card |
+| [Getting started](getting-started.md) | The welcome, Set up's questions, the First week card |
 | [Today](today.md) | The day in order, easier days, rest days, picking by time |
 | [Strength](strength.md) | Programs, a session, timers, the library, gear, tests and coaching |
 | [Conditioning & the Timer](conditioning.md) | Work and rest, sets, ladders, sequences, time caps, presets, cues |
