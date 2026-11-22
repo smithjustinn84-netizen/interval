@@ -27,10 +27,7 @@ object LiftSizes {
     val barbellDiagram = 56.dp
     val kettlebellRack = 72.dp
 
-    /** The marker on a demo's timeline, the gap between its stretches, and the bar beside a cue it lights. */
-    val demoMarkerWidth = 4.dp
-    val demoMarkerHeight = 16.dp
-    val demoStretchGap = 2.dp
+    /** The bar beside a cue a demo lights. */
     val cueBar = 6.dp
 
     /** A set-up's stretch at its narrowest on a demo's timeline, and the gap that keeps it apart from the rep. */

@@ -83,7 +83,7 @@ fun DemoTimeline(
             },
     ) {
         val track = Sizes.progressBar.toPx()
-        val gap = LiftSizes.demoStretchGap.toPx()
+        val gap = Sizes.demoStretchGap.toPx()
         val middle = size.height / 2
         val round = CornerRadius(track / 2)
         fun stretch(from: Float, to: Float, beat: DemoBeat) = drawRoundRect(
@@ -97,8 +97,8 @@ fun DemoTimeline(
             val (start, phase) = stretches[i]
             stretch(bar.xOf(start, size.width), bar.xOf(phase.until.coerceAtMost(1f), size.width), phase.beat)
         }
-        val markerWidth = LiftSizes.demoMarkerWidth.toPx()
-        val markerHeight = LiftSizes.demoMarkerHeight.toPx()
+        val markerWidth = Sizes.demoMarkerWidth.toPx()
+        val markerHeight = Sizes.demoMarkerHeight.toPx()
         val x = bar.xOf(player.progress, size.width).coerceIn(markerWidth / 2, size.width - markerWidth / 2)
         drawRoundRect(
             marker,

@@ -13,10 +13,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.FloatState
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -101,6 +101,8 @@ data class ExerciseDemoColors(
  * It fills the room [modifier] gives it, the whole rep fitted inside, so the figure never moves about its frame.
  * [contentDescription] says what it shows, for a screen reader. [onPhase] is told the part of the rep it is in
  * ([ExerciseRep.phaseAt]) as that changes, for a label that follows it: [ExerciseDiagram] is the two together.
+ * [position] is where it keeps how far through the rep it has run, for a caller that draws that too (a marker on
+ * a [PhaseTrack]).
  */
 @Composable
 fun ExerciseDemoCanvas(
@@ -110,12 +112,15 @@ fun ExerciseDemoCanvas(
     colors: ExerciseDemoColors = ExerciseDemoColors.theme(),
     contentDescription: String? = null,
     onPhase: ((RepPhase?) -> Unit)? = null,
+    position: RepPosition = rememberRepPosition(rep),
 ) {
     val held by rememberUpdatedState(progress?.coerceIn(0f, 1f))
     var inView by remember { mutableStateOf(true) }
-    val loop = rememberLoopProgress(rep, progress, inView)
-    val report by rememberUpdatedState(onPhase)
-    LaunchedEffect(rep) { snapshotFlow { rep.phaseAt(held ?: loop.floatValue) }.collect { report?.invoke(it) } }
+    RunLoop(rep, position, progress, inView)
+    if (onPhase != null) {
+        val report by rememberUpdatedState(onPhase)
+        LaunchedEffect(rep, position) { snapshotFlow { rep.phaseAt(held ?: position.share) }.collect { report(it) } }
+    }
     val described = if (contentDescription == null) {
         Modifier
     } else {
@@ -132,7 +137,7 @@ fun ExerciseDemoCanvas(
                 val stage = DemoStage(rep, size, this)
                 onDrawBehind {
                     // Read here, so a frame redraws the figure and recomposes nothing.
-                    val at = held ?: loop.floatValue
+                    val at = held ?: position.share
                     drawReferences(stage, colors.reference)
                     drawTrajectory(stage, at, colors.bell)
                     val pose = rep.poseAt(at)
@@ -145,25 +150,37 @@ fun ExerciseDemoCanvas(
 }
 
 /**
- * How far through [rep] it has run by itself. It stands where [held] has it while it is held, so it runs on from
+ * How far through its rep a diagram has run by itself: [share], 0 to 1. It changes every frame while the rep
+ * runs, so read it while drawing, where a frame redraws and recomposes nothing.
+ */
+@Stable
+class RepPosition internal constructor(start: Float) {
+    var share: Float by mutableFloatStateOf(start)
+        internal set
+}
+
+/** A [RepPosition] for [rep], starting where the rep stands still. */
+@Composable
+fun rememberRepPosition(rep: ExerciseRep): RepPosition = remember(rep) { RepPosition(rep.still) }
+
+/**
+ * Runs [position] through [rep] by itself. It stands where [held] has it while it is held, so it runs on from
  * there, stands still under reduced motion, and takes no frames while it is scrolled out of view ([inView]). The
  * frames come from an infinite animation, which a UI test cancels rather than waits on.
  */
 @Composable
-private fun rememberLoopProgress(rep: ExerciseRep, held: Float?, inView: Boolean): FloatState {
+private fun RunLoop(rep: ExerciseRep, position: RepPosition, held: Float?, inView: Boolean) {
     val still = prefersReducedMotion()
-    val progress = remember(rep) { mutableFloatStateOf(rep.still) }
-    LaunchedEffect(rep, held, still, inView) {
-        if (held != null) progress.floatValue = held.coerceIn(0f, 1f)
+    LaunchedEffect(rep, position, held, still, inView) {
+        if (held != null) position.share = held.coerceIn(0f, 1f)
         if (held != null || still || !inView) return@LaunchedEffect
-        val from = progress.floatValue
+        val from = position.share
         val start = withInfiniteAnimationFrameMillis { it }
         while (true) {
             val elapsed = withInfiniteAnimationFrameMillis { it } - start
-            progress.floatValue = (from + elapsed / (rep.seconds * MILLIS_PER_SECOND)).mod(1f)
+            position.share = (from + elapsed / (rep.seconds * MILLIS_PER_SECOND)).mod(1f)
         }
     }
-    return progress
 }
 
 /** A limb's width at each end, as shares of the figure's height: wider where it joins the body. */

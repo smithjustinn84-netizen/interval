@@ -68,4 +68,6 @@
     <string name="rep_phase_down_to_elbow">Down to the elbow</string>
     <string name="rep_phase_roll_down">Roll down</string>
     <string name="rep_phase_lower_bell">Lower the bell</string>
+    <string name="rep_track_cd">Where in the bell's path</string>
+    <string name="rep_resume">Resume</string>
 </resources>

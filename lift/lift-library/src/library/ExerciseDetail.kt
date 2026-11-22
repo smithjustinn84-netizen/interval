@@ -257,8 +257,9 @@ private fun Cues(lines: List<String>) {
 }
 
 /**
- * [exercise] drawn from the side with the path its bell takes, under the name of the part of the rep it is in:
- * for a lift a diagram is drawn for ([diagram]), and nothing for the rest.
+ * [exercise] drawn from the side with the path its bell takes, under the name of the part of the rep it is in and
+ * over a bar of the rep's parts to go through it by hand: for a lift a diagram is drawn for ([diagram]), and
+ * nothing for the rest.
  */
 @Composable
 private fun BellPath(exercise: Exercise, name: String) {
@@ -267,8 +268,9 @@ private fun BellPath(exercise: Exercise, name: String) {
     ListCard(fill = IntervalTheme.palette.surfaceVariant) {
         ExerciseDiagram(
             rep,
-            Modifier.fillMaxWidth().height(Sizes.figurePage).padding(Spacing.space12),
+            Modifier.fillMaxWidth().height(Sizes.figurePage + Sizes.iconButton).padding(Spacing.space12),
             contentDescription = stringResource(Res.string.detail_bell_path_cd, name),
+            scrubbable = true,
         )
     }
 }

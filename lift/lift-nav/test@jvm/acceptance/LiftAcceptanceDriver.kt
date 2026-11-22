@@ -2,6 +2,7 @@
 
 package dev.justinsmith.lift.acceptance
 
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.DesktopComposeUiTest
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -15,6 +16,7 @@ import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.ui.AcceptanceSteps
@@ -472,6 +474,20 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     }
 
     fun seeNoBellPath() = seeNo("Bell path")
+
+    /** Touching the bar under the bell's path [at] that share of the way along holds the rep in [phase]. */
+    fun scrubBellPath(at: Float, phase: String) {
+        ui.onNode(hasContentDescription("Where in the bell's path"))
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(at) }
+        see(phase)
+        see("Resume")
+    }
+
+    /** Resume sets the held rep running again. */
+    fun resumeBellPath() {
+        tap("Resume")
+        seeNo("Resume")
+    }
 
     fun pauseDemonstration() {
         tap("Pause")

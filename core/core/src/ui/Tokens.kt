@@ -195,6 +195,11 @@ object Sizes {
     val demoPath = 1.5.dp
     val demoTrail = 3.dp
 
+    /** The marker on a timeline of a rep ([PhaseTrack], Lift's figure's), and the gap between its stretches. */
+    val demoMarkerWidth = 4.dp
+    val demoMarkerHeight = 16.dp
+    val demoStretchGap = 2.dp
+
     /** How tall the fade at the foot of a summary's scrolling column is while more of it lies below. */
     val summaryFade = 48.dp
 
