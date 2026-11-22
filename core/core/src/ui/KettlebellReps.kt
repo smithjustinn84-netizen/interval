@@ -12,6 +12,13 @@ object KettlebellPoses {
      */
     val Hinge = BodyPose(hipAngleDeg = 70f, kneeAngleDeg = 26f, torsoAngleDeg = 46f, shoulderAngleDeg = 2f)
 
+    /**
+     * The hinge done wrong, as a squat: the knees gone forward over the toes, the hips sunk rather than sent back
+     * and the chest up, the arms still on the ribs. What a swing looks like with its hinge squatted, for a
+     * diagram to show beside the right one.
+     */
+    val SquattedHinge = BodyPose(hipAngleDeg = 66f, kneeAngleDeg = 66f, torsoAngleDeg = 24f, shoulderAngleDeg = 2f)
+
     /** The hips through: standing tall already, the arm only now leaving the body. A swing passes through it. */
     val Drive = BodyPose(shoulderAngleDeg = 24f)
 

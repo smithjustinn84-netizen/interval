@@ -65,7 +65,14 @@ data class ExerciseKeyframe(
 
 /** The stretch of a rep called [phase]: [from] this share of the way through it [until] that one. */
 @Immutable
-data class PhaseSpan(val phase: RepPhase, val from: Float, val until: Float)
+data class PhaseSpan(val phase: RepPhase, val from: Float, val until: Float) {
+    /** Where a rep held to show this stretch stands: just inside it, where its own name shows. */
+    val start: Float get() = from + INSIDE
+
+    private companion object {
+        const val INSIDE = 0.001f
+    }
+}
 
 /**
  * A rep as its [keyframes], in order, from the first at 0 to the last at 1, over [seconds] when it runs by itself.
@@ -148,13 +155,43 @@ data class ExerciseRep(val keyframes: List<ExerciseKeyframe>, val seconds: Float
      * start it is the first stretch's.
      */
     fun phaseAt(progress: Float): RepPhase? {
-        val at = progress - floor(progress)
+        // The very end is the last stretch's, where a rep dragged all the way along is held, not the start again.
+        val at = if (progress == 1f) 1f else progress - floor(progress)
         // By its place, not an iterator: this is asked every frame a rep runs.
         for (index in phases.indices) {
             val span = phases[index]
             if (at <= span.until) return span.phase.takeIf { at > span.from || (at == 0f && span.from == 0f) }
         }
         return null
+    }
+
+    /**
+     * Where the named stretch after the one [at] is in starts ([PhaseSpan.start]), for a rep gone through a part
+     * at a time: the first again after the last, and [at] itself for a rep that names none. A rep at the end of
+     * one stretch is still in it ([phaseAt]), so the next is the one that starts there.
+     */
+    fun stepAfter(at: Float): Float {
+        for (index in phases.indices) {
+            val from = phases[index].from
+            if (from >= at && !(at == 0f && from == 0f)) return phases[index].start
+        }
+        return phases.firstOrNull()?.start ?: at
+    }
+
+    /**
+     * Where the last named stretch to start before [at] starts: its own, from further into it, and the last
+     * again before the first.
+     */
+    fun stepBefore(at: Float): Float {
+        for (index in phases.indices.reversed()) {
+            if (phases[index].start < at - STEP_SLACK) return phases[index].start
+        }
+        return phases.lastOrNull()?.start ?: at
+    }
+
+    private companion object {
+        /** How near a stretch's start still counts as there, so a step never stays put. */
+        const val STEP_SLACK = 0.001f
     }
 }
 

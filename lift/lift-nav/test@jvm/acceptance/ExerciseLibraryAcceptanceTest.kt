@@ -5,9 +5,9 @@ import kotlin.test.Test
 
 /**
  * `journeys/exercise-library.xml`: search and narrow the library, add an exercise from a search that finds
- * nothing, pick it on the Log sheet and log it, then see its equipment locked, and a built-in shown by its bell's
- * path, played, paused, slowed and gone through by hand, over a figure; one of the user's own shown by a built-in's
- * figure.
+ * nothing, pick it on the Log sheet and log it, then see its equipment locked, a flagship lift shown by its bell's
+ * path alone, played, paused, slowed, stepped, gone through by its cues and done wrong, any other built-in by its
+ * figure, and one of the user's own by the path of the built-in it names.
  */
 class ExerciseLibraryAcceptanceTest {
     @Test
@@ -87,39 +87,70 @@ class ExerciseLibraryAcceptanceTest {
         openExercise("Goblet squat")
         seeMatches("Kettlebell · Reps · Lower body", "Not logged yet. Its sets will show here.")
         seeNo("Edit")
-        seeDemonstration("Goblet squat")
         seeBellPath("Goblet squat", phase = "Bottom", cue = "Elbows inside the knees, spine long")
-        seeBellPathLeads("Goblet squat")
-        pauseDemonstration()
-        showCuePart("Push the knees out and drive up through the whole foot")
-        showCuePart("Sit between your heels with the chest up")
-        seeSetUpThenEachRep()
-        showSetUp("Hold the bell by the horns at your chest, elbows down")
+        seeNoDemonstration()
+        showPathCue("Push the knees out and drive up through the whole foot", part = "Drive up")
+        showPathCue("Sit between your heels with the chest up", part = "Sit down")
+        showPathCue("Hold the bell by the horns at your chest, elbows down", part = "Stand tall")
+        seeNo("Watch for")
     }
 
     @Test
-    fun `a swing's figure is slowed and stepped through and shown done wrong`() = liftScenario {
+    fun `a swing's path is slowed and stepped through and shown done wrong`() = liftScenario {
         openExerciseLibrary()
         scrollTo("Two-hand swing")
         openExercise("Two-hand swing")
         seeBellPath("Two-hand swing", phase = "Float", cue = "Standing plank, let the bell float")
+        seeNoDemonstration()
         scrubBellPath(at = 0.9f, phase = "Hike pass", cue = "Hinge back, shins vertical")
-        scrubBellPath(at = 0.05f, phase = "Hip snap", cue = "Snap the hips, glutes and abs tight")
         playBellPath()
         pauseBellPath()
         playBellPath()
         slowBellPath()
         fullSpeedBellPath()
-        slowDemonstration()
-        stepDemonstration(to = "Let it float to chest height, then wait until your upper arms touch your ribs to hinge")
-        stepDemonstration(to = "Set the bell a foot in front, hinge at the hips and hike it high between your legs")
+        scrubBellPath(at = 0.05f, phase = "Hip snap", cue = "Snap the hips, glutes and abs tight")
+        seeCurrentCue("Snap the hips into a crisp standing plank, glutes tight, ribs down and wrists straight")
+        stepBellPath(
+            to = "Float",
+            cue = "Let it float to chest height, then wait until your upper arms touch your ribs to hinge",
+        )
+        stepBellPath(
+            to = "Backswing",
+            cue = "Let it float to chest height, then wait until your upper arms touch your ribs to hinge",
+        )
+        stepBellPath(
+            to = "Hike pass",
+            cue = "Set the bell a foot in front, hinge at the hips and hike it high between your legs",
+        )
+        showPathCue(
+            "Snap the hips into a crisp standing plank, glutes tight, ribs down and wrists straight",
+            part = "Hip snap",
+        )
         showFault("Hips back, shins stay vertical")
         seeFaultNotShown("Loosen at the top, grip on the way down")
         hideFault("Hips back, shins stay vertical")
     }
 
     @Test
-    fun `an exercise of the user's own is shown by a built-in's figure`() = liftScenario {
+    fun `a lift with no path keeps its figure which is slowed and stepped and shown done wrong`() = liftScenario {
+        openExerciseLibrary()
+        searchFor("deadlift")
+        openExercise("Deadlift")
+        seeDemonstration("Deadlift")
+        seeNoBellPath()
+        seeSetUpThenEachRep()
+        pauseDemonstration()
+        slowDemonstration()
+        stepDemonstration(to = "Push the floor away and stand tall")
+        stepDemonstration(to = "Lower it the way it came up, hips back first")
+        showCuePart("Push the floor away and stand tall")
+        showFault("Hips back, shins stay vertical")
+        hideFault("Hips back, shins stay vertical")
+        showSetUp("Bell between your feet, hinge with a flat back")
+    }
+
+    @Test
+    fun `an exercise of the user's own is shown as the built-in it names is`() = liftScenario {
         openExerciseLibrary()
         searchFor("Pause goblet squat")
         addSearchedExercise("Pause goblet squat")
@@ -134,8 +165,8 @@ class ExerciseLibraryAcceptanceTest {
         saveExercise()
 
         openExercise("Pause goblet squat")
-        seeDemonstration("Pause goblet squat")
         seeBellPath("Pause goblet squat", phase = "Bottom", cue = "Elbows inside the knees, spine long")
+        seeNoDemonstration()
         see("Two seconds at the bottom")
         seeNo("Watch for")
         tap("Edit")

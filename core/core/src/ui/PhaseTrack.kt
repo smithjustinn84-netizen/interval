@@ -37,8 +37,8 @@ fun interface RepShare {
  * [rep] laid out as a bar, a stretch for each part of it that has a name, the one it is in lit in the accent, with
  * a marker where [progress] says it is. Tapping or dragging along it calls [onScrub] with the place, 0 to 1
  * through the rep, so a rep can be gone through by hand; a screen reader moves it as it would a slider, and the
- * arrow keys step it from one stretch to the next. [label] names it. [progress] is read while drawing, so a
- * running rep moves the marker without recomposing.
+ * arrow keys step it from one stretch to the next ([ExerciseRep.stepAfter]). [label] names it. [progress] is read
+ * while drawing, so a running rep moves the marker without recomposing.
  */
 @Composable
 fun PhaseTrack(
@@ -64,14 +64,11 @@ fun PhaseTrack(
             }
             .onKeyEvent { event ->
                 if (event.type != KeyEventType.KeyDown) return@onKeyEvent false
-                // A stretch is stepped to just inside it, where its own name shows.
-                val starts = rep.phases.map { it.from + STEP_SLACK }
-                val to = when (event.key) {
-                    Key.DirectionRight -> starts.firstOrNull { it > at.now() + STEP_SLACK } ?: starts.first()
-                    Key.DirectionLeft -> starts.lastOrNull { it < at.now() - STEP_SLACK } ?: starts.last()
+                when (event.key) {
+                    Key.DirectionRight -> scrub(rep.stepAfter(at.now()))
+                    Key.DirectionLeft -> scrub(rep.stepBefore(at.now()))
                     else -> return@onKeyEvent false
                 }
-                scrub(to)
                 true
             }
             .focusable()
@@ -114,6 +111,3 @@ fun PhaseTrack(
 
 /** How far through a rep a touch at [x] along a track [width] wide is. */
 private fun placeAt(x: Float, width: Int): Float = if (width <= 0) 0f else (x / width).coerceIn(0f, 1f)
-
-/** How far inside a stretch a step lands, and how near its start still counts as there. */
-private const val STEP_SLACK = 0.001f

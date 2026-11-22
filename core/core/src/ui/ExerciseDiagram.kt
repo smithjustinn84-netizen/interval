@@ -11,9 +11,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -30,9 +32,65 @@ import dev.justinsmith.core.resources.rep_speed_full
 import dev.justinsmith.core.resources.rep_speed_full_cd
 import dev.justinsmith.core.resources.rep_speed_slow
 import dev.justinsmith.core.resources.rep_speed_slow_cd
+import dev.justinsmith.core.resources.rep_step
 import dev.justinsmith.core.resources.rep_track_cd
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import org.jetbrains.compose.resources.stringResource
+
+/**
+ * Where a diagram's rep is and how it runs, for whatever shows it to read and move: the part of the rep it is in
+ * ([phase]), whether it is held and where ([heldAt]), and whether it runs at half speed ([slow]). A card that lights
+ * a cue with the part, or takes the rep to one, shares it with its [ExerciseDiagram].
+ */
+@Stable
+class RepPlayer internal constructor(private val rep: ExerciseRep, heldAt: Float?, slow: Boolean) {
+    /** Where the rep is held, 0 to 1 through it; null while it runs by itself. */
+    var heldAt: Float? by mutableStateOf(heldAt)
+        private set
+
+    /** Whether it runs at half its speed, for a quick lift to be followed. */
+    var slow: Boolean by mutableStateOf(slow)
+        private set
+
+    /** The part of the rep it is in, if that part has a name: it changes as the rep runs or is moved. */
+    var phase: RepPhase? by mutableStateOf(rep.phaseAt(heldAt ?: rep.still))
+        internal set
+
+    /** How far through the rep it has run by itself. */
+    internal val position = RepPosition(heldAt ?: rep.still)
+
+    /** Holds the rep [at] this share of the way through it. */
+    fun hold(at: Float) {
+        heldAt = at.coerceIn(0f, 1f)
+    }
+
+    /** Holds the rep where it is, or sets it running again from there. */
+    fun toggle() {
+        heldAt = if (heldAt == null) position.share else null
+    }
+
+    fun toggleSlow() {
+        slow = !slow
+    }
+
+    /** Holds the rep where its next part starts ([ExerciseRep.stepAfter]), from wherever it is. */
+    fun step() = hold(rep.stepAfter(heldAt ?: position.share))
+
+    internal companion object {
+        /** What a saved player has in place of where it is held, when it runs. */
+        private const val RUNNING = -1f
+
+        fun saver(rep: ExerciseRep) = listSaver<RepPlayer, Any>(
+            save = { listOf(it.heldAt ?: RUNNING, it.slow) },
+            restore = { RepPlayer(rep, (it[0] as Float).takeIf { at -> at >= 0f }, it[1] as Boolean) },
+        )
+    }
+}
+
+/** A player for [rep], running from where it stands still; what it holds and its speed are kept across a rotation. */
+@Composable
+fun rememberRepPlayer(rep: ExerciseRep): RepPlayer =
+    rememberSaveable(rep, saver = RepPlayer.saver(rep)) { RepPlayer(rep, heldAt = null, slow = false) }
 
 /**
  * [rep] as a diagram ([ExerciseDemoCanvas]) under the name of the part of the rep it is in and the one thing to get
@@ -40,11 +98,13 @@ import org.jetbrains.compose.resources.stringResource
  * part of itself is the diagram alone. The words keep the room the longest of them takes, so the diagram never
  * moves.
  *
- * With [controls] it can be handled. Beside the name, a speed (full, or half for a quick lift to be followed) and
- * Pause, which holds the rep where it is, or Play, which sets it running again from there; under the diagram a
- * [PhaseTrack], which holds the rep where it is touched, to be gone through by hand. With reduced motion it never
- * runs, so it offers neither speed nor Play, only the track. What is held and how fast it runs are kept across a
- * rotation. A [progress] handed in holds it regardless.
+ * With [controls] it can be handled. Beside the name, Step, which holds the rep where its next part starts; a speed
+ * (full, or half for a quick lift to be followed); and Pause, which holds the rep where it is, or Play, which sets
+ * it running again from there. Under the diagram a [PhaseTrack], which holds the rep where it is touched, to be
+ * gone through by hand. With reduced motion it never runs, so it offers neither speed nor Play, only Step and the
+ * track. Where it is and how it runs are [player]'s, which keeps what is held and the speed across a rotation: a
+ * caller hands in its own to follow the rep's parts or move it, and may then draw another [rep] of the same parts
+ * with it (a lift done wrong). A [progress] handed in holds it regardless.
  */
 @Composable
 fun ExerciseDiagram(
@@ -53,24 +113,25 @@ fun ExerciseDiagram(
     progress: Float? = null,
     contentDescription: String? = null,
     controls: Boolean = false,
+    player: RepPlayer = rememberRepPlayer(rep),
 ) {
-    var heldAt by rememberSaveable(rep) { mutableStateOf<Float?>(null) }
-    var slow by rememberSaveable(rep) { mutableStateOf(false) }
-    val held = progress ?: heldAt
-    val position = rememberRepPosition(rep)
-    var phase by remember(rep) { mutableStateOf(rep.phaseAt(held ?: rep.still)) }
+    val held = progress ?: player.heldAt
+    // One held from outside names its part at once, without waiting on the diagram to report it.
+    val phase = if (progress == null) player.phase else rep.phaseAt(progress)
     val named = rep.phases.isNotEmpty()
     val runs = controls && !prefersReducedMotion()
+    val steps = controls && named
     Column(modifier) {
         if (named || runs) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.weight(1f)) { phase?.let { PhaseBadge(it) } }
+                if (steps) QuietTextButton(stringResource(Res.string.rep_step), onClick = player::step)
                 if (runs) {
                     RepControls(
                         playing = held == null,
-                        slow = slow,
-                        onToggleSlow = { slow = !slow },
-                        onTogglePlaying = { heldAt = if (heldAt == null) position.share else null },
+                        slow = player.slow,
+                        onToggleSlow = player::toggleSlow,
+                        onTogglePlaying = player::toggle,
                     )
                 }
             }
@@ -81,15 +142,15 @@ fun ExerciseDiagram(
             Modifier.fillMaxWidth().weight(1f),
             progress = held,
             contentDescription = contentDescription,
-            onPhase = { phase = it },
-            position = position,
-            speed = if (slow) SLOW else 1f,
+            onPhase = { player.phase = it },
+            position = player.position,
+            speed = if (player.slow) SLOW else 1f,
         )
-        if (controls && named) {
+        if (steps) {
             PhaseTrack(
                 rep,
-                progress = { held ?: position.share },
-                onScrub = { heldAt = it },
+                progress = { held ?: player.position.share },
+                onScrub = player::hold,
                 label = stringResource(Res.string.rep_track_cd),
             )
         }

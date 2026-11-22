@@ -125,7 +125,8 @@ private fun FramedDemonstration(
             colors = colors,
         )
         CueRows(demo, player, cues, phase, colors.of(phase.beat), still)
-        FaultRows(demo, faults, wrongAt, onToggle = { wrongAt = if (wrongAt == it) -1 else it })
+        val showable = remember(demo, faults) { faults.map { demo.doneWrong(it) != null } }
+        FaultRows(faults, showable, wrongAt, onToggle = { wrongAt = if (wrongAt == it) -1 else it })
     }
 }
 

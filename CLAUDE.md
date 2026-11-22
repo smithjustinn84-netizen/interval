@@ -247,12 +247,16 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      alone takes `ExerciseDemo.framed()`, which follows one that lies down and stands up, `follows`), and `Demonstration`,
                      the card of the figure over its timeline and cues lit in turn (Step, Slow; under Watch for a
                      lift's `faults`, squatting the hinge shown done wrong by `ExerciseDemo.doneWrong`), which the exercise page and a
-                     flow's move both show; the diagram the flagship kettlebell lifts are also drawn by, from the side with the
-                     bell's path and the rep's phase named (`Exercise.diagram`, `diagramOf(key)`, `Diagrams.kt`: core's
-                     `ExerciseRep` of `ExerciseKeyframe`s, the lifts in `KettlebellReps`, drawn by `ExerciseDiagram` under the
-                     phase's name and its cue, `RepPhase.cue`, with a speed, Pause and a `PhaseTrack` to scrub it; null
-                     for a lift with none yet), which leads the exercise page under Bell path, over the figure's card or
-                     beside it where the page is wide enough (`PathAndNotes`); most of Lift's strings
+                     flow's move both show; the diagram the flagship kettlebell lifts' own pages show them by in place of the
+                     figure, from the side with the bell's path and the rep's phase named (`Exercise.diagram`,
+                     `Diagrams.kt`: core's `ExerciseRep` of `ExerciseKeyframe`s, the lifts in `KettlebellReps`, drawn by
+                     `ExerciseDiagram` under the phase's name and its cue, `RepPhase.cue`, with Step, a speed, Pause and a
+                     `PhaseTrack` to scrub it, all one `RepPlayer`'s; null for a lift with none yet), in the card
+                     `PathDemonstration`: the diagram over the lift's written cues, each lit while the rep is in a part
+                     of its (`Exercise.diagramCues`) and tapped to hold it there, and Watch for, squatting the hinge shown
+                     done wrong by `ExerciseRep.doneWrong`; beside them where the card is wide enough. A page has one
+                     drawing: a lift with a diagram is still its figure on the session card and in a thumbnail;
+                     most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`

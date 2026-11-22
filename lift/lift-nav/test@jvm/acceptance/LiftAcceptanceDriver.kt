@@ -27,7 +27,6 @@ import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.ui.LiftAppFixture
 import dev.justinsmith.lift.ui.liftAppTest
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * Lift's acceptance tests in the words of its journeys (the `lift-*` and `exercise-library` files in
@@ -472,23 +471,12 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
      * the [cue] for it.
      */
     fun seeBellPath(exercise: String, phase: String, cue: String) {
-        see("Bell path")
         see(hasContentDescription("$exercise from the side, with the path its bell takes"))
         see(phase)
         see(cue)
     }
 
-    fun seeNoBellPath() = seeNo("Bell path")
-
-    /** The bell's path leads [exercise]'s page: its card is over the figure's. */
-    fun seeBellPathLeads(exercise: String) {
-        val path = ui.onNode(hasContentDescription("$exercise from the side, with the path its bell takes"))
-        val figure = ui.onNode(hasContentDescription("$exercise, shown by a figure"))
-        assertTrue(
-            path.fetchSemanticsNode().boundsInRoot.top < figure.fetchSemanticsNode().boundsInRoot.top,
-            "The bell's path is over the figure",
-        )
-    }
+    fun seeNoBellPath() = seeNo(hasContentDescription("from the side, with the path its bell takes", substring = true))
 
     /**
      * Touching the bar under the bell's path [at] that share of the way along holds the rep in [phase], with its
@@ -524,6 +512,25 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     fun fullSpeedBellPath() {
         tap("0.5×")
         see("1×")
+    }
+
+    /**
+     * Step holds the bell's path where the next part of the rep starts: the tag names it ([to]) and the one of the
+     * lift's written cues it belongs to ([cue]) is lit.
+     */
+    fun stepBellPath(to: String, cue: String) {
+        tap("Step")
+        see(to)
+        seeCurrentCue(cue)
+        see(hasContentDescription("Play the bell path"))
+    }
+
+    /** Taps one of the lift's written cues under its bell's path, which holds the rep where its [part] starts. */
+    fun showPathCue(cue: String, part: String) {
+        tap(cue)
+        see(part)
+        seeCurrentCue(cue)
+        see(hasContentDescription("Play the bell path"))
     }
 
     fun pauseDemonstration() {

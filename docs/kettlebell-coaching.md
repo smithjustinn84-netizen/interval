@@ -52,9 +52,11 @@ Lift's timers speak, never mid-rep:
   - **Wrist flexion in the hinge**: "Knuckles to the floor, wrist straight." A straight line from elbow to handle spares the wrist extensors.
   - **Late hand insertion on the snatch**: "Punch through before it lands."
 
-  An exercise's page lists them under Watch for, under its figure's cues. Squatting the hinge is the one a figure
-  can show, so tapping it has the figure do the lift squatted, marked "Done wrong" (`doneWrong`, lift-ui); the
-  others are words alone, since a grip, a wrist round a handle or a hand a moment late don't show on it.
+  An exercise's page lists them under Watch for, under its cues. Squatting the hinge is the one a drawing can
+  show, so tapping it has the lift done squatted, marked "Done wrong": by the figure (`ExerciseDemo.doneWrong`,
+  lift-ui), or on a flagship lift's page, which draws it from the side with its bell's path instead, by that
+  diagram (`ExerciseRep.doneWrong`). The others are words alone, since a grip, a wrist round a handle or a hand a
+  moment late don't show on either.
 - **Safety lines.** Each is said in place of a set-up cue (a rest's last ten seconds, an EMOM's or a density block's count-in), since the speaker cuts a line short when the next starts; a session opening before its first set says the one due at once.
   - **"Groove five light first."** Before a ballistic lift's first set at a bell, or a pair, heavier than any it has been done at, 15:15's snatches counted (`firstAtBell`, `Safety.kt`), with a lighter bell owned to groove with. Once for each lift and bell a session; a free session's opening leaves it out, as its card's lift may not be the one done.
   - **"Stop a rep early."** Once a session on a Taxed day (`Readiness`, the same reading as the easier day's offer, `EasierDay.taxed`), after a groove line due.

@@ -370,7 +370,7 @@ class KettlebellRepsTest {
         assertEquals(RepPhase.HighBridge, rep.phaseAt(rep.timeOf(bridge)), "a stance held says how it was reached")
         assertEquals(RepPhase.HighBridge, rep.phaseAt(rep.still))
         assertEquals(RepPhase.FloorPress, rep.phaseAt(0f))
-        assertEquals(RepPhase.FloorPress, rep.phaseAt(1f))
+        assertEquals(RepPhase.LowerBell, rep.phaseAt(1f), "held at its end it has just lowered the bell")
         assertEquals(RepPhase.LowerBell, rep.phaseAt(-0.01f))
         assertEquals(RepPhase.Float, KettlebellReps.Swing.phaseAt(KettlebellReps.Swing.still))
         assertEquals(RepPhase.Lockout, KettlebellReps.Snatch.phaseAt(KettlebellReps.Snatch.still))
@@ -386,6 +386,40 @@ class KettlebellRepsTest {
             listOf(RepPhase.HipSnap, RepPhase.Float, RepPhase.Backswing, RepPhase.HikePass),
             KettlebellReps.Swing.phases.map { it.phase },
         )
+    }
+
+    @Test
+    fun `a rep held at its very end is in its last part`() {
+        reps.forEach { (name, rep) -> assertEquals(rep.phases.last().phase, rep.phaseAt(1f), name) }
+        assertEquals(RepPhase.HipSnap, KettlebellReps.Swing.phaseAt(0f))
+        assertEquals(RepPhase.HipSnap, KettlebellReps.Swing.phaseAt(1.05f), "past the end it has gone round")
+    }
+
+    @Test
+    fun `a step goes on to where the next part starts and round to the first`() {
+        val swing = KettlebellReps.Swing
+        val starts = swing.phases.map { it.start }
+        assertEquals(starts[1], swing.stepAfter(0.05f))
+        assertEquals(starts[2], swing.stepAfter(starts[1]))
+        assertEquals(starts[0], swing.stepAfter(0.99f))
+        assertEquals(starts[0], swing.stepAfter(1f))
+        assertEquals(starts[1], swing.stepAfter(0f))
+        assertEquals(starts[2], swing.stepAfter(swing.still), "from the float, held at its end")
+        assertEquals(starts[0], swing.stepBefore(0.05f))
+        assertEquals(starts[3], swing.stepBefore(starts[0]))
+        assertEquals(starts[2], swing.stepBefore(starts[3]))
+        starts.forEachIndexed { part, start -> assertEquals(swing.phases[part].phase, swing.phaseAt(start)) }
+    }
+
+    @Test
+    fun `a squatted hinge sinks the hips and sends the knees forward with the bell off the floor`() {
+        val hinge = KettlebellPoses.Hinge.joints()
+        val squatted = KettlebellPoses.SquattedHinge.joints()
+        assertTrue(squatted.knee.x > hinge.knee.x + 0.08f, "knees forward")
+        assertTrue(squatted.hip.y < hinge.hip.y - 0.03f, "hips lower")
+        assertTrue(squatted.hip.x > hinge.hip.x, "hips not sent back as far")
+        assertTrue(KettlebellPoses.SquattedHinge.torsoAngleDeg < KettlebellPoses.Hinge.torsoAngleDeg - 15f, "chest up")
+        assertTrue(squatted.kettlebellCenter.y - BodyProportions.BELL_RADIUS > 0f, "the bell clear of the floor")
     }
 
     @Test

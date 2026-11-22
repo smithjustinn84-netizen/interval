@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import dev.justinsmith.interval.ui.Corners
@@ -16,7 +15,6 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.Fault
 import dev.justinsmith.lift.ui.demo.DemoPlayer
 import dev.justinsmith.lift.ui.demo.ExerciseDemo
-import dev.justinsmith.lift.ui.demo.doneWrong
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.demo_done_wrong
 import dev.justinsmith.lift.ui.resources.demo_full_speed
@@ -51,14 +49,13 @@ internal fun DemoControls(demo: ExerciseDemo, player: DemoPlayer, still: Boolean
 }
 
 /**
- * Under Watch for, the [faults] a lift is prone to, each by the words that put it right: one [demo]'s figure can show
- * done wrong is tapped to show it ([onToggle], by its place) and lit while it shows ([shown]); one it can't is words
- * alone. Nothing for a lift with none.
+ * Under Watch for, the [faults] a lift is prone to, each by the words that put it right: one the card's drawing can
+ * show done wrong ([showable], by its place) is tapped to show it ([onToggle]) and lit while it shows ([shown]); one
+ * it can't is words alone. Nothing for a lift with none.
  */
 @Composable
-internal fun FaultRows(demo: ExerciseDemo, faults: List<Fault>, shown: Int, onToggle: (Int) -> Unit) {
+internal fun FaultRows(faults: List<Fault>, showable: List<Boolean>, shown: Int, onToggle: (Int) -> Unit) {
     if (faults.isEmpty()) return
-    val showable = remember(demo, faults) { faults.map { demo.doneWrong(it) != null } }
     CueGroupLabel(stringResource(Res.string.demo_watch_for))
     faults.forEachIndexed { i, fault ->
         if (i > 0) RowDivider()
