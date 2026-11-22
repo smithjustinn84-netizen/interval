@@ -6,7 +6,10 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.IntervalConfig
+import dev.justinsmith.interval.timer.hangboardIntervals
+import dev.justinsmith.interval.timer.hiitIntervals
 import dev.justinsmith.interval.timer.snatchIntervals
+import dev.justinsmith.interval.timer.tabataIntervals
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestClock
@@ -106,7 +109,8 @@ class BuiltWeekTest {
     fun `a sport with no day picked plans none`() {
         val week = build(WeekAnswers(Sport.Running, emptySet(), bell, minutes = 15))
         assertNull(week.sport)
-        assertEquals(setOf(MON, WED, FRI), week.liftDays)
+        assertEquals(ProgramId.GobletSquatRow, week.programId)
+        assertEquals(setOf(MON, THU), week.liftDays)
     }
 
     @Test
@@ -256,5 +260,70 @@ class BuiltWeekTest {
         val week = build(WeekAnswers(Sport.Bjj, setOf(TUE, THU), bell, minutes = 15), planned)
         assertTrue(week.remove.isEmpty())
         assertFalse(SAT in week.liftDays)
+    }
+
+    @Test
+    fun `barbell bodyweight pull-up bar and bands each get a starter program without bells`() {
+        val barbell = build(WeekAnswers(minutes = 30, equipment = setOf(SetupEquipment.Barbell)))
+        assertEquals(ProgramId.BarbellFiveByFive, barbell.programId)
+        assertEquals(setOf(MON, WED, FRI), barbell.liftDays)
+
+        val floor = build(WeekAnswers(minutes = 20, equipment = setOf(SetupEquipment.Bodyweight)))
+        assertEquals(ProgramId.BodyweightFloor, floor.programId)
+        assertEquals(setOf(MON, WED, FRI), floor.liftDays)
+
+        val bar = build(WeekAnswers(minutes = 20, equipment = setOf(SetupEquipment.PullUpBar)))
+        assertEquals(ProgramId.BodyweightBasics, bar.programId)
+        assertEquals(setOf(MON, WED, FRI), bar.liftDays)
+
+        val bands = build(WeekAnswers(minutes = 20, equipment = setOf(SetupEquipment.Bands)))
+        assertEquals(ProgramId.BandBasics, bands.programId)
+        assertEquals(setOf(MON, WED, FRI), bands.liftDays)
+    }
+
+    @Test
+    fun `conditioning only schedules weekly intervals without a lift program`() {
+        val alone = build(WeekAnswers(minutes = 15, equipment = setOf(SetupEquipment.ConditioningOnly)))
+        assertNull(alone.program)
+        assertTrue(alone.liftDays.isEmpty())
+        assertEquals(hiitIntervals, alone.conditioning)
+        assertEquals(setOf(MON, WED, FRI), alone.conditioningDays)
+        assertEquals(3, alone.goal)
+
+        val short = build(WeekAnswers(minutes = 10, equipment = setOf(SetupEquipment.ConditioningOnly)))
+        assertEquals(tabataIntervals, short.conditioning)
+
+        val climbing = build(
+            WeekAnswers(
+                Sport.Climbing,
+                setOf(TUE, THU),
+                minutes = 15,
+                equipment = setOf(SetupEquipment.ConditioningOnly),
+            ),
+        )
+        assertEquals(hangboardIntervals, climbing.conditioning)
+        assertEquals(2, climbing.conditioningDays.size)
+        assertEquals(4, climbing.goal)
+    }
+
+    @Test
+    fun `climbing and running get tailored kettlebell tracks`() {
+        val climb = build(WeekAnswers(Sport.Climbing, setOf(TUE, THU), bell, minutes = 30))
+        assertEquals(ProgramId.ShoulderArmor, climb.programId)
+
+        val climbBands = build(
+            WeekAnswers(
+                Sport.Climbing,
+                setOf(TUE, THU),
+                bell,
+                minutes = 30,
+                equipment = setOf(SetupEquipment.Kettlebells, SetupEquipment.Bands),
+            ),
+        )
+        assertEquals(ProgramId.BandsAndBells, climbBands.programId)
+
+        val run = build(WeekAnswers(Sport.Running, setOf(MON, WED, FRI), bell, minutes = 20))
+        assertEquals(ProgramId.GobletSquatRow, run.programId)
+        assertEquals(2, run.liftDays.size)
     }
 }

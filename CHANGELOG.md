@@ -7,6 +7,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Equipment-aware `Set up` and sport-tailored starter tracks. `Set up` now asks what you train with (Kettlebells,
+  Barbell, Bands, Pull-up bar, Bodyweight, or Conditioning only), revealing bell or bar pickers only when relevant,
+  and persists your bar weight to Lift's gear. Two lean starter programs join Lift's Mixed family — **Bodyweight on
+  the floor** (no bar or bench needed) and **Band basics** (resistance bands alone) — while Conditioning only plans
+  weekly interval sessions matched to your sport and session length. Climbing and Running now get tailored starter
+  tracks (shoulder/band work for climbers, 2-day strength for runners, and Hangboard for conditioning-only climbers).
 - Pounds (`lb`) across Lift, 15:15's snatch count, `Set up` and Settings. Weights stay stored in kilograms; switching
   to pounds shows canonical US kettlebell sizes (18, 26, 35, 44, 53, 70 lb and the full bell table), standard US
   bars (25, 35, 45 lb) with 5 lb steps and US plate breakdowns/diagrams (45, 35, 25, 10, 5, 2.5 lb), and totals

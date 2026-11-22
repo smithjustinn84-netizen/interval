@@ -66,8 +66,10 @@ fun WeekSetupRoute(onBack: () -> Unit, onShowWeek: () -> Unit, onPrograms: () ->
             onSport = viewModel::pickSport,
             onSportName = viewModel::nameSport,
             onWeekdays = viewModel::setWeekdays,
+            onEquipment = viewModel::toggleEquipment,
             onBell = viewModel::toggleBell,
             onPair = viewModel::togglePair,
+            onBar = viewModel::setBar,
             onUnit = viewModel::setUnit,
             onMinutes = viewModel::setMinutes,
             onPrograms = { programs() },
@@ -92,11 +94,15 @@ class WeekSetupActions(
     val onSportName: (String) -> Unit = {},
     /** The sport's days, a bit per day. */
     val onWeekdays: (Int) -> Unit = {},
+    /** Ticks or unticks an equipment option. */
+    val onEquipment: (SetupEquipment) -> Unit = {},
     /** Ticks or unticks a bell, by its kg. */
     val onBell: (Double) -> Unit = {},
     /** Ticks or unticks owning two of a bell, by its kg. */
     val onPair: (Double) -> Unit = {},
-    /** Switches the weight unit shown for the bells (and saved on build). */
+    /** Picks the empty barbell weight, in kg. */
+    val onBar: (Double) -> Unit = {},
+    /** Switches the weight unit shown for bells and bar (and saved on build). */
     val onUnit: (WeightUnit) -> Unit = {},
     val onMinutes: (Int) -> Unit = {},
     val onPrograms: () -> Unit = {},
@@ -104,9 +110,8 @@ class WeekSetupActions(
 )
 
 /**
- * Set up: what else you train, on which days, which bells you own and how long a session is, then the week
- * those come to and the button that builds it. The days are asked only of a sport; the week names the program
- * before anything is built, so nothing it does is a surprise.
+ * Set up: what else you train, on which days, what you train with (and bell/barbell details when picked), and
+ * how long a session is, then the week those come to and the button that builds it.
  */
 @Composable
 fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier: Modifier = Modifier) {
@@ -141,8 +146,16 @@ fun WeekSetupScreen(state: WeekSetupUiState, actions: WeekSetupActions, modifier
                 )
                 SportQuestion(state, actions)
                 AnimatedVisibility(state.asksDays) { DaysQuestion(state.weekdays, actions.onWeekdays) }
-                BellsQuestion(state, actions.onBell, actions.onUnit)
-                AnimatedVisibility(state.bells.isNotEmpty()) { PairsQuestion(state, actions.onPair) }
+                EquipmentQuestion(state.equipment, actions.onEquipment)
+                AnimatedVisibility(state.hasKettlebells) {
+                    BellsQuestion(state, actions.onBell, actions.onUnit)
+                }
+                AnimatedVisibility(state.hasKettlebells && state.bells.isNotEmpty()) {
+                    PairsQuestion(state, actions.onPair)
+                }
+                AnimatedVisibility(state.hasBarbell) {
+                    BarbellQuestion(state, actions.onBar, actions.onUnit, showUnit = !state.hasKettlebells)
+                }
                 MinutesQuestion(state.minutes, actions.onMinutes)
                 YourWeek(state, actions.onPrograms)
             }
@@ -172,6 +185,7 @@ private fun WeekSetupScreenPreview() {
             state = WeekSetupUiState(
                 sport = 0,
                 weekdays = weekdayMask(previewSportDays),
+                equipment = setOf(SetupEquipment.Kettlebells),
                 bells = previewBells,
                 minutes = previewMinutes.first,
                 week = BuiltWeek(

@@ -9,6 +9,7 @@ import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.hiitIntervals
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.lift.domain.ProgramId
@@ -259,5 +260,32 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
         assertTrue(viewModel().build())
         assertEquals(WeightUnit.Lb, repository.settings.appSettings.value.body.unit)
         assertEquals(listOf(16.0), lift.gear.bells.value)
+    }
+
+    @Test
+    fun `barbell setup persists bar weight and follows barbell five by five`() {
+        viewModel.toggleEquipment(SetupEquipment.Barbell)
+        viewModel.setBar(15.0)
+        viewModel.setMinutes(30)
+
+        assertTrue(viewModel.build())
+        assertEquals(15.0, lift.gear.bar.value)
+        assertEquals(ProgramId.BarbellFiveByFive, followed)
+        assertEquals(setOf(MON, WED, FRI), weekly(PlanWorkout.Lift.ProgramDay))
+    }
+
+    @Test
+    fun `conditioning only is mutually exclusive with strength gear and plans intervals`() {
+        viewModel.toggleBell(16.0)
+        assertTrue(viewModel.state.value.hasKettlebells)
+
+        viewModel.toggleEquipment(SetupEquipment.ConditioningOnly)
+        assertFalse(viewModel.state.value.hasKettlebells)
+        assertTrue(viewModel.state.value.bells.isEmpty())
+        assertTrue(viewModel.state.value.isConditioningOnly)
+
+        assertTrue(viewModel.build())
+        assertNull(followed)
+        assertEquals(setOf(MON, WED, FRI), weekly(hiitIntervals.asPlan()))
     }
 }

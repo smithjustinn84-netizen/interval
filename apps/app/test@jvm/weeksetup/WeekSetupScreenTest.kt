@@ -34,6 +34,7 @@ import kotlin.test.assertEquals
 private val bjj = WeekSetupUiState(
     sport = 0,
     weekdays = weekdayMask(setOf(1, 3, 5)),
+    equipment = setOf(SetupEquipment.Kettlebells),
     bells = setOf(16.0),
     minutes = 15,
     week = BuiltWeek(
@@ -54,11 +55,12 @@ class WeekSetupScreenTest {
         onNode(hasText("Set up") and isHeading()).assertExists()
         onNodeWithText("What else do you train?").assertExists()
         onNodeWithText("On which days?").assertDoesNotExist()
-        onNodeWithText("Which bells do you own, in kg?").assertExists()
+        onNodeWithText("What do you train with?").assertExists()
+        onNodeWithText("Which bells do you own, in kg?").assertDoesNotExist()
         onNodeWithText("How long is a session?").assertExists()
         onNode(hasText("15 min") and isSelectable()).assertIsSelected()
         onNodeWithText("Answer above and your week shows here.").assertExists()
-        onNodeWithText("Tick a bell for strength days").assertDoesNotExist()
+        onNodeWithText("Pick your equipment for strength or conditioning").assertDoesNotExist()
         onNodeWithText("Pick another program").assertDoesNotExist()
         onNode(hasText("Build my week") and hasClickAction()).assertIsNotEnabled()
     }

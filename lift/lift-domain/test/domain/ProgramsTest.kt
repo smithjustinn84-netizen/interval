@@ -224,7 +224,12 @@ class ProgramsTest {
                     ProgramId.FirstHundredSwings,
                     ProgramId.BeginnerFullBody,
                 ),
-                ProgramFamily.Mixed to listOf(ProgramId.BodyweightBasics, ProgramId.BandsAndBells),
+                ProgramFamily.Mixed to listOf(
+                    ProgramId.BodyweightBasics,
+                    ProgramId.BodyweightFloor,
+                    ProgramId.BandsAndBells,
+                    ProgramId.BandBasics,
+                ),
                 ProgramFamily.Barbell to listOf(ProgramId.OlympicFoundations, ProgramId.BarbellFiveByFive),
             ),
             offered,

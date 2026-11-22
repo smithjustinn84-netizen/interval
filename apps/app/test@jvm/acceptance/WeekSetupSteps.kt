@@ -40,6 +40,11 @@ fun IntervalAcceptanceDriver.trainOn(vararg weekdays: String) = weekdays.forEach
     tap(hasContentDescription(it) and isToggleable())
 }
 
+/** Ticks an equipment option on Set up (e.g. "Kettlebells", "Barbell", "Bodyweight", "Conditioning only"). */
+fun IntervalAcceptanceDriver.trainWith(vararg names: String) = names.forEach {
+    tap(hasText(it) and isToggleable())
+}
+
 /** The third: each bell of [kg] tapped, which turns it on or off; then each of [twoOf] tapped as owned two of. */
 fun IntervalAcceptanceDriver.ownBells(vararg kg: Int, twoOf: List<Int> = emptyList()) {
     kg.forEach { tap(hasContentDescription("$it kg") and isToggleable()) }
@@ -87,13 +92,14 @@ fun IntervalAcceptanceDriver.weekHolds(
     goal: Int?,
     pairs: Set<Double> = emptySet(),
     intervalDays: Int = 0,
+    intervalWorkout: PlanWorkout = snatchIntervals.asPlan(),
 ) {
     val lift = app.koin.koin.get<LiftRepository>()
     waitFor("$sportDays sport and $programDays program days planned, following $program") {
         val planned = app.repository.plans.planned.value.map { it.workout }
         planned.count { it is PlanWorkout.SportDay } == sportDays &&
             planned.count { it == PlanWorkout.Lift.ProgramDay } == programDays &&
-            planned.count { it == snatchIntervals.asPlan() } == intervalDays &&
+            planned.count { it == intervalWorkout } == intervalDays &&
             lift.programs.followed.value?.program?.key == program?.let { ProgramKey.BuiltIn(it) }
     }
     assertEquals(bells, lift.gear.bells.value)

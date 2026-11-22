@@ -49,9 +49,11 @@ enum class ProgramId(val family: ProgramFamily = ProgramFamily.Classic) {
     BeginnerFullBody(ProgramFamily.Beginner),
     GetUpPractice(ProgramFamily.Beginner),
     BodyweightBasics(ProgramFamily.Mixed),
+    BodyweightFloor(ProgramFamily.Mixed),
     BodyweightEmom(ProgramFamily.Mixed),
     BellsAndBodyweight(ProgramFamily.Mixed),
     BandsAndBells(ProgramFamily.Mixed),
+    BandBasics(ProgramFamily.Mixed),
     CoreOnTheMat(ProgramFamily.Mixed),
     OlympicFoundations(ProgramFamily.Barbell),
     BarbellFiveByFive(ProgramFamily.Barbell),
@@ -515,6 +517,26 @@ val builtInPrograms: List<Program> = listOf(
         daysPerWeek = 3,
         weeks = 6,
     ),
+    // Pure bodyweight on the floor, no bar or bench needed.
+    builtIn(
+        ProgramId.BodyweightFloor,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.PushUp, rounds = 3, reps = 10),
+                Block(BuiltInExercise.AirSquat, rounds = 3, reps = 15),
+                Block(BuiltInExercise.GluteBridge, rounds = 3, reps = 12),
+                Block(BuiltInExercise.Plank, rounds = 3, reps = 30),
+            ),
+            listOf(
+                Block(BuiltInExercise.ReverseLunge, rounds = 3, reps = 8),
+                Block(BuiltInExercise.PikePushUp, rounds = 3, reps = 6),
+                Block(BuiltInExercise.HollowHold, rounds = 3, reps = 20),
+                Block(BuiltInExercise.SidePlank, rounds = 2, reps = 20),
+            ),
+        ),
+        daysPerWeek = 3,
+        weeks = 6,
+    ),
     builtIn(
         ProgramId.BodyweightEmom,
         days = listOf(
@@ -568,6 +590,26 @@ val builtInPrograms: List<Program> = listOf(
             ),
         ),
         daysPerWeek = 2,
+        weeks = 6,
+    ),
+    // Full-body strength with resistance bands alone.
+    builtIn(
+        ProgramId.BandBasics,
+        days = listOf(
+            listOf(
+                Block(BuiltInExercise.BandSquat, rounds = 3, reps = 12).upTo(15),
+                Block(BuiltInExercise.BandChestPress, rounds = 3, reps = 12).upTo(15),
+                Block(BuiltInExercise.BandSeatedRow, rounds = 3, reps = 12).upTo(15),
+                Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15).upTo(20),
+            ),
+            listOf(
+                Block(BuiltInExercise.BandGoodMorning, rounds = 3, reps = 12).upTo(15),
+                Block(BuiltInExercise.BandOverheadPress, rounds = 3, reps = 10).upTo(12),
+                Block(BuiltInExercise.BandFacePull, rounds = 3, reps = 15).upTo(20),
+                Block(BuiltInExercise.BandPallofPress, rounds = 3, reps = 10).upTo(15),
+            ),
+        ),
+        daysPerWeek = 3,
         weeks = 6,
     ),
     // Classical mat work for the trunk, then a bell for the same work standing and rising.

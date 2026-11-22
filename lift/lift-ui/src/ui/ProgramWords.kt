@@ -29,6 +29,9 @@ import dev.justinsmith.lift.ui.resources.log_added_none
 import dev.justinsmith.lift.ui.resources.program_abf_for
 import dev.justinsmith.lift.ui.resources.program_abf_name
 import dev.justinsmith.lift.ui.resources.program_abf_summary
+import dev.justinsmith.lift.ui.resources.program_band_basics_for
+import dev.justinsmith.lift.ui.resources.program_band_basics_name
+import dev.justinsmith.lift.ui.resources.program_band_basics_summary
 import dev.justinsmith.lift.ui.resources.program_bands_bells_for
 import dev.justinsmith.lift.ui.resources.program_bands_bells_name
 import dev.justinsmith.lift.ui.resources.program_bands_bells_summary
@@ -48,6 +51,9 @@ import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_name
 import dev.justinsmith.lift.ui.resources.program_bodyweight_basics_summary
 import dev.justinsmith.lift.ui.resources.program_bodyweight_emom_name
 import dev.justinsmith.lift.ui.resources.program_bodyweight_emom_summary
+import dev.justinsmith.lift.ui.resources.program_bodyweight_floor_for
+import dev.justinsmith.lift.ui.resources.program_bodyweight_floor_name
+import dev.justinsmith.lift.ui.resources.program_bodyweight_floor_summary
 import dev.justinsmith.lift.ui.resources.program_clean_press_name
 import dev.justinsmith.lift.ui.resources.program_clean_press_summary
 import dev.justinsmith.lift.ui.resources.program_core_mat_name
@@ -187,9 +193,11 @@ fun programName(id: ProgramId): String = stringResource(
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_name
         ProgramId.GetUpPractice -> Res.string.program_get_up_practice_name
         ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_name
+        ProgramId.BodyweightFloor -> Res.string.program_bodyweight_floor_name
         ProgramId.BodyweightEmom -> Res.string.program_bodyweight_emom_name
         ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_name
         ProgramId.BandsAndBells -> Res.string.program_bands_bells_name
+        ProgramId.BandBasics -> Res.string.program_band_basics_name
         ProgramId.CoreOnTheMat -> Res.string.program_core_mat_name
         ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_name
         ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_name
@@ -218,7 +226,9 @@ fun programFor(program: Program): String? {
         ProgramId.FirstHundredSwings -> Res.string.program_first_hundred_for
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_for
         ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_for
+        ProgramId.BodyweightFloor -> Res.string.program_bodyweight_floor_for
         ProgramId.BandsAndBells -> Res.string.program_bands_bells_for
+        ProgramId.BandBasics -> Res.string.program_band_basics_for
         ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_for
         ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_for
         else -> null
@@ -298,9 +308,11 @@ private fun programAbout(id: ProgramId): String = stringResource(
         ProgramId.BeginnerFullBody -> Res.string.program_beginner_full_body_summary
         ProgramId.GetUpPractice -> Res.string.program_get_up_practice_summary
         ProgramId.BodyweightBasics -> Res.string.program_bodyweight_basics_summary
+        ProgramId.BodyweightFloor -> Res.string.program_bodyweight_floor_summary
         ProgramId.BodyweightEmom -> Res.string.program_bodyweight_emom_summary
         ProgramId.BellsAndBodyweight -> Res.string.program_bells_bodyweight_summary
         ProgramId.BandsAndBells -> Res.string.program_bands_bells_summary
+        ProgramId.BandBasics -> Res.string.program_band_basics_summary
         ProgramId.CoreOnTheMat -> Res.string.program_core_mat_summary
         ProgramId.OlympicFoundations -> Res.string.program_olympic_foundations_summary
         ProgramId.BarbellFiveByFive -> Res.string.program_five_by_five_summary

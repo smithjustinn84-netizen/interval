@@ -9,11 +9,11 @@
   </description>
   <actions>
     <action>Open the app, tap "Skip to Set up" on the welcome it opens on, and verify that "Set up" is shown, with Back in its title bar</action>
-    <action>Verify that "Set up" asks "What else do you train?", "Which bells do you own, in kg?" and "How long is a session?" with "15 min" picked, that "Your week" says "Answer above and your week shows here.", and that "Build my week" is dimmed</action>
+    <action>Verify that "Set up" asks "What else do you train?", "What do you train with?" and "How long is a session?" with "15 min" picked, that "Your week" says "Answer above and your week shows here.", and that "Build my week" is dimmed</action>
     <action>Tap "BJJ" and verify that "On which days?" appears under it with M T W T F S S, none picked, and that "Your week" says "BJJ" over "Pick its days"</action>
-    <action>Tap M, W and F; tap "16"; leave "15 min"</action>
+    <action>Tap M, W and F; tap "Kettlebells" and "16"; leave "15 min"</action>
     <action>Verify that "Your week" reads "BJJ" over "Mon, Wed, Fri", "Your first 100 swings" over "about 15 min · Tue, Thu, Sat" and "Goal: 6 days a week", with "Pick another program" under the card</action>
-    <action>Tap "Just the bell" and verify that the days go and the week is the program alone on Mon, Wed, Fri; tap "BJJ" again and verify that M, W and F are still picked</action>
+    <action>Tap "Nothing else" and verify that the days go and the week is the program alone on Mon, Wed, Fri; tap "BJJ" again and verify that M, W and F are still picked</action>
     <action>Tap "30 min" and verify that the program becomes "One bell beside BJJ" on two days; tap "15 min" again</action>
     <action>Tap "Build my week"</action>
     <action>Verify that Today is shown with the notice "Week built", the week's dots naming "BJJ" under each of Monday, Wednesday and Friday from today on (a day gone by shows none: a plan counts from the day it is made), "Pick by time · 15 min" on the "Something else" row, and (on a Tuesday, Thursday or Saturday) "Your first 100 swings" up next with "Start day 1" ending "~15 min"</action>

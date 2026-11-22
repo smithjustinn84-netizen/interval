@@ -5,7 +5,9 @@ import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.hiitIntervals
 import dev.justinsmith.lift.data.FollowingEntity
+import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import kotlin.test.Test
@@ -26,6 +28,7 @@ class WeekSetupAcceptanceTest {
         openSetUpFromToday()
         answerSport("BJJ")
         trainOn("Monday", "Wednesday", "Friday")
+        trainWith("Kettlebells")
         ownBells(16)
         sessionOf(15)
 
@@ -52,6 +55,7 @@ class WeekSetupAcceptanceTest {
         openSetUpFromToday()
         answerSport("BJJ")
         trainOn("Tuesday", "Thursday")
+        trainWith("Kettlebells")
         ownBells(24, twoOf = listOf(24))
         sessionOf(20)
 
@@ -77,6 +81,7 @@ class WeekSetupAcceptanceTest {
             openSetUpFromToday()
             answerSport("BJJ")
             trainOn("Tuesday", "Thursday")
+            trainWith("Kettlebells")
             ownBells(16)
             sessionOf(20)
 
@@ -100,8 +105,9 @@ class WeekSetupAcceptanceTest {
         openSetUpFromToday()
         answerSport("BJJ")
         see("On which days?")
-        answerSport("Just the bell")
+        answerSport("Nothing else")
         seeNo("On which days?")
+        trainWith("Kettlebells")
         ownBells(16)
         sessionOf(30)
 
@@ -119,7 +125,7 @@ class WeekSetupAcceptanceTest {
         trainOn("Tuesday", "Saturday")
 
         seeYourWeek("Climbing", "Tue, Sat")
-        see("Tick a bell for strength days")
+        see("Pick your equipment for strength or conditioning")
         buildMyWeek()
 
         weekHolds(sportDays = 2, programDays = 0, program = null, bells = emptyList(), goal = 2)
@@ -147,6 +153,7 @@ class WeekSetupAcceptanceTest {
             openSetUpFromSettings()
             answerSport("BJJ")
             trainOn("Monday", "Wednesday")
+            trainWith("Kettlebells")
             ownBells(16)
             sessionOf(15)
             seeYourWeek("Your first 100 swings", "Tue, Thu, Sat")
@@ -197,6 +204,7 @@ class WeekSetupAcceptanceTest {
         skipWelcome()
         answerSport("Climbing")
         trainOn("Thursday")
+        trainWith("Kettlebells")
         ownBells(12)
         sessionOf(20)
         seeYourWeek("Kettlebell foundations", "Mon, Wed, Fri")
@@ -234,6 +242,7 @@ class WeekSetupAcceptanceTest {
         openSetUpFromToday()
         answerSport("BJJ")
         trainOn("Tuesday", "Thursday")
+        trainWith("Kettlebells")
         pickWeightUnit("lb")
         see("Which bells do you own, in lb?")
         ownBellsLb(35, 53, twoOf = listOf(53))
@@ -254,5 +263,55 @@ class WeekSetupAcceptanceTest {
         see("2 × 35 lb")
         scrollTo("Your equipment")
         see("35 lb · 53 lb · records")
+    }
+
+    @Test
+    fun `barbell setup builds five by five and saves the bar`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("Nothing else")
+        trainWith("Barbell")
+        sessionOf(30)
+
+        seeYourWeek("Barbell 5×5", "Mon, Wed, Fri")
+        seeGoalToBe(3)
+        buildMyWeek()
+
+        weekHolds(sportDays = 0, programDays = 3, program = ProgramId.BarbellFiveByFive, bells = emptyList(), goal = 3)
+        assertEquals(20.0, app.koin.koin.get<LiftRepository>().gear.bar.value)
+    }
+
+    @Test
+    fun `bodyweight and conditioning only setups build without bells`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("Nothing else")
+        trainWith("Bodyweight")
+        sessionOf(20)
+
+        seeYourWeek("Bodyweight on the floor", "Mon, Wed, Fri")
+        buildMyWeek()
+
+        weekHolds(sportDays = 0, programDays = 3, program = ProgramId.BodyweightFloor, bells = emptyList(), goal = 3)
+    }
+
+    @Test
+    fun `conditioning only schedules weekly intervals with no lift program`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("Nothing else")
+        trainWith("Conditioning only")
+        sessionOf(15)
+
+        seeYourWeek("HIIT 30/30", "Mon, Wed, Fri")
+        seeGoalToBe(3)
+        buildMyWeek()
+
+        weekHolds(
+            sportDays = 0,
+            programDays = 0,
+            program = null,
+            bells = emptyList(),
+            goal = 3,
+            intervalDays = 3,
+            intervalWorkout = hiitIntervals.asPlan(),
+        )
     }
 }

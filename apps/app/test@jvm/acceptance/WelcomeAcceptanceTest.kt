@@ -53,6 +53,7 @@ class WelcomeAcceptanceTest {
             skipWelcome()
             answerSport("Climbing")
             trainOn("Thursday")
+            trainWith("Kettlebells")
             ownBells(12)
             sessionOf(20)
             buildMyWeek()

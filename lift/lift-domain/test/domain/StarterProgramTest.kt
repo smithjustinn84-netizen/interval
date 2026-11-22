@@ -35,6 +35,7 @@ class StarterProgramTest {
             ProgramId.BodyweightEmom,
             // Bands, and the barbell.
             ProgramId.BandsAndBells,
+            ProgramId.BandBasics,
             ProgramId.OlympicFoundations,
             ProgramId.BarbellFiveByFive,
         )
@@ -120,5 +121,45 @@ class StarterProgramTest {
     fun `with nothing for one bell there is no program`() {
         val doubles = builtInPrograms.filter { !it.oneBell }
         assertNull(starterProgram(20, rest, programs = doubles))
+    }
+
+    private fun pickFor(
+        minutes: Int,
+        gear: StarterGear,
+        sport: StarterSport? = null,
+    ) = (starterProgram(minutes, rest, gear, sport)?.key as? ProgramKey.BuiltIn)?.id
+
+    @Test
+    fun `each equipment tier picks a matching starter program`() {
+        assertNull(pickFor(20, StarterGear()))
+        assertEquals(ProgramId.BarbellFiveByFive, pickFor(20, StarterGear(barbell = true)))
+        assertEquals(ProgramId.BarbellFiveByFive, pickFor(30, StarterGear(barbell = true)))
+        assertEquals(ProgramId.BandBasics, pickFor(20, StarterGear(bands = true)))
+        assertEquals(ProgramId.BodyweightBasics, pickFor(20, StarterGear(pullUpBar = true)))
+        assertEquals(ProgramId.BodyweightFloor, pickFor(20, StarterGear(bodyweight = true)))
+        assertEquals(ProgramId.BodyweightBasics, pickFor(20, StarterGear(pullUpBar = true, bodyweight = true)))
+    }
+
+    @Test
+    fun `climbing prefers shoulder armor with a bell and bands and bells with bands`() {
+        assertEquals(ProgramId.ShoulderArmor, pickFor(30, StarterGear(oneBell = true), StarterSport.Climbing))
+        assertEquals(
+            ProgramId.BandsAndBells,
+            pickFor(30, StarterGear(oneBell = true, bands = true), StarterSport.Climbing),
+        )
+        assertEquals(ProgramId.BarbellFiveByFive, pickFor(30, StarterGear(barbell = true), StarterSport.Climbing))
+        assertEquals(ProgramId.BodyweightFloor, pickFor(20, StarterGear(bodyweight = true), StarterSport.Climbing))
+    }
+
+    @Test
+    fun `running prefers two-day strength programs beside run days`() {
+        assertEquals(ProgramId.GobletSquatRow, pickFor(15, StarterGear(oneBell = true), StarterSport.Running))
+        assertEquals(ProgramId.GobletSquatRow, pickFor(20, StarterGear(oneBell = true), StarterSport.Running))
+        assertEquals(ProgramId.BeginnerFullBody, pickFor(30, StarterGear(oneBell = true), StarterSport.Running))
+        assertEquals(
+            ProgramId.BandsAndBells,
+            pickFor(30, StarterGear(oneBell = true, bands = true), StarterSport.Running),
+        )
+        assertEquals(ProgramId.BodyweightFloor, pickFor(20, StarterGear(bodyweight = true), StarterSport.Running))
     }
 }

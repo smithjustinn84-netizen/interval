@@ -114,8 +114,32 @@ val snatchIntervals: Preset = Preset(
 )
 
 /** Five five-minute rounds with a minute between: rolling, drilling, or rounds of anything. */
-private val matRounds =
+val matRoundsIntervals: Preset =
     Preset("Mat rounds", IntervalConfig(prepSeconds = 10, workSeconds = 300, restSeconds = 60, rounds = 5))
+
+/** Classic 20s on / 10s off × 8 Tabata intervals. */
+val tabataIntervals: Preset =
+    Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8))
+
+/** Ten 30s/30s work-rest intervals. */
+val hiitIntervals: Preset =
+    Preset("HIIT 30/30", IntervalConfig(prepSeconds = 10, workSeconds = 30, restSeconds = 30, rounds = 10))
+
+/** Six 10s hangs with 50s rest for climbers. */
+val hangboardIntervals: Preset = Preset(
+    "Hangboard",
+    IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6, activity = Activity.Climbing),
+)
+
+/** Twelve 45s on / 15s off intervals. */
+val longEffortsIntervals: Preset =
+    Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12))
+
+/** As many rounds as you can in twenty minutes: a circuit of the user's own, each round tapped as it is done. */
+val twentyMinuteCapIntervals: Preset = Preset(
+    "20-minute cap",
+    IntervalConfig(prepSeconds = 10, workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true),
+)
 
 /** What a preset is for, which Train's Conditioning groups the built-ins by, in its order. */
 enum class PresetPurpose {
@@ -133,7 +157,7 @@ enum class PresetPurpose {
 val Preset.purpose: PresetPurpose
     get() = when {
         config.activity == Activity.Kettlebell -> PresetPurpose.Bell
-        config.activity == Activity.Climbing || config.sameShape(matRounds.config) -> PresetPurpose.MatAndWall
+        config.activity == Activity.Climbing || config.sameShape(matRoundsIntervals.config) -> PresetPurpose.MatAndWall
         else -> PresetPurpose.Anywhere
     }
 
@@ -142,15 +166,12 @@ val Preset.purpose: PresetPurpose
  * [defaultPresetName]'s, not labels, so they are data here rather than strings.xml text.
  */
 val builtInPresets: List<Preset> = listOf(
-    Preset("Tabata", IntervalConfig(prepSeconds = 10, workSeconds = 20, restSeconds = 10, rounds = 8)),
-    Preset("HIIT 30/30", IntervalConfig(prepSeconds = 10, workSeconds = 30, restSeconds = 30, rounds = 10)),
-    Preset(
-        "Hangboard",
-        IntervalConfig(prepSeconds = 10, workSeconds = 10, restSeconds = 50, rounds = 6, activity = Activity.Climbing),
-    ),
-    Preset("Long efforts", IntervalConfig(prepSeconds = 5, workSeconds = 45, restSeconds = 15, rounds = 12)),
+    tabataIntervals,
+    hiitIntervals,
+    hangboardIntervals,
+    longEffortsIntervals,
     snatchIntervals,
-    matRounds,
+    matRoundsIntervals,
     // Ten swings at the top of each minute for ten: hard enough, with most of every minute to recover.
     Preset(
         "Swings on the minute",
@@ -162,9 +183,5 @@ val builtInPresets: List<Preset> = listOf(
             activity = Activity.Kettlebell,
         ),
     ),
-    // As many rounds as you can in twenty minutes: a circuit of the user's own, each round tapped as it is done.
-    Preset(
-        "20-minute cap",
-        IntervalConfig(prepSeconds = 10, workSeconds = 1200, restSeconds = 0, rounds = 1, capped = true),
-    ),
+    twentyMinuteCapIntervals,
 )
