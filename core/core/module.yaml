@@ -7,6 +7,10 @@ product:
   type: kmp/lib
   platforms: [android, iosArm64, iosSimulatorArm64, jvm]
 
+# `src@skia/`: what iOS and the desktop share and Android doesn't, Skia under Compose (a runtime shader's maker).
+aliases:
+  - skia: [iosArm64, iosSimulatorArm64, jvm]
+
 # `lib`, not `compose-lib` or `tested-lib`: `compose-lib` depends on core, and on core-ui-testing, which depends on this.
 apply:
   - //templates/lib.module-template.yaml

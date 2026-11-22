@@ -232,8 +232,9 @@ object Sizes {
     /** Compact inline glyphs paired with a label inside a chip, group heading, or row. */
     val iconInline = 18.dp
 
-    /** The heart of the sensor's pulse in a title bar, and the dot on it while the battery is low. */
+    /** The heart of the sensor's pulse in a title bar, its live emitter slot, and the dot while the battery is low. */
     val sensorPulseHeart = 20.dp
+    val sensorPulseEmitter = 16.dp
     val sensorPulseDot = 8.dp
 
     /** The dot of a heart rate's zone, beating with it, in a badge: the title bar's and a session's top bar's. */

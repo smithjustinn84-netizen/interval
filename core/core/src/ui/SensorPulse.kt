@@ -1,6 +1,7 @@
 package dev.justinsmith.interval.ui
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
@@ -9,7 +10,10 @@ import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -32,6 +36,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.unit.dp
 import dev.justinsmith.core.resources.Res
 import dev.justinsmith.core.resources.sensor_pulse_idle_cd
 import dev.justinsmith.core.resources.sensor_pulse_low_battery_cd
@@ -39,6 +44,7 @@ import dev.justinsmith.core.resources.sensor_pulse_reading_cd
 import dev.justinsmith.core.resources.sensor_pulse_rec
 import dev.justinsmith.core.resources.sensor_pulse_recording_cd
 import dev.justinsmith.interval.platform.DEFAULT_MAX_BPM
+import dev.justinsmith.interval.platform.HeartRateZone
 import dev.justinsmith.interval.platform.LiveHeartRateState
 import dev.justinsmith.interval.platform.heartRateZone
 import org.jetbrains.compose.resources.stringResource
@@ -70,12 +76,12 @@ data class SensorPulse(
 val LocalSensorPulse = compositionLocalOf<SensorPulse?> { null }
 
 /**
- * The sensor in a title bar: read, as the heart rate reads everywhere, a dot beating in its zone's colour, the
- * number and a dim BPM; not read, a dim heart standing still, with no words, since the sensor is off for most
- * of a day; recording a class, that heart and "Rec". A low battery puts a red dot on the badge's corner. The
- * whole of it is the tap that opens the sensor's sheet, as wide as an icon's at least and as tall, its glyphs
- * level with the title's capitals as an [IconAction]'s are. Read by a screen reader as what it shows and the
- * sensor's name, never as each beat.
+ * The sensor in a title bar: read, as the heart rate reads everywhere, a procedural pulse emitter beating in its
+ * zone's colour with concentric acoustic ripples scaled by zone, the number and a dim BPM; not read, a dim heart
+ * framed by a calm breathing ring with no words, since the sensor is off for most of a day; recording a class,
+ * that heart and "Rec". A low battery puts a red dot on the badge's corner. The whole of it is the tap that opens
+ * the sensor's sheet, as wide as an icon's at least and as tall, its glyphs level with the title's capitals as an
+ * [IconAction]'s are. Read by a screen reader as what it shows and the sensor's name, never as each beat.
  */
 @Composable
 fun SensorPulseBadge(pulse: SensorPulse, modifier: Modifier = Modifier) {
@@ -83,22 +89,7 @@ fun SensorPulseBadge(pulse: SensorPulse, modifier: Modifier = Modifier) {
     val interaction = remember { MutableInteractionSource() }
     val bpm = pulse.bpm
     val zone = bpm?.let { heartRateZone(it, pulse.maxBpm, LocalRestingHeartRate.current) }
-    val description = listOfNotNull(
-        when {
-            pulse.recording -> stringResource(Res.string.sensor_pulse_recording_cd, pulse.name)
-
-            bpm != null && zone != null ->
-                stringResource(Res.string.sensor_pulse_reading_cd, bpm, zone.number, pulse.name)
-
-            else -> stringResource(Res.string.sensor_pulse_idle_cd, pulse.name)
-        },
-        stringResource(Res.string.sensor_pulse_low_battery_cd).takeIf { pulse.lowBattery },
-    ).joinToString()
-    val heart by animateColorAsState(
-        zone?.let(palette.heartZones::of) ?: palette.textDim,
-        tween(Motion.STATE_MILLIS, easing = StandardEasing),
-        label = "sensorPulse",
-    )
+    val description = sensorPulseDescription(pulse, bpm, zone)
     Box(
         modifier
             .height(Sizes.iconButton)
@@ -115,30 +106,12 @@ fun SensorPulseBadge(pulse: SensorPulse, modifier: Modifier = Modifier) {
         contentAlignment = Alignment.Center,
     ) {
         Box(Modifier.offset(y = LocalTitleBarGlyphShift.current)) {
-            Row(
-                Modifier
-                    .pressScale(interaction)
-                    .clip(Corners.full)
-                    .background(if (bpm != null) palette.surfaceVariant else Color.Transparent)
-                    .indication(interaction, LocalIndication.current)
-                    .padding(horizontal = Spacing.space8, vertical = Spacing.space4),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
-            ) {
-                if (bpm != null && !pulse.recording) {
-                    ZoneDot(heart, bpm)
-                    BadgeBpm(bpm, palette.text, palette.textDim)
-                } else {
-                    Icon(IntervalIcons.Heart, null, Modifier.size(Sizes.sensorPulseHeart), tint = heart)
-                    if (pulse.recording) {
-                        Text(
-                            stringResource(Res.string.sensor_pulse_rec),
-                            style = IntervalTheme.type.caption,
-                            color = palette.textDim,
-                        )
-                    }
-                }
-            }
+            SensorPulsePill(
+                bpm = bpm,
+                zone = zone,
+                recording = pulse.recording,
+                interaction = interaction,
+            )
             if (pulse.lowBattery) {
                 Box(
                     Modifier
@@ -152,6 +125,97 @@ fun SensorPulseBadge(pulse: SensorPulse, modifier: Modifier = Modifier) {
     }
 }
 
+@Composable
+private fun SensorPulsePill(
+    bpm: Int?,
+    zone: HeartRateZone?,
+    recording: Boolean,
+    interaction: MutableInteractionSource,
+    modifier: Modifier = Modifier,
+) {
+    val palette = IntervalTheme.palette
+    val activeReading = bpm != null && !recording
+    val profile = pulseZoneProfile(bpm, zone, recording)
+    val heart by animateColorAsState(
+        if (activeReading && zone != null) palette.heartZones.of(zone) else palette.textDim,
+        tween(Motion.STATE_MILLIS, easing = StandardEasing),
+        label = "sensorPulse",
+    )
+    val waveSpan by animateFloatAsState(
+        profile.waveSpan,
+        tween(Motion.ENTER_MILLIS, easing = StandardEasing),
+        label = "sensorPulseWaveSpan",
+    )
+    val intensity by animateFloatAsState(
+        profile.intensity,
+        tween(Motion.ENTER_MILLIS, easing = StandardEasing),
+        label = "sensorPulseIntensity",
+    )
+    val active by animateFloatAsState(
+        profile.active,
+        tween(Motion.CONTENT_MILLIS, easing = StandardEasing),
+        label = "sensorPulseActive",
+    )
+    val idle = LocalIdle.current
+    val phase = rememberPulsePhase(profile.beatsPerSecond, paused = !activeReading && idle())
+    val program = remember { shaderProgram(SENSOR_PULSE_SHADER) }
+    val contentPadding = when {
+        activeReading -> PaddingValues(horizontal = Spacing.space8, vertical = Spacing.space4)
+        recording -> PaddingValues(horizontal = Spacing.space8, vertical = RECORDING_VERTICAL_PADDING)
+        else -> PaddingValues(Spacing.space8)
+    }
+    val centerX = Spacing.space8 + (if (activeReading) Sizes.sensorPulseEmitter else Sizes.sensorPulseHeart) / 2
+    Row(
+        modifier
+            .pressScale(interaction)
+            .clip(Corners.full)
+            .background(if (activeReading) palette.surfaceVariant else Color.Transparent)
+            .sensorPulseWave(
+                phase = { phase.floatValue },
+                color = { heart },
+                waveSpan = { waveSpan },
+                intensity = { intensity },
+                active = { active },
+                centerX = centerX,
+                centered = !activeReading && !recording,
+                program = program,
+            )
+            .indication(interaction, LocalIndication.current)
+            .padding(contentPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(Spacing.space8),
+    ) {
+        if (activeReading) {
+            Spacer(Modifier.size(Sizes.sensorPulseEmitter))
+            BadgeBpm(bpm, palette.text, palette.textDim)
+        } else {
+            Icon(IntervalIcons.Heart, null, Modifier.size(Sizes.sensorPulseHeart), tint = heart)
+            if (recording) {
+                Text(
+                    stringResource(Res.string.sensor_pulse_rec),
+                    style = IntervalTheme.type.caption,
+                    color = palette.textDim,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun sensorPulseDescription(pulse: SensorPulse, bpm: Int?, zone: HeartRateZone?): String = listOfNotNull(
+    when {
+        pulse.recording -> stringResource(Res.string.sensor_pulse_recording_cd, pulse.name)
+
+        bpm != null && zone != null ->
+            stringResource(Res.string.sensor_pulse_reading_cd, bpm, zone.number, pulse.name)
+
+        else -> stringResource(Res.string.sensor_pulse_idle_cd, pulse.name)
+    },
+    stringResource(Res.string.sensor_pulse_low_battery_cd).takeIf { pulse.lowBattery },
+).joinToString()
+
+private val RECORDING_VERTICAL_PADDING = 6.dp
+
 @PreviewFormFactors
 @Composable
 private fun SensorPulseBadgePreview() {
@@ -164,6 +228,28 @@ private fun SensorPulseBadgePreview() {
             SensorPulseBadge(SensorPulse(LiveHeartRateState.Disconnected, "Polar Sense 1A2B3C4D"))
             SensorPulseBadge(SensorPulse(LiveHeartRateState.Idle, "Polar Sense 1A2B3C4D", lowBattery = true))
             SensorPulseBadge(SensorPulse(LiveHeartRateState.Unavailable, "Polar Sense 1A2B3C4D", recording = true))
+        }
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun SensorPulseZonesPreview() {
+    IntervalTheme {
+        Column(
+            Modifier.background(IntervalTheme.palette.background).padding(Spacing.space12),
+            verticalArrangement = Arrangement.spacedBy(Spacing.space8),
+        ) {
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Reading(bpm = 95), "Polar Sense"))
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Reading(bpm = 122), "Polar Sense"))
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Reading(bpm = 142), "Polar Sense"))
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.space8)) {
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Reading(bpm = 162), "Polar Sense"))
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Reading(bpm = 182), "Polar Sense"))
+                SensorPulseBadge(SensorPulse(LiveHeartRateState.Disconnected, "Polar Sense"))
+            }
         }
     }
 }
