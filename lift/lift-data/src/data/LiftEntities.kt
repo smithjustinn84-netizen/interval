@@ -68,6 +68,8 @@ data class SetEntity(
     val seconds: Int? = null,
     /** The band used, a [BandEntity]'s id (one every user starts with by its name); null for a set without one. */
     val band: String? = null,
+    /** Logged as a warm-up, which counts toward nothing a working set does; none before version 20. */
+    @ColumnInfo(name = "warm_up", defaultValue = "0") val warmUp: Boolean = false,
 )
 
 /**

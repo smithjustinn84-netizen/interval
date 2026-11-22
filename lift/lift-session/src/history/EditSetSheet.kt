@@ -24,9 +24,10 @@ import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.session.ExerciseCard
 import dev.justinsmith.lift.session.SetDraft
+import dev.justinsmith.lift.session.WarmUpSwitch
 import dev.justinsmith.lift.session.appliedTo
+import dev.justinsmith.lift.session.changing
 import dev.justinsmith.lift.session.clamped
-import dev.justinsmith.lift.session.from
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.log_edit_remove
 import dev.justinsmith.lift.session.resources.log_edit_save
@@ -57,7 +58,7 @@ internal fun EditSetSheet(
     onRemove: (SetLog) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var draft by remember(set.id) { mutableStateOf(SetDraft().from(set, flipSide = false).clamped(state.bar)) }
+    var draft by remember(set.id) { mutableStateOf(SetDraft().changing(set).clamped(state.bar)) }
     val sideways = sheetIsSideways()
     IntervalSheet(
         title = stringResource(Res.string.log_edit_title),
@@ -97,6 +98,7 @@ internal fun EditSetSheet(
                 GroupLabel(stringResource(Res.string.log_side))
                 ChoiceRow(Side.entries, draft.side, { sideName(it) }, { draft = draft.copy(side = it) })
             }
+            WarmUpSwitch(draft.warmUp) { draft = draft.copy(warmUp = !draft.warmUp) }
             Column(
                 Modifier.fillMaxWidth().padding(top = Spacing.space16, bottom = Spacing.space8),
                 verticalArrangement = Arrangement.spacedBy(Spacing.space8),

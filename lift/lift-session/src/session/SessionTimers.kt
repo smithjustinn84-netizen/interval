@@ -314,7 +314,7 @@ class SessionTimers(
     fun close() = scope.cancel()
 
     private fun logHeld(set: SetDraft, seconds: Int) {
-        setStore.logSet(set.exercise, set.load, 0, set.side, seconds = seconds)
+        setStore.logSet(set.exercise, set.load, 0, set.side, seconds = seconds, warmUp = set.warmUp)
         rest.start(setStore.restSeconds.value)
         held.tryEmit(set)
     }

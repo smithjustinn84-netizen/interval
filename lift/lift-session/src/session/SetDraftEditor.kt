@@ -98,9 +98,15 @@ class SetDraftEditor(private val context: () -> DraftContext) {
         current.update { it.planned(next) }
     }
 
-    /** A one-sided lift usually goes on with the other side. */
-    fun flipSide(set: SetDraft) {
-        if (set.exercise.sided(set.doubled)) current.update { it.copy(side = set.side.other) }
+    /**
+     * After [set] is logged: a one-sided lift usually goes on with the other side, and the next set is a working
+     * one unless switched again, so a warm-up never runs on into the work unseen.
+     */
+    fun logged(set: SetDraft) {
+        current.update { draft ->
+            val side = if (set.exercise.sided(set.doubled)) set.side.other else draft.side
+            draft.copy(side = side, warmUp = false)
+        }
     }
 
     /** Opens the set [id] logged this session to change: the draft becomes it, the one for a new set put aside. */
@@ -108,7 +114,7 @@ class SetDraftEditor(private val context: () -> DraftContext) {
         val set = context().logged.firstOrNull { it.id == id } ?: return
         if (changing.value == null) putAside = current.value
         changing.value = set
-        current.update { it.from(set, flipSide = false) }
+        current.update { it.changing(set) }
     }
 
     /** The set being changed as the draft now has it, ending the change; null when none is. */

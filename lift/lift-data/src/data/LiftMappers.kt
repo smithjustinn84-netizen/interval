@@ -43,6 +43,7 @@ internal fun SetEntity.toDomain(made: List<CustomExercise>, bands: List<Band>): 
         equipment = done,
         seconds = seconds,
         band = band?.let { bandOf(it, bands) },
+        warmUp = warmUp,
     )
 }
 
@@ -59,6 +60,7 @@ internal fun SetLog.toEntity(sessionUid: String, id: Long = 0): SetEntity = SetE
     equipment = load.equipment.name,
     seconds = seconds,
     band = load.band?.id,
+    warmUp = warmUp,
 )
 
 internal fun SessionEntity.toDomain(sets: List<SetLog>, made: List<CustomExercise>, bands: List<Band>) =

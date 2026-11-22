@@ -470,6 +470,7 @@ private fun SetExport.toDomain(exercises: List<CustomExercise>, bands: List<Band
         equipment = equipment,
         seconds = seconds,
         band = band?.let { id -> bands.firstOrNull { it.id == id } ?: Band(id, "", BandColour.Grey, 0) },
+        warmUp = warmUp,
     )
 }
 

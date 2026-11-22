@@ -11,8 +11,11 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isOff
+import androidx.compose.ui.test.isOn
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
+import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onLast
 import androidx.compose.ui.test.performScrollTo
@@ -248,6 +251,19 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
 
     /** Logs the set on the Log sheet: its Log set is drawn over the session's own. */
     fun logFromSheet() = tap("Log set")
+
+    /** On the Log sheet: switches Warm-up, on or off. */
+    fun markWarmUp() = tap(hasText("Warm-up") and isToggleable())
+
+    fun seeWarmUp(on: Boolean) = see(hasText("Warm-up") and isToggleable() and if (on) isOn() else isOff())
+
+    /** Opens the logged set [line] on the sheet, to change it. */
+    fun editSet(line: String) {
+        tap(line)
+        see("Save set")
+    }
+
+    fun saveSet() = tap("Save set")
 
     /** On the card about the next set, under its figure: the worst fault the lift is prone to. */
     fun seeWatchFor(fault: String) = see("Watch for · $fault")

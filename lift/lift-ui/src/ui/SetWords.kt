@@ -78,11 +78,23 @@ import dev.justinsmith.lift.ui.resources.set_line_added
 import dev.justinsmith.lift.ui.resources.set_line_band
 import dev.justinsmith.lift.ui.resources.set_line_double
 import dev.justinsmith.lift.ui.resources.set_line_reps
+import dev.justinsmith.lift.ui.resources.set_line_warm_up
 import org.jetbrains.compose.resources.stringResource
 
-/** A logged set in words, as [setLine] puts it. */
+/** A logged set in words, as [setLine] puts it, a warm-up said as one: "12 kg × 10 · Warm-up". */
 @Composable
-fun setLine(set: SetLog): String = setLine(set.load, set.reps, set.side, set.seconds)
+fun setLine(set: SetLog): String {
+    val line = setLine(set.load, set.reps, set.side, set.seconds)
+    return if (set.warmUp) {
+        stringResource(
+            Res.string.common_joined,
+            line,
+            stringResource(Res.string.set_line_warm_up),
+        )
+    } else {
+        line
+    }
+}
 
 /**
  * A set in words, by its [load]: a bell "24 kg × 10", two "2 × 16 kg × 5"; a bar "62.5 kg × 3"; bodyweight

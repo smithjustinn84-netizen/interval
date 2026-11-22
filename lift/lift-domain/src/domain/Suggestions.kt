@@ -2,7 +2,8 @@ package dev.justinsmith.lift.domain
 
 /** The band to suggest for [exercise]: the last one used for it if [offered] still, else [fallback]. */
 fun suggestedBand(exercise: Exercise, history: List<SetLog>, offered: List<Band>, fallback: Band): Band {
-    val last = history.lastOrNull { it.exercise.key == exercise.key && it.load.band != null }?.load?.band
+    val last = history.lastOrNull { it.exercise.key == exercise.key && it.load.band != null && !it.warmUp }
+        ?.load?.band
     return offered.firstOrNull { it.id == last?.id } ?: fallback
 }
 
@@ -11,8 +12,8 @@ fun suggestedBand(exercise: Exercise, history: List<SetLog>, offered: List<Band>
  * the last used for it at all, else [fallback].
  */
 fun suggestedBell(exercise: Exercise, double: Boolean, history: List<SetLog>, fallback: Double): Double =
-    history.lastOrNull { it.exercise.key == exercise.key && it.double == double }?.load?.kg
-        ?: history.lastOrNull { it.exercise.key == exercise.key }?.load?.kg
+    history.lastOrNull { it.exercise.key == exercise.key && it.double == double && !it.warmUp }?.load?.kg
+        ?: history.lastOrNull { it.exercise.key == exercise.key && !it.warmUp }?.load?.kg
         ?: fallback
 
 /**

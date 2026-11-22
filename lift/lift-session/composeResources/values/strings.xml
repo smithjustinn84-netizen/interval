@@ -34,6 +34,9 @@
     <string name="log_title">Add to the session</string>
     <string name="log_edit_title">Change the set</string>
     <string name="log_edit_save">Save set</string>
+    <!-- A switch on the Log sheet: the set is a warm-up, kept but counted toward nothing -->
+    <string name="log_warm_up">Warm-up</string>
+    <string name="log_warm_up_note">Not counted toward records, progress or totals</string>
     <string name="log_edit_remove">Remove set</string>
     <string name="session_edit_set_cd">Change %1$s</string>
     <string name="log_kind_set">A set</string>

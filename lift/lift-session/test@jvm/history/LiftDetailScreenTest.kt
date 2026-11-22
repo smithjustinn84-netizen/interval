@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import dev.justinsmith.interval.ui.runUiTest
@@ -111,7 +112,8 @@ class LiftDetailScreenTest {
         onAllNodes(hasScrollAction()).onFirst().performScrollToNode(hasClickAction() and hasText("16 kg × 12"))
         onNode(hasClickAction() and hasText("16 kg × 12")).performClick()
         waitForIdle()
-        onNodeWithText("Remove set").performClick()
+        // Under the Warm-up switch: the sheet scrolls to it.
+        onNodeWithText("Remove set").performScrollTo().performClick()
         waitForIdle()
         assertEquals(listOf(2L), removed)
 

@@ -63,16 +63,17 @@ class SetRepository(
      * Logs a set to the session in progress, its [load] as [exercise] takes it: with two bells only if it can
      * be, a band only for band work. A held exercise keeps its [seconds], dropped from any other.
      */
-    override fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int?) {
+    override fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int?, warmUp: Boolean) {
         writer.persist {
             val active = sessionDao.active() ?: return@persist
-            sessionDao.insert(setRow(active.uid, exercise, load, reps, side, seconds, clock.nowMillis()))
+            sessionDao.insert(setRow(active.uid, exercise, load, reps, side, seconds, clock.nowMillis(), warmUp))
         }
     }
 
     /**
-     * Changes the logged set [set.id] to [set]: its load, reps or seconds and side. It keeps its session and when
-     * it was logged; a held exercise keeps seconds and a band one its band, each dropped from any other.
+     * Changes the logged set [set.id] to [set]: its load, reps or seconds, side and whether it was a warm-up. It
+     * keeps its session and when it was logged; a held exercise keeps seconds and a band one its band, each dropped
+     * from any other.
      */
     override fun updateSet(set: SetLog) {
         writer.persist {
@@ -87,6 +88,7 @@ class SetRepository(
                     doubled = doubled,
                     seconds = set.seconds.takeIf { exercise.measure == Measure.Time },
                     band = set.load.band?.id,
+                    warmUp = set.warmUp,
                 ),
             )
         }
@@ -168,6 +170,7 @@ internal fun setRow(
     side: Side?,
     seconds: Int?,
     loggedAt: Long,
+    warmUp: Boolean = false,
 ): SetEntity {
     val taken = exercise.taking(load)
     return SetEntity(
@@ -182,5 +185,6 @@ internal fun setRow(
         equipment = taken.equipment.name,
         seconds = seconds.takeIf { exercise.measure == Measure.Time },
         band = taken.band?.id,
+        warmUp = warmUp,
     )
 }

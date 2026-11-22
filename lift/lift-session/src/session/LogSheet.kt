@@ -241,6 +241,7 @@ private fun ColumnScope.HowMuch(state: SessionUiState, kind: LogKind, actions: S
     MeasurePicker(draft, emom = kind == LogKind.Emom, state.otherSide, actions, timing = !editing)
     if (kind == LogKind.Emom) EmomMinutes(draft, actions)
     if (draft.exercise.sided(draft.doubled)) SidePicker(draft, first = kind == LogKind.Emom, actions)
+    if (kind == LogKind.Set) WarmUpSwitch(draft.warmUp) { actions.onDraft { it.copy(warmUp = !it.warmUp) } }
     SheetAction(kind, editing, actions, hide)
 }
 

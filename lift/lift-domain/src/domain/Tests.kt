@@ -111,7 +111,7 @@ data class Attempt(val sessionUid: String, val atEpochMillis: Long, val load: Lo
  * clock, else the best set, at the load of the set that made it (a clock's first). Null with nothing counted.
  */
 fun testResult(test: StrengthTest, sets: List<SetLog>): Pair<Load, Int>? {
-    val done = sets.filter { it.exercise.key == test.exercise.key }.sortedBy { it.loggedAtEpochMillis }
+    val done = sets.filter { it.exercise.key == test.exercise.key && !it.warmUp }.sortedBy { it.loggedAtEpochMillis }
     return when (test.measure) {
         TestMeasure.RepsInCap ->
             done.filter { it.seconds == null }.takeIf { it.isNotEmpty() }?.let {

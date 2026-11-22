@@ -23,6 +23,7 @@ import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.lift.domain.Doubles
 import dev.justinsmith.lift.domain.Side
 import dev.justinsmith.lift.session.resources.Res
+import dev.justinsmith.lift.session.resources.common_joined
 import dev.justinsmith.lift.session.resources.exercise_editor_new
 import dev.justinsmith.lift.session.resources.hold_time_it
 import dev.justinsmith.lift.session.resources.library_title
@@ -31,6 +32,7 @@ import dev.justinsmith.lift.session.resources.log_fewer_reps
 import dev.justinsmith.lift.session.resources.log_less_time
 import dev.justinsmith.lift.session.resources.log_more_reps
 import dev.justinsmith.lift.session.resources.log_more_time
+import dev.justinsmith.lift.session.resources.log_warm_up
 import dev.justinsmith.lift.session.resources.next_free_title
 import dev.justinsmith.lift.ui.Choice
 import dev.justinsmith.lift.ui.Stepper
@@ -58,10 +60,16 @@ internal fun DraftSetCard(
         NextFigure(draft.exercise, draft.doubled, actions.onOpenExercise, celebrating)
         FaultsNote(draft.exercise)
         Column(Modifier.padding(Spacing.space16), verticalArrangement = Arrangement.spacedBy(Spacing.space4)) {
+            // A warm-up switched on in the sheet is what Log set here logs too: said over the lift, in the accent.
+            val title = stringResource(Res.string.next_free_title)
             Text(
-                stringResource(Res.string.next_free_title),
+                if (draft.warmUp) {
+                    stringResource(Res.string.common_joined, title, stringResource(Res.string.log_warm_up))
+                } else {
+                    title
+                },
                 style = IntervalTheme.type.caption,
-                color = IntervalTheme.palette.textDim,
+                color = if (draft.warmUp) IntervalTheme.palette.accent else IntervalTheme.palette.textDim,
             )
             LiftHeading(draft.exercise, draft.doubled, actions.onOpenExercise, onChange = onChange)
             LoadStep(draft.load, state, actions.onStepDraftLoad)

@@ -15,4 +15,5 @@ fun SetStore.logSet(
     double: Boolean = false,
     seconds: Int? = null,
     band: Band? = null,
-) = logSet(exercise, Load.of(exercise.equipment, bellKg, double, band), reps, side, seconds)
+    warmUp: Boolean = false,
+) = logSet(exercise, Load.of(exercise.equipment, bellKg, double, band), reps, side, seconds, warmUp)

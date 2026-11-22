@@ -120,6 +120,7 @@ Targeted fixes for the sharpest daily user friction.
 - **Where**: `lift/lift-domain/src/domain/`, `lift/lift-session/src/session/LogSheet.kt`
 - **Issue**: Lift's voice coaching instructs *"Groove five light first"*, yet logging warm-up sets currently counts them as working sets—distorting progression, density pace, and tonnage.
 - **Improvement**: Add a single-tap **Warm-up** toggle on logged sets, excluded from working-set progression and pace calculations while preserved in session history.
+- **Done (2026-11-22)**: a set carries `SetLog.warmUp` (`LiftDatabase` v20's `warm_up` column, exported in schema 16). The Log sheet has a Warm-up switch that turns off again once its set is logged, and the next-set card says "Next set · Warm-up" while it is on. A set logged is made a warm-up, or a working set again, from its row, in the session or on its page in the Log. A warm-up is listed as "12 kg × 10 · Warm-up". It counts toward no record, planned set ticked off, step up, density round, pace, challenge, test, suggested load, trend line or session total (`List<SetLog>.working()`, `LiftSession.workingSets`), but the grip's load, the muscles worked, a first set at a new bell and the time sent to the health store still take it.
 
 ### P5. Reorganize Settings as it scales
 - **Where**: `interval/interval-settings/src/settings/SettingsGroups.kt` (636 lines, 9 stacked groups)

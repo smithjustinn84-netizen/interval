@@ -243,7 +243,7 @@ class SessionViewModel(
         }
         // A hold the timers logged goes on with the other side, as a set logged here does.
         viewModelScope.launch {
-            timers.heldSets.collect(draft::flipSide)
+            timers.heldSets.collect(draft::logged)
         }
         // The timers say the set coming in a rest's last seconds, the plan's next or the Next set card's, or a safety
         // line due in its place. A session opening fresh, before its first set, says the one due at once: a program
@@ -322,8 +322,9 @@ class SessionViewModel(
             if (set.held) 0 else set.reps,
             set.side,
             seconds = seconds.takeIf { set.held },
+            warmUp = set.warmUp,
         )
-        draft.flipSide(set)
+        draft.logged(set)
         timers.startRest(rest ?: setStore.restSeconds.value, after = set.exercise)
     }
 

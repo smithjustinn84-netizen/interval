@@ -70,7 +70,8 @@ interface SessionStore {
 interface SetStore {
     val restSeconds: StateFlow<Int>
 
-    fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int? = null)
+    /** Logs a set in the session in progress: a [warmUp] counts toward nothing a working set does. */
+    fun logSet(exercise: Exercise, load: Load, reps: Int, side: Side?, seconds: Int? = null, warmUp: Boolean = false)
 
     fun updateSet(set: SetLog)
 

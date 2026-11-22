@@ -134,4 +134,23 @@ class SetDraftEditorTest {
         editor.exercisesChanged(listOf(old, added))
         assertEquals(added, draft.exercise)
     }
+
+    @Test
+    fun `a warm-up switched on is off again once its set is logged and the side moves on`() {
+        editor.update { it.copy(exercise = BuiltInExercise.Press, side = Side.Left, warmUp = true) }
+        editor.logged(draft)
+        assertEquals(false, draft.warmUp)
+        assertEquals(Side.Right, draft.side)
+    }
+
+    @Test
+    fun `a set changed opens as the warm-up it was and saves the switch`() {
+        val warmUp = set(1, 12.0).copy(warmUp = true)
+        context = context.copy(logged = listOf(warmUp))
+        editor.edit(1)
+        assertEquals(true, draft.warmUp)
+        editor.update { it.copy(warmUp = false) }
+        assertEquals(false, editor.takeEdit()?.warmUp)
+        assertEquals(false, draft.warmUp)
+    }
 }

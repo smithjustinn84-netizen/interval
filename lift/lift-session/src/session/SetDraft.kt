@@ -34,6 +34,8 @@ data class SetDraft(
     /** How long a hold lasted. */
     val seconds: Int = DEFAULT_SECONDS,
     val band: Band = Band.Default,
+    /** Logged as a warm-up: switched on for a set, off again once it is logged. */
+    val warmUp: Boolean = false,
 ) {
     /** Whether the set is done with two bells. */
     val doubled: Boolean get() = exercise.doubled(double)
@@ -114,10 +116,17 @@ internal fun SetDraft.planned(next: UpNext): SetDraft {
     )
 }
 
-/** The logged [set] changed to what this draft has: its load, reps or seconds, side, bells and band. */
+/**
+ * The logged [set] changed to what this draft has: its load, reps or seconds, side, bells and band, and whether
+ * it was a warm-up.
+ */
 internal fun SetDraft.appliedTo(set: SetLog): SetLog = set.copy(
     load = load,
     reps = if (held) 0 else reps,
     side = side,
     seconds = seconds.takeIf { held },
+    warmUp = warmUp,
 )
+
+/** This draft opened on the logged [set] to change it: as [from] has it, a warm-up if [set] was one. */
+internal fun SetDraft.changing(set: SetLog): SetDraft = from(set, flipSide = false).copy(warmUp = set.warmUp)

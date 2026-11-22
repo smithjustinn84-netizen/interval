@@ -51,7 +51,7 @@ sealed interface PersonalRecord {
  * an exercise this build doesn't know set none.
  */
 fun personalRecords(sets: List<SetLog>): List<PersonalRecord> = sets
-    .filter { it.exercise !is UnknownExercise }
+    .filter { it.exercise !is UnknownExercise && !it.warmUp }
     .groupBy { Triple(it.exercise.key, it.double, it.recordKind) }
     .map { (lift, done) ->
         val exercise = done.first().exercise
@@ -85,12 +85,12 @@ fun newRecords(before: List<SetLog>, sets: List<SetLog>): List<PersonalRecord> {
  * set ever has no record to beat, so it is not one; the summary's [newRecords] lists it all the same.
  */
 fun recordSetIds(before: List<SetLog>, sets: List<SetLog>): Set<Long> {
-    val prior = before.filter { it.exercise !is UnknownExercise }
+    val prior = before.filter { it.exercise !is UnknownExercise && !it.warmUp }
         .groupBy { it.lift }
         .mapValuesTo(mutableMapOf()) { it.value.toMutableList() }
     val ids = mutableSetOf<Long>()
     for (set in sets) {
-        if (set.exercise is UnknownExercise) continue
+        if (set.exercise is UnknownExercise || set.warmUp) continue
         val same = prior.getOrPut(set.lift) { mutableListOf() }
         val was = personalRecords(same).singleOrNull()
         same += set

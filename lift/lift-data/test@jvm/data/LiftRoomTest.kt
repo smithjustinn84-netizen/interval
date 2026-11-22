@@ -66,6 +66,20 @@ class LiftRoomTest {
     }
 
     @Test
+    fun `a warm-up is kept as one, changed to a working set and back, and put back as one`() {
+        repository.sessions.startSession()
+        repository.sets.logSet(BuiltInExercise.TwoHandSwing, 12.0, 10, null, warmUp = true)
+        val warmUp = await({ repository.sessions.active.value?.sets.orEmpty() }) { it.size == 1 }.single()
+        assertEquals(true, warmUp.warmUp)
+        repository.sets.updateSet(warmUp.copy(warmUp = false))
+        await({ repository.sessions.active.value?.sets.orEmpty() }) { it.singleOrNull()?.warmUp == false }
+        repository.sets.removeSet(warmUp.id)
+        await({ repository.sessions.active.value?.sets.orEmpty() }) { it.isEmpty() }
+        repository.sets.restoreSet(warmUp)
+        assertEquals(listOf(warmUp), await({ repository.sessions.active.value?.sets.orEmpty() }) { it.size == 1 })
+    }
+
+    @Test
     fun `an import that fails part way writes nothing`() = runBlocking {
         val set = SetLog.of(0, BuiltInExercise.TwoHandSwing, 24.0, 10, null, 500)
         val session = LiftSession("s1", 0, 1_000, "Swings", listOf(set))

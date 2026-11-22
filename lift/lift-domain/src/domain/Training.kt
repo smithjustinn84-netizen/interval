@@ -356,6 +356,11 @@ data class SetLog(
     val side: Side?,
     val loggedAtEpochMillis: Long,
     val seconds: Int? = null,
+    /**
+     * A warm-up, logged before the work: kept and shown with the session's sets, but left out of everything a
+     * working set counts toward (see [working]).
+     */
+    val warmUp: Boolean = false,
 ) {
     /** Whether it was done with two bells. */
     val double: Boolean get() = load.double
@@ -380,7 +385,9 @@ data class SetLog(
             equipment: Equipment = exercise.equipment,
             seconds: Int? = null,
             band: Band? = null,
-        ): SetLog = SetLog(id, exercise, Load.of(equipment, kg, double, band), reps, side, loggedAtEpochMillis, seconds)
+            warmUp: Boolean = false,
+        ): SetLog =
+            SetLog(id, exercise, Load.of(equipment, kg, double, band), reps, side, loggedAtEpochMillis, seconds, warmUp)
     }
 }
 
@@ -411,9 +418,13 @@ data class LiftSession(
     /** 5-second BPM samples recorded live by the paired heart-rate sensor; null when none were recorded. */
     val heartRateSamples: List<Int>? = null,
 ) {
-    val tonnageKg: Double get() = sets.sumOf { it.tonnageKg }
+    /** The sets that count: every one logged but the warm-ups. */
+    val workingSets: List<SetLog> get() = sets.working()
 
-    val reps: Int get() = sets.sumOf { it.reps }
+    /** The weight moved and the reps, in the working sets: a warm-up adds to neither. */
+    val tonnageKg: Double get() = workingSets.sumOf { it.tonnageKg }
+
+    val reps: Int get() = workingSets.sumOf { it.reps }
 
     /** The lifts done, in the order first done. */
     val exercises: List<Exercise> get() = sets.map { it.exercise }.distinct()
@@ -426,6 +437,14 @@ data class LiftSession(
         const val MILLIS_PER_SECOND = 1000L
     }
 }
+
+/**
+ * These sets without the warm-ups: what records, progression, a planned set ticked off, pace, density, the
+ * challenges and tests, a suggested load and a session's totals go by. Everything that is about the body
+ * rather than the work (the grip's load, the muscles worked, a first set at a new bell, time spent) and
+ * everything shown, changed or put back takes every set.
+ */
+fun List<SetLog>.working(): List<SetLog> = if (none { it.warmUp }) this else filterNot { it.warmUp }
 
 /**
  * Every set of these sessions, held newest first as the repository holds them, oldest first: the order a

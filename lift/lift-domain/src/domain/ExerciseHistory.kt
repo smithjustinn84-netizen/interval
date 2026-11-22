@@ -151,7 +151,11 @@ data class Trend(val measure: TrendMeasure, val points: List<TrendPoint>) {
  * times the reps, a tie going to the heavier bell. Null until there are two sessions to compare.
  */
 fun exerciseTrend(exercise: Exercise, sessions: List<PastSession>): Trend? {
-    val oldestFirst = sessions.take(TREND_SESSIONS).asReversed()
+    // A session of warm-ups alone has no point: the trend is of the work.
+    val oldestFirst = sessions.map { it.copy(sets = it.sets.working()) }
+        .filter { it.sets.isNotEmpty() }
+        .take(TREND_SESSIONS)
+        .asReversed()
     if (oldestFirst.size < MIN_TREND_SESSIONS) return null
     val measure = when {
         exercise.measure == Measure.Time -> TrendMeasure.Seconds

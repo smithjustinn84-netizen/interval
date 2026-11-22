@@ -1,0 +1,20 @@
+<journey name="Lift: a warm-up set">
+  <description>
+    A set logged as a warm-up stays in the session, said as one, but counts toward nothing a working set does:
+    it ticks off no planned set, sets no record and adds to no total. The switch is off again for the next set,
+    and a set logged can be made a warm-up, or a working set again, after. Run on a fresh install
+    (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
+    <action>Tap the "Train" tab, which opens on "Strength", then "Follow a program"; scroll to "Your first 100 swings", tap it, then "Follow this program"</action>
+    <action>Tap "Start day 1" and verify that the session shows "Up next · 1 of 12 sets"</action>
+    <action>Tap "Add set or EMOM" in the title bar; verify that the sheet has a "Warm-up" switch, off, over "Not counted toward records, progress or totals"</action>
+    <action>Switch "Warm-up" on, then tap "Log set" on the sheet</action>
+    <action>Verify that the set is listed as "16 kg × 10 · Warm-up" and that the session still shows "Up next · 1 of 12 sets"</action>
+    <action>Tap "Log set" and verify "Up next · 2 of 12 sets"; open the sheet again and verify that "Warm-up" is off</action>
+    <action>Close the sheet; tap the "16 kg × 10 · Warm-up" row, switch "Warm-up" off and tap "Save set"</action>
+    <action>Verify that the row now reads "16 kg × 10" and the session shows "Up next · 3 of 12 sets"</action>
+    <action>Tap "Finish", then "Close"; open the session in "Log" and verify its sets, tapping one to switch "Warm-up" on and save, and that the row then says "· Warm-up"</action>
+  </actions>
+</journey>

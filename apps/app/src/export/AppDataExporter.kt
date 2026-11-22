@@ -223,4 +223,5 @@ private fun SetLog.export() = SetExport(
     seconds = seconds,
     band = load.band?.id,
     loggedAtEpochMillis = loggedAtEpochMillis,
+    warmUp = warmUp,
 )

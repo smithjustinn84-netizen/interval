@@ -17,7 +17,7 @@ fun plannedMatches(planned: List<PlannedSet>, logged: List<SetLog>): List<SetLog
  * for one not done.
  */
 fun plannedRounds(planned: List<PlannedSet>, logged: List<SetLog>): List<List<SetLog>> {
-    val byKey = logged.groupBy { it.exercise.key to it.side }.mapValues { (_, sets) -> ArrayDeque(sets) }
+    val byKey = logged.working().groupBy { it.exercise.key to it.side }.mapValues { (_, sets) -> ArrayDeque(sets) }
     return planned.map { set ->
         val cap = set.capMinutes
             ?: return@map listOfNotNull(byKey[set.exercise.key to set.side]?.removeFirstOrNull())

@@ -208,7 +208,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      `StrengthTest` is a program of one day under `ProgramKey.Test`, never offered or followed, an
                      attempt a finished session of it, compared only at the same load; `shippedPrograms`, the
                      built-ins and the tests', is what a session's program is looked up among), all worked out from
-                     sets logged, nothing stored. No dependencies
+                     sets logged, nothing stored. A set logged as a warm-up (`SetLog.warmUp`) is kept and shown but
+                     counted toward none of that bar the grip, the muscles and a first set at a bell (`working()`,
+                     `LiftSession.workingSets`). No dependencies
   lift-api           the ports between the sides, package `dev.justinsmith.lift.data`: `IntervalActivity` (what
                      Lift reads of the interval side, the days a sport was logged on among it, each a `SportDay`
                      saying whether it was grappling, whether the mat or the wall is trained on at all (`matOrWall`:

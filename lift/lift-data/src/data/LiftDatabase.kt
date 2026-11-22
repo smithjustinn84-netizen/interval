@@ -22,7 +22,8 @@ import androidx.sqlite.execSQL
  * version 14 the timer running in the session in progress, [SessionEntity.timer]; version 15 a finished session's
  * heart rate ([SessionEntity.averageBpm], [SessionEntity.peakBpm]); version 16 a set's session as a foreign key,
  * so a set goes with its session ([MIGRATION_15_16]); version 17 which bells the user owns two of
- * ([BellEntity.pair]), none in rows from before.
+ * ([BellEntity.pair]), none in rows from before; version 20 which sets were warm-ups ([SetEntity.warmUp]), none
+ * of those logged before.
  * Every version adds; none rewrites a row, and only 16 drops one: a set whose session was already gone.
  */
 @Database(
@@ -37,7 +38,7 @@ import androidx.sqlite.execSQL
         BarEntity::class,
         RestEntity::class,
     ],
-    version = 19,
+    version = 20,
     // 3 to 4 and 15 to 16 are by hand, [LIFT_MIGRATIONS], added in liftStorageModule.
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -56,6 +57,7 @@ import androidx.sqlite.execSQL
         AutoMigration(from = 16, to = 17),
         AutoMigration(from = 17, to = 18),
         AutoMigration(from = 18, to = 19),
+        AutoMigration(from = 19, to = 20),
     ],
 )
 @ConstructedBy(LiftDatabaseConstructor::class)

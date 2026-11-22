@@ -20,6 +20,7 @@ internal fun SavedStateHandle.keep(draft: SetDraft) {
     this[BAR_KG] = draft.barKg
     this[SECONDS] = draft.seconds
     this[BAND] = draft.band.id
+    this[WARM_UP] = draft.warmUp
 }
 
 // Every field is kept together, so a draft without its lift was never kept; one of a lift no longer here is none.
@@ -37,6 +38,7 @@ internal fun SavedStateHandle.restoredDraft(made: List<CustomExercise>, bands: L
         barKg = get<Double>(BAR_KG) ?: blank.barKg,
         seconds = get<Int>(SECONDS) ?: blank.seconds,
         band = get<String>(BAND)?.let { bandOf(it, bands) } ?: blank.band,
+        warmUp = get<Boolean>(WARM_UP) ?: blank.warmUp,
     )
 }
 
@@ -59,3 +61,4 @@ private const val ADDED_KG = "set_added_kg"
 private const val BAR_KG = "set_bar_kg"
 private const val SECONDS = "set_seconds"
 private const val BAND = "set_band"
+private const val WARM_UP = "set_warm_up"

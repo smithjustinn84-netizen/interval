@@ -33,7 +33,7 @@ private fun countsWith(exercise: Exercise, other: Exercise): Boolean =
 
 /** The reps of [exercise] in [sets] (a swing's, both swings'), holds aside. */
 fun lifetimeReps(exercise: Exercise, sets: List<SetLog>): Int =
-    sets.filter { it.seconds == null && countsWith(exercise, it.exercise) }.sumOf { it.reps }
+    sets.filter { it.seconds == null && !it.warmUp && countsWith(exercise, it.exercise) }.sumOf { it.reps }
 
 /** The highest of [milestones] [after] reached that [before] hadn't; null with none crossed. */
 fun crossedMilestone(before: Int, after: Int): Int? = milestones.lastOrNull { it in (before + 1)..after }
@@ -51,7 +51,7 @@ private fun mostInWindow(exercise: Exercise, session: LiftSession, minutes: Int)
 
 /** The most reps of [exercise] in any [minutes] of [sets], one session's or one interval workout's; null with none. */
 private fun mostInWindowOf(exercise: Exercise, logged: List<SetLog>, minutes: Int): Int? {
-    val sets = logged.filter { it.exercise.key == exercise.key && it.seconds == null && it.reps > 0 }
+    val sets = logged.filter { it.exercise.key == exercise.key && it.seconds == null && it.reps > 0 && !it.warmUp }
         .sortedBy { it.loggedAtEpochMillis }
     if (sets.isEmpty() || !loggedAsDone(sets)) return null
     val window = minutes * MILLIS_PER_MINUTE
@@ -141,7 +141,7 @@ fun challenges(
 ): List<Challenge> {
     val ofProgram = following == ProgramKey.BuiltIn(ProgramId.TenThousandSwings) && followedSince != null
     val since = if (ofProgram) followedSince else nowMillis - SWING_CHALLENGE_DAYS * MILLIS_PER_DAY
-    val sets = sessions.flatMap { it.sets }
+    val sets = sessions.flatMap { it.workingSets }
     val swung = lifetimeReps(BuiltInExercise.TwoHandSwing, sets.filter { it.loggedAtEpochMillis >= since })
     val getUps = sets.filter { it.exercise == BuiltInExercise.GetUp }
     return listOfNotNull(

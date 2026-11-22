@@ -27,7 +27,7 @@ fun loggedAsDone(sets: List<SetLog>): Boolean =
  * than two, for holds, or for sets not [loggedAsDone].
  */
 fun density(sets: List<SetLog>): Double? {
-    val counted = sets.filter { it.seconds == null && it.reps > 0 }.sortedBy { it.loggedAtEpochMillis }
+    val counted = sets.filter { it.seconds == null && it.reps > 0 && !it.warmUp }.sortedBy { it.loggedAtEpochMillis }
     if (counted.size < 2 || !loggedAsDone(counted)) return null
     val span = counted.last().loggedAtEpochMillis - counted.first().startedAt
     return if (span > 0) counted.sumOf { it.reps } / (span / MILLIS_PER_MINUTE) else null
@@ -41,7 +41,7 @@ fun paces(session: LiftSession): List<Pace> = paces(session.sets)
 
 /** The paces [logged] set, one session's or one interval workout's sets, as [paces] counts a session's. */
 fun paces(logged: List<SetLog>): List<Pace> = logged
-    .filter { it.exercise !is UnknownExercise }
+    .filter { it.exercise !is UnknownExercise && !it.warmUp }
     .groupBy { Triple(it.exercise.key, it.load.kg, it.double) }
     .mapNotNull { (lift, sets) ->
         density(sets)?.let { Pace(sets.first().exercise, lift.second, lift.third, it) }
