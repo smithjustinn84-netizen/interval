@@ -37,11 +37,15 @@ import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.PlanRow
 import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.SupersetOffer
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.otherAbcProtocol
+import dev.justinsmith.lift.domain.supersetOffer
 import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.programs.BlockChoices
 import dev.justinsmith.lift.programs.BlockCounts
 import dev.justinsmith.lift.programs.BlockLoad
+import dev.justinsmith.lift.programs.SupersetPicker
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.block_done
 import dev.justinsmith.lift.session.resources.density_rounds
@@ -95,7 +99,9 @@ internal fun PlanSheets(
             onSwap = { actions.onSwapBlock(changing, it) },
             onSkip = { actions.onSkipBlock(changing) },
             onUnskip = { actions.onUnskipBlock(changing) },
+            onPair = actions.onPairBlock,
         ),
+        superset = SessionPlan(state.plan.map { it.entry }).supersetOffer(changing),
         onDismiss = { onChanging(-1) },
     )
 }
@@ -133,6 +139,13 @@ internal fun PlanSheet(state: SessionUiState, onOpen: (Int) -> Unit, onDismiss: 
                                 style = IntervalTheme.type.label,
                                 color = palette.text,
                             )
+                            row.superset?.let { place ->
+                                Text(
+                                    supersetLine(place, straightOn = false),
+                                    style = IntervalTheme.type.meta,
+                                    color = palette.accent,
+                                )
+                            }
                             Text(
                                 blockLine(row.block, state.bands),
                                 style = IntervalTheme.type.meta,
@@ -186,6 +199,8 @@ internal data class PlanBlockActions(
     val onSwap: (Exercise) -> Unit,
     val onSkip: () -> Unit,
     val onUnskip: () -> Unit,
+    /** Pairs block [Int] with the one after it, resting by [SupersetRest]; null undoes the pair. */
+    val onPair: (Int, SupersetRest?) -> Unit = { _, _ -> },
 )
 
 /**
@@ -200,6 +215,7 @@ internal fun PlanBlockSheet(
     onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
     actions: PlanBlockActions,
     onDismiss: () -> Unit,
+    superset: SupersetOffer? = null,
 ) {
     var picking by rememberSaveable { mutableStateOf(false) }
     val sideways = sheetIsSideways()
@@ -255,6 +271,7 @@ internal fun PlanBlockSheet(
                     rangeEditable = false,
                 )
                 OtherAbcProtocol(row, actions.onChange)
+                superset?.let { offer -> SupersetPicker(offer) { actions.onPair(offer.first, it) } }
                 AccentButton(
                     stringResource(Res.string.block_done),
                     onClick = hide,

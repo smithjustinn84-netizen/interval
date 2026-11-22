@@ -20,25 +20,37 @@ data class ProgramDraft(
     /** With [block] at the end of day [day]. */
     fun addBlock(day: Int, block: Block = NEW_BLOCK): ProgramDraft = mapDay(day) { it + block }
 
-    /** With block [index] of day [day] changed by [transform]. */
+    /**
+     * With block [index] of day [day] changed by [transform]: out of its superset once it can no longer be one (a
+     * hold, another kind, or its partner's lift).
+     */
     fun changeBlock(day: Int, index: Int, transform: (Block) -> Block): ProgramDraft =
         mapDay(day) { blocks -> blocks.mapIndexed { i, b -> if (i == index) transform(b) else b } }
 
+    /** Without block [index] of day [day], its superset undone. */
     fun removeBlock(day: Int, index: Int): ProgramDraft =
-        mapDay(day) { blocks -> blocks.filterIndexed { i, _ -> i != index } }
+        mapDay(day) { blocks -> blocks.unpair(index).filterIndexed { i, _ -> i != index } }
 
-    /** With block [index] of day [day] moved [by] places, earlier for less than 0; past either end, unchanged. */
+    /**
+     * With block [index] of day [day] moved [by] places, earlier for less than 0, out of its superset and splitting
+     * any it lands in; past either end, unchanged.
+     */
     fun moveBlock(day: Int, index: Int, by: Int): ProgramDraft = mapDay(day) { blocks ->
         val to = index + by
         if (index !in blocks.indices || to !in blocks.indices) {
             blocks
         } else {
-            blocks.toMutableList().apply { add(to, removeAt(index)) }
+            blocks.unpair(index).toMutableList().apply { add(to, removeAt(index)) }
         }
     }
 
+    /** With block [index] of day [day] and the one after it a superset resting by [rest]; null undoes its pair. */
+    fun pairWithNext(day: Int, index: Int, rest: SupersetRest?): ProgramDraft =
+        mapDay(day) { it.pairedWithNext(index, rest) }
+
+    /** Every change keeps only the marks that pair ([keptPaired]), so a mark left alone never pairs again later. */
     private fun mapDay(day: Int, transform: (List<Block>) -> List<Block>) =
-        copy(days = days.mapIndexed { i, blocks -> if (i == day) transform(blocks) else blocks })
+        copy(days = days.mapIndexed { i, blocks -> if (i == day) transform(blocks).keptPaired() else blocks })
 
     companion object {
         const val DEFAULT_DAYS_PER_WEEK = 3

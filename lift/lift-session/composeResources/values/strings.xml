@@ -246,6 +246,17 @@
     <string name="block_remove_rung">Remove last rung</string>
     <string name="block_done">Done</string>
     <string name="block_remove">Remove block</string>
+    <string name="superset_title">Superset with %1$s</string>
+    <string name="superset_title_none">Superset</string>
+    <string name="superset_hint">A set of each in turn, round by round.</string>
+    <string name="superset_off">Off</string>
+    <string name="superset_shared">Rest after both</string>
+    <string name="superset_alternating">Rest after each</string>
+    <string name="superset_with">with %1$s</string>
+    <string name="superset_straight_on">straight on to %1$s</string>
+    <string name="superset_rest_shared">rest after the pair</string>
+    <string name="superset_rest_alternating">rest after each</string>
+    <string name="notice_straight_on">Straight on to %1$s</string>
     <string name="load_last_time_hint">Last time starts from what you used for it last.</string>
     <string name="next_title">Up next</string>
     <string name="next_progress">%1$d of %2$d sets</string>

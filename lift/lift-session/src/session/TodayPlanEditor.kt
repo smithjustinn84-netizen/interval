@@ -12,9 +12,11 @@ import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramDay
 import dev.justinsmith.lift.domain.SessionPlan
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.dayOf
 import dev.justinsmith.lift.domain.nextSet
 import dev.justinsmith.lift.domain.offeredBands
+import dev.justinsmith.lift.domain.pairedWithNext
 import dev.justinsmith.lift.domain.pickedDayNumber
 import dev.justinsmith.lift.domain.planRows
 import dev.justinsmith.lift.domain.plannedLoad
@@ -51,6 +53,13 @@ class TodayPlanEditor(
     fun skipBlock(index: Int) {
         setStore.changeSessionPlan { session ->
             today(session)?.let { (plan, done) -> plan.skip(index, done.getOrElse(index) { 0 }) }
+        }
+    }
+
+    /** Pairs block [index] of today's plan with the one after it, resting by [rest]; null undoes its pair. */
+    fun pairBlock(index: Int, rest: SupersetRest?) {
+        setStore.changeSessionPlan { session ->
+            today(session)?.let { (plan, _) -> plan.pairedWithNext(index, rest) }
         }
     }
 
@@ -142,12 +151,14 @@ internal fun upNext(
     return UpNext(
         set = next.set,
         load = plannedLoad(next.set, history, bar, bands, draft.bellKg, draft.band, owned),
-        number = next.index + 1,
+        number = next.number,
         total = next.total,
         emomMinutes = next.emomMinutes,
         block = next.block,
         lastTime = lastTime(before, next.set.exercise, next.set.double),
         densityMinutes = next.densityMinutes,
+        superset = next.superset,
+        straightOn = next.straightOn,
     )
 }
 

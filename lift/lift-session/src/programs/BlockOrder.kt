@@ -29,8 +29,11 @@ import dev.justinsmith.interval.ui.rememberReorderState
 import dev.justinsmith.interval.ui.reorderItem
 import dev.justinsmith.lift.domain.Band
 import dev.justinsmith.lift.domain.Block
+import dev.justinsmith.lift.domain.SupersetPlace
+import dev.justinsmith.lift.domain.supersetPlace
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.editor_reorder_block_cd
+import dev.justinsmith.lift.session.supersetLine
 import dev.justinsmith.lift.ui.blockLine
 import dev.justinsmith.lift.ui.liftName
 import org.jetbrains.compose.resources.stringResource
@@ -57,6 +60,7 @@ internal fun DayBlockRows(
             BlockRow(
                 block,
                 bands,
+                blocks.supersetPlace(i),
                 onOpen = { onOpen(i) },
                 handle = if (blocks.size > 1) {
                     {
@@ -79,7 +83,13 @@ internal fun DayBlockRows(
 }
 
 @Composable
-private fun BlockRow(block: Block, bands: List<Band>, onOpen: () -> Unit, handle: (@Composable () -> Unit)?) {
+private fun BlockRow(
+    block: Block,
+    bands: List<Band>,
+    superset: SupersetPlace?,
+    onOpen: () -> Unit,
+    handle: (@Composable () -> Unit)?,
+) {
     val palette = IntervalTheme.palette
     val interaction = remember { MutableInteractionSource() }
     Row(
@@ -99,6 +109,9 @@ private fun BlockRow(block: Block, bands: List<Band>, onOpen: () -> Unit, handle
         ) {
             Column(Modifier.weight(1f)) {
                 Text(liftName(block.exercise, block.double), style = IntervalTheme.type.label, color = palette.text)
+                superset?.let {
+                    Text(supersetLine(it, straightOn = false), style = IntervalTheme.type.meta, color = palette.accent)
+                }
                 Text(blockLine(block, bands), style = IntervalTheme.type.meta, color = palette.textDim)
             }
             Icon(IntervalIcons.Chevron, null, tint = palette.textDim, modifier = Modifier.size(Sizes.icon))

@@ -13,6 +13,7 @@ import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RepRange
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SessionPlan
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.weighedKg
@@ -38,6 +39,8 @@ internal data class StoredBlock(
     val rest: Int? = null,
     /** The block it goes back to at the next bell ([Block.origin]); none for one never stepped at its bell. */
     val origin: StoredBlock? = null,
+    /** How the superset it is one of rests, by name ([Block.superset]); none for a block on its own. */
+    val superset: String? = null,
 )
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -83,6 +86,7 @@ internal fun Block.toStored(): StoredBlock = StoredBlock(
     range?.top,
     rest,
     origin?.toStored(),
+    superset?.name,
 )
 
 /**
@@ -137,6 +141,8 @@ internal fun StoredBlock.toBlock(made: List<CustomExercise>, bands: List<Band>):
         rest = rest?.takeIf { it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS },
         // An origin of a lift this build doesn't know is dropped: the block then goes on as it stands.
         origin = origin?.toBlock(made, bands)?.copy(origin = null),
+        // A way of resting this build doesn't know leaves the block on its own.
+        superset = SupersetRest.entries.firstOrNull { it.name == superset },
     )
 }
 

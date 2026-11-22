@@ -57,16 +57,32 @@ fun ProgramDay.doneAsPlanned(
     restSeconds: Int,
     loadOf: (PlannedSet) -> Load,
 ): SessionAsPlanned? {
-    val blocks = today.blocks.map { it.block to it.plannedSets() }.filter { (_, sets) -> sets.isNotEmpty() }
+    // A superset is one part, its sets in the order they are done, the second block's rest after it.
+    val order = today.inOrder()
+    val paired = today.supersets()
+    val blocks = today.blocks.indices.mapNotNull { i ->
+        val pair = paired.firstOrNull { it.has(i) }
+        when {
+            pair == null -> Part(today.blocks[i].block, today.blocks[i].plannedSets(), emptySet())
+
+            i == pair.first -> {
+                val sets = order.filter { pair.has(it.block) }
+                val straight = sets.withIndex().filter { it.value.straightOn }.map { it.index + 1 }.toSet()
+                Part(today.blocks[pair.second].block, sets.map { it.set }, straight)
+            }
+
+            else -> null
+        }
+    }.filter { it.sets.isNotEmpty() }
     if (blocks.isEmpty()) return null
     val timed = mutableListOf<Pair<PlannedSet, Long>>()
     var at = 0L
-    blocks.forEachIndexed { index, (block, planned) ->
-        if (index > 0) at += restAfter(blocks[index - 1].first, restSeconds) * MILLIS
+    blocks.forEachIndexed { index, (block, planned, straight) ->
+        if (index > 0) at += restAfter(blocks[index - 1].block, restSeconds) * MILLIS
         at = when (block.kind) {
             BlockKind.Emom -> emomSets(planned, at, timed)
             BlockKind.Density -> densitySets(block, densityRoundsBefore(block, before), at, timed)
-            BlockKind.Sets, BlockKind.Ladder -> sets(planned, at, restSeconds, timed)
+            BlockKind.Sets, BlockKind.Ladder -> sets(planned, at, restSeconds, timed, straight)
         }
     }
     val startedAt = finishedAt - at
@@ -87,16 +103,27 @@ fun ProgramDay.doneAsPlanned(
 private fun ProgramDay.densityRoundsBefore(block: Block, before: List<LiftSession>): Int =
     densityRounds(block, program, before).lastOrNull() ?: 1
 
-/** One after another, a rest after each but between a left side and its right. Returns when the block ends. */
+/**
+ * A block's sets, or a superset's, and the rest the one after it takes: the last block's, a superset's second
+ * ([block]). The sets at [straightOn] follow the one before them with no rest, a shared superset's A2s.
+ */
+private data class Part(val block: Block, val sets: List<PlannedSet>, val straightOn: Set<Int>)
+
+/**
+ * One after another, a rest after each but between a left side and its right, and before the sets at [straightOn].
+ * Returns when the block ends.
+ */
 private fun sets(
     planned: List<PlannedSet>,
     from: Long,
     restSeconds: Int,
     into: MutableList<Pair<PlannedSet, Long>>,
+    straightOn: Set<Int> = emptySet(),
 ): Long {
     var at = from
     planned.forEachIndexed { index, set ->
-        if (index > 0 && set.side != Side.Right) at += (set.rest ?: restSeconds) * MILLIS
+        val rests = index > 0 && set.side != Side.Right && index !in straightOn
+        if (rests) at += (planned[index - 1].rest ?: restSeconds) * MILLIS
         at += workSeconds(set) * MILLIS
         into += set to at
     }

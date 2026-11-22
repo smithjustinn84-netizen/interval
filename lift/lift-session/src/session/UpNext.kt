@@ -113,6 +113,13 @@ private fun NextSetCard(
                 color = palette.textDim,
             )
             LiftHeading(set.exercise, set.double, actions.onOpenExercise)
+            next.superset?.let { place ->
+                Text(
+                    supersetLine(place, next.straightOn),
+                    style = IntervalTheme.type.meta,
+                    color = palette.accent,
+                )
+            }
             NextLoad(next, state, actions)
             LastTimeLine(next.lastTime)
             if (set.held && onTimeIt != null) {

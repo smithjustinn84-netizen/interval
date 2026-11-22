@@ -325,7 +325,9 @@ class SessionViewModel(
 
     /** Logs [set], by default the sheet's: a hold for [seconds], fewer when a timed one is stopped early. */
     fun logSet(set: SetDraft = draft.draft.value, seconds: Int = set.seconds) {
-        val rest = upNextNow?.set?.takeIf { it.exercise.key == set.exercise.key }?.rest
+        // The plan's next set, when this is it: its rest, or a superset's straight on. Any other rests Lift's.
+        val planned = upNextNow?.takeIf { it.set.exercise.key == set.exercise.key }
+        if (planned?.straightOn == true) timers.goStraightOn()
         setStore.logSet(
             set.exercise,
             set.load,
@@ -335,13 +337,16 @@ class SessionViewModel(
             warmUp = set.warmUp,
         )
         draft.logged(set)
-        timers.startRest(rest ?: setStore.restSeconds.value, after = set.exercise)
+        if (planned?.straightOn != true) {
+            timers.startRest(planned?.set?.rest ?: setStore.restSeconds.value, after = set.exercise)
+        }
     }
 
     /** Logs the plan's next set as planned, with its suggested load: a hold for its seconds. */
     fun logNext() {
         val next = upNextNow ?: return
         val set = next.set
+        if (next.straightOn) timers.goStraightOn()
         setStore.logSet(
             set.exercise,
             next.load,
@@ -349,7 +354,7 @@ class SessionViewModel(
             set.side,
             seconds = set.reps.takeIf { set.held },
         )
-        timers.startRest(set.rest ?: setStore.restSeconds.value, after = set.exercise)
+        if (!next.straightOn) timers.startRest(set.rest ?: setStore.restSeconds.value, after = set.exercise)
     }
 
     /** Saves the set being changed as the sheet's draft now has it. */

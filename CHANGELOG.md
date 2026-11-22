@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- Supersets in Lift: two sets blocks side by side, A1 and A2, done in turn, a set of each round by round. Pair
+  them from a block's sheet in the program editor or in today's plan ("Superset with Row"), resting after both,
+  where A1 goes straight on to A2 with no rest and A2's set-up is said at once, or after each. Up next, today's
+  plan and the editor mark A1 and A2 with how the pair rests, and a day's estimate leaves out the rests it skips.
+  Kept in the export file.
 - Trends, from the foot of the Log's All time card: the last 12 weeks of time trained and weight lifted, and the
   heart load a sensor read, each week against a usual one; how far the heart falls a minute into the rests of
   workouts run straight through, a point a workout, and whether that is getting faster; the records set, newest

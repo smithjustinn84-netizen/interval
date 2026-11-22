@@ -36,9 +36,15 @@ import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.LiftSession
+import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Program
+import dev.justinsmith.lift.domain.ProgramDay
+import dev.justinsmith.lift.domain.ProgramKey
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.SupersetRest
+import dev.justinsmith.lift.domain.nextSet
+import dev.justinsmith.lift.domain.planRows
 import dev.justinsmith.lift.library.ExerciseDetailSheet
 import dev.justinsmith.lift.session.resources.Res
 import dev.justinsmith.lift.session.resources.common_cancel
@@ -90,6 +96,8 @@ data class SessionActions(
     val onSwapBlock: (Int, Exercise) -> Unit = { _, _ -> },
     val onSkipBlock: (Int) -> Unit = {},
     val onUnskipBlock: (Int) -> Unit = {},
+    /** Today's plan: block [Int] paired with the one after it, resting by [SupersetRest]; null undoes the pair. */
+    val onPairBlock: (Int, SupersetRest?) -> Unit = { _, _ -> },
     /** The rest a step shorter (−1) or longer (+1), and every one after; or skipped. */
     val onStepRest: (Int) -> Unit = {},
     /** Takes the easier day offered on a taxed one. */
@@ -380,5 +388,44 @@ private fun SessionScreenHeartPreview() {
     )
     IntervalTheme {
         SessionScreen(state, { clocks }, SessionActions())
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun SessionScreenSupersetPreview() {
+    val squat = Block(BuiltInExercise.GobletSquat, rounds = 3, reps = 10, superset = SupersetRest.Shared)
+    val row = Block(BuiltInExercise.Row, rounds = 3, reps = 10, superset = SupersetRest.Shared)
+    val day =
+        ProgramDay(
+            Program(ProgramKey.Custom("p"), listOf(listOf(squat, row)), 3, 4, "Squat and row"),
+            1,
+            1,
+            listOf(squat, row),
+        )
+    val next = day.nextSet(emptyList())!!
+    val state = SessionUiState(
+        session = LiftSession(
+            "s",
+            startedAtEpochMillis = 0,
+            finishedAtEpochMillis = null,
+            "Squat and row",
+            emptyList(),
+        ),
+        ownsBells = true,
+        upNext = UpNext(
+            next.set,
+            Load.Bell(16.0),
+            next.number,
+            next.total,
+            null,
+            superset = next.superset,
+            straightOn = next.straightOn,
+        ),
+        programDay = day,
+        plan = day.planRows(emptyList()),
+    )
+    IntervalTheme {
+        SessionScreen(state, { SessionClocks(elapsed = "0:12") }, SessionActions())
     }
 }

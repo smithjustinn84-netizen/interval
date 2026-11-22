@@ -213,7 +213,9 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
                      the faults it is prone to, from that (`Faults.kt`, which the rests say), the grip's load (`Grip.kt`, BJJ days in it, and the month's four weeks, `GripLoad.weeks`) and how ready the lifter is (`Readiness.kt`,
                      the interval workouts' efforts in it), a
                      taxed day's easier plan (`Autoregulate.kt`), the safety lines (`Safety.kt`: `SafetyLine`, and
-                     `firstAtBell`, a thrown lift's first set at a bell new to it), density and pace (`Density.kt`, only from sets
+                     `firstAtBell`, a thrown lift's first set at a bell new to it), supersets (`Supersets.kt`: two
+                     sets blocks side by side marked alike, `Block.superset`, A1 and A2, done in turn by `inOrder`,
+                     resting after both, A1 `straightOn`, or after each; each still a block of its own), density and pace (`Density.kt`, only from sets
                      logged as done), the challenges and totals (`Benchmarks.kt`) and the tests (`Tests.kt`: a
                      `StrengthTest` is a program of one day under `ProgramKey.Test`, never offered or followed, an
                      attempt a finished session of it, compared only at the same load; `shippedPrograms`, the

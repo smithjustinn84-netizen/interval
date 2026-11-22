@@ -12,6 +12,7 @@ import dev.justinsmith.lift.domain.Focus
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.RepRange
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.band
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -61,6 +62,7 @@ class StoredProgramsTest {
                     load = Load.Bell(16.0),
                     rest = 45,
                     origin = Block(BuiltInExercise.TwoHandSwing, rounds = 5, reps = 10, load = Load.Bell(16.0)),
+                    superset = SupersetRest.Alternating,
                 ),
             ),
         )

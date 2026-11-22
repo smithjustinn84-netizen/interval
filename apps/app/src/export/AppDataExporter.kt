@@ -189,6 +189,7 @@ private fun Block.export(): BlockExport =
         range?.top,
         rest,
         origin?.export(),
+        superset?.name,
     )
 
 private fun Followed.export() = FollowedExport(program.key.stored, startedAtEpochMillis, daysBefore)

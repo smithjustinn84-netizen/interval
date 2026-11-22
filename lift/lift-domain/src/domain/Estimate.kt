@@ -10,8 +10,8 @@ import kotlin.math.roundToInt
  * lasts its minutes and its count-in, with no rest inside, and a density block its cap and its count-in. A hold
  * lasts its seconds and its count-in. Any other set takes its reps at its lift's pace ([secondsPerRep]). A rest
  * follows each set that isn't on the clock, a one-sided lift's two sides sharing one (the rest timer offers one
- * after each side, which few take), and none follows the last set of the day. A skipped block counts for the sets
- * it kept.
+ * after each side, which few take), and none follows the last set of the day, nor a superset's A1 that shares the
+ * pair's rest ([OrderedSet.straightOn]). A skipped block counts for the sets it kept.
  */
 fun SessionPlan.estimatedSeconds(restSeconds: Int): Int {
     val parts = blocks.map { it.block to it.plannedSets() }.filter { (_, sets) -> sets.isNotEmpty() }
@@ -24,7 +24,8 @@ fun SessionPlan.estimatedSeconds(restSeconds: Int): Int {
     }
     // Each block rests its own, when it keeps one ([Block.rest]), else the user's.
     val resting = parts.filter { (block, _) -> !block.onTheClock }
-    val rested = resting.sumOf { (block, sets) -> rests(sets) * (block.rest ?: restSeconds) }
+    val rested = resting.sumOf { (block, sets) -> rests(sets) * (block.rest ?: restSeconds) } -
+        inOrder().filter { it.straightOn }.sumOf { it.set.rest ?: restSeconds }
     val last = parts.lastOrNull()?.first?.takeIf { !it.onTheClock }
     return work + (rested - (last?.let { it.rest ?: restSeconds } ?: 0)).coerceAtLeast(0)
 }

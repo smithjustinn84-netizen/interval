@@ -35,6 +35,11 @@ data class Block(
      * bell (see [nextStep]), its lift too when it has moved to a harder one at the same bell. Null for none taken.
      */
     val origin: Block? = null,
+    /**
+     * How the superset it is one of rests, marked on both its blocks; null for none. Only two blocks side by side
+     * marked alike pair ([supersets]): a mark left alone pairs nothing.
+     */
+    val superset: SupersetRest? = null,
 ) {
     /** Whether it has moved to a harder lift, or to two bells, at the same bell: its [origin] was another. */
     val onDetour: Boolean get() = origin != null && (origin.exercise != exercise || origin.double != double)

@@ -43,6 +43,7 @@ import dev.justinsmith.lift.domain.RepRange
 import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.UnknownExercise
 import dev.justinsmith.lift.domain.bandOf
 import dev.justinsmith.lift.domain.shippedPrograms
@@ -432,6 +433,7 @@ private fun BlockExport.toDomain(exercises: List<CustomExercise>, bands: List<Ba
         range = if (rangeBottom != null && rangeTop != null) RepRange(rangeBottom, rangeTop) else null,
         rest = rest?.takeIf { it in RestClock.MIN_SECONDS..RestClock.MAX_SECONDS },
         origin = origin?.toDomain(exercises, bands)?.copy(origin = null),
+        superset = SupersetRest.entries.firstOrNull { it.name == superset },
     )
 }
 

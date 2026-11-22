@@ -51,7 +51,10 @@ import dev.justinsmith.lift.domain.Block
 import dev.justinsmith.lift.domain.ExerciseFilters
 import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.ProgramId
+import dev.justinsmith.lift.domain.SupersetOffer
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.program
+import dev.justinsmith.lift.domain.supersetOffer
 import dev.justinsmith.lift.domain.withExercise
 import dev.justinsmith.lift.library.rememberPickerList
 import dev.justinsmith.lift.session.resources.Res
@@ -343,6 +346,8 @@ private fun EditingBlock(
         state.choices,
         actions.onFilters,
         onChange = { transform -> actions.onChange { it.changeBlock(day, index, transform) } },
+        superset = state.draft.days[day].supersetOffer(index),
+        onPair = { first, rest -> actions.onChange { it.pairWithNext(day, first, rest) } },
         onRemove = {
             val snapshot = state.draft
             actions.onChange { it.removeBlock(day, index) }
@@ -420,6 +425,8 @@ private fun BlockSheet(
     choices: BlockChoices,
     onFilters: ((ExerciseFilters) -> ExerciseFilters) -> Unit,
     onChange: ((Block) -> Block) -> Unit,
+    superset: SupersetOffer?,
+    onPair: (Int, SupersetRest?) -> Unit,
     onRemove: () -> Unit,
     onDismiss: () -> Unit,
 ) {
@@ -449,6 +456,7 @@ private fun BlockSheet(
             first = { BlockLoad(block, choices, onChange, onPickExercise = { picking = true }) },
             second = {
                 BlockCounts(block, onChange)
+                superset?.let { offer -> SupersetPicker(offer) { onPair(offer.first, it) } }
                 AccentButton(
                     stringResource(Res.string.block_done),
                     onClick = hide,
@@ -473,6 +481,17 @@ private fun BlockSheet(
 @Composable
 private fun ProgramEditorScreenPreview() {
     val draft = ProgramDraft.of(program(ProgramId.GobletSquatRow)).copy(name = "Squat and row (yours)")
+    IntervalTheme {
+        ProgramEditorScreen(ProgramEditorUiState(draft = draft, initialDraft = draft), ProgramEditorActions())
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun ProgramEditorScreenSupersetPreview() {
+    val draft = ProgramDraft.of(program(ProgramId.GobletSquatRow))
+        .copy(name = "Squat and row (yours)")
+        .pairWithNext(0, 0, SupersetRest.Shared)
     IntervalTheme {
         ProgramEditorScreen(ProgramEditorUiState(draft = draft, initialDraft = draft), ProgramEditorActions())
     }

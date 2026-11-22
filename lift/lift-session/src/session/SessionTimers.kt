@@ -109,6 +109,9 @@ class SessionTimers(
     /** The set coming after this rest, as the session's screen last said; null with none known. */
     private var next: ComingSet? = null
 
+    /** Whether a superset's A1 was just logged, going straight on: the set coming next hears its set-up at once. */
+    private var straightOn = false
+
     /** How many faults each lift has had said, by its key, so the next set hears the next. */
     private val faultsSaid = mutableMapOf<String, Int>()
 
@@ -154,14 +157,32 @@ class SessionTimers(
      * prone to is said as the rest starts.
      */
     fun startRest(seconds: Int, after: Exercise? = null) {
+        straightOn = false
         rest.start(seconds)
         after?.let { voice.say(nextFault(it)) }
         changed()
     }
 
-    /** The set coming after a rest, its lift's set-up said in its last seconds; null when none is known. */
+    /**
+     * The set coming after a rest, its lift's set-up said in its last seconds; null when none is known. Coming
+     * straight on from a superset's A1 ([goStraightOn]), it is said now, or the safety line due in its place.
+     */
     fun upNext(coming: ComingSet?) {
         next = coming
+        if (straightOn) {
+            straightOn = false
+            coming?.let { coach.say(Coaching.Cue(it.exercise, 0)) }
+        }
+    }
+
+    /**
+     * A superset's A1 about to be logged, its A2 to follow with no rest: any rest running ends, and the set coming
+     * next ([upNext]) hears its set-up as soon as it is known.
+     */
+    fun goStraightOn() {
+        rest.skip()
+        straightOn = true
+        changed()
     }
 
     /** Whether today is a taxed day: a set-up cue gives way to "Stop a rep early" once while it is. */

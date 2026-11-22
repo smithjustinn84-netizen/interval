@@ -176,6 +176,7 @@ private fun sessionActions(parts: ActionTargets, title: String, healthTitle: Str
             onSwapBlock = viewModel.plan::swapBlock,
             onSkipBlock = viewModel.plan::skipBlock,
             onUnskipBlock = viewModel.plan::unskipBlock,
+            onPairBlock = viewModel.plan::pairBlock,
             onStepRest = viewModel::stepRest,
             onSkipRest = timers::skipRest,
             onLogPartRound = viewModel::logPartRound,

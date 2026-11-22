@@ -27,6 +27,7 @@ import dev.justinsmith.lift.domain.RestClock
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
 import dev.justinsmith.lift.domain.Side
+import dev.justinsmith.lift.domain.SupersetPlace
 import dev.justinsmith.lift.domain.TestResult
 import dev.justinsmith.lift.domain.bands
 import dev.justinsmith.lift.domain.builtInPrograms
@@ -95,6 +96,10 @@ data class UpNext(
     val lastTime: SetLog? = null,
     /** When it opens a density block, the minutes of its cap. */
     val densityMinutes: Int? = null,
+    /** Where its block stands in a superset, A1 or A2; null for a block on its own. */
+    val superset: SupersetPlace? = null,
+    /** Whether the superset's other set follows it with no rest, the pair sharing one after. */
+    val straightOn: Boolean = false,
 )
 
 /**

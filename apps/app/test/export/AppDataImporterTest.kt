@@ -37,6 +37,7 @@ import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.ExerciseDraft
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.ProgramDraft
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.withLoad
 import dev.justinsmith.lift.fakes.FakeLiftStorage
 import dev.justinsmith.lift.fakes.logSet
@@ -83,9 +84,18 @@ private class Phone(val now: Long) {
 class AppDataImporterTest {
     private val now = noonOf(TODAY)
 
-    /** A block with a rest of its own, stepped from where it started ([Block.origin]). */
-    private val steppedPushUps =
-        Block(BuiltInExercise.PushUp, rounds = 3, reps = 10, rest = 60, origin = Block(BuiltInExercise.PushUp, 3, 8))
+    /**
+     * A block with a rest of its own, stepped from where it started ([Block.origin]), and the first of a superset
+     * with pull-ups.
+     */
+    private val steppedPushUps = Block(
+        BuiltInExercise.PushUp,
+        rounds = 3,
+        reps = 10,
+        rest = 60,
+        origin = Block(BuiltInExercise.PushUp, 3, 8),
+        superset = SupersetRest.Shared,
+    )
 
     /** A phone with something of every kind on it. */
     @Suppress("detekt.LongMethod") // One of every kind, each a line or two.
@@ -172,6 +182,7 @@ class AppDataImporterTest {
                         Block(BuiltInExercise.BandPullApart, rounds = 3, reps = 15)
                             .withLoad(Load.Banded(lift.gear.bands.value.single { it.id == loop })),
                         steppedPushUps,
+                        Block(BuiltInExercise.PullUp, rounds = 3, reps = 5, superset = SupersetRest.Shared),
                         Block(BuiltInExercise.ArmorBuildingComplex, 20, 1, BlockKind.Density, double = true),
                     ),
                 ),

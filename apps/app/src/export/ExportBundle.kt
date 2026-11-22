@@ -19,9 +19,10 @@ import kotlinx.serialization.Serializable
  * schema 13 a block that is a time cap, `capped`, and the rounds done in a workout's caps, `capRounds`; schema 14
  * the classes recorded on a heart-rate sensor, `classes`; schema 15 the max heart rate in the settings and a
  * workout's or a session's heart rate as a sensor read it live, `heartRateSamples`; schema 16 the built-in an
- * exercise of the user's own is shown by, `figure`, and a set logged as a warm-up, `warmUp`, the rest absent from
- * older files). [SCHEMA] moves at most once between releases: a field added after the cycle's bump joins that
- * number's entry. Lift's sessions carry their sets but not how a day's plan was changed: the sets are the record.
+ * exercise of the user's own is shown by, `figure`, a set logged as a warm-up, `warmUp`, and how the superset a
+ * block is one of rests, `superset`, the rest absent from older files). [SCHEMA] moves at most once between
+ * releases: a field added after the cycle's bump joins that number's entry. Lift's sessions carry their sets but
+ * not how a day's plan was changed: the sets are the record.
  */
 @Serializable
 data class ExportBundle(
@@ -272,6 +273,8 @@ data class BlockExport(
     val rest: Int? = null,
     /** The block it goes back to at the next bell, its origin; null for none, and in files from before it was kept. */
     val origin: BlockExport? = null,
+    /** How the superset it is one of rests, "Shared" or "Alternating"; null for none, and in older files. */
+    val superset: String? = null,
 )
 
 @Serializable

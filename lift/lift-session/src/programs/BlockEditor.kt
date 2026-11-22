@@ -26,6 +26,8 @@ import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.ProgramDraft
 import dev.justinsmith.lift.domain.RepRange
 import dev.justinsmith.lift.domain.SetLog
+import dev.justinsmith.lift.domain.SupersetOffer
+import dev.justinsmith.lift.domain.SupersetRest
 import dev.justinsmith.lift.domain.asKind
 import dev.justinsmith.lift.domain.band
 import dev.justinsmith.lift.domain.bandOf
@@ -65,7 +67,13 @@ import dev.justinsmith.lift.session.resources.editor_fewer_cd
 import dev.justinsmith.lift.session.resources.editor_more_cd
 import dev.justinsmith.lift.session.resources.load_last_time_hint
 import dev.justinsmith.lift.session.resources.log_held
+import dev.justinsmith.lift.session.resources.superset_alternating
+import dev.justinsmith.lift.session.resources.superset_hint
+import dev.justinsmith.lift.session.resources.superset_off
+import dev.justinsmith.lift.session.resources.superset_shared
+import dev.justinsmith.lift.session.resources.superset_title
 import dev.justinsmith.lift.ui.LoadPicker
+import dev.justinsmith.lift.ui.exerciseName
 import org.jetbrains.compose.resources.stringResource
 
 /** What a block can be made of: the bells and bands to plan with, and the exercises to pick from. */
@@ -326,3 +334,42 @@ private fun maxRounds(kind: BlockKind): Int = when (kind) {
 
 /** A density block's cap is [DensityClock.MIN_MINUTES] at the least; any other block a round. */
 private fun leastRounds(kind: BlockKind): Int = if (kind == BlockKind.Density) DensityClock.MIN_MINUTES else 1
+
+/** A superset's choices on the block sheet: none, or resting once after both blocks, or after each. */
+private enum class SupersetChoice(
+    val rest: SupersetRest?,
+) {
+    Off(null),
+    Shared(SupersetRest.Shared),
+    Alternating(SupersetRest.Alternating),
+}
+
+/**
+ * Whether a block is a superset with [offer]'s partner, the block after it (or before, for an A2), and how the pair
+ * rests: Off, Rest after both or Rest after each.
+ */
+@Composable
+internal fun SupersetPicker(offer: SupersetOffer, onPick: (SupersetRest?) -> Unit) {
+    GroupLabel(stringResource(Res.string.superset_title, exerciseName(offer.partner)))
+    SegmentedPicker(
+        SupersetChoice.entries,
+        SupersetChoice.entries.first { it.rest == offer.rest },
+        { supersetChoiceName(it) },
+        { onPick(it.rest) },
+        check = false,
+    )
+    Text(
+        stringResource(Res.string.superset_hint),
+        style = IntervalTheme.type.meta,
+        color = IntervalTheme.palette.textDim,
+    )
+}
+
+@Composable
+private fun supersetChoiceName(choice: SupersetChoice): String = stringResource(
+    when (choice) {
+        SupersetChoice.Off -> Res.string.superset_off
+        SupersetChoice.Shared -> Res.string.superset_shared
+        SupersetChoice.Alternating -> Res.string.superset_alternating
+    },
+)
