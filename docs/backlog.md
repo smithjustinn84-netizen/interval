@@ -56,8 +56,15 @@ After the class recorded on a heart-rate sensor (2026-11-18: record, sync, round
   battery's dot, and "Rec" through a class.
 - **Live heart rate on a real strap** (2026-11-19). Lift's session now takes the max heart rate and the alerts
   switch from Settings, the stream is held by its users (a workout's and a session's, neither ending the other's),
-  a strap that reads no heart shows as no signal, and a dropped connection is tried again (`PolarHeartStream`, a
+  a strap that reads no heart shows as no signal, and a dropped connection is tried again (`HeartRateStream`, a
   wait of 5 s growing to 30). The reconnecting and the contact flag have met no sensor. *Brings it in:* the H10.
+- **Live heart rate over Android's own Bluetooth** (F1, 2026-11-22). Every sensor streams over GATT now
+  (`AndroidHeartRateLink`), Polar's too, and pairing scans for the standard Heart Rate service: none of it has met a
+  sensor. To try: pairing an H10 and a Verity Sense, and a strap of another make; the live heart rate through a
+  workout on each (Android 12, and 13 and up, take different callbacks); a Verity paired by a build before this one
+  found again by its name; a class recorded and synced on each Polar sensor, the SDK now connecting by address;
+  the battery read over GATT. *Brings it in:* the sensors in hand. iOS's CoreBluetooth side is the next piece of
+  F1: it streams nothing yet, and needs `NSBluetoothAlwaysUsageDescription` and a real ask for Bluetooth.
 - **The heart rate read, on a real strap** (2026-11-19). The trace under the ring, Lift's heart card and its
   rest's "ready", recovery and heart load on the summary and in the Log, the zones by heart-rate reserve, the
   sensor's battery, and heart load in readiness are all built against fakes. None has met a sensor: the battery

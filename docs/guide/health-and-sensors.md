@@ -54,8 +54,9 @@ stays in place unlit with the last reading) and the sensor is tried again until 
 
 ## A class on a sensor (Android 12+)
 
-Record a whole class on a **Polar Verity Sense** or a **Polar H10** chest strap with the phone in your bag. One
-is paired at a time, and either shows your heart rate live in a workout too:
+Any heart-rate chest strap or armband that speaks Bluetooth's standard heart-rate service (Polar's, Garmin's,
+Wahoo's and most others) pairs in Settings and shows your heart rate live in workouts and Lift sessions. A **Polar
+Verity Sense** or a **Polar H10** also records a whole class with the phone in your bag. One is paired at a time:
 
 1. **Pair** it in Settings, under *Body and heart rate*. The app asks for leave to reach nearby devices; it never
    asks for your location.

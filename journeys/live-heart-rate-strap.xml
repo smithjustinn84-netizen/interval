@@ -1,0 +1,25 @@
+<journey name="Live heart rate on any strap">
+  <description>
+    A heart-rate strap or armband of any make, speaking Bluetooth's standard Heart Rate service, pairs in Settings and
+    shows the heart rate live in a workout and a Lift session; it records no class. Then the same on a Polar sensor,
+    whose live heart rate now comes over Android's own Bluetooth rather than Polar's SDK. Needs a real phone on Android
+    12 or later with Bluetooth on (once on 12, once on 13 or later if both are to hand: each hears the strap through
+    callbacks of its own), and a strap that isn't Polar's, charged and worn: the emulator has no Bluetooth, so this
+    one is run by hand. Run on a fresh install (adb shell pm clear dev.justinsmith.interval).
+  </description>
+  <actions>
+    <action>On the welcome, which a fresh install opens on, tap "Skip to Set up", then "Skip for now" on "Set up"</action>
+    <action>Tap the gear on "Today" and scroll to "Body and heart rate"; verify that the sensor's row reads "Pair a sensor" over "Any heart-rate strap or armband, worn and close by"</action>
+    <action>With the strap worn, tap "Pair a sensor" and allow "Nearby devices" when Android asks</action>
+    <action>Verify that the row reads "Looking for it…", then the strap's name over "Paired. Its heart rate shows live in workouts and sessions." (or its battery, where it says one) with "Forget" beside it</action>
+    <action>Go back to "Today" and verify that beside the gear a dot beats in a pill with the heart rate and "BPM" within a few seconds, and that no card offers "Record class", even after adding "BJJ" for today from "Plan your week"</action>
+    <action>Hold still for a minute, so the heart rate barely moves, then start a workout from "Train", "Conditioning"; verify that the heart-rate card under the ring reads the heart rate and, tapped, draws a trace with no gaps down to the floor</action>
+    <action>Take the strap off and verify that within a minute the reading says "No signal"; put it back on and verify that the number returns</action>
+    <action>Walk out of Bluetooth's reach for a minute and come back: verify that the number returns within half a minute of coming back</action>
+    <action>End the workout and verify that its summary shows the heart rate's average and peak</action>
+    <action>Start a free session from "Train", "Strength", log a set and verify that the heart card reads the heart rate; finish it</action>
+    <action>In Settings, tap "Forget" on the strap and verify that the row reads "Pair a sensor" and the pill beside the gear is gone</action>
+    <action>Pair a Polar H10 or Verity Sense the same way; verify that it reads "Paired. Record a class from Today on its day.", that its heart rate shows beside the gear, and that Today offers "Record class" on a day with BJJ planned</action>
+    <action>Tap "Record class", then "Sync class" a few minutes later, and verify that the class page opens: the Polar SDK now reaches the sensor by its address</action>
+  </actions>
+</journey>

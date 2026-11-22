@@ -105,7 +105,10 @@ core/
                      `dev.justinsmith.core.resources`
   core-platform      what the platform gives that isn't drawing, with no Compose: the clocks (`WallClock`,
                      `epochMillisNow`, `realElapsedTime`, `days`), `IdGenerator` (`Ids.kt`), `TimestampFormatter`,
-                     `AppInfo`, `Sharer`, `AppIconSwitcher` (`AppIcon.kt`: which icon the app wears, the kettlebell
+                     `AppInfo`, `Sharer`, the live heart rate (`LiveHeartRate.kt`; `HeartRateService.kt`, Bluetooth's
+                     standard Heart Rate service's ids and bytes read; `HeartRateStream.kt`, the stream held, given
+                     way and tried again over any `HeartRateLink`; Android's `AndroidHeartRateLink`, its GATT
+                     connection and scan), `AppIconSwitcher` (`AppIcon.kt`: which icon the app wears, the kettlebell
                      or the ring, and each platform's way to change it), `LiveActivities` (`LiveActivity.kt`: what a timer off screen shows on
                      iOS's Lock Screen and Dynamic Island, worded and timed, and the `LiveActivityRelay` iosApp points
                      at Swift's), `Speaker` (the device's voice, both sides', and `SpokenLines`, which
@@ -153,7 +156,8 @@ interval/            the interval timer
                      `platformModule` with its storage, player, `WorkoutService` and `PlanReminderReceiver`
                      (android). Over `core-platform`, not `core`; only `app` depends on it
   interval-polar-platform  Android's heart-rate sensor, Android alone: `PolarClassSensor` (`ClassSensor` and
-                     `LiveHeartRate`), `PolarHeartStream`, `PolarRecorders` and `polarSensorModule`, over Polar's SDK
+                     `LiveHeartRate`: any strap's heart rate live over core-platform's `AndroidHeartRateLink`, a
+                     Polar sensor's class through the SDK), `PolarRecorders` and `polarSensorModule`, over Polar's SDK
                      (from JitPack, which the module names as a repository), so the SDK and what it brings (RxJava,
                      Retrofit, Protobuf) are held to one module. Only `app`'s Android side depends on it, folding
                      `polarSensorModule` into the interval platform's (`AppKoin.android.kt`); the other platforms bind
@@ -704,15 +708,21 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
 - **A class on a heart-rate sensor**: `ClassSensor` (`interval-platform-api`) is the port: `status` (Unavailable,
   Unpaired, Paired, Recording), `pair`, `forget`, `startRecording`, `sync(keep)`, each reaching the sensor for as
   long as it takes and letting it go. A sync hands the recording to `keep` and clears the sensor only once that
-  returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-polar-platform`, a Polar Verity Sense
-  or H10, one paired at a time and told apart by its name, with both in reach the one picked on Settings' "Which sensor?" sheet (`pair(choose)`, the scan going on a few seconds past the first heard), through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`, the live stream giving
+  returns, so `HistoryStore.keepClass` suspends until the row is written and throws if it wasn't. Android's is `PolarClassSensor` (`interval-polar-platform`: any strap or armband that
+  speaks the standard Heart Rate service, one paired at a time, found by Android's own scan (`AndroidHeartRateLink.scan`)
+  and kept by its Bluetooth address, with two in reach the one picked on Settings' "Which sensor?" sheet (`pair(choose)`, the scan going on a few seconds past the first heard);
+  its heart rate live over GATT (`HeartRateStream` over `AndroidHeartRateLink`); a Polar Verity Sense or H10, told apart
+  by its name, records a class through Polar's coroutine SDK, each model's way a `PolarRecorder` in `PolarRecorders.kt`,
+  the SDK's work keyed by Polar's own id for it, which `deviceConnected` maps the address to; any other is
+  `SensorStatus.Paired(recordsClasses = false)`, which Settings words and Today offers no class for; the live stream giving
   way to a recording's start or its sync: the Verity's offline
   recording of the heart rate and the accelerometer on the sensor's own memory, the H10's one exercise of the heart
   rate a second alone, so its rounds go by the heart rate, started when Record is tapped; which sensor is the app's, and since when it records, in preferences of its own; unavailable below
   Android 12, so the manifest asks `BLUETOOTH_SCAN` flagged `neverForLocation` and `BLUETOOTH_CONNECT` and no
   location, and takes out the companion-device permissions the SDK declares). iOS and desktop bind
   `NoClassSensor`, and tests `RecordingClassSensor` (`interval-testing`, Unavailable until a test offers one, with
-  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10, its class recording not yet tried (docs/backlog.md). A sync hands its `keep`
+  `sparringRecording` a class to hand it). It has paired, recorded and synced on a real Verity Sense, though not yet a whole class, and has paired and streamed live on an H10 through Polar's SDK, its class recording not yet tried; the live heart
+  rate over Android's own GATT, and pairing by its scan, have met no sensor (docs/backlog.md). A sync hands its `keep`
   a `ClassRecording` (`interval-domain`, `model/SportClass.kt`: a `ClassSample` every five seconds, the heart rate
   and how much the arm moved, reduced from the raw readings by `classSamples`), which `HistoryStore.keepClass`
   stores (`sport_class`, Room 19, the samples one JSON column, `ClassesJson.kt`; known by the moment it started,

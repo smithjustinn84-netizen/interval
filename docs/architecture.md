@@ -483,9 +483,12 @@ flowchart TD
   rate from `LocalRestingHeartRate`, provided once in `AppContent`. Lift's readiness takes each day's heart load
   as a number (`HeartLoad`, `heavyHeartDay`), since `lift-domain` depends on nothing: the app's
   `IntervalActivity` works out the interval side's, `lift-data`'s `heartLoads` Lift's own. CLAUDE.md has the detail.
-- **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the armband a class is recorded on. Android's
-  `PolarClassSensor` (`interval-polar-platform`) drives a Polar Verity Sense's offline recording, or an H10's exercise recording (the heart rate alone), through
-  Polar's SDK;
+- **Heart-rate sensor** (`ClassSensor`, `interval-platform-api`): the strap or armband paired, whose heart rate
+  shows live, and the armband a class is recorded on. Android's `PolarClassSensor` (`interval-polar-platform`) pairs
+  any sensor of Bluetooth's standard Heart Rate service and streams it over GATT (core-platform's
+  `HeartRateStream` over `AndroidHeartRateLink`, the bytes read by `HeartRateService`), and drives a Polar Verity
+  Sense's offline recording, or an H10's exercise recording (the heart rate alone), through Polar's SDK; any other
+  strap records no class;
   iOS and desktop bind `NoClassSensor`. A sync hands a `ClassRecording` of five-second `ClassSample`s to its
   `keep`, which stores it with `HistoryStore.keepClass` (`sport_class`, the one write that is waited on) before the
   sensor is cleared, so a class that couldn't be stored is on the sensor still; it is read back as a `SportClass` whose rounds `detectRounds`
