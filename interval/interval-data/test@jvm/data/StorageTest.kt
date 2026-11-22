@@ -36,6 +36,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import okio.Path.Companion.toPath
 import java.io.File
 import java.nio.file.Files
@@ -44,6 +45,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -604,12 +606,41 @@ class StorageTest {
                 clock = { clock },
             )
             repository.ready.first { it }
+            assertReadyHoldsHistory(repository)
             block(repository)
         } finally {
             job.cancelAndJoin()
             database.close()
         }
     }
+
+    /**
+     * Once [IntervalRepository.ready], its history holds every workout the file does. CI has twice (a version 9 and a
+     * version 10 database, 2026-11-21 and -22) found it empty there with no read error logged, which no local run
+     * has repeated; failing here says what the file held and whether the workouts came later, which tells a read
+     * made before the file held them from one that lost them.
+     */
+    private suspend fun assertReadyHoldsHistory(repository: IntervalRepository) {
+        val held = repository.history.history.value.size
+        val (rows, file) = onFile()
+        if (held == rows) return
+        val later = withTimeoutOrNull(5.seconds) { repository.history.history.first { it.size == rows } }
+        fail(
+            "Ready with $held workouts where the file holds $rows ($file); " +
+                if (later == null) "they never came" else "they came after ready",
+        )
+    }
+
+    /** The workouts in the database file, read on a connection of its own, and how the file stands. */
+    private fun onFile(): Pair<Int, String> =
+        BundledSQLiteDriver().open(directory.resolve(DATABASE_NAME).absolutePath).use { connection ->
+            fun read(sql: String): String = connection.prepare(sql).use {
+                it.step()
+                it.getText(0)
+            }
+            read("SELECT count(*) FROM history WHERE deleted = 0").toInt() to
+                "user_version ${read("PRAGMA user_version")}, journal ${read("PRAGMA journal_mode")}"
+        }
 
     /** Collections follow the database a moment after a write; waits for them to catch up. */
     private suspend fun settled(repository: IntervalRepository, done: (IntervalRepository) -> Boolean) {
