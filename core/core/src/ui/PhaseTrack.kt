@@ -26,19 +26,17 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 
 /**
- * How far through a rep something is, 0 to 1, asked for while drawing: a lambda that hands back a plain float, so a
- * frame boxes nothing.
+ * How far through a rep something is, 0 to 1 (or negative while setting up), asked for while drawing: a lambda
+ * that hands back a plain float, so a frame boxes nothing.
  */
 fun interface RepShare {
     fun now(): Float
 }
 
 /**
- * [rep] laid out as a bar, a stretch for each part of it that has a name, the one it is in lit in the accent, with
- * a marker where [progress] says it is. Tapping or dragging along it calls [onScrub] with the place, 0 to 1
- * through the rep, so a rep can be gone through by hand; a screen reader moves it as it would a slider, and the
- * arrow keys step it from one stretch to the next ([ExerciseRep.stepAfter]). [label] names it. [progress] is read
- * while drawing, so a running rep moves the marker without recomposing.
+ * [rep] laid out as a bar, a stretch for each part of it, the active one lit in its beat's colour, with a marker
+ * where [progress] says it is. Tapping or dragging along it calls [onScrub] with the place, 0 to 1 through the rep;
+ * a screen reader moves it as a slider, and the arrow keys step it from one stretch to the next.
  */
 @Composable
 fun PhaseTrack(
@@ -47,6 +45,7 @@ fun PhaseTrack(
     onScrub: (Float) -> Unit,
     label: String,
     modifier: Modifier = Modifier,
+    colors: ExerciseDemoColors = ExerciseDemoColors.theme(),
 ) {
     val palette = IntervalTheme.palette
     val scrub by rememberUpdatedState(onScrub)
@@ -74,7 +73,7 @@ fun PhaseTrack(
             .focusable()
             .semantics {
                 contentDescription = label
-                progressBarRangeInfo = ProgressBarRangeInfo(at.now(), 0f..1f)
+                progressBarRangeInfo = ProgressBarRangeInfo(at.now().coerceIn(0f, 1f), 0f..1f)
                 setProgress { to ->
                     scrub(to.coerceIn(0f, 1f))
                     true
@@ -84,14 +83,16 @@ fun PhaseTrack(
         val track = Sizes.progressBar.toPx()
         val gap = Sizes.demoStretchGap.toPx()
         val middle = size.height / 2
-        val now = at.now()
-        // By its place, not an iterator: a frame of a running rep makes nothing.
-        for (index in rep.phases.indices) {
-            val span = rep.phases[index]
-            // As [ExerciseRep.phaseAt] has it: a stretch lasts up to and at its end, and the first from the start.
-            val lit = now <= span.until && (now > span.from || (now == 0f && span.from == 0f))
+        val raw = at.now()
+        val settingUp = raw < 0f && rep.setUp != null
+        val now = raw.coerceIn(0f, 1f)
+        val spans = rep.spans
+        for (index in spans.indices) {
+            val span = spans[index]
+            val lit = !settingUp && now <= span.until && (now > span.from || (now == 0f && span.from == 0f))
+            val color = if (lit) colors.of(span.beat) else palette.line
             drawRoundRect(
-                if (lit) palette.accent else palette.line,
+                color,
                 topLeft = Offset(span.from * size.width + gap / 2, middle - track / 2),
                 size = Size(((span.until - span.from) * size.width - gap).coerceAtLeast(0f), track),
                 cornerRadius = CornerRadius(track / 2),

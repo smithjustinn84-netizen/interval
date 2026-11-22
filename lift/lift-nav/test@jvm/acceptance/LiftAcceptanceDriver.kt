@@ -576,14 +576,14 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     }
 
     fun pauseDemonstration() {
-        tap("Pause")
-        see("Play")
+        tapDescribed("Pause")
+        see(hasContentDescription("Play"))
     }
 
     /** Taps a cue under the figure, which stops it where the cue starts and lights that cue. */
     fun showCuePart(cue: String) {
         tap(cue)
-        see("Play")
+        see(hasContentDescription("Play"))
         seeCurrentCue(cue)
     }
 
@@ -592,16 +592,16 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     /** The figure's cues grouped: what is done once before the reps, then what each rep does. */
     fun seeSetUpThenEachRep() = seeMatches("Set up", "Each rep")
 
-    /** Slows the figure to half speed, which Full speed puts back. */
+    /** Slows the figure to half speed, which 0.5× puts back. */
     fun slowDemonstration() {
-        tap("Slow")
-        see("Full speed")
+        tap("1×")
+        see("0.5×")
     }
 
     /** Steps the figure on to where the next of its cues starts, which stops it there and lights [to]. */
     fun stepDemonstration(to: String) {
         tap("Step")
-        see("Play")
+        see(hasContentDescription("Play"))
         seeCurrentCue(to)
     }
 
@@ -628,7 +628,7 @@ class LiftAcceptanceDriver(ui: DesktopComposeUiTest, val app: LiftAppFixture) : 
     /** Taps the set-up's cue, which plays the set-up again and lights it. */
     fun showSetUp(cue: String) {
         tap(cue)
-        see("Pause")
+        see(hasContentDescription("Pause"))
         seeCurrentCue(cue)
     }
 

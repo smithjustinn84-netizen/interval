@@ -5,6 +5,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 import kotlin.math.PI
 import kotlin.math.acos
 import kotlin.math.atan2
@@ -35,7 +36,7 @@ private val matView = Rect(left = -60f, top = 120f, right = 420f, bottom = 380f)
 private val kneelingView = Rect(left = -10f, top = 100f, right = 410f, bottom = 380f)
 
 /** The hip flexor lunge: the back knee down, the front foot forward, the hips eased forward under tall ribs. */
-val HipFlexorLungeDemo: ExerciseDemo = run {
+val HipFlexorLungeDemo: ExerciseRep = run {
     val kneeling = Pose(
         shin = 25f,
         thigh = -95f,
@@ -51,7 +52,7 @@ val HipFlexorLungeDemo: ExerciseDemo = run {
 }
 
 /** The deep squat: heels down, the chest up, the elbows inside the knees pressing them out. */
-val DeepSquatDemo: ExerciseDemo = held(
+val DeepSquatDemo: ExerciseRep = held(
     Pose(shin = 36f, thigh = -112f, torso = 30f, upperArm = 45f, forearm = 110f),
     Pose(shin = 36f, thigh = -112f, torso = 26f, upperArm = 48f, forearm = 112f),
     root = Root.Ankle,
@@ -63,7 +64,7 @@ val DeepSquatDemo: ExerciseDemo = held(
  * The world's greatest stretch: a long lunge with the hands on the floor inside the front foot, the near elbow
  * dropped toward the instep, then that arm turned and reached to the ceiling. The back leg is on its toes.
  */
-val WorldsGreatestStretchDemo: ExerciseDemo = run {
+val WorldsGreatestStretchDemo: ExerciseRep = run {
     val hands = Pose(
         shin = 45f,
         thigh = -100f,
@@ -82,7 +83,7 @@ val WorldsGreatestStretchDemo: ExerciseDemo = run {
     val folded = hands.copy(upperArm = 20f, forearm = -210f)
     val reach = hands.copy(upperArm = 180f, forearm = -180f)
     val landing = hands.copy(upperArm = -30f, forearm = -60f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = hands),
             Keyframe(at = 0.12f, pose = hands),
@@ -106,10 +107,10 @@ val WorldsGreatestStretchDemo: ExerciseDemo = run {
 }
 
 /** Shoulder circles: standing tall, one arm long, the biggest slow circle forward and then back the other way. */
-val ShoulderCirclesDemo: ExerciseDemo = run {
+val ShoulderCirclesDemo: ExerciseRep = run {
     fun arm(angle: Float) =
         Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = angle, forearm = angle, farUpperArm = 0f, farForearm = 10f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = arm(0f)),
             Keyframe(at = 0.08f, pose = arm(0f)),
@@ -131,14 +132,14 @@ private val armsCloseUp = Rect(left = 170f, top = 45f, right = 340f, bottom = 18
  * Wrist circles: the elbows at the sides and the forearms level, the loose fists circled at the wrists one way then
  * the other. Seen close and side on, a circle shows as the hands tipping up, level, down and level again.
  */
-val WristCirclesDemo: ExerciseDemo = run {
+val WristCirclesDemo: ExerciseRep = run {
     fun fists(wrist: Float) =
         Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 90f, wrist = wrist, palm = LOOSE_FIST)
     val top = fists(70f)
     val forward = fists(0f)
     val bottom = fists(-70f)
     val back = fists(0f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = top),
             Keyframe(at = 0.125f, pose = forward),
@@ -162,24 +163,24 @@ val WristCirclesDemo: ExerciseDemo = run {
  * Palms down, fingers back: on all fours with the hands flat and the fingers pointing back to the knees, rocked back
  * until the forearms pull, and eased. Seen close, at the hands.
  */
-val PalmsDownFingersBackDemo: ExerciseDemo =
+val PalmsDownFingersBackDemo: ExerciseRep =
     rocking(allFours(thigh = -32f, torso = 77.3f, arm = 24.8f))
 
 /**
  * Backs of the hands: on all fours with the backs of the hands down and the fingers to the knees, leaned in lightly
  * over them, and eased. From the side a hand on its back looks as one on its palm does; the lean says which.
  */
-val BacksOfTheHandsDemo: ExerciseDemo =
+val BacksOfTheHandsDemo: ExerciseRep =
     rocking(allFours(thigh = 14f, torso = 78.4f, arm = -10.8f))
 
 /**
  * Finger pulls: one arm out in front with the hand open and the fingers up, the other hand on them drawing them
  * back toward the wrist, and easing them off. Seen close, at the arms.
  */
-val FingerPullsDemo: ExerciseDemo = run {
+val FingerPullsDemo: ExerciseRep = run {
     val meeting = pulling(wrist = 25f)
     val pulled = pulling(wrist = 90f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = meeting),
             Keyframe(at = 0.1f, pose = meeting),
@@ -202,7 +203,7 @@ val FingerPullsDemo: ExerciseDemo = run {
  * The forearm stretch: one arm out in front, palm forward and the fingers pointing down, the other hand on them
  * drawing them back toward the body.
  */
-val ForearmStretchDemo: ExerciseDemo = held(
+val ForearmStretchDemo: ExerciseRep = held(
     pulling(wrist = -110f),
     pulling(wrist = -118f),
     root = Root.Ankle,
@@ -222,10 +223,26 @@ private fun pulling(wrist: Float): Pose {
     val upperArm = 60f
     val forearm = 120f
     val held = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = upperArm, forearm = forearm, wrist = wrist, palm = 1f)
-        .figure()
-    val grip = held.hand + (held.fingers - held.hand) * GRIP - (held.shoulder - Offset(Rig.FAR_ARM_OFFSET, 0f))
-    val way = atan2(grip.x, grip.y)
-    val bend = acos((grip.getDistance() / (Rig.UPPER_ARM + Rig.FOREARM)).coerceAtMost(1f))
+        .toBodyPose()
+        .joints()
+    val upperLen = (held.elbow - held.shoulder).getDistance()
+    val foreLen = (held.wrist - held.elbow).getDistance()
+    val handLen = (held.kettlebellAnchor - held.wrist).getDistance()
+    val target = held.wrist + (held.fingers - held.wrist) * GRIP
+    val farShoulder = held.shoulder - Offset(FAR_ARM_SHIFT, 0f)
+    val dx = target.x - farShoulder.x
+    // Y-up to hanging-down angle (0° is straight down, +90° is right): atan2(dx, -dy).
+    val dy = target.y - farShoulder.y
+    val dist = kotlin.math.hypot(dx, dy).coerceAtLeast(0.001f)
+    val reachFore = foreLen + handLen
+    val way = atan2(dx, -dy)
+    val cosBend = ((dist * dist + upperLen * upperLen - reachFore * reachFore) / (2f * dist * upperLen))
+        .coerceIn(-1f, 1f)
+    val bend = acos(cosBend)
+    val upper = way - bend
+    val elbowX = farShoulder.x + upperLen * kotlin.math.sin(upper)
+    val elbowY = farShoulder.y - upperLen * kotlin.math.cos(upper)
+    val fore = atan2(target.x - elbowX, -(target.y - elbowY))
     return Pose(
         shin = 0f,
         thigh = 0f,
@@ -234,12 +251,14 @@ private fun pulling(wrist: Float): Pose {
         forearm = forearm,
         wrist = wrist,
         palm = 1f,
-        farUpperArm = (way - bend).degrees(),
-        farForearm = (way + bend).degrees(),
+        farUpperArm = upper.degrees(),
+        farForearm = fore.degrees(),
         farWrist = 0f,
         farPalm = HOLDING,
     )
 }
+
+private const val FAR_ARM_SHIFT = 0.023f
 
 /** How far along the held hand the other takes it, and how far that one is open, closed round it. */
 private const val GRIP = 0.6f
@@ -251,7 +270,7 @@ private fun Float.degrees() = this * 180f / PI.toFloat()
  * Cat-cow: on all fours, the back rounded to the ceiling with the head tucked (the cat, the hips tucked under
  * and the elbows soft), then let sink with the head up (the cow). The hands and the knees stay put.
  */
-val CatCowDemo: ExerciseDemo = run {
+val CatCowDemo: ExerciseRep = run {
     // The cow lets the belly down and the cat rounds the back up, between hips and shoulders that stay put.
     val cow = allFours(thigh = 6f, torso = 78.6f, arm = -4.7f).copy(spine = -32f)
     val cat = allFours(thigh = -10f, torso = 92f, arm = -33.5f).copy(forearm = 51.3f, farForearm = 51.3f, spine = 36f)
@@ -276,7 +295,7 @@ val CatCowDemo: ExerciseDemo = run {
 }
 
 /** Child's pose: kneeling, sat back to the heels, the arms long on the mat ahead and the forehead down. */
-val ChildsPoseDemo: ExerciseDemo = run {
+val ChildsPoseDemo: ExerciseRep = run {
     fun folded(thigh: Float, torso: Float, arm: Float) = Pose(
         shin = KNEELING_SHIN,
         thigh = thigh,
@@ -294,28 +313,41 @@ val ChildsPoseDemo: ExerciseDemo = run {
 }
 
 /** The cobra: face down, the hands under the shoulders, the chest pressed up with the hips heavy on the mat. */
-val CobraDemo: ExerciseDemo = run {
-    // The hands stay where they are on the mat, so the arms were solved for each lift of the chest.
-    fun pressed(torso: Float, upperArm: Float, forearm: Float) = Pose(
-        shin = PRONE,
-        thigh = PRONE,
-        torso = torso,
-        upperArm = upperArm,
-        forearm = forearm,
-        farFoot = KNEELING_FOOT,
-        foot = KNEELING_FOOT,
-    )
-    held(
-        pressed(torso = 45f, upperArm = 44.3f, forearm = 27.2f),
-        pressed(torso = 47.5f, upperArm = 55.2f, forearm = 15.5f),
-    )
+val CobraDemo: ExerciseRep = run {
+    fun pressed(torso: Float): Pose {
+        val base = Pose(
+            shin = PRONE,
+            thigh = PRONE,
+            torso = torso,
+            upperArm = 0f,
+            forearm = 0f,
+            farFoot = KNEELING_FOOT,
+            foot = KNEELING_FOOT,
+        )
+        val j = base.toBodyPose().joints(root = Root.Hips)
+        val upperLen = (j.elbow - j.shoulder).getDistance()
+        val foreLen = (j.kettlebellAnchor - j.elbow).getDistance()
+        val handTarget = Offset(j.hip.x + 0.30f, 0.024f)
+        val dx = handTarget.x - j.shoulder.x
+        val dy = handTarget.y - j.shoulder.y
+        val dist = kotlin.math.hypot(dx, dy).coerceAtLeast(0.001f)
+        val way = atan2(dx, -dy)
+        val cosBend = ((dist * dist + upperLen * upperLen - foreLen * foreLen) / (2f * dist * upperLen))
+            .coerceIn(-1f, 1f)
+        val upper = way - acos(cosBend)
+        val elbowX = j.shoulder.x + upperLen * kotlin.math.sin(upper)
+        val elbowY = j.shoulder.y - upperLen * kotlin.math.cos(upper)
+        val fore = atan2(handTarget.x - elbowX, -(handTarget.y - elbowY))
+        return base.copy(upperArm = upper.degrees(), forearm = fore.degrees())
+    }
+    held(pressed(torso = 45f), pressed(torso = 47.5f))
 }
 
 /**
  * Downward dog: the hands and feet down and the hips high, the back long from the hands to the hips, the heels
  * toward the mat, then one knee bent and the other to walk them down. Grounded by the hands.
  */
-val DownwardDogDemo: ExerciseDemo = run {
+val DownwardDogDemo: ExerciseRep = run {
     val dog = Pose(shin = 20f, thigh = 20f, torso = 129.0f, upperArm = -51.0f, forearm = -51.0f)
     // A knee bends with the foot flat, lifting it, then the heel comes up: pitching the toes down as the ankle
     // rose would dip them into the floor, since the two ease at different rates.
@@ -323,7 +355,7 @@ val DownwardDogDemo: ExerciseDemo = run {
     val nearBent = nearLifted.copy(foot = 40f)
     val farLifted = dog.copy(farShin = 52f, farThigh = -16.9f)
     val farBent = farLifted.copy(farFoot = 40f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = dog),
             Keyframe(at = 0.3f, pose = dog),
@@ -349,7 +381,7 @@ val DownwardDogDemo: ExerciseDemo = run {
 }
 
 /** The half split: sat back onto the back knee from a lunge, the front leg straight, toes up, folded over it. */
-val HalfSplitDemo: ExerciseDemo = run {
+val HalfSplitDemo: ExerciseRep = run {
     fun sat(torso: Float, arm: Float) = Pose(
         shin = -60f,
         thigh = -60f,
@@ -371,7 +403,7 @@ val HalfSplitDemo: ExerciseDemo = run {
 }
 
 /** The forward fold: standing with the knees soft, hung from the hips, the arms folded and the head let go. */
-val ForwardFoldDemo: ExerciseDemo = held(
+val ForwardFoldDemo: ExerciseRep = held(
     Pose(shin = 5f, thigh = -10f, torso = 148f, upperArm = 30f, forearm = -100f),
     Pose(shin = 5f, thigh = -10f, torso = 150f, upperArm = 32f, forearm = -100f),
     root = Root.Ankle,
@@ -380,7 +412,7 @@ val ForwardFoldDemo: ExerciseDemo = held(
 )
 
 /** Pigeon: the front leg folded on the mat, the back leg long behind, folded forward with the hands on the floor. */
-val PigeonDemo: ExerciseDemo = run {
+val PigeonDemo: ExerciseRep = run {
     fun folded(torso: Float, arm: Float) = Pose(
         shin = 100f,
         thigh = 268f,
@@ -410,7 +442,7 @@ private fun allFours(thigh: Float, torso: Float, arm: Float) = Pose(
  * seen close at the hands. The hands lie flat with the fingers back toward the knees: each pose turns the wrists to
  * keep them there as the forearms tip, and since every keyframe is held, they stay there between them too.
  */
-private fun rocking(moved: Pose): ExerciseDemo {
+private fun rocking(moved: Pose): ExerciseRep {
     val neutral = allFours(thigh = 0f, torso = 78.7f, arm = 0f).flatHands()
     val there = moved.flatHands()
     return onAllFours(
@@ -436,7 +468,7 @@ private fun onAllFours(
     still: Float,
     crop: Rect? = null,
 ) =
-    ExerciseDemo(
+    repOf(
         keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
         phases = phases,
         hold = Hold.Free,
@@ -449,7 +481,7 @@ private fun onAllFours(
     )
 
 /** A demo on the mat from these keyframes, grounded by the hips. */
-private fun mat(keys: List<Pair<Float, Pose>>, phases: List<DemoPhase>, seconds: Float, still: Float) = ExerciseDemo(
+private fun mat(keys: List<Pair<Float, Pose>>, phases: List<DemoPhase>, seconds: Float, still: Float) = repOf(
     keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
     phases = phases,
     hold = Hold.Free,
@@ -468,7 +500,7 @@ private fun held(
     anchor: Offset = matAnchor,
     view: Rect = matView,
     crop: Rect? = null,
-) = ExerciseDemo(
+) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = held),
         Keyframe(at = 0.5f, pose = breath),

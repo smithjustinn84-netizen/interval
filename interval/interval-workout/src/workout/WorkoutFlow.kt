@@ -18,10 +18,11 @@ import androidx.compose.ui.text.style.TextOverflow
 import dev.justinsmith.interval.timer.FlowSide
 import dev.justinsmith.interval.timer.FlowStep
 import dev.justinsmith.interval.timer.Phase
+import dev.justinsmith.interval.ui.ExerciseDemoColors
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.MoveFigureBand
 import dev.justinsmith.interval.ui.Sizes
-import dev.justinsmith.interval.ui.demo
+import dev.justinsmith.interval.ui.rep
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.flow_hold
 import dev.justinsmith.interval.workout.resources.flow_left_side
@@ -33,7 +34,6 @@ import dev.justinsmith.interval.workout.resources.next_move
 import dev.justinsmith.interval.workout.resources.next_right_side
 import dev.justinsmith.interval.workout.resources.phase_done
 import dev.justinsmith.interval.workout.resources.phase_get_ready
-import dev.justinsmith.lift.ui.demo.FigureColors
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -87,17 +87,17 @@ private const val CUE_LINES = 2
 @Composable
 internal fun FlowFigure(flow: FlowNow, paused: Boolean, onOpen: () -> Unit, modifier: Modifier = Modifier) {
     val move = flow.step?.move
-    val demo = move?.demo
+    val rep = move?.rep
     Box(modifier.fillMaxWidth().height(Sizes.figureBand)) {
-        if (move != null && demo != null) {
+        if (move != null && rep != null) {
             MoveFigureBand(
                 move,
-                demo,
+                rep,
                 paused = paused,
                 onOpen = onOpen,
                 fill = IntervalTheme.workout.control,
                 border = IntervalTheme.workout.upcoming,
-                colors = FigureColors.workout(),
+                colors = ExerciseDemoColors.workout(),
             )
         }
     }

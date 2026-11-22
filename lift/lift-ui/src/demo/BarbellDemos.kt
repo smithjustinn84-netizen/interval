@@ -1,6 +1,7 @@
 package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 import dev.justinsmith.lift.ui.demo.BarbellPoses.atKnee
 import dev.justinsmith.lift.ui.demo.BarbellPoses.backDeep
 import dev.justinsmith.lift.ui.demo.BarbellPoses.backRack
@@ -22,7 +23,7 @@ import dev.justinsmith.lift.ui.demo.BarbellPoses.split
 import dev.justinsmith.lift.ui.demo.BarbellPoses.standing
 
 /** The deadlift: from the floor, push the floor away to stand tall, lower it hips back first. */
-val BarbellDeadliftDemo: ExerciseDemo = barLift(
+val BarbellDeadliftDemo: ExerciseRep = barLift(
     seconds = 3.4f,
     still = 0.05f,
     phases = phases(0.1f to 0, 0.58f to 1, 1f to 2),
@@ -36,7 +37,7 @@ val BarbellDeadliftDemo: ExerciseDemo = barLift(
 )
 
 /** The Romanian deadlift: from standing, hips back with the bar sliding down the thighs, then drive them forward. */
-val BarbellRomanianDeadliftDemo: ExerciseDemo = run {
+val BarbellRomanianDeadliftDemo: ExerciseRep = run {
     val bottom = bar(shin = 6f, thigh = -38f, torso = 78f, arm = -4f)
     barLift(
         seconds = 3.4f,
@@ -52,7 +53,7 @@ val BarbellRomanianDeadliftDemo: ExerciseDemo = run {
 }
 
 /** The row: hinged over a flat back, pull the bar to the lower ribs, lower it without standing up. */
-val BarbellRowDemo: ExerciseDemo = run {
+val BarbellRowDemo: ExerciseRep = run {
     val hinged = bar(shin = 12f, thigh = -45f, torso = 70f, arm = -4f)
     val pulled = hinged.copy(upperArm = -90f, forearm = 10f)
     barLift(
@@ -69,40 +70,40 @@ val BarbellRowDemo: ExerciseDemo = run {
 }
 
 /** The clean pull: a clean's pull from the floor, finishing tall with a shrug, the arms long. */
-val BarbellCleanPullDemo: ExerciseDemo = pull()
+val BarbellCleanPullDemo: ExerciseRep = pull()
 
 /** The snatch pull: a snatch's pull from the floor, finishing tall with a shrug, the arms long. */
-val BarbellSnatchPullDemo: ExerciseDemo = pull()
+val BarbellSnatchPullDemo: ExerciseRep = pull()
 
 /** The power clean: from the floor, extend hard and catch the bar on the shoulders above a quarter squat. */
-val BarbellPowerCleanDemo: ExerciseDemo = catchFromFloor(catch = frontRack over power, stood = frontRack)
+val BarbellPowerCleanDemo: ExerciseRep = catchFromFloor(catch = frontRack over power, stood = frontRack)
 
 /** The clean: from the floor, extend, pull under and catch it on the shoulders in a full squat, then stand. */
-val BarbellCleanDemo: ExerciseDemo = catchFromFloor(catch = frontRack over deep, stood = frontRack)
+val BarbellCleanDemo: ExerciseRep = catchFromFloor(catch = frontRack over deep, stood = frontRack)
 
 /** The power snatch: from the floor, extend and catch it locked overhead above a quarter squat. */
-val BarbellPowerSnatchDemo: ExerciseDemo = catchFromFloor(catch = overhead over power, stood = overhead)
+val BarbellPowerSnatchDemo: ExerciseRep = catchFromFloor(catch = overhead over power, stood = overhead)
 
 /** The snatch: from the floor, extend, pull under and catch it overhead in a full squat, then stand. */
-val BarbellSnatchDemo: ExerciseDemo = catchFromFloor(catch = overhead over deep, stood = overhead)
+val BarbellSnatchDemo: ExerciseRep = catchFromFloor(catch = overhead over deep, stood = overhead)
 
 /** The hang clean: from standing, lower to the hang, drive and shrug, catch it on the shoulders and stand. */
-val BarbellHangCleanDemo: ExerciseDemo = catchFromHang(catch = frontRack over power, stood = frontRack)
+val BarbellHangCleanDemo: ExerciseRep = catchFromHang(catch = frontRack over power, stood = frontRack)
 
 /** The hang snatch: from standing, lower to the hang, jump and pull under, catch it overhead and stand. */
-val BarbellHangSnatchDemo: ExerciseDemo = catchFromHang(catch = overhead over deep, stood = overhead)
+val BarbellHangSnatchDemo: ExerciseRep = catchFromHang(catch = overhead over deep, stood = overhead)
 
 /** The overhead squat: the bar locked overhead, squat with it over the middle of the foot, push up into it. */
-val BarbellOverheadSquatDemo: ExerciseDemo = squat(top = overhead, seconds = 3.6f)
+val BarbellOverheadSquatDemo: ExerciseRep = squat(top = overhead, seconds = 3.6f)
 
 /** The back squat: the bar on the upper back, sit down between the heels, drive up. */
-val BarbellBackSquatDemo: ExerciseDemo = squat(top = backRack, bottom = backDeep, seconds = 3.2f)
+val BarbellBackSquatDemo: ExerciseRep = squat(top = backRack, bottom = backDeep, seconds = 3.2f)
 
 /** The front squat: the bar on the front of the shoulders, elbows high, sit straight down, drive up. */
-val BarbellFrontSquatDemo: ExerciseDemo = squat(top = frontRack, seconds = 3.2f)
+val BarbellFrontSquatDemo: ExerciseRep = squat(top = frontRack, seconds = 3.2f)
 
 /** The snatch balance: from the bar on the back, dip, then drive down under it to a full squat with it locked out. */
-val BarbellSnatchBalanceDemo: ExerciseDemo = barLift(
+val BarbellSnatchBalanceDemo: ExerciseRep = barLift(
     seconds = 3.2f,
     still = 0.42f,
     phases = phases(0.1f to 0, 0.36f to 1, 1f to 2),
@@ -117,7 +118,7 @@ val BarbellSnatchBalanceDemo: ExerciseDemo = barLift(
 )
 
 /** The overhead press: from the front of the shoulders, press straight up past the face to lockout. */
-val BarbellOverheadPressDemo: ExerciseDemo = barLift(
+val BarbellOverheadPressDemo: ExerciseRep = barLift(
     seconds = 2.8f,
     still = 0.52f,
     phases = phases(0.12f to 0, 0.46f to 1, 1f to 2),
@@ -131,7 +132,7 @@ val BarbellOverheadPressDemo: ExerciseDemo = barLift(
 )
 
 /** The push press: a dip, a drive with the legs, then pressed the rest of the way to lockout. */
-val BarbellPushPressDemo: ExerciseDemo = barLift(
+val BarbellPushPressDemo: ExerciseRep = barLift(
     seconds = 2.6f,
     still = 0.52f,
     phases = phases(0.1f to 0, 0.36f to 1, 1f to 2),
@@ -146,7 +147,7 @@ val BarbellPushPressDemo: ExerciseDemo = barLift(
 )
 
 /** The split jerk: dip and drive, split the feet as you punch under, recover the front foot then the back. */
-val BarbellJerkDemo: ExerciseDemo = barLift(
+val BarbellJerkDemo: ExerciseRep = barLift(
     seconds = 3f,
     still = 0.4f,
     phases = phases(0.18f to 0, 0.44f to 1, 1f to 2),
@@ -164,7 +165,7 @@ val BarbellJerkDemo: ExerciseDemo = barLift(
 )
 
 /** The clean and jerk: the clean to the shoulders and up out of the squat, then the split jerk, and back down. */
-val BarbellCleanAndJerkDemo: ExerciseDemo = barLift(
+val BarbellCleanAndJerkDemo: ExerciseRep = barLift(
     seconds = 5.6f,
     still = 0.6f,
     phases = phases(0.38f to 0, 0.66f to 1, 1f to 2),
@@ -192,11 +193,11 @@ val BarbellCleanAndJerkDemo: ExerciseDemo = barLift(
  * The bench press: lying on the bench, feet planted, lower the bar to the lower chest with the elbows under it,
  * press up and a little back.
  */
-val BarbellBenchPressDemo: ExerciseDemo = run {
+val BarbellBenchPressDemo: ExerciseRep = run {
     val lying = Pose(shin = -10f, thigh = -90f, torso = -90f, upperArm = 180f, forearm = 180f)
     // The bar comes down to the lower chest, the forearms upright under it, well clear of the face.
     val chest = lying.copy(upperArm = 64f, forearm = 180f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = lying),
             Keyframe(at = 0.12f, pose = lying),
@@ -210,7 +211,7 @@ val BarbellBenchPressDemo: ExerciseDemo = run {
         secondsPerRep = 2.8f,
         still = 0.12f,
         view = Rect(left = -60f, top = 60f, right = 300f, bottom = 380f),
-        props = listOf(Bench(from = -30f, to = 135f, height = 62f)),
+        props = listOf(bench(from = -30f, to = 135f, height = 62f)),
     )
 }
 
@@ -294,7 +295,7 @@ private fun barLift(
     still: Float,
     phases: List<DemoPhase>,
     vararg poses: Pair<Float, Pose>,
-) = ExerciseDemo(
+) = repOf(
     keyframes = poses.map { (at, pose) -> Keyframe(at = at, pose = pose) },
     phases = phases,
     hold = Hold.Bar,

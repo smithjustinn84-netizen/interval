@@ -16,6 +16,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import dev.justinsmith.interval.platform.AskToShowNotifications
 import dev.justinsmith.interval.platform.KeepScreenOn
 import dev.justinsmith.interval.platform.LiveHeartRateState
+import dev.justinsmith.interval.ui.Celebration
 import dev.justinsmith.interval.ui.ConfirmDialog
 import dev.justinsmith.interval.ui.HeartBeatBadge
 import dev.justinsmith.interval.ui.IconAction
@@ -50,7 +51,6 @@ import dev.justinsmith.lift.session.resources.session_discard_text
 import dev.justinsmith.lift.session.resources.session_discard_title
 import dev.justinsmith.lift.session.resources.session_title
 import dev.justinsmith.lift.session.resources.session_undo
-import dev.justinsmith.lift.ui.demo.Celebration
 import dev.justinsmith.lift.ui.setLine
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.stringResource

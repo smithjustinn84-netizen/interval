@@ -5,6 +5,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 
 // The band lifts. The band is drawn from the hands to whatever it is tied to or stood on, so it stretches as the
 // lift does. A post off to one side (the Pallof press's, the woodchop's) is drawn behind the figure.
@@ -24,14 +25,14 @@ private val underFoot = listOf(Band(BandEnd.Hand, BandEnd.Foot))
 private val floorView = Rect(left = 20f, top = 150f, right = 390f, bottom = 380f)
 
 /** The face pull: from a post at face height, the hands pulled to beside the ears, the elbows high and wide. */
-val BandFacePullDemo: ExerciseDemo = pull(
+val BandFacePullDemo: ExerciseRep = pull(
     from = standing.copy(torso = -3f, upperArm = 96f, forearm = 96f).bothArms(),
     to = standing.copy(torso = -3f, upperArm = 95f, forearm = 175f, reach = 0.55f).bothArms(),
-    band = Band(BandEnd.Hand, BandEnd.Post(Offset(372f, 78f))),
+    band = Band(BandEnd.Hand, BandEnd.post(Offset(372f, 78f))),
 )
 
 /** The seated row: sitting tall, the band round the feet, the elbows pulled back past the ribs. */
-val BandSeatedRowDemo: ExerciseDemo = pull(
+val BandSeatedRowDemo: ExerciseRep = pull(
     from = seated.copy(upperArm = 75f, forearm = 75f).bothArms(),
     to = seated.copy(upperArm = -35f, forearm = 85f).bothArms(),
     band = Band(BandEnd.Hand, BandEnd.Foot),
@@ -41,23 +42,23 @@ val BandSeatedRowDemo: ExerciseDemo = pull(
 )
 
 /** The lat pulldown: from a post high ahead, the elbows pulled down to the hips. */
-val BandLatPulldownDemo: ExerciseDemo = pull(
+val BandLatPulldownDemo: ExerciseRep = pull(
     from = standing.copy(torso = -5f, upperArm = 148f, forearm = 148f).bothArms(),
     to = standing.copy(torso = -5f, upperArm = 10f, forearm = 160f).bothArms(),
-    band = Band(BandEnd.Hand, BandEnd.Post(Offset(305f, -52f))),
+    band = Band(BandEnd.Hand, BandEnd.post(Offset(305f, -52f))),
 )
 
 /** The chest press: from a post behind at chest height, the hands pressed straight ahead. */
-val BandChestPressDemo: ExerciseDemo = pull(
+val BandChestPressDemo: ExerciseRep = pull(
     from = standing.copy(upperArm = -60f, forearm = 90f).bothArms(),
     to = standing.copy(upperArm = 90f, forearm = 90f).bothArms(),
-    band = Band(BandEnd.Hand, BandEnd.Post(Offset(95f, 112f))),
+    band = Band(BandEnd.Hand, BandEnd.post(Offset(95f, 112f))),
 )
 
 /** The overhead press: stood on the band, the hands pressed from the shoulders to overhead. */
-val BandOverheadPressDemo: ExerciseDemo = run {
+val BandOverheadPressDemo: ExerciseRep = run {
     val overhead = standing.copy(upperArm = 180f, forearm = 180f).bothArms()
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = atShoulders),
             Keyframe(at = 0.1f, pose = atShoulders),
@@ -75,27 +76,27 @@ val BandOverheadPressDemo: ExerciseDemo = run {
 }
 
 /** The biceps curl: stood on the band, the elbows by the sides, the hands curled to the shoulders. */
-val BandBicepsCurlDemo: ExerciseDemo = pull(
+val BandBicepsCurlDemo: ExerciseRep = pull(
     from = standing.copy(upperArm = 0f, forearm = 0f).bothArms(),
     to = standing.copy(upperArm = 0f, forearm = 150f).bothArms(),
     band = underFoot.single(),
 )
 
 /** The triceps pushdown: from a post high ahead, the elbows pinned, the hands pushed down straight. */
-val BandTricepsPushdownDemo: ExerciseDemo = pull(
+val BandTricepsPushdownDemo: ExerciseRep = pull(
     from = standing.copy(torso = 10f, upperArm = 5f, forearm = 130f).bothArms(),
     to = standing.copy(torso = 10f, upperArm = 5f, forearm = 5f).bothArms(),
-    band = Band(BandEnd.Hand, BandEnd.Post(Offset(292f, -40f))),
+    band = Band(BandEnd.Hand, BandEnd.post(Offset(292f, -40f))),
 )
 
 /**
  * The Pallof press: side on to a post at chest height (drawn behind), the hands pressed straight out from the
  * chest and held there against the pull.
  */
-val BandPallofPressDemo: ExerciseDemo = run {
+val BandPallofPressDemo: ExerciseRep = run {
     val stance = Pose(shin = 8f, thigh = -12f, torso = 4f, upperArm = 10f, forearm = 120f)
     val out = stance.copy(upperArm = 90f, forearm = 90f).bothArms()
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = stance),
             Keyframe(at = 0.1f, pose = stance),
@@ -107,21 +108,21 @@ val BandPallofPressDemo: ExerciseDemo = run {
         hold = Hold.Free,
         secondsPerRep = 3.2f,
         still = 0.5f,
-        props = listOf(Band(BandEnd.Hand, BandEnd.Post(Offset(95f, 118f)))),
+        props = listOf(Band(BandEnd.Hand, BandEnd.post(Offset(95f, 118f)))),
     )
 }
 
 /** The woodchop: from a post high on one side (drawn behind), the hands pulled across and down to the hip. */
-val BandWoodchopDemo: ExerciseDemo = pull(
+val BandWoodchopDemo: ExerciseRep = pull(
     from = standing.copy(torso = -5f, upperArm = 210f, forearm = 210f).bothArms(),
     to = Pose(shin = 12f, thigh = -25f, torso = 20f, upperArm = 25f, forearm = 25f),
-    band = Band(BandEnd.Hand, BandEnd.Post(Offset(95f, -20f))),
+    band = Band(BandEnd.Hand, BandEnd.post(Offset(95f, -20f))),
 )
 
 /** The band squat: stood on the band, the ends at the shoulders, sit down between the heels and drive up. */
-val BandSquatDemo: ExerciseDemo = run {
+val BandSquatDemo: ExerciseRep = run {
     val deep = Pose(shin = 30f, thigh = -105f, torso = 25f, upperArm = 30f, forearm = 175f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = atShoulders),
             Keyframe(at = 0.1f, pose = atShoulders),
@@ -140,7 +141,7 @@ val BandSquatDemo: ExerciseDemo = run {
 }
 
 /** The good morning: stood on the band, its loop behind the neck, a hinge with a flat back and up. */
-val BandGoodMorningDemo: ExerciseDemo = pull(
+val BandGoodMorningDemo: ExerciseRep = pull(
     from = standing.copy(upperArm = 20f, forearm = 170f).bothArms(),
     // The upper body tipped over as one, so the hands stay at the shoulders.
     to = Pose(shin = 5f, thigh = -10f, torso = 75f, upperArm = -55f, forearm = 95f),
@@ -148,7 +149,7 @@ val BandGoodMorningDemo: ExerciseDemo = pull(
 )
 
 /** The banded glute bridge: the bridge with a band above the knees, pushed out against. */
-val BandGluteBridgeDemo: ExerciseDemo = bridge(single = false, props = listOf(Band(BandEnd.Knee, BandEnd.FarKnee)))
+val BandGluteBridgeDemo: ExerciseRep = bridge(single = false, props = listOf(Band(BandEnd.Knee, BandEnd.FarKnee)))
 
 /** This pose with the far arm doing as the near one does. */
 private fun Pose.bothArms() = copy(farUpperArm = upperArm, farForearm = forearm)
@@ -161,7 +162,7 @@ private fun pull(
     root: Root = Root.Ankle,
     anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
     view: Rect = Rig.view,
-) = ExerciseDemo(
+) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = from),
         Keyframe(at = 0.1f, pose = from),

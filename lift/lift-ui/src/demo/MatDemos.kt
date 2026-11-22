@@ -5,6 +5,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 
 // The mat Pilates lifts, nearly all on the floor, so each is grounded by its hips over whatever rests on the mat.
 // Lying on the back the head is to the left: a leg's angle of 270 lies along the mat toward the feet, 180 points
@@ -41,7 +42,7 @@ private val matView = Rect(left = -60f, top = 120f, right = 420f, bottom = 380f)
 private val tallMatView = Rect(left = -60f, top = 40f, right = 420f, bottom = 380f)
 
 /** The hundred: head and shoulders curled up, the legs up long, the arms pumping by the sides. */
-val HundredDemo: ExerciseDemo = run {
+val HundredDemo: ExerciseRep = run {
     val up = back(torso = CURLED, legs = 225f, arms = 100f)
     val down = up.arms(86f)
     mat(
@@ -53,7 +54,7 @@ val HundredDemo: ExerciseDemo = run {
 }
 
 /** The roll-up: from lying long, arms overhead, peeled up through sitting to reach past the toes, and back down. */
-val RollUpDemo: ExerciseDemo = run {
+val RollUpDemo: ExerciseRep = run {
     val lying = back(torso = FLAT, legs = DOWN, arms = OVERHEAD).flexed()
     // It peels up through a rounded back, a bone at a time, and folds over the legs rounded too.
     val peeling = lying.copy(torso = -45f, spine = 18f).arms(UP)
@@ -78,20 +79,20 @@ val RollUpDemo: ExerciseDemo = run {
 }
 
 /** Rolling like a ball: balanced behind the sit bones, knees hugged in, rolled back to the shoulder blades and up. */
-val RollingLikeABallDemo: ExerciseDemo = run {
+val RollingLikeABallDemo: ExerciseRep = run {
     val ball = tuck(torso = -15f, arms = 50f, hands = 65f).copy(spine = BALL_SPINE)
     rolling(ball, listOf(0f to ball, 0.15f to ball), seconds = 2.4f)
 }
 
 /** The single-leg stretch: head up, one knee hugged in as the other leg stretches out long, then switch. */
-val SingleLegStretchDemo: ExerciseDemo = run {
+val SingleLegStretchDemo: ExerciseRep = run {
     val nearIn = back(torso = CURLED, legs = LONG, arms = 95f).hugNear().copy(forearm = 110f, farForearm = 110f)
     val farIn = back(torso = CURLED, legs = LONG, arms = 95f).hugFar().copy(forearm = 110f, farForearm = 110f)
     switching(nearIn, farIn, seconds = 2f)
 }
 
 /** The double-leg stretch: both knees hugged in, then the arms and legs stretched out long, the arms circled back. */
-val DoubleLegStretchDemo: ExerciseDemo = run {
+val DoubleLegStretchDemo: ExerciseRep = run {
     val hug = back(torso = CURLED, legs = LONG, arms = 95f).hugNear().hugFar().copy(forearm = 110f, farForearm = 110f)
     val long = back(torso = CURLED, legs = LONG, arms = 245f)
     val round = long.arms(BY_SIDES)
@@ -104,7 +105,7 @@ val DoubleLegStretchDemo: ExerciseDemo = run {
 }
 
 /** Scissors: both legs up, one pulled toward the face with two pulses as the other lowers, then switch. */
-val ScissorsDemo: ExerciseDemo = run {
+val ScissorsDemo: ExerciseRep = run {
     fun scissor(up: Float, down: Float, near: Boolean): Pose {
         val legs = back(torso = CURLED, legs = down, arms = 165f).copy(forearm = 105f, farForearm = 105f)
         return if (near) legs.near(up) else legs.far(up)
@@ -131,13 +132,13 @@ val ScissorsDemo: ExerciseDemo = run {
 }
 
 /** The criss-cross: hands behind the head, an elbow turned to the opposite knee as it comes in, then the other. */
-val CrissCrossDemo: ExerciseDemo = run {
+val CrissCrossDemo: ExerciseRep = run {
     val hands = back(torso = -60f, legs = LONG, arms = 200f).copy(forearm = 300f, farForearm = 300f)
     switching(hands.copy(torso = -55f).hugNear(), hands.copy(torso = -55f).hugFar(), seconds = 2.4f)
 }
 
 /** The spine stretch forward: sitting tall, legs long and feet flexed, rounded forward reaching ahead, stacked up. */
-val SpineStretchForwardDemo: ExerciseDemo = run {
+val SpineStretchForwardDemo: ExerciseRep = run {
     val tall = seated.arms(BY_SIDES)
     val round = seated.copy(torso = 45f, spine = 30f).arms(100f)
     mat(
@@ -153,7 +154,7 @@ val SpineStretchForwardDemo: ExerciseDemo = run {
  * The saw: sitting tall with the arms out to the sides (pointing at the eye and away, so they look short), then
  * twisted and folded, the front hand reaching past the far foot and the back one behind.
  */
-val SawDemo: ExerciseDemo = run {
+val SawDemo: ExerciseRep = run {
     val tall = seated.arms(BY_SIDES).copy(reach = 0.15f)
     val saw = seated.copy(torso = 40f, upperArm = 95f, forearm = 95f, farUpperArm = -120f, farForearm = -120f)
     mat(
@@ -166,7 +167,7 @@ val SawDemo: ExerciseDemo = run {
 }
 
 /** The swan: face down, hands under the shoulders, the chest lifted by lengthening the spine, lowered slowly. */
-val SwanDemo: ExerciseDemo = run {
+val SwanDemo: ExerciseRep = run {
     // The hands stay where they are on the mat, so the arms were solved for each lift of the chest.
     val down = front(torso = PRONE, legs = 90f).arms(upper = 153.9f, fore = 3.5f)
     val low = front(torso = 72f, legs = 90f).arms(upper = 102.5f, fore = -21.6f)
@@ -184,7 +185,7 @@ val SwanDemo: ExerciseDemo = run {
 }
 
 /** The single-leg kick: on the forearms, the chest lifted, one heel kicked to the glutes twice, then the other. */
-val SingleLegKickDemo: ExerciseDemo = run {
+val SingleLegKickDemo: ExerciseRep = run {
     val prone = front(torso = 65f, legs = 90f).arms(upper = 0f, fore = 90f)
     fun near(shin: Float) = prone.copy(shin = shin, foot = shin + 90f)
     fun far(shin: Float) = prone.copy(farShin = shin, farFoot = shin + 90f)
@@ -213,7 +214,7 @@ val SingleLegKickDemo: ExerciseDemo = run {
  * Seen from the front the swing comes toward the eye and away, so it shows as the leg rising and falling, the
  * foot flexed forward and pointed back.
  */
-val SideKickSeriesDemo: ExerciseDemo = run {
+val SideKickSeriesDemo: ExerciseRep = run {
     val side = Pose(
         shin = DOWN,
         thigh = DOWN,
@@ -238,7 +239,7 @@ val SideKickSeriesDemo: ExerciseDemo = run {
 }
 
 /** The teaser: from lying long, rolled up to balance in a V, the arms reaching for the feet, and down with control. */
-val TeaserDemo: ExerciseDemo = run {
+val TeaserDemo: ExerciseRep = run {
     val lying = back(torso = FLAT, legs = DOWN, arms = OVERHEAD)
     val vee = back(torso = -30f, legs = 210f, arms = 150f)
     mat(
@@ -251,7 +252,7 @@ val TeaserDemo: ExerciseDemo = run {
 }
 
 /** Swimming: face down, arms and legs long and lifted, fluttering opposite arm and leg. */
-val SwimmingDemo: ExerciseDemo = run {
+val SwimmingDemo: ExerciseRep = run {
     val lifted = front(torso = 80f, legs = 98f)
     val nearArm = lifted.copy(
         upperArm = 110f,
@@ -286,7 +287,7 @@ val SwimmingDemo: ExerciseDemo = run {
 }
 
 /** The shoulder bridge: the hips bridged up, one leg lifted to the ceiling and lowered long, the hips level. */
-val ShoulderBridgeDemo: ExerciseDemo = run {
+val ShoulderBridgeDemo: ExerciseRep = run {
     val lying = Pose(shin = -38.3f, thigh = -123f, torso = FLAT, upperArm = 90f, forearm = 90f)
     val bridged = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     fun leg(angle: Float) = bridged.copy(farShin = angle, farThigh = angle, farFoot = 90f + angle)
@@ -294,7 +295,7 @@ val ShoulderBridgeDemo: ExerciseDemo = run {
     val lowered = leg(-100f)
     // The knee drawn up first, so the leg unfolds to the ceiling rather than swinging up straight from the foot.
     val kneeUp = bridged.copy(farShin = -60f, farThigh = -160f, farFoot = 20f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = lying),
             Keyframe(at = 0.12f, pose = bridged),
@@ -316,7 +317,7 @@ val ShoulderBridgeDemo: ExerciseDemo = run {
 }
 
 /** The seal: balanced holding the ankles, the feet clapped three times, rolled back and up to clap again. */
-val SealDemo: ExerciseDemo = run {
+val SealDemo: ExerciseRep = run {
     val ball = tuck(torso = -5f, arms = 38f, hands = 38f).copy(spine = BALL_SPINE)
     val clap = ball.copy(farThigh = 190f)
     rolling(
@@ -327,7 +328,7 @@ val SealDemo: ExerciseDemo = run {
 }
 
 /** The leg pull front: in a high plank, one leg lifted without the hips shifting, lowered, then the other. */
-val LegPullFrontDemo: ExerciseDemo = run {
+val LegPullFrontDemo: ExerciseRep = run {
     val plank = Pose(
         shin = 73.2f,
         thigh = 73.2f,
@@ -339,7 +340,7 @@ val LegPullFrontDemo: ExerciseDemo = run {
     )
     val nearUp = plank.copy(shin = 92f, thigh = 92f, foot = 172f)
     val farUp = plank.copy(farShin = 92f, farThigh = 92f, farFoot = 172f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = plank),
             Keyframe(at = 0.1f, pose = plank),
@@ -448,7 +449,7 @@ private fun Pose.tipped(degrees: Float) = copy(
 )
 
 /** A rep from [ball] through what it does [first] (ending on [ball]), rolled back to the shoulder blades and up. */
-private fun rolling(ball: Pose, first: List<Pair<Float, Pose>>, seconds: Float): ExerciseDemo {
+private fun rolling(ball: Pose, first: List<Pair<Float, Pose>>, seconds: Float): ExerciseRep {
     val start = first.last().first
     val back = ball.tipped(-70f)
     val rest = 1f - start
@@ -480,7 +481,7 @@ private fun mat(
     seconds: Float,
     still: Float,
     view: Rect = matView,
-) = ExerciseDemo(
+) = repOf(
     keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
     phases = phases,
     hold = Hold.Free,

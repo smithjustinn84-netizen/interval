@@ -21,7 +21,7 @@ import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.stepAfter
 import dev.justinsmith.interval.timer.stepAt
 import dev.justinsmith.interval.ui.SnatchAsk
-import dev.justinsmith.interval.ui.demo
+import dev.justinsmith.interval.ui.rep
 
 /** What the line under the clock says comes next. */
 sealed interface NextUp {
@@ -274,7 +274,7 @@ private fun WorkoutState.flowNow(flow: Flow): FlowNow {
         done = step?.let { it.number - 1 } ?: flow.moves.size,
         step = step,
         next = step?.takeIf { phase == Phase.Work }?.let(flow::stepAfter),
-        figures = flow.moves.any { it.demo != null },
+        figures = flow.moves.any { it.rep != null },
     )
 }
 

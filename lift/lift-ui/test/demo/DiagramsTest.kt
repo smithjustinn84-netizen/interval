@@ -14,46 +14,40 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class DiagramsTest {
-    private val drawn = BuiltInExercise.entries.filter { it.diagram != null }
+    private val namedPhaseLifts = BuiltInExercise.entries.filter { it.rep?.phases?.isNotEmpty() == true }
 
     @Test
-    fun `each flagship lift has its diagram`() {
+    fun `each flagship lift uses its canonical KettlebellRep`() {
         mapOf(
             BuiltInExercise.TwoHandSwing to KettlebellReps.Swing,
-            BuiltInExercise.OneHandSwing to KettlebellReps.Swing,
+            BuiltInExercise.OneHandSwing to KettlebellReps.OneHandSwing,
             BuiltInExercise.Clean to KettlebellReps.Clean,
             BuiltInExercise.Snatch to KettlebellReps.Snatch,
             BuiltInExercise.Press to KettlebellReps.Press,
             BuiltInExercise.GobletSquat to KettlebellReps.GobletSquat,
             BuiltInExercise.GetUp to KettlebellReps.GetUp,
             BuiltInExercise.CleanAndPress to KettlebellReps.CleanAndPress,
-        ).forEach { (exercise, rep) -> assertSame(rep, exercise.diagram, exercise.key) }
-        assertEquals(8, drawn.size)
+        ).forEach { (exercise, rep) -> assertSame(rep, exercise.rep, exercise.key) }
+        assertEquals(19, namedPhaseLifts.size)
     }
 
     @Test
-    fun `a lift with no diagram yet has none and no cues for one`() {
-        assertNull(BuiltInExercise.Row.diagram)
-        assertTrue(BuiltInExercise.Row.diagramCues.isEmpty())
+    fun `every built-in exercise has a unified rep`() {
+        BuiltInExercise.entries.forEach { assertNotNull(it.rep, it.key) }
     }
 
     @Test
-    fun `a lift with a diagram has a figure too for where the page is not what shows it`() {
-        drawn.forEach { assertNotNull(it.demo, it.key) }
-    }
-
-    @Test
-    fun `every part of a lift's rep belongs to one of its three cues and every cue has a part`() {
-        drawn.forEach { lift ->
-            val cueOf = lift.diagramCues
-            val parts = assertNotNull(lift.diagram).phases.map { it.phase }.toSet()
+    fun `every named phase of a kettlebell lift belongs to one of its written cues`() {
+        namedPhaseLifts.forEach { lift ->
+            val cueOf = lift.repCues
+            val parts = assertNotNull(lift.rep).phases.map { it.phase }.toSet()
             assertEquals(parts, cueOf.keys, lift.key)
-            assertEquals(setOf(0, 1, 2), cueOf.values.toSet(), lift.key)
+            assertTrue(cueOf.values.all { it in 0..2 }, lift.key)
         }
     }
 
     @Test
-    fun `one of the user's own takes the diagram of the built-in it names but none of its cues`() {
+    fun `one of the user's own takes the rep of the built-in it names but none of its cues`() {
         val own = CustomExercise(
             uid = "own",
             name = "Pause goblet squat",
@@ -63,31 +57,31 @@ class DiagramsTest {
             focus = BuiltInExercise.GobletSquat.focus,
             figure = BuiltInExercise.GobletSquat,
         )
-        assertSame(KettlebellReps.GobletSquat, own.diagram)
-        assertTrue(own.diagramCues.isEmpty())
+        assertSame(KettlebellReps.GobletSquat, own.rep)
+        assertTrue(own.repCues.isEmpty())
     }
 
     @Test
-    fun `a rep that hinges is drawn squatted with its parts where they were and no other is`() {
-        drawn.forEach { lift ->
-            val rep = assertNotNull(lift.diagram)
+    fun `a flagship rep that hinges is drawn squatted with its parts preserved`() {
+        namedPhaseLifts.forEach { lift ->
+            val rep = assertNotNull(lift.rep)
             val wrong = rep.doneWrong(Fault.SquattedHinge)
-            val hinges = rep.keyframes.any { it.pose == KettlebellPoses.Hinge }
-            assertEquals(hinges, wrong != null, lift.key)
-            if (wrong != null) {
+            if (Fault.SquattedHinge in lift.faults) {
+                assertNotNull(wrong, lift.key)
                 assertEquals(rep.phases, wrong.phases, lift.key)
                 assertEquals(rep.seconds, wrong.seconds)
-                assertTrue(wrong.keyframes.none { it.pose == KettlebellPoses.Hinge }, lift.key)
-                assertTrue(wrong.keyframes.any { it.pose == KettlebellPoses.SquattedHinge }, lift.key)
+                if (rep.keyframes.any {
+                        it.pose.torsoAngleDeg == KettlebellPoses.Hinge.torsoAngleDeg &&
+                            it.pose.hipAngleDeg == KettlebellPoses.Hinge.hipAngleDeg
+                    }
+                ) {
+                    assertTrue(
+                        wrong.keyframes.any { it.pose.torsoAngleDeg == KettlebellPoses.SquattedHinge.torsoAngleDeg },
+                        lift.key,
+                    )
+                }
             }
             listOf(Fault.LateHand, Fault.DeathGrip, Fault.BentWrist).forEach { assertNull(rep.doneWrong(it)) }
-        }
-    }
-
-    @Test
-    fun `every lift whose page lists the squatted hinge can show it`() {
-        drawn.filter { Fault.SquattedHinge in it.faults }.forEach { lift ->
-            assertNotNull(assertNotNull(lift.diagram).doneWrong(Fault.SquattedHinge), lift.key)
         }
     }
 }

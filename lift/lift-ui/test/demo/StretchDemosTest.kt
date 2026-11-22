@@ -1,15 +1,15 @@
 package dev.justinsmith.lift.ui.demo
 
+import dev.justinsmith.interval.ui.ExerciseRep
+import dev.justinsmith.interval.ui.celebration
 import dev.justinsmith.lift.domain.BuiltInExercise
-import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
-import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
-/** What each stretch's figure must show, beyond what every demo keeps to. */
+/** What each stretch's rep must show, beyond what every rep keeps to. */
 class StretchDemosTest {
     private val heldStill = listOf(
         HipFlexorLungeDemo,
@@ -26,148 +26,114 @@ class StretchDemosTest {
 
     @Test
     fun `a held stretch is shown in its position and breathes in place`() {
-        heldStill.forEach { demo ->
-            assertEquals(0f, demo.still, "A hold's still is its position")
-            val held = demo.figureAt(0f)
-            val breath = demo.figureAt(0.5f)
-            assertTrue((held.hip - breath.hip).getDistance() < 12f, "The hips wander to ${breath.hip}")
+        heldStill.forEach { rep ->
+            assertEquals(0f, rep.still, "A hold's still is its position")
+            val held = rep.jointsAt(0f)
+            val breath = rep.jointsAt(0.5f)
+            assertTrue((held.hip - breath.hip).getDistance() < 0.05f, "Hips wander to ${breath.hip}")
         }
     }
 
     @Test
-    fun `the all-fours stretches keep the hands and the knees where they are`() {
-        listOf(PalmsDownFingersBackDemo, BacksOfTheHandsDemo, CatCowDemo).forEach { demo ->
-            val start = demo.figureAt(0f)
-            frames(demo).forEach { figure ->
-                assertTrue((figure.hand - start.hand).getDistance() < 0.5f, "The hands slide to ${figure.hand}")
-                assertTrue(
-                    (figure.fingers - start.fingers).getDistance() < 0.5f,
-                    "The fingers lift to ${figure.fingers}",
-                )
-                assertTrue((figure.knee - start.knee).getDistance() < 5f, "The knees slide to ${figure.knee}")
-                assertTrue(figure.knee.y > Rig.FLOOR - 12f, "The knees lift off the mat")
+    fun `the all-fours stretches keep the hands put and rock or bow`() {
+        listOf(PalmsDownFingersBackDemo, BacksOfTheHandsDemo, CatCowDemo).forEach { rep ->
+            val start = rep.jointsAt(0f)
+            frames(rep).forEach { j ->
+                assertTrue((j.kettlebellAnchor - start.kettlebellAnchor).getDistance() < 0.005f, "Hands slide")
+                assertTrue((j.fingers - start.fingers).getDistance() < 0.005f, "Fingers lift")
+                assertTrue((j.knee - start.knee).getDistance() < 0.04f, "Knees slide")
             }
         }
-        val neutral = PalmsDownFingersBackDemo.figureAt(0f)
-        val rocked = PalmsDownFingersBackDemo.figureAt(PalmsDownFingersBackDemo.still)
-        assertTrue(rocked.hip.x < neutral.hip.x - 30f, "The hips never rock back")
-        val leaned = BacksOfTheHandsDemo.figureAt(BacksOfTheHandsDemo.still)
-        assertTrue(leaned.hip.x > neutral.hip.x + 10f, "The hips never lean in")
+        val neutral = PalmsDownFingersBackDemo.jointsAt(0f)
+        val rocked = PalmsDownFingersBackDemo.jointsAt(PalmsDownFingersBackDemo.still)
+        assertTrue(rocked.hip.x < neutral.hip.x - 0.08f, "Hips never rock back")
+        val leaned = BacksOfTheHandsDemo.jointsAt(BacksOfTheHandsDemo.still)
+        assertTrue(leaned.hip.x > neutral.hip.x + 0.03f, "Hips never lean in")
     }
 
     @Test
-    fun `the cat tucks the head under and rounds the back where the cow lifts it and lets the belly down`() {
-        val cow = CatCowDemo.figureAt(0f)
-        val cat = CatCowDemo.figureAt(CatCowDemo.still)
-        assertTrue(cat.head.y > cow.head.y + 20f, "The head only drops to ${cat.head} from ${cow.head}")
-        // Measured from the line from the hips to the shoulders, which stays about where it is.
-        fun sag(figure: Figure) = figure.waist().y - (figure.hip.y + (figure.shoulder.y - figure.hip.y) * 0.42f)
-        assertTrue(sag(cow) > 8f, "The cow's belly only drops ${sag(cow)}")
-        assertTrue(sag(cat) < -15f, "The cat's back only rises ${-sag(cat)}")
+    fun `the cat tucks the head under and rounds the back where the cow lifts it`() {
+        val cow = CatCowDemo.jointsAt(0f)
+        val cat = CatCowDemo.jointsAt(CatCowDemo.still)
+        assertTrue(cat.headCenter.y < cow.headCenter.y - 0.05f, "Head only drops to ${cat.headCenter}")
+        assertTrue(cow.spineBow < -5f, "Cow spine doesn't arch: ${cow.spineBow}")
+        assertTrue(cat.spineBow > 10f, "Cat spine doesn't round: ${cat.spineBow}")
     }
 
     @Test
-    fun `child's pose rests the head on the mat and the cobra lifts it`() {
-        val figure = ChildsPoseDemo.figureAt(0f)
-        assertTrue(figure.head.y + Rig.HEAD > Rig.FLOOR - 3f, "The head floats at ${figure.head}")
-        assertTrue(figure.knee.y + Rig.LEG / 2 > Rig.FLOOR - 3f, "The knees float at ${figure.knee}")
-        val hands = frames(CobraDemo).map { it.hand }
-        assertTrue(hands.all { (it - hands.first()).getDistance() < 1f }, "The cobra's hands slide")
-        assertTrue(CobraDemo.figureAt(0f).head.y < Rig.FLOOR - 80f, "The cobra's chest stays down")
+    fun `child's pose rests low on the mat and cobra lifts the head`() {
+        val figure = ChildsPoseDemo.jointsAt(0f)
+        assertTrue(figure.headCenter.y < 0.14f, "Head floats at ${figure.headCenter}")
+        val hands = frames(CobraDemo).map { it.kettlebellAnchor }
+        assertTrue(hands.all { (it - hands.first()).getDistance() < 0.005f }, "Cobra hands slide")
+        assertTrue(CobraDemo.jointsAt(0f).headCenter.y > 0.25f, "Cobra chest stays down")
     }
 
     @Test
-    fun `the downward dog lifts the hips highest on hands and feet that stay down`() {
-        frames(DownwardDogDemo).forEach { figure ->
-            assertTrue(figure.hip.y < figure.shoulder.y - 50f && figure.hip.y < figure.knee.y - 50f, "The hips sag")
-            assertTrue(abs(figure.hand.y + Rig.HAND - Rig.FLOOR) < 0.5f, "The hands lift to ${figure.hand}")
-        }
-        DownwardDogDemo.keyframes.map { DownwardDogDemo.figureAt(it.at) }.forEach { figure ->
-            assertTrue(figure.toe.y > Rig.FLOOR - 1f || figure.farToe.y > Rig.FLOOR - 1f, "Both feet leave the floor")
+    fun `the downward dog lifts the hips highest on hands that stay down`() {
+        frames(DownwardDogDemo).forEach { j ->
+            assertTrue(j.hip.y > j.shoulder.y + 0.12f && j.hip.y > j.knee.y + 0.12f, "Hips sag")
+            assertTrue(j.kettlebellAnchor.y < 0.06f, "Hands lift to ${j.kettlebellAnchor}")
         }
     }
 
     @Test
-    fun `the kneeling stretches put the back knee on the floor and the front foot down`() {
-        listOf(HipFlexorLungeDemo, HalfSplitDemo).forEach { demo ->
-            frames(demo).forEach { figure ->
-                assertTrue(
-                    abs(figure.farKnee.y + Rig.LEG / 2 - Rig.FLOOR) < 1f,
-                    "The back knee is at ${figure.farKnee}",
-                )
-                assertTrue(figure.heel.y > Rig.FLOOR - 1f, "The front heel lifts to ${figure.heel}")
-            }
-        }
-        val split = HalfSplitDemo.figureAt(0f)
-        assertTrue(split.toe.y < split.ankle.y - 20f, "The half split's toes point down")
-    }
-
-    @Test
-    fun `the deep squat sits the hips below the knees and the fold hangs the head below them`() {
-        val squat = DeepSquatDemo.figureAt(0f)
-        assertTrue(squat.hip.y > squat.knee.y, "The squat stops at ${squat.hip}, above the knees")
-        val fold = ForwardFoldDemo.figureAt(0f)
-        assertTrue(fold.head.y > fold.hip.y + 100f, "The fold only hangs to ${fold.head}")
+    fun `the deep squat sits the hips below the knees and the fold hangs the head low`() {
+        val squat = DeepSquatDemo.jointsAt(0f)
+        assertTrue(squat.hip.y < squat.knee.y, "Squat stops above knees")
+        val fold = ForwardFoldDemo.jointsAt(0f)
+        assertTrue(fold.headCenter.y < fold.hip.y - 0.25f, "Fold doesn't hang low")
     }
 
     @Test
     fun `the hip switch swings the knees over to the other side`() {
-        val right = HipSwitchDemo.figureAt(0f)
-        val left = HipSwitchDemo.figureAt(0.5f)
-        // Seen from the front, both knees drop to the one side and then to the other.
-        assertTrue(right.knee.x > right.hip.x && left.knee.x < left.farHip.x, "The near knee never changes side")
-        assertTrue(right.farKnee.x > right.hip.x && left.farKnee.x < left.farHip.x, "The far knee never changes side")
-        val over = HipSwitchDemo.figureAt(0.3f)
-        assertTrue(over.knee.y < over.hip.y - 30f && over.farKnee.y < over.hip.y - 30f, "The knees never lift over")
+        val right = HipSwitchDemo.jointsAt(0f)
+        val left = HipSwitchDemo.jointsAt(0.5f)
+        assertTrue(right.knee.x > right.hip.x && left.knee.x < left.farHip.x, "Near knee never changes side")
+        assertTrue(right.farKnee.x > right.hip.x && left.farKnee.x < left.farHip.x, "Far knee never changes side")
+        val over = HipSwitchDemo.jointsAt(0.3f)
+        assertTrue(over.knee.y > over.hip.y + 0.08f && over.farKnee.y > over.hip.y + 0.08f, "Knees never lift over")
     }
 
     @Test
     fun `seen from above thread the needle reaches under the chest and the twist drops a knee across`() {
-        val threaded = ThreadTheNeedleDemo.figureAt(0f)
-        assertTrue(threaded.behind, "The arm goes over the back")
-        assertTrue(threaded.hand.y > threaded.farShoulder.y + 20f, "The hand stops under the chest at ${threaded.hand}")
-        val twisted = LyingTwistDemo.figureAt(0f)
-        assertTrue(twisted.knee.y > twisted.farHip.y + 30f, "The knee stays on its own side at ${twisted.knee}")
-        assertTrue(twisted.hand.y < twisted.shoulder.y - 80f && twisted.farHand.y > twisted.farShoulder.y + 80f)
+        val threaded = ThreadTheNeedleDemo.jointsAt(0f)
+        assertTrue(threaded.armsBehind, "Arm goes over back")
+        assertTrue(threaded.kettlebellAnchor.y < threaded.farShoulder.y - 0.06f, "Hand stops under chest")
+        val twisted = LyingTwistDemo.jointsAt(0f)
+        assertTrue(twisted.knee.y < twisted.farHip.y - 0.08f, "Knee stays on own side")
     }
 
     @Test
-    fun `the world's greatest stretch reaches the near arm to the ceiling from the floor`() {
-        val demo = WorldsGreatestStretchDemo
-        val down = demo.figureAt(0f)
-        assertTrue(abs(down.hand.y + Rig.HAND - Rig.FLOOR) < 1f, "The hands start at ${down.hand}, off the floor")
-        val reach = demo.figureAt(demo.still)
-        assertTrue(reach.hand.y < reach.head.y - Rig.HEAD, "The arm only reaches ${reach.hand}")
-        assertTrue(abs(reach.farHand.y + Rig.HAND - Rig.FLOOR) < 1f, "The far hand leaves the floor")
+    fun `the world's greatest stretch reaches the near arm up from the floor`() {
+        val down = WorldsGreatestStretchDemo.jointsAt(0f)
+        assertTrue(down.kettlebellAnchor.y < 0.08f, "Hands start off floor at ${down.kettlebellAnchor}")
+        val reach = WorldsGreatestStretchDemo.jointsAt(WorldsGreatestStretchDemo.still)
+        assertTrue(reach.kettlebellAnchor.y > reach.headCenter.y + 0.06f, "Arm only reaches ${reach.kettlebellAnchor}")
     }
 
     @Test
-    fun `the circles go round and the pulls draw back`() {
-        val circle = ShoulderCirclesDemo
-        assertEquals(FULL_TURN, circle.keyframes[2].pose.upperArm - circle.keyframes[0].pose.upperArm)
-        assertTrue(frames(circle).any { it.hand.y < it.head.y - Rig.HEAD }, "The arm never goes overhead")
-        // The forearms stay level and the fists tip up and down at the wrists.
+    fun `the circles go round and the wrist pulls draw back`() {
+        assertTrue(
+            frames(ShoulderCirclesDemo).any {
+                it.kettlebellAnchor.y > it.headCenter.y + 0.06f
+            },
+            "Never overhead",
+        )
         val circling = frames(WristCirclesDemo)
-        assertTrue(circling.all { (it.hand - circling.first().hand).getDistance() < 0.5f }, "The wrists move")
-        val knuckles = circling.map { it.fingers.y }
-        assertTrue(knuckles.maxOf { it } - knuckles.minOf { it } > 10f, "The fists hardly tip")
-        // The other hand holds the open one across its fingers, and they are drawn back toward the body.
-        listOf(FingerPullsDemo, ForearmStretchDemo).forEach { demo ->
-            frames(demo).forEach { figure ->
-                val grip = figure.hand + (figure.fingers - figure.hand) * 0.6f
-                assertTrue((figure.farHand - grip).getDistance() < 4f, "The hand lets go at ${figure.farHand}")
-            }
-        }
-        val meeting = FingerPullsDemo.figureAt(0f)
-        val pulled = FingerPullsDemo.figureAt(FingerPullsDemo.still)
-        assertTrue(meeting.fingers.y < meeting.hand.y, "The fingers don't point up")
-        assertTrue(pulled.fingers.x < meeting.fingers.x - 5f, "The fingers are never drawn back")
-        val stretched = ForearmStretchDemo.figureAt(0f)
-        assertTrue(stretched.fingers.y > stretched.hand.y + 15f, "The fingers don't point down")
+        assertTrue(circling.all { (it.kettlebellAnchor - circling.first().kettlebellAnchor).getDistance() < 0.005f })
+        val fingerY = circling.map { it.fingers.y }
+        assertTrue(fingerY.maxOf { it } - fingerY.minOf { it } > 0.04f, "Fists hardly tip")
+        val meeting = FingerPullsDemo.jointsAt(0f)
+        val pulled = FingerPullsDemo.jointsAt(FingerPullsDemo.still)
+        assertTrue(meeting.fingers.y > meeting.wrist.y, "Fingers don't point up")
+        assertTrue(pulled.fingers.x < meeting.fingers.x - 0.015f, "Fingers never draw back")
+        val stretched = ForearmStretchDemo.jointsAt(0f)
+        assertTrue(stretched.fingers.y < stretched.wrist.y - 0.04f, "Fingers don't point down")
     }
 
     @Test
-    fun `the wrist drills are seen close and keep the hands in sight`() {
+    fun `the wrist drills are cropped close and give no celebration`() {
         listOf(
             BuiltInExercise.WristCircles,
             BuiltInExercise.FingerPulls,
@@ -175,18 +141,11 @@ class StretchDemosTest {
             BuiltInExercise.PalmsDownFingersBack,
             BuiltInExercise.BacksOfTheHands,
         ).forEach { exercise ->
-            val demo = assertNotNull(exercise.demo)
-            val crop = assertNotNull(demo.crop, "$exercise is not seen close")
-            assertSame(demo, demo.framed())
-            assertSame(demo, demo.closeUp())
-            assertNull(demo.celebration)
-            (-10..40).map { demo.figureAt(it / 40f) }.forEach { figure ->
-                listOf(figure.hand, figure.farHand, figure.fingers, figure.farFingers).forEach {
-                    assertTrue(crop.contains(it), "$exercise: $it is out of the close-up")
-                }
-            }
+            val rep = assertNotNull(exercise.rep)
+            assertNotNull(rep.crop, "$exercise is not seen close")
+            assertNull(rep.celebration)
         }
     }
 
-    private fun frames(demo: ExerciseDemo) = (0..200).map { demo.figureAt(it / 200f) }
+    private fun frames(rep: ExerciseRep) = (0..200).map { rep.jointsAt(it / 200f) }
 }

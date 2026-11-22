@@ -5,6 +5,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 
 // The bodyweight lifts. Where the figure has two holds on the world (hands and toes on the floor, hands on a
 // bar and heels on the floor), the poses were solved so both stay put: the push-ups pivot about the toes, the
@@ -42,24 +43,24 @@ private val pushUpMid = plank(lean = 81.7f, foot = 85.4f, upperArm = -59.5f, for
 private val pushUpBottom = plank(lean = 87.2f, foot = 90.9f, upperArm = -87.6f, forearm = 45.8f)
 
 /** The push-up: a straight body from the toes, lowered with the elbows back until the chest nears the floor. */
-val PushUpDemo: ExerciseDemo = pushUp(top = pushUpTop, mid = pushUpMid, bottom = pushUpBottom, hands = floorHands)
+val PushUpDemo: ExerciseRep = pushUp(top = pushUpTop, mid = pushUpMid, bottom = pushUpBottom, hands = floorHands)
 
 /** The incline push-up: the push-up with the hands on a bench, the body steeper. */
-val InclinePushUpDemo: ExerciseDemo = pushUp(
+val InclinePushUpDemo: ExerciseRep = pushUp(
     top = plank(lean = 49.9f, foot = 61.2f, upperArm = -5.5f, forearm = 10.1f),
     mid = plank(lean = 60.4f, foot = 71.7f, upperArm = -71.8f, forearm = 22.4f),
     bottom = plank(lean = 66.7f, foot = 78f, upperArm = -104.9f, forearm = 4.5f),
     hands = Offset(330f, Rig.FLOOR - INCLINE_BENCH - Rig.HAND),
-    props = listOf(Bench(from = 300f, to = 385f, height = INCLINE_BENCH)),
+    props = listOf(bench(from = 300f, to = 385f, height = INCLINE_BENCH)),
     view = Rect(left = 60f, top = 40f, right = 420f, bottom = 380f),
 )
 
 /** The pike push-up: the hips high in an upside-down V, the head lowered toward the floor between the hands. */
-val PikePushUpDemo: ExerciseDemo = run {
-    val legs = 17.1f
-    val top = Pose(shin = legs, thigh = legs, torso = 125f, upperArm = -5f, forearm = -5f, foot = 69f, farFoot = 69f)
-    val bottom = top.copy(torso = 150f).arms(upper = -21.8f, fore = 65.9f)
-    ExerciseDemo(
+val PikePushUpDemo: ExerciseRep = run {
+    val legs = 32f
+    val top = Pose(shin = legs, thigh = legs, torso = 125f, upperArm = -5f, forearm = -5f, foot = 35f, farFoot = 35f)
+    val bottom = top.copy(torso = 144f).arms(upper = -21.8f, fore = 65.9f)
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = top),
             Keyframe(at = 0.1f, pose = top),
@@ -79,13 +80,13 @@ val PikePushUpDemo: ExerciseDemo = run {
 }
 
 /** The mountain climber: from the top of a push-up, each knee driven to the chest in turn. */
-val MountainClimberDemo: ExerciseDemo = run {
+val MountainClimberDemo: ExerciseRep = run {
     val plank = pushUpTop
     val near = plank.copy(torso = HIPS_UP, shin = 31.8f, thigh = -92.7f, foot = 20f)
     val far = plank.copy(torso = HIPS_UP, farShin = 31.8f, farThigh = -92.7f, farFoot = 20f)
     val nearUp = plank.copy(torso = HIPS_UP, shin = FOLDED, thigh = LIFTED, foot = LIFTED_FOOT)
     val farUp = plank.copy(torso = HIPS_UP, farShin = FOLDED, farThigh = LIFTED, farFoot = LIFTED_FOOT)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = plank),
             Keyframe(at = 0.08f, pose = nearUp),
@@ -108,11 +109,11 @@ val MountainClimberDemo: ExerciseDemo = run {
 }
 
 /** The bench dip: the hands on a bench behind, the heels on the floor, lowered by bending the elbows back. */
-val BenchDipDemo: ExerciseDemo = run {
+val BenchDipDemo: ExerciseRep = run {
     val top = Pose(shin = -69.5f, thigh = -69.5f, torso = -8f, upperArm = 0f, forearm = 0f, foot = -80f, farFoot = -80f)
     val bottom = top.copy(shin = -81.6f, thigh = -81.6f, farShin = -81.6f, farThigh = -81.6f)
         .arms(upper = -39.2f, fore = 52.2f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = top),
             Keyframe(at = 0.1f, pose = top),
@@ -132,23 +133,23 @@ val BenchDipDemo: ExerciseDemo = run {
         root = Root.Hand,
         anchor = Offset(140f, Rig.FLOOR - DIP_BENCH - Rig.HAND),
         view = Rect(left = 40f, top = 100f, right = 380f, bottom = 380f),
-        props = listOf(Bench(from = 60f, to = 152f, height = DIP_BENCH)),
+        props = listOf(bench(from = 60f, to = 152f, height = DIP_BENCH)),
     )
 }
 
 /** The pull-up: from a dead hang, pull the chin over the bar, lower all the way. */
-val PullUpDemo: ExerciseDemo = hang()
+val PullUpDemo: ExerciseRep = hang()
 
 /** The chin-up: the pull-up with the palms turned toward you, the same from the side. */
-val ChinUpDemo: ExerciseDemo = hang()
+val ChinUpDemo: ExerciseRep = hang()
 
 /** The inverted row: under a low bar, the body straight from the heels, pull the chest up to it. */
-val InvertedRowDemo: ExerciseDemo = run {
+val InvertedRowDemo: ExerciseRep = run {
     val low = plank(lean = 83.9f, foot = -80f, upperArm = 180f, forearm = 180f)
     val high = plank(lean = 67.6f, foot = -80f, upperArm = 76.3f, forearm = 217.2f)
     val halfway = plank(lean = 76.1f, foot = -80f, upperArm = 125.3f, forearm = 223.8f)
     val bar = Offset(300f, Rig.FLOOR - ROW_BAR)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = low),
             Keyframe(at = 0.1f, pose = low),
@@ -165,15 +166,15 @@ val InvertedRowDemo: ExerciseDemo = run {
         root = Root.Hand,
         anchor = bar,
         view = Rect(left = 20f, top = 120f, right = 380f, bottom = 380f),
-        props = listOf(Rail(bar)),
+        props = listOf(rail(bar)),
     )
 }
 
 /** The air squat: arms forward for balance, sit down below parallel, stand. */
-val AirSquatDemo: ExerciseDemo = run {
+val AirSquatDemo: ExerciseRep = run {
     val stand = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 8f)
     val deep = Pose(shin = 30f, thigh = -105f, torso = 25f, upperArm = 90f, forearm = 90f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = stand),
             Keyframe(at = 0.1f, pose = stand),
@@ -194,7 +195,7 @@ val AirSquatDemo: ExerciseDemo = run {
  * The split squat: a long stance held, the back knee lowered toward the floor and driven back up. The back foot
  * stays where it is, so each step down is solved for it.
  */
-val SplitSquatDemo: ExerciseDemo = run {
+val SplitSquatDemo: ExerciseRep = run {
     fun stance(shin: Float, thigh: Float, farThigh: Float, farShin: Float) = Pose(
         shin = shin,
         thigh = thigh,
@@ -209,7 +210,7 @@ val SplitSquatDemo: ExerciseDemo = run {
     val third = stance(shin = 7f, thigh = -53f, farThigh = 26.5f, farShin = 75.4f)
     val twoThirds = stance(shin = 8f, thigh = -62f, farThigh = 20.4f, farShin = 86.5f)
     val bottom = stance(shin = 10f, thigh = -80f, farThigh = 18.3f, farShin = 106.1f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = top),
             Keyframe(at = 0.1f, pose = top),
@@ -229,19 +230,19 @@ val SplitSquatDemo: ExerciseDemo = run {
 }
 
 /** The reverse lunge: step back, lower the back knee toward the floor, drive through the front foot to stand. */
-val ReverseLungeDemo: ExerciseDemo = run {
+val ReverseLungeDemo: ExerciseRep = run {
     val arms = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 8f)
-    ExerciseDemo(
-        keyframes = RackedLungeDemo.keyframes.map { it.copy(pose = arms.standingAs(it.pose)) },
-        phases = RackedLungeDemo.phases,
+    repOf(
+        keyframes = rackedLungeKeyframes.map { it.copy(pose = arms.standingAs(it.pose)) },
+        phases = rackedLungePhases,
         hold = Hold.Free,
         secondsPerRep = 3f,
-        still = RackedLungeDemo.still,
+        still = RACKED_LUNGE_STILL,
     )
 }
 
 /** The Bulgarian split squat: the back foot laced on a bench behind, down on the front leg and up. */
-val BulgarianSplitSquatDemo: ExerciseDemo = run {
+val BulgarianSplitSquatDemo: ExerciseRep = run {
     val top = Pose(
         shin = 4f,
         thigh = -28f,
@@ -257,13 +258,13 @@ val BulgarianSplitSquatDemo: ExerciseDemo = run {
         top,
         bottom,
         seconds = 3f,
-        props = listOf(Bench(from = 20f, to = 92f, height = 62f)),
+        props = listOf(bench(from = 20f, to = 92f, height = 62f)),
         view = Rect(left = 0f, top = -70f, right = 390f, bottom = 380f),
     )
 }
 
 /** The step-up: one foot on a box, stand up onto it, the other knee rising, then step back down. */
-val StepUpDemo: ExerciseDemo = run {
+val StepUpDemo: ExerciseRep = run {
     val low = Pose(
         shin = 36.6f,
         thigh = -88.4f,
@@ -283,7 +284,7 @@ val StepUpDemo: ExerciseDemo = run {
         farThigh = -70f,
         farFoot = 10f,
     )
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = low),
             Keyframe(at = 0.1f, pose = low),
@@ -296,15 +297,15 @@ val StepUpDemo: ExerciseDemo = run {
         secondsPerRep = 2.8f,
         still = 0.5f,
         anchor = Offset(Rig.ANKLE_X, Rig.FLOOR - STEP),
-        props = listOf(Bench(from = 175f, to = 290f, height = STEP)),
+        props = listOf(bench(from = 175f, to = 290f, height = STEP)),
     )
 }
 
 /** The calf raise: up onto the toes, pause, lower the heels slowly. */
-val CalfRaiseDemo: ExerciseDemo = run {
+val CalfRaiseDemo: ExerciseRep = run {
     val flat = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 8f)
     val up = flat.copy(foot = 40f, farFoot = 40f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = flat),
             Keyframe(at = 0.1f, pose = flat),
@@ -322,20 +323,20 @@ val CalfRaiseDemo: ExerciseDemo = run {
 }
 
 /** The wall sit: the back flat on a wall, the thighs level, held, breathing. */
-val WallSitDemo: ExerciseDemo = breathing(
+val WallSitDemo: ExerciseRep = breathing(
     Pose(shin = 0f, thigh = -90f, torso = 0f, upperArm = 0f, forearm = 8f),
     Pose(shin = 0f, thigh = -90f, torso = -1f, upperArm = 2f, forearm = 10f),
-    props = listOf(Wall(x = 115f)),
+    props = listOf(wall(x = 115f)),
 )
 
 /** The glute bridge: on the back, the feet planted, drive the hips up until knees, hips and shoulders line up. */
-val GluteBridgeDemo: ExerciseDemo = bridge(single = false)
+val GluteBridgeDemo: ExerciseRep = bridge(single = false)
 
 /** The single-leg glute bridge: the bridge on one foot, the other leg held out straight. */
-val SingleLegGluteBridgeDemo: ExerciseDemo = bridge(single = true)
+val SingleLegGluteBridgeDemo: ExerciseRep = bridge(single = true)
 
 /** The forearm plank: a straight body from the toes to the elbows, held, breathing. */
-val PlankDemo: ExerciseDemo = breathing(
+val PlankDemo: ExerciseRep = breathing(
     forearmPlank(lean = 84f),
     forearmPlank(lean = 83f),
     root = Root.Hips,
@@ -343,7 +344,7 @@ val PlankDemo: ExerciseDemo = breathing(
 )
 
 /** The side plank: up on one forearm, the top arm reaching up, the hips lifted high, held. */
-val SidePlankDemo: ExerciseDemo = breathing(
+val SidePlankDemo: ExerciseRep = breathing(
     forearmPlank(lean = 80f).copy(farUpperArm = 180f, farForearm = 180f),
     forearmPlank(lean = 80f).copy(shin = 86f, thigh = 88f, farShin = 86f, farThigh = 88f).copy(
         farUpperArm = 180f,
@@ -354,7 +355,7 @@ val SidePlankDemo: ExerciseDemo = breathing(
 )
 
 /** The hollow hold: on the back, the shoulders and the legs lifted, the arms long overhead, held. */
-val HollowHoldDemo: ExerciseDemo = breathing(
+val HollowHoldDemo: ExerciseRep = breathing(
     supine(torso = -72f, nearLeg = 252f, farLeg = -108f, arms = 250f),
     supine(torso = -76f, nearLeg = 248f, farLeg = -112f, arms = 246f),
     root = Root.Hips,
@@ -363,11 +364,11 @@ val HollowHoldDemo: ExerciseDemo = breathing(
 )
 
 /** The dead bug: on the back, the arms up and the knees over the hips, each arm reaching back with the other leg. */
-val DeadBugDemo: ExerciseDemo = run {
+val DeadBugDemo: ExerciseRep = run {
     val rest = supine(torso = -87f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
     val nearArm = rest.copy(upperArm = 250f, forearm = 250f, farShin = -110f, farThigh = -110f)
     val farArm = rest.copy(farUpperArm = 250f, farForearm = 250f, shin = 250f, thigh = 250f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = rest),
             Keyframe(at = 0.25f, pose = nearArm),
@@ -386,11 +387,11 @@ val DeadBugDemo: ExerciseDemo = run {
 }
 
 /** The kettlebell dead bug: the dead bug with one bell held up over the chest in both hands, only the legs reaching. */
-val KettlebellDeadBugDemo: ExerciseDemo = run {
+val KettlebellDeadBugDemo: ExerciseRep = run {
     val rest = supine(torso = -87f, nearLeg = 0f, farLeg = 0f, arms = 180f).tableTop()
     val farLeg = rest.copy(farShin = -110f, farThigh = -110f)
     val nearLeg = rest.copy(shin = 250f, thigh = 250f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = rest),
             Keyframe(at = 0.25f, pose = farLeg),
@@ -412,10 +413,10 @@ val KettlebellDeadBugDemo: ExerciseDemo = run {
  * The renegade row: a push-up plank with the hands on two bells, the near one rowed to the hip and set down, the
  * far arm and the toes holding the body square.
  */
-val RenegadeRowDemo: ExerciseDemo = run {
+val RenegadeRowDemo: ExerciseRep = run {
     val plank = plank(lean = RENEGADE_LEAN, foot = RENEGADE_FOOT, upperArm = -5.5f, forearm = 10.1f)
     val rowed = plank.copy(upperArm = -70f, forearm = 10f, bell = 10f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = plank),
             Keyframe(at = 0.1f, pose = plank),
@@ -438,11 +439,11 @@ val RenegadeRowDemo: ExerciseDemo = run {
  * The burpee: squat the hands to the floor, jump the feet back to a plank, a push-up, jump them in, stand and
  * reach.
  */
-val BurpeeDemo: ExerciseDemo = run {
+val BurpeeDemo: ExerciseRep = run {
     val stand = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 8f)
     val crouch = Pose(shin = 30f, thigh = -105f, torso = 55f, upperArm = 10f, forearm = 10f)
     val reach = stand.copy(upperArm = 175f, forearm = 178f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = stand),
             Keyframe(at = 0.12f, pose = crouch),
@@ -503,7 +504,7 @@ private fun pushUp(
     hands: Offset,
     props: List<Prop> = emptyList(),
     view: Rect = plankView,
-) = ExerciseDemo(
+) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = top),
         Keyframe(at = 0.1f, pose = top),
@@ -524,11 +525,11 @@ private fun pushUp(
 )
 
 /** Hanging from a bar by the hands: a dead hang, pulled up until the chin is over it, lowered. */
-private fun hang(): ExerciseDemo {
+private fun hang(): ExerciseRep {
     val bar = Offset(215f, -40f)
     val hanging = Pose(shin = 35f, thigh = 0f, torso = 0f, upperArm = 180f, forearm = 180f)
     val top = Pose(shin = 40f, thigh = -15f, torso = -10f, upperArm = 20f, forearm = 175f)
-    return ExerciseDemo(
+    return repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = hanging),
             Keyframe(at = 0.1f, pose = hanging),
@@ -544,7 +545,7 @@ private fun hang(): ExerciseDemo {
         root = Root.Hand,
         anchor = bar,
         view = Rect(left = 40f, top = -100f, right = 360f, bottom = 380f),
-        props = listOf(Rail(bar)),
+        props = listOf(rail(bar)),
     )
 }
 
@@ -555,7 +556,7 @@ private fun upAndDown(
     seconds: Float,
     props: List<Prop> = emptyList(),
     view: Rect = Rig.view,
-) = ExerciseDemo(
+) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = top),
         Keyframe(at = 0.1f, pose = top),
@@ -579,7 +580,7 @@ private fun breathing(
     view: Rect = Rig.view,
     props: List<Prop> = emptyList(),
     anchor: Offset = Offset(Rig.ANKLE_X, Rig.FLOOR),
-) = ExerciseDemo(
+) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = held),
         Keyframe(at = 0.5f, pose = breath),
@@ -599,11 +600,11 @@ private fun breathing(
  * On the back with the feet planted, the hips driven up off the floor and lowered; one leg held out if [single],
  * with [props] round it.
  */
-internal fun bridge(single: Boolean, props: List<Prop> = emptyList()): ExerciseDemo {
+internal fun bridge(single: Boolean, props: List<Prop> = emptyList()): ExerciseRep {
     val down = Pose(shin = -38.3f, thigh = -123f, torso = -87f, upperArm = 90f, forearm = 90f)
     val up = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     fun leg(pose: Pose) = if (single) pose.copy(farShin = pose.thigh, farThigh = pose.thigh) else pose
-    return ExerciseDemo(
+    return repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = leg(down)),
             Keyframe(at = 0.1f, pose = leg(down)),

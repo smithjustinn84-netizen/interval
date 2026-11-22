@@ -21,6 +21,7 @@ import dev.justinsmith.interval.ui.resources.move_moved
 import dev.justinsmith.interval.ui.resources.move_number
 import dev.justinsmith.lift.ui.Demonstration
 import dev.justinsmith.lift.ui.cues
+import dev.justinsmith.lift.ui.demo.repCues
 import org.jetbrains.compose.resources.stringArrayResource
 import org.jetbrains.compose.resources.stringResource
 
@@ -61,9 +62,9 @@ fun MoveDetail(move: Move, number: Int, of: Int, onBack: () -> Unit, modifier: M
         }
         if (move.cue.isNotBlank()) Text(move.cue, style = IntervalTheme.type.body, color = palette.text)
         val exercise = move.builtIn
-        val demo = move.demo
-        if (exercise != null && demo != null) {
-            Demonstration(demo, move.name, stringArrayResource(exercise.cues()))
+        val rep = move.rep
+        if (exercise != null && rep != null) {
+            Demonstration(rep, move.name, stringArrayResource(exercise.cues()), cueOf = exercise.repCues)
         }
         SecondaryButton(stringResource(Res.string.move_back_to_moves), onBack, Modifier.fillMaxWidth())
     }

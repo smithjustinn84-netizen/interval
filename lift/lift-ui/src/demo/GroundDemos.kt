@@ -1,14 +1,9 @@
 package dev.justinsmith.lift.ui.demo
 
-import dev.justinsmith.lift.ui.demo.KettlebellPoses.rack
+import dev.justinsmith.interval.ui.ExerciseRep
 
-/**
- * The racked lunge: the bell in the rack, step back and lower the back knee toward the floor, drive through
- * the front foot to stand. The near foot is the front one and stays put. Its phases are its cues: Rack (0),
- * Step back and lower (1), Drive up (2).
- */
-val RackedLungeDemo: ExerciseDemo = run {
-    val standing = rack.stillHand()
+internal val rackedLungeKeyframes: List<Keyframe> = run {
+    val standing = rackPose.stillHand()
     val stepping = standing.standingAs(
         Pose(
             shin = 4f,
@@ -33,50 +28,52 @@ val RackedLungeDemo: ExerciseDemo = run {
             farFoot = 75f,
         ),
     )
-    ExerciseDemo(
-        keyframes = listOf(
-            Keyframe(at = 0f, pose = standing),
-            Keyframe(at = 0.1f, pose = standing),
-            Keyframe(at = 0.28f, pose = stepping),
-            Keyframe(at = 0.48f, pose = bottom),
-            Keyframe(at = 0.56f, pose = bottom),
-            Keyframe(at = 0.76f, pose = stepping),
-            Keyframe(at = 0.92f, pose = standing),
-            Keyframe(at = 1f, pose = standing),
-        ),
-        phases = listOf(
-            DemoPhase(until = 0.1f, beat = DemoBeat.Set, cue = 0),
-            DemoPhase(until = 0.56f, beat = DemoBeat.Ease, cue = 1),
-            DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
-            DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
-        ),
-        hold = Hold.NearHand,
-        secondsPerRep = 3.4f,
-        still = 0.52f,
+    listOf(
+        Keyframe(at = 0f, pose = standing),
+        Keyframe(at = 0.1f, pose = standing),
+        Keyframe(at = 0.28f, pose = stepping),
+        Keyframe(at = 0.48f, pose = bottom),
+        Keyframe(at = 0.56f, pose = bottom),
+        Keyframe(at = 0.76f, pose = stepping),
+        Keyframe(at = 0.92f, pose = standing),
+        Keyframe(at = 1f, pose = standing),
     )
 }
 
-/**
- * The walking lunge: the racked lunge's stride with the bell hanging at the side, the hips kept over the spot as the
- * floor goes by, as in a carry.
- */
-val WalkingLungeDemo: ExerciseDemo = run {
+internal val rackedLungePhases: List<DemoPhase> = listOf(
+    DemoPhase(until = 0.1f, beat = DemoBeat.Set, cue = 0),
+    DemoPhase(until = 0.56f, beat = DemoBeat.Ease, cue = 1),
+    DemoPhase(until = 0.92f, beat = DemoBeat.Drive, cue = 2),
+    DemoPhase(until = 1f, beat = DemoBeat.Set, cue = 0),
+)
+
+internal const val RACKED_LUNGE_SECONDS = 3.4f
+internal const val RACKED_LUNGE_STILL = 0.52f
+
+/** The racked lunge: bell in the rack, step back and lower the back knee toward the floor, drive up. */
+val RackedLungeDemo: ExerciseRep = repOf(
+    keyframes = rackedLungeKeyframes,
+    phases = rackedLungePhases,
+    hold = Hold.NearHand,
+    secondsPerRep = RACKED_LUNGE_SECONDS,
+    still = RACKED_LUNGE_STILL,
+)
+
+/** The walking lunge: the racked lunge's stride with the bell hanging at the side, hips over the spot. */
+val WalkingLungeDemo: ExerciseRep = run {
     val atSide = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 0f).stillHand()
-    ExerciseDemo(
-        keyframes = RackedLungeDemo.keyframes.map { it.copy(pose = atSide.standingAs(it.pose)) },
-        phases = RackedLungeDemo.phases,
+    repOf(
+        keyframes = rackedLungeKeyframes.map { it.copy(pose = atSide.standingAs(it.pose)) },
+        phases = rackedLungePhases,
         hold = Hold.NearHand,
-        secondsPerRep = RackedLungeDemo.secondsPerRep,
-        still = RackedLungeDemo.still,
+        secondsPerRep = RACKED_LUNGE_SECONDS,
+        still = RACKED_LUNGE_STILL,
         root = Root.Hips,
     )
 }
 
-/**
- * The row: hinged over a flat back with the free hand braced on a bench, pull the elbow back to the hip and
- * lower to a long arm. Its phases are its cues: Brace (0), Pull (1), Lower (2).
- */
-val RowDemo: ExerciseDemo = run {
+/** The row: hinged over a flat back with the free hand braced on a bench, pull the elbow back to the hip. */
+val RowDemo: ExerciseRep = run {
     val braced = Pose(
         shin = 8f,
         thigh = -40f,
@@ -87,7 +84,7 @@ val RowDemo: ExerciseDemo = run {
         farForearm = -4f,
     )
     val pulled = braced.copy(upperArm = -70f, forearm = 10f, bell = 10f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = braced),
             Keyframe(at = 0.1f, pose = braced),
@@ -104,6 +101,6 @@ val RowDemo: ExerciseDemo = run {
         hold = Hold.NearHand,
         secondsPerRep = 2.8f,
         still = 0.45f,
-        props = listOf(Bench(from = 236f, to = 340f, height = 78f)),
+        props = listOf(bench(from = 236f, to = 340f, height = 78f)),
     )
 }

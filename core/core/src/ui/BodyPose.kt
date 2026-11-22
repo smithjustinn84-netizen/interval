@@ -2,21 +2,35 @@ package dev.justinsmith.interval.ui
 
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.geometry.Offset
-import kotlin.math.PI
 import kotlin.math.abs
-import kotlin.math.asin
-import kotlin.math.atan2
-import kotlin.math.cos
-import kotlin.math.hypot
-import kotlin.math.sin
 
 // The figure of an exercise diagram as numbers: how long its parts are, the angles a stance turns its joints to,
 // and where those put each joint. Everything is in shares of the figure's standing height.
 
 /**
+ * Where the figure is seen from: [Side], facing right; [Front], facing the eye, for a lift that goes sideways; or
+ * [Above], lying on a mat and looked down on, for one that goes across the floor.
+ */
+enum class RepFacing { Side, Front, Above }
+
+/**
+ * What stays put at the rep's anchor: [Ankle] the near ankle, for a lift done on the spot; [Toe] the near toe, for
+ * one up on the toes; [Hand] the near hand, for one hung from a bar or propped on a bench; [Hips] the hips across,
+ * over whatever of the figure is lowest resting on the floor, for a walk or a lift done lying down.
+ */
+enum class RepRoot { Ankle, Toe, Hand, Hips }
+
+/**
+ * What the hands hold: [BothHands] one bell between them; [NearHand] one bell in the near hand with the far arm
+ * free; [Pair] a bell in each hand; [Bar] a barbell seen end on as the near plate; [Free] nothing held.
+ */
+enum class RepHold { BothHands, NearHand, Pair, Bar, Free }
+
+/**
  * How long each part of the figure is, as a share of its standing height: the floor is 0 and the top of the head
  * 1. The lengths are fixed, so a pose can only turn the joints between them, never stretch a limb.
  */
+@Suppress("detekt.MagicNumber") // Anatomical proportions in shares of standing height.
 internal object BodyProportions {
     const val ANKLE = 0.04f
     const val SHIN = 0.24f
@@ -29,18 +43,60 @@ internal object BodyProportions {
     const val UPPER_ARM = 0.17f
     const val FOREARM = 0.15f
 
-    /** From the wrist to the middle of the grip. */
+    /** From the wrist to the middle of the grip, and an open hand to the fingertips. */
     const val HAND = 0.045f
+    const val PALM = 0.077f
 
     /** The bell: from the grip to the top of its body, the body's radius, and half the handle's width. */
     const val BELL_HANDLE = 0.052f
     const val BELL_RADIUS = 0.068f
     const val BELL_GRIP = 0.044f
 
+    /** A barbell's plate seen end on: radius (45 cm plate at standing scale), rim and sleeve. */
+    const val PLATE_RADIUS = 0.129f
+    const val PLATE_RIM = 0.023f
+    const val SLEEVE = 0.019f
+
     /** The foot along the floor, behind and ahead of the ankle, and how high its middle is. */
     const val HEEL = 0.035f
     const val TOE = 0.12f
     const val SOLE = 0.02f
+
+    /** Seen from the front: half-widths of hips and shoulders, and feet pointing at the eye. */
+    const val HIP_HALF = 0.039f
+    const val SHOULDER_HALF = 0.087f
+    const val FRONT_FOOT = 0.039f
+    const val FRONT_HEEL = 0.013f
+
+    /** Visual depth offset of far limbs in profile, so twin legs and arms read apart. */
+    const val FAR_LEG_OFFSET = 0.029f
+    const val FAR_ARM_OFFSET = 0.023f
+
+    /** Resting half-thicknesses used when grounding a lying or kneeling figure onto the floor. */
+    const val PELVIS_RADIUS = 0.045f
+    const val WAIST_RADIUS = 0.040f
+    const val CHEST_RADIUS = 0.053f
+    const val SHOULDERS_RADIUS = 0.039f
+    const val LEG_HALF = 0.023f
+    const val ARM_HALF = 0.018f
+    const val FIST_RADIUS = 0.024f
+    const val FINGERS_RADIUS = 0.011f
+
+    /** Mat dimensions in standing-height shares. */
+    const val MAT = 0.016f
+    const val MAT_REACH = 0.058f
+    const val MAT_LENGTH = 0.418f
+    const val MAT_MARGIN = 0.084f
+    const val MAT_CORNER = 0.045f
+    const val MAT_EDGE = 0.0065f
+
+    /** Prop dimensions in standing-height shares. */
+    const val BENCH_TOP = 0.026f
+    const val BENCH_LEG = 0.016f
+    const val WALL = 0.019f
+    const val RAIL = 0.035f
+    const val BAND = 0.013f
+    const val POST = 0.019f
 
     /** The room a joint's limbs take round it, when the figure is fitted to its canvas. */
     const val JOINT_REACH = 0.06f
@@ -51,9 +107,9 @@ internal object BodyProportions {
  * the figure faces standing, and y is up from the floor. [kettlebellAnchor] is the middle of the grip, where the
  * handle sits in the hand; [kettlebellCenter] the middle of the bell's body, which is what its path follows.
  *
- * The far side's leg hangs from the same [hip] and its arm from the same [shoulder]: [farKnee] and [farAnkle],
- * its foot from [farHeel] to [farToe], and [farElbow] and [farWrist], its fist. Where the pose says nothing of
- * them they are the near side's own, behind it.
+ * The far side's leg hangs from [farHip] and its arm from [farShoulder]: [farKnee] and [farAnkle], its foot from
+ * [farHeel] to [farToe], and [farElbow], [farWrist], [farBellAnchor] and [farBellCenter]. Seen from the side,
+ * [farHip] and [farShoulder] are [hip] and [shoulder].
  */
 @Immutable
 data class BodyJoints(
@@ -72,18 +128,53 @@ data class BodyJoints(
     val farToe: Offset = Offset(BodyProportions.TOE, BodyProportions.SOLE),
     val farElbow: Offset = elbow,
     val farWrist: Offset = wrist,
+    val heel: Offset = Offset(-BodyProportions.HEEL, BodyProportions.SOLE),
+    val toe: Offset = Offset(BodyProportions.TOE, BodyProportions.SOLE),
+    val farHip: Offset = hip,
+    val farShoulder: Offset = shoulder,
+    val farBellAnchor: Offset = kettlebellAnchor,
+    val farBellCenter: Offset = kettlebellCenter,
+    val fingers: Offset = kettlebellAnchor,
+    val farFingers: Offset = farBellAnchor,
+    val front: Boolean = false,
+    val armsBehind: Boolean = false,
+    val spineBow: Float = 0f,
 ) {
+    /** The middle of the hips, and of the shoulders: the two ends of the spine, whichever way it is seen. */
+    val hips: Offset get() = (hip + farHip) / 2f
+
+    val neck: Offset get() = (shoulder + farShoulder) / 2f
+
     /** Each point the figure reaches to with the room it takes there, for fitting it to a canvas. */
-    internal inline fun forEachReach(reach: (point: Offset, room: Float) -> Unit) {
+    internal inline fun forEachReach(hold: RepHold = RepHold.NearHand, reach: (point: Offset, room: Float) -> Unit) {
+        reach(heel, BodyProportions.SOLE)
+        reach(toe, BodyProportions.SOLE)
+        reach(ankle, BodyProportions.SOLE)
         reach(knee, BodyProportions.JOINT_REACH)
         reach(hip, BodyProportions.JOINT_REACH)
+        reach(farHip, BodyProportions.JOINT_REACH)
         reach(shoulder, BodyProportions.JOINT_REACH)
+        reach(farShoulder, BodyProportions.JOINT_REACH)
         reach(elbow, BodyProportions.JOINT_REACH)
         reach(kettlebellAnchor, BodyProportions.JOINT_REACH)
         reach(headCenter, BodyProportions.HEAD)
-        reach(kettlebellCenter, BodyProportions.BELL_RADIUS)
+        reach(fingers, BodyProportions.FINGERS_RADIUS)
+        reach(farFingers, BodyProportions.FINGERS_RADIUS)
+        when (hold) {
+            RepHold.Bar -> reach(kettlebellAnchor, BodyProportions.PLATE_RADIUS)
+
+            RepHold.Free -> Unit
+
+            RepHold.Pair -> {
+                reach(kettlebellCenter, BodyProportions.BELL_RADIUS)
+                reach(farBellCenter, BodyProportions.BELL_RADIUS)
+            }
+
+            RepHold.BothHands, RepHold.NearHand -> reach(kettlebellCenter, BodyProportions.BELL_RADIUS)
+        }
         reach(farKnee, BodyProportions.JOINT_REACH)
         reach(farAnkle, BodyProportions.SOLE)
+        reach(farHeel, BodyProportions.SOLE)
         reach(farToe, BodyProportions.SOLE)
         reach(farElbow, BodyProportions.JOINT_REACH)
         reach(farWrist, BodyProportions.SOLE)
@@ -91,27 +182,20 @@ data class BodyJoints(
 }
 
 /**
- * A lifter's stance at one moment of a rep, seen from the side and facing right, as the angles of its joints in
- * degrees. Each is the joint's own bend, so standing tall with the arm hanging is every angle at zero:
+ * A lifter's stance at one moment of a rep, as the angles of its joints in degrees. Seen from the side and facing
+ * right, each is the joint's own bend, so standing tall with the arm hanging is every angle at zero:
  *
  * - [torsoAngleDeg]: how far the trunk leans forward from upright. Lying on its back it is a quarter turn back.
- * - [hipAngleDeg]: how far the hip is folded, the thigh from the trunk's line. A hinge is a big fold under a
- *   trunk that leans, which sends the hips back.
+ * - [hipAngleDeg]: how far the hip is folded, the thigh from the trunk's line.
  * - [kneeAngleDeg]: how far the knee is bent, the shin from the thigh's line.
- * - [shoulderAngleDeg]: how far the arm is raised ahead, from hanging along the trunk to overhead in line with it
- *   (a half turn).
+ * - [shoulderAngleDeg]: how far the arm is raised ahead, from hanging along the trunk to overhead (180).
  * - [elbowAngleDeg]: how far the elbow is bent, the forearm folding up toward the shoulder.
- * - [bellAngleDeg]: how far the bell is turned in the hand from the forearm's line: none while it is swung, most of
- *   a half turn back once it rests on the forearm in the rack or locked out.
+ * - [bellAngleDeg]: how far the bell is turned in the hand from the forearm's line.
  *
- * Those are the near side's: the leg whose foot is planted, which the figure is worked up from, and the arm with
- * the bell. The far side's ([farHipAngleDeg], [farKneeAngleDeg], [farShoulderAngleDeg], [farElbowAngleDeg]) are
- * the same joints of the other leg and arm, and the same angles unless a stance says otherwise: both legs under a
- * swing, a knee down behind for a half-kneeling press, a hand propping a get-up. Its foot goes where its leg puts
- * it, on the floor or off it.
- *
- * The joints are worked out from these by [joints], along limbs of fixed length. So two poses are blended by their
- * angles ([blend]), never by where their joints are, and a limb keeps its length all the way between them.
+ * The far side's angles default to the near side's unless specified. Optional parameters cover double bells
+ * ([farBellAngleDeg]), pitched feet ([footPitchDeg], [farFootPitchDeg]), spinal flexion/extension ([spineBowDeg]),
+ * open palms and wrists ([palmOpen], [wristDeg]), and front/above view foreshortening and rotation ([armReach],
+ * [legsScale], [farLegsScale], [trunkScale], [armsBehind], [bodyTurnDeg]).
  */
 @Immutable
 data class BodyPose(
@@ -125,19 +209,41 @@ data class BodyPose(
     val farKneeAngleDeg: Float = kneeAngleDeg,
     val farShoulderAngleDeg: Float = shoulderAngleDeg,
     val farElbowAngleDeg: Float = elbowAngleDeg,
+    val farBellAngleDeg: Float = bellAngleDeg,
+    val footPitchDeg: Float = 0f,
+    val farFootPitchDeg: Float = 0f,
+    val spineBowDeg: Float = 0f,
+    val wristDeg: Float = 0f,
+    val farWristDeg: Float = wristDeg,
+    val palmOpen: Float = 0f,
+    val farPalmOpen: Float = palmOpen,
+    val armReach: Float = 1f,
+    val legsScale: Float = 1f,
+    val farLegsScale: Float = legsScale,
+    val trunkScale: Float = 1f,
+    val armsBehind: Float = 0f,
+    val bodyTurnDeg: Float = 0f,
 ) {
     /** Whether the far leg or arm is anywhere but behind the near one, so there is something of it to draw. */
     val showsFarSide: Boolean
         get() = farHipAngleDeg != hipAngleDeg || farKneeAngleDeg != kneeAngleDeg ||
-            farShoulderAngleDeg != shoulderAngleDeg || farElbowAngleDeg != elbowAngleDeg
+            farShoulderAngleDeg != shoulderAngleDeg || farElbowAngleDeg != elbowAngleDeg ||
+            farBellAngleDeg != bellAngleDeg || farFootPitchDeg != footPitchDeg ||
+            farPalmOpen != palmOpen || farWristDeg != wristDeg || farLegsScale != legsScale
 
     /**
-     * Where the joints are: up the near leg from its ankle, which never leaves its place, out along the near arm
-     * to the bell, then down the far leg from the hip and along the far arm from the shoulder.
+     * Where the joints are for this stance under [root], [anchor], [facing], and [hold].
      */
-    fun joints(): BodyJoints {
+    fun joints(
+        root: RepRoot = RepRoot.Ankle,
+        anchor: Offset = Offset.Zero,
+        facing: RepFacing = RepFacing.Side,
+        hold: RepHold = RepHold.NearHand,
+        bellSwingOverride: Float = Float.NaN,
+        farBellSwingOverride: Float = Float.NaN,
+    ): BodyJoints {
         val frame = BodyFrame()
-        frame.place(angles())
+        frame.place(angles(), root, anchor, facing, hold, bellSwingOverride, farBellSwingOverride)
         return frame.joints()
     }
 
@@ -159,25 +265,72 @@ data class BodyPose(
         farKneeAngleDeg,
         farShoulderAngleDeg,
         farElbowAngleDeg,
+        farBellAngleDeg,
+        footPitchDeg,
+        farFootPitchDeg,
+        spineBowDeg,
+        wristDeg,
+        farWristDeg,
+        palmOpen,
+        farPalmOpen,
+        armReach,
+        legsScale,
+        farLegsScale,
+        trunkScale,
+        armsBehind,
+        bodyTurnDeg,
     )
 
-    internal companion object {
-        const val JOINTS = 10
+    companion object {
+        internal const val JOINTS = 24
 
-        /** Each joint's place among [angles]. */
-        const val HIP = 0
-        const val KNEE = 1
-        const val TORSO = 2
-        const val SHOULDER = 3
-        const val ELBOW = 4
-        const val BELL = 5
-        const val FAR_HIP = 6
-        const val FAR_KNEE = 7
-        const val FAR_SHOULDER = 8
-        const val FAR_ELBOW = 9
+        /** Each joint's place among angles. */
+        internal const val HIP = 0
+        internal const val KNEE = 1
+        internal const val TORSO = 2
+        internal const val SHOULDER = 3
+        internal const val ELBOW = 4
+        internal const val BELL = 5
+        internal const val FAR_HIP = 6
+        internal const val FAR_KNEE = 7
+        internal const val FAR_SHOULDER = 8
+        internal const val FAR_ELBOW = 9
+        internal const val FAR_BELL = 10
+        internal const val FOOT_PITCH = 11
+        internal const val FAR_FOOT_PITCH = 12
+        internal const val SPINE_BOW = 13
+        internal const val WRIST = 14
+        internal const val FAR_WRIST = 15
+        internal const val PALM_OPEN = 16
+        internal const val FAR_PALM_OPEN = 17
+        internal const val ARM_REACH = 18
+        internal const val LEGS_SCALE = 19
+        internal const val FAR_LEGS_SCALE = 20
+        internal const val TRUNK_SCALE = 21
+        internal const val ARMS_BEHIND = 22
+        internal const val BODY_TURN = 23
+
+        /** Index of the first non-angular scalar channel (scales & toggles). */
+        private const val FIRST_SCALAR = PALM_OPEN
+        private const val SAME_EPSILON = 0.01f
+
+        /** Whether [a] and [b] represent the same stance, allowing whole 360° turns on angular joints. */
+        fun sameStance(a: BodyPose, b: BodyPose): Boolean {
+            val fa = a.angles()
+            val fb = b.angles()
+            return (0..<JOINTS).all { i ->
+                val diff = abs(fa[i] - fb[i])
+                if (i >= FIRST_SCALAR) {
+                    diff < SAME_EPSILON
+                } else {
+                    val mod = diff % Angles.FULL_TURN
+                    mod < SAME_EPSILON || Angles.FULL_TURN - mod < SAME_EPSILON
+                }
+            }
+        }
 
         /** The pose whose joints are [angles], in the order [BodyPose.angles] gives them. */
-        fun of(angles: FloatArray): BodyPose = BodyPose(
+        internal fun of(angles: FloatArray): BodyPose = BodyPose(
             hipAngleDeg = angles[HIP],
             kneeAngleDeg = angles[KNEE],
             torsoAngleDeg = angles[TORSO],
@@ -188,140 +341,20 @@ data class BodyPose(
             farKneeAngleDeg = angles[FAR_KNEE],
             farShoulderAngleDeg = angles[FAR_SHOULDER],
             farElbowAngleDeg = angles[FAR_ELBOW],
+            farBellAngleDeg = angles[FAR_BELL],
+            footPitchDeg = angles[FOOT_PITCH],
+            farFootPitchDeg = angles[FAR_FOOT_PITCH],
+            spineBowDeg = angles[SPINE_BOW],
+            wristDeg = angles[WRIST],
+            farWristDeg = angles[FAR_WRIST],
+            palmOpen = angles[PALM_OPEN],
+            farPalmOpen = angles[FAR_PALM_OPEN],
+            armReach = angles[ARM_REACH],
+            legsScale = angles[LEGS_SCALE],
+            farLegsScale = angles[FAR_LEGS_SCALE],
+            trunkScale = angles[TRUNK_SCALE],
+            armsBehind = angles[ARMS_BEHIND],
+            bodyTurnDeg = angles[BODY_TURN],
         )
     }
 }
-
-/**
- * Where a stance's joints are, worked out in place: [place] moves each to where a stance's angles put it and makes
- * nothing new, so a diagram that runs keeps one of these and places it again every frame. [joints] is the same as
- * a value, for whatever keeps it.
- */
-internal class BodyFrame {
-    val ankle = Offset(0f, BodyProportions.ANKLE)
-    var knee = Offset.Zero
-        private set
-    var hip = Offset.Zero
-        private set
-    var shoulder = Offset.Zero
-        private set
-    var elbow = Offset.Zero
-        private set
-    var wrist = Offset.Zero
-        private set
-    var headCenter = Offset.Zero
-        private set
-    var kettlebellAnchor = Offset.Zero
-        private set
-    var kettlebellCenter = Offset.Zero
-        private set
-    var farKnee = Offset.Zero
-        private set
-    var farAnkle = Offset.Zero
-        private set
-    var farHeel = Offset.Zero
-        private set
-    var farToe = Offset.Zero
-        private set
-    var farElbow = Offset.Zero
-        private set
-    var farWrist = Offset.Zero
-        private set
-
-    /** Whether the far leg or arm is anywhere but behind the near one ([BodyPose.showsFarSide]). */
-    var showsFarSide = false
-        private set
-
-    /**
-     * Puts the joints where [angles] have them ([BodyPose.angles]' order): up the near leg from its ankle, which
-     * never leaves its place, out along the near arm to the bell, then down the far leg from the hip and along
-     * the far arm from the shoulder.
-     */
-    fun place(angles: FloatArray) {
-        val torso = angles[BodyPose.TORSO]
-        val thighLean = torso - angles[BodyPose.HIP]
-        val armSwing = angles[BodyPose.SHOULDER] - torso
-        val forearmSwing = armSwing + angles[BodyPose.ELBOW]
-        knee = ankle + rising(thighLean + angles[BodyPose.KNEE]) * BodyProportions.SHIN
-        hip = knee + rising(thighLean) * BodyProportions.THIGH
-        shoulder = hip + rising(torso) * BodyProportions.TORSO
-        elbow = shoulder + hanging(armSwing) * BodyProportions.UPPER_ARM
-        wrist = elbow + hanging(forearmSwing) * BodyProportions.FOREARM
-        headCenter = shoulder + rising(torso) * BodyProportions.NECK
-        kettlebellAnchor = wrist + hanging(forearmSwing) * BodyProportions.HAND
-        kettlebellCenter = kettlebellAnchor +
-            hanging(forearmSwing + angles[BodyPose.BELL]) * (BodyProportions.BELL_HANDLE + BodyProportions.BELL_RADIUS)
-        val farThighSwing = angles[BodyPose.FAR_HIP] - torso
-        val farShin = hanging(farThighSwing - angles[BodyPose.FAR_KNEE])
-        farKnee = hip + hanging(farThighSwing) * BodyProportions.THIGH
-        farAnkle = farKnee + farShin * BodyProportions.SHIN
-        val farFoot = footFrom(farAnkle, farShin)
-        farHeel = farAnkle - farFoot * BodyProportions.HEEL + farFoot.sole() * SOLE_DROP
-        farToe = farAnkle + farFoot * BodyProportions.TOE + farFoot.sole() * SOLE_DROP
-        val farArmSwing = angles[BodyPose.FAR_SHOULDER] - torso
-        farElbow = shoulder + hanging(farArmSwing) * BodyProportions.UPPER_ARM
-        farWrist = farElbow + hanging(farArmSwing + angles[BodyPose.FAR_ELBOW]) * BodyProportions.FOREARM
-        showsFarSide = angles[BodyPose.FAR_HIP] != angles[BodyPose.HIP] ||
-            angles[BodyPose.FAR_KNEE] != angles[BodyPose.KNEE] ||
-            angles[BodyPose.FAR_SHOULDER] != angles[BodyPose.SHOULDER] ||
-            angles[BodyPose.FAR_ELBOW] != angles[BodyPose.ELBOW]
-    }
-
-    /** The joints where they now are, as a value. */
-    fun joints() = BodyJoints(
-        ankle = ankle,
-        knee = knee,
-        hip = hip,
-        shoulder = shoulder,
-        elbow = elbow,
-        wrist = wrist,
-        headCenter = headCenter,
-        kettlebellAnchor = kettlebellAnchor,
-        kettlebellCenter = kettlebellCenter,
-        farKnee = farKnee,
-        farAnkle = farAnkle,
-        farHeel = farHeel,
-        farToe = farToe,
-        farElbow = farElbow,
-        farWrist = farWrist,
-    )
-}
-
-/** How far under the ankle the middle of the sole is. */
-private const val SOLE_DROP = BodyProportions.ANKLE - BodyProportions.SOLE
-
-/** How near the floor a foot's toes may come before it is laid along it. */
-private const val FLOOR_SLACK = 0.001f
-
-/** The way a part standing on its joint points, leaning [leanDeg] forward from straight up. */
-private fun rising(leanDeg: Float): Offset = Angles.radians(leanDeg).let { Offset(sin(it), cos(it)) }
-
-/** The way a part hanging from its joint points, swung [swingDeg] forward from straight down. */
-private fun hanging(swingDeg: Float): Offset = Angles.radians(swingDeg).let { Offset(sin(it), -cos(it)) }
-
-/** The side of a foot pointing this way that its sole is on. */
-private fun Offset.sole(): Offset = Offset(y, -x)
-
-/**
- * The way the foot at [ankle] points, under a shin that comes down to it along [shin]: square to the shin, as it
- * stands, unless that would put its toes through the floor. Then it points as far that way as the floor lets it:
- * a knee down behind lays the foot along the floor, its sole up.
- */
-private fun footFrom(ankle: Offset, shin: Offset): Offset {
-    val square = Offset(-shin.y, shin.x)
-    val toes = ankle.y + square.y * BodyProportions.TOE + square.sole().y * SOLE_DROP
-    if (toes >= BodyProportions.SOLE - FLOOR_SLACK) return square
-    // The toes' height is the ankle's plus a sine of the foot's angle: the two angles that put them on the floor,
-    // and of those the one nearer to square.
-    val reach = hypot(BodyProportions.TOE, SOLE_DROP)
-    val tilt = atan2(SOLE_DROP, BodyProportions.TOE)
-    val down = asin(((BodyProportions.SOLE - ankle.y) / reach).coerceIn(-1f, 1f))
-    val squareAngle = atan2(square.y, square.x)
-    val near = down + tilt
-    val far = PI.toFloat() - down + tilt
-    val angle = if (turn(near - squareAngle) <= turn(far - squareAngle)) near else far
-    return Offset(cos(angle), sin(angle))
-}
-
-/** How far apart two directions [radians] apart are, the short way round. */
-private fun turn(radians: Float): Float = abs(atan2(sin(radians), cos(radians)))

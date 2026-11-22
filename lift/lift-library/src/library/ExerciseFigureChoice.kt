@@ -41,8 +41,8 @@ import dev.justinsmith.lift.library.resources.exercise_figure
 import dev.justinsmith.lift.library.resources.exercise_figure_change
 import dev.justinsmith.lift.library.resources.exercise_figure_hint
 import dev.justinsmith.lift.library.resources.exercise_figure_none
-import dev.justinsmith.lift.ui.demo.FigureThumb
-import dev.justinsmith.lift.ui.demo.demo
+import dev.justinsmith.lift.ui.demo.ExerciseThumb
+import dev.justinsmith.lift.ui.demo.rep
 import dev.justinsmith.lift.ui.exerciseName
 import org.jetbrains.compose.resources.stringResource
 
@@ -79,7 +79,7 @@ internal fun FigureChoice(
                         color = palette.textDim,
                     )
                 }
-                chosen?.demo?.let { FigureThumb(it) }
+                chosen?.rep?.let { ExerciseThumb(it) }
                 QuietTextButton(stringResource(Res.string.exercise_figure_change), { open = !open }, expanded = open)
             }
             AnimatedVisibility(open, enter = enterExpanding(), exit = exitShrinking()) {
@@ -116,7 +116,7 @@ private fun FigureRow(figure: BuiltInExercise?, selected: Boolean, onPick: () ->
         horizontalArrangement = Arrangement.spacedBy(Spacing.space12),
     ) {
         Text(figureName(figure), style = IntervalTheme.type.label, color = palette.text, modifier = Modifier.weight(1f))
-        figure?.demo?.let { FigureThumb(it) }
+        figure?.rep?.let { ExerciseThumb(it) }
         // Room for the check on every row, so the stills line up.
         Box(Modifier.size(Sizes.icon)) {
             if (selected) Icon(IntervalIcons.Check, contentDescription = null, tint = palette.accent)

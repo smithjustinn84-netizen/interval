@@ -69,6 +69,7 @@
     <string name="rep_phase_roll_down">Roll down</string>
     <string name="rep_phase_lower_bell">Lower the bell</string>
     <string name="rep_track_cd">Where in the bell's path</string>
+    <string name="rep_track_rep_cd">Where in the rep</string>
     <string name="rep_step">Step</string>
     <string name="rep_cue_hike_pass">Hinge back, shins vertical</string>
     <string name="rep_cue_hip_snap">Snap the hips, glutes and abs tight</string>
@@ -100,8 +101,12 @@
     <string name="rep_cue_lower_bell">Both hands bring the bell to the chest</string>
     <string name="rep_pause_cd">Pause the bell path</string>
     <string name="rep_play_cd">Play the bell path</string>
+    <string name="rep_pause_rep_cd">Pause</string>
+    <string name="rep_play_rep_cd">Play</string>
     <string name="rep_speed_full">1×</string>
     <string name="rep_speed_slow">0.5×</string>
     <string name="rep_speed_full_cd">Full speed</string>
     <string name="rep_speed_slow_cd">Half speed</string>
+    <string name="rep_raising_bell">Raising the bell</string>
+    <string name="rep_bowing">Taking a bow</string>
 </resources>

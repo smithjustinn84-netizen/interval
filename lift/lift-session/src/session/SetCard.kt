@@ -1,18 +1,11 @@
 package dev.justinsmith.lift.session
 
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -20,10 +13,8 @@ import dev.justinsmith.interval.ui.BesideOrUnder
 import dev.justinsmith.interval.ui.IntervalTheme
 import dev.justinsmith.interval.ui.LocalWeightUnit
 import dev.justinsmith.interval.ui.QuietTextButton
-import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.longestWordWidth
-import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.Exercise
 import dev.justinsmith.lift.domain.Load
 import dev.justinsmith.lift.domain.SetLog
@@ -37,9 +28,8 @@ import dev.justinsmith.lift.session.resources.next_how_to_cd
 import dev.justinsmith.lift.session.resources.next_last_time
 import dev.justinsmith.lift.session.resources.next_watch_for
 import dev.justinsmith.lift.ui.LoadStepper
-import dev.justinsmith.lift.ui.demo.ExerciseFigure
-import dev.justinsmith.lift.ui.demo.demo
-import dev.justinsmith.lift.ui.demo.rememberDemoPlayer
+import dev.justinsmith.lift.ui.demo.ExerciseBand
+import dev.justinsmith.lift.ui.demo.rep
 import dev.justinsmith.lift.ui.liftName
 import dev.justinsmith.lift.ui.loadLine
 import dev.justinsmith.lift.ui.platesLine
@@ -50,9 +40,8 @@ import org.jetbrains.compose.resources.stringResource
 // The pieces a card about one set shares: Up next on a program day, and Next set in a free session.
 
 /**
- * A figure doing the lift, a band across the top of its card: it sets up and then does the lift over and over,
- * as on the exercise's page, which a tap on it opens ([onHowTo], by the exercise's key; the page has Pause). Only a
- * built-in has one: for an exercise of the user's own the card starts with its words. As a record lands
+ * A figure doing the lift, a band across the top of its card: it runs the same kinematic animation as the exercise's
+ * page in clean compact form, which a tap on it opens ([onHowTo], by the exercise's key). As a record lands
  * ([celebrating], the set's id while its moment is on) the figure raises what it holds, or takes a bow.
  */
 @Composable
@@ -62,29 +51,14 @@ internal fun NextFigure(
     onHowTo: (String) -> Unit,
     celebrating: Long? = null,
 ) {
-    val demo = exercise.demo ?: return
-    val player = rememberDemoPlayer(demo)
-    val interaction = remember { MutableInteractionSource() }
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(Sizes.figureBand)
-            .surfaceButton(
-                interaction,
-                shape = RectangleShape,
-                fill = IntervalTheme.palette.surfaceVariant,
-                onClick = { onHowTo(exercise.key) },
-                onClickLabel = stringResource(Res.string.next_how_to),
-            ),
-    ) {
-        ExerciseFigure(
-            demo,
-            player,
-            contentDescription = stringResource(Res.string.next_figure_cd, liftName(exercise, double)),
-            modifier = Modifier.fillMaxSize().padding(Spacing.space8),
-            celebrating = celebrating,
-        )
-    }
+    val rep = exercise.rep ?: return
+    ExerciseBand(
+        rep = rep,
+        contentDescription = stringResource(Res.string.next_figure_cd, liftName(exercise, double)),
+        onClick = { onHowTo(exercise.key) },
+        onClickLabel = stringResource(Res.string.next_how_to),
+        celebrating = celebrating,
+    )
 }
 
 /**

@@ -1,10 +1,12 @@
 package dev.justinsmith.lift.ui.demo
 
+import dev.justinsmith.interval.ui.ExerciseRep
+import dev.justinsmith.interval.ui.RepBench
 import kotlin.math.abs
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-/** What each barbell lift's figure must show, beyond what every demo keeps to. */
+/** What each barbell lift's rep must show, beyond what every rep keeps to. */
 class BarDemosTest {
     private val fromTheFloor = listOf(
         BarbellDeadliftDemo,
@@ -18,11 +20,11 @@ class BarDemosTest {
     )
 
     @Test
-    fun `a lift from the floor starts with the plate on it over the middle of the foot`() {
-        fromTheFloor.forEach { demo ->
-            val start = demo.figureAt(0f)
-            assertTrue(abs(start.hand.y + Rig.PLATE - Rig.FLOOR) < 4f, "The plate starts at ${start.hand}")
-            assertTrue(abs(start.hand.x - (start.ankle.x + Rig.FOOT / 2)) < 15f, "The bar isn't over the foot")
+    fun `a lift from the floor starts with the plate near the floor over the foot`() {
+        fromTheFloor.forEach { rep ->
+            val start = rep.jointsAt(0f)
+            assertTrue(start.kettlebellAnchor.y in 0.08f..0.24f, "The plate starts at ${start.kettlebellAnchor}")
+            assertTrue(abs(start.kettlebellAnchor.x - start.ankle.x) < 0.14f, "The bar isn't over the foot")
         }
     }
 
@@ -39,12 +41,15 @@ class BarDemosTest {
             BarbellJerkDemo,
             BarbellCleanAndJerkDemo,
         )
-        overhead.forEach { demo ->
-            assertTrue(frames(demo).any { it.hand.y < it.head.y - Rig.HEAD }, "The bar never goes overhead")
+        overhead.forEach { rep ->
+            assertTrue(frames(rep).any { it.kettlebellAnchor.y > it.headCenter.y + 0.06f }, "Bar never goes overhead")
         }
-        listOf(BarbellCleanDemo, BarbellPowerCleanDemo, BarbellHangCleanDemo, BarbellFrontSquatDemo).forEach { demo ->
+        listOf(BarbellCleanDemo, BarbellPowerCleanDemo, BarbellHangCleanDemo, BarbellFrontSquatDemo).forEach { rep ->
             assertTrue(
-                frames(demo).any { abs(it.hand.y - it.shoulder.y) < 20f && it.hand.x > it.shoulder.x },
+                frames(rep).any {
+                    abs(it.kettlebellAnchor.y - it.shoulder.y) < 0.08f &&
+                        it.kettlebellAnchor.x > it.shoulder.x
+                },
                 "The bar never sits on the front of the shoulders",
             )
         }
@@ -60,49 +65,53 @@ class BarDemosTest {
             BarbellSnatchBalanceDemo,
             BarbellBackSquatDemo,
             BarbellFrontSquatDemo,
-        ).forEach { demo -> assertTrue(frames(demo).any { it.hip.y > it.knee.y }, "The squat stops high") }
-        listOf(BarbellPowerCleanDemo, BarbellPowerSnatchDemo).forEach { demo ->
-            assertTrue(frames(demo).none { it.hip.y > it.knee.y }, "A power catch goes below parallel")
+        ).forEach { rep -> assertTrue(frames(rep).any { it.hip.y < it.knee.y }, "The squat stops high") }
+        listOf(BarbellPowerCleanDemo, BarbellPowerSnatchDemo).forEach { rep ->
+            assertTrue(frames(rep).none { it.hip.y < it.knee.y }, "A power catch goes below parallel")
         }
     }
 
     @Test
     fun `the back squat keeps the bar on the upper back`() {
-        frames(BarbellBackSquatDemo).forEach { figure ->
-            assertTrue((figure.hand - figure.shoulder).getDistance() < 25f, "The bar slips to ${figure.hand}")
+        frames(BarbellBackSquatDemo).forEach { j ->
+            assertTrue(
+                (j.kettlebellAnchor - j.shoulder).getDistance() < 0.12f,
+                "The bar slips to ${j.kettlebellAnchor}",
+            )
         }
     }
 
     @Test
     fun `the split jerk splits the feet and brings them back together`() {
         val split = frames(BarbellJerkDemo).maxOf { it.ankle.x - it.farAnkle.x }
-        assertTrue(split > 80f, "The feet only split $split")
-        val tall = BarbellJerkDemo.figureAt(0.7f)
-        assertTrue(abs(tall.ankle.x - tall.farAnkle.x) < 2f, "The feet stay split")
+        assertTrue(split > 0.25f, "The feet only split $split")
+        val tall = BarbellJerkDemo.jointsAt(0.7f)
+        assertTrue(abs(tall.ankle.x - tall.farAnkle.x) < 0.02f, "The feet stay split")
     }
 
     @Test
     fun `the bench press lowers the bar to the chest and presses it over the shoulders`() {
-        val demo = BarbellBenchPressDemo
-        val top = demo.figureAt(0f)
-        assertTrue(top.hand.y < top.shoulder.y - 90f, "The bar starts at ${top.hand}")
-        val chest = demo.figureAt(0.48f)
+        val rep = BarbellBenchPressDemo
+        val top = rep.jointsAt(0f)
+        assertTrue(top.kettlebellAnchor.y > top.shoulder.y + 0.28f, "The bar starts at ${top.kettlebellAnchor}")
+        val chest = rep.jointsAt(0.48f)
         assertTrue(
-            chest.hand.y < chest.shoulder.y && chest.hand.y > chest.shoulder.y - 35f,
-            "The bar stops at ${chest.hand}",
+            chest.kettlebellAnchor.y > chest.shoulder.y && chest.kettlebellAnchor.y < chest.shoulder.y + 0.16f,
+            "The bar stops at ${chest.kettlebellAnchor}",
         )
-        frames(demo).forEach {
-            assertTrue(it.hip.y < Rig.FLOOR - (demo.props.single() as Bench).height, "The hips sink into the bench")
+        val benchHeight = (rep.props.single() as RepBench).height
+        frames(rep).forEach {
+            assertTrue(it.hip.y >= benchHeight - 0.04f, "The hips sink into the bench at ${it.hip.y}")
         }
     }
 
     @Test
     fun `the row and the Romanian deadlift stay hinged`() {
-        frames(BarbellRowDemo).forEach { assertTrue(it.shoulder.y > it.hip.y - 50f, "The row stands up") }
-        val bottom = BarbellRomanianDeadliftDemo.figureAt(BarbellRomanianDeadliftDemo.still)
-        assertTrue(bottom.hand.y > bottom.knee.y, "The bar stops above the knees")
-        assertTrue(bottom.hip.x < bottom.ankle.x - 30f, "The hips never go back")
+        frames(BarbellRowDemo).forEach { assertTrue(it.shoulder.y < it.hip.y + 0.18f, "The row stands up") }
+        val bottom = BarbellRomanianDeadliftDemo.jointsAt(BarbellRomanianDeadliftDemo.still)
+        assertTrue(bottom.kettlebellAnchor.y < bottom.knee.y + 0.04f, "The bar stops above the knees")
+        assertTrue(bottom.hip.x < bottom.ankle.x - 0.08f, "The hips never go back")
     }
 
-    private fun frames(demo: ExerciseDemo) = (0..200).map { demo.figureAt(it / 200f) }
+    private fun frames(rep: ExerciseRep) = (0..200).map { rep.jointsAt(it / 200f) }
 }

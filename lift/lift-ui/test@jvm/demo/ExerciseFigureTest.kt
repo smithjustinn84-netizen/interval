@@ -17,7 +17,13 @@ import androidx.compose.ui.test.captureToImage
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
+import dev.justinsmith.interval.ui.Celebration
+import dev.justinsmith.interval.ui.DemoDisplayMode
+import dev.justinsmith.interval.ui.ExerciseDemoCanvas
+import dev.justinsmith.interval.ui.KettlebellReps
 import dev.justinsmith.interval.ui.Motion
+import dev.justinsmith.interval.ui.RepPlayer
+import dev.justinsmith.interval.ui.rememberRepPlayer
 import dev.justinsmith.interval.ui.runUiTest
 import dev.justinsmith.interval.ui.setThemedContent
 import kotlin.test.Test
@@ -27,35 +33,42 @@ import kotlin.test.assertTrue
 
 class ExerciseFigureTest {
     @Test
-    fun `a moving figure is described for a screen reader`() = runUiTest {
+    fun `a compact session band is described for a screen reader`() = runUiTest {
         setThemedContent {
-            ExerciseFigure(
-                TwoHandSwingDemo,
-                rememberDemoPlayer(TwoHandSwingDemo),
+            ExerciseBand(
+                KettlebellReps.Swing,
                 contentDescription = "Two-hand swing",
-                modifier = Modifier.size(200.dp),
+                onClick = {},
+                onClickLabel = "How to",
             )
         }
         onNodeWithContentDescription("Two-hand swing").assertIsDisplayed()
     }
 
     @Test
-    fun `a figure draws one bell or two or leaning on a bench or a band at any moment`() = runUiTest {
-        val demos = listOf(
-            GetUpDemo,
-            ArmorBuildingComplexDemo,
+    fun `the unified canvas draws bells bars benches bands front and above views at any moment`() = runUiTest {
+        val reps = listOf(
+            KettlebellReps.GetUp,
+            ArmorBuildingComplexRep,
             RowDemo,
             HaloDemo,
-            SnatchDemo,
+            KettlebellReps.Snatch,
             FarmersWalkDemo,
             BandChestPressDemo,
             BandClamshellDemo,
+            BarbellBackSquatDemo,
+            HipEscapeDemo,
         )
         setThemedContent {
             Column {
-                demos.forEach { demo ->
-                    listOf(0f, 0.3f, 0.6f).forEach { at ->
-                        ExerciseFigure(demo, { at }, contentDescription = null, modifier = Modifier.size(60.dp))
+                reps.forEach { rep ->
+                    listOf(DemoDisplayMode.Detail, DemoDisplayMode.Compact, DemoDisplayMode.Thumb).forEach { mode ->
+                        ExerciseDemoCanvas(
+                            rep,
+                            Modifier.size(60.dp),
+                            progress = 0.3f,
+                            mode = mode,
+                        )
                     }
                 }
             }
@@ -64,36 +77,36 @@ class ExerciseFigureTest {
     }
 
     @Test
-    fun `a figure given a record raises the bell with its rep held and then goes on`() = runUiTest {
+    fun `a compact canvas given a record raises the bell then resumes`() = runUiTest {
         var record by mutableStateOf<Long?>(null)
-        lateinit var player: DemoPlayer
         setThemedContent {
-            player = rememberDemoPlayer(TwoHandSwingDemo)
-            ExerciseFigure(TwoHandSwingDemo, player, "Two-hand swing", Modifier.size(200.dp), celebrating = record)
+            ExerciseDemoCanvas(
+                KettlebellReps.Swing,
+                Modifier.size(200.dp),
+                contentDescription = "Two-hand swing",
+                mode = DemoDisplayMode.Compact,
+                celebrating = record,
+            )
         }
         mainClock.autoAdvance = false
-        assertTrue(player.playing)
         onNode(celebrating("Raising the bell")).assertDoesNotExist()
         record = 1L
         settle()
         onNode(celebrating("Raising the bell")).assertExists()
-        assertFalse(player.playing)
         mainClock.advanceTimeBy(Celebration.MILLIS.toLong())
         settle()
         onNode(celebrating("Raising the bell")).assertDoesNotExist()
-        assertTrue(player.playing)
     }
 
     @Test
-    fun `a figure with nothing in hand takes a bow and one appearing on the record joins in`() = runUiTest {
-        // Held before the figure appears: left to run, the clock would play the whole gesture out as it settles.
+    fun `an unweighted standing rep takes a bow and one appearing on a record joins in`() = runUiTest {
         mainClock.autoAdvance = false
         setThemedContent {
-            ExerciseFigure(
+            ExerciseDemoCanvas(
                 AirSquatDemo,
-                rememberDemoPlayer(AirSquatDemo),
-                "Air squat",
                 Modifier.size(200.dp),
+                contentDescription = "Air squat",
+                mode = DemoDisplayMode.Compact,
                 celebrating = 3L,
             )
         }
@@ -103,26 +116,34 @@ class ExerciseFigureTest {
     }
 
     @Test
-    fun `a figure not on its feet lets a record pass`() = runUiTest {
-        lateinit var player: DemoPlayer
+    fun `a rep not on its feet lets a record pass`() = runUiTest {
         mainClock.autoAdvance = false
         setThemedContent {
-            player = rememberDemoPlayer(PushUpDemo)
-            ExerciseFigure(PushUpDemo, player, "Push-up", Modifier.size(200.dp), celebrating = 3L)
+            ExerciseDemoCanvas(
+                PushUpDemo,
+                Modifier.size(200.dp),
+                contentDescription = "Push-up",
+                mode = DemoDisplayMode.Compact,
+                celebrating = 3L,
+            )
         }
         settle()
         onNode(celebrating("Taking a bow")).assertDoesNotExist()
-        assertTrue(player.playing)
     }
 
     @Test
-    fun `a figure shown a place moves there over a moment rather than jumping`() = runUiTest {
-        lateinit var player: DemoPlayer
+    fun `a player shown a place glides there smoothly rather than jumping`() = runUiTest {
+        lateinit var player: RepPlayer
         setThemedContent {
-            player = rememberDemoPlayer(GobletSquatDemo)
-            ExerciseFigure(GobletSquatDemo, player, "Goblet squat", Modifier.size(200.dp))
+            player = rememberRepPlayer(KettlebellReps.GobletSquat)
+            ExerciseDemoCanvas(
+                KettlebellReps.GobletSquat,
+                Modifier.size(200.dp),
+                progress = player.heldAt,
+                position = player.position,
+            )
         }
-        player.seek(0.2f)
+        player.hold(0.2f)
         waitForIdle()
         mainClock.autoAdvance = false
         player.show(0.6f)
@@ -137,6 +158,5 @@ class ExerciseFigureTest {
 
     private fun celebrating(words: String) = SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, words)
 
-    /** A few frames, for a change of key to reach the figure's effect and its first frame to draw. */
     private fun ComposeUiTest.settle() = repeat(3) { mainClock.advanceTimeByFrame() }
 }

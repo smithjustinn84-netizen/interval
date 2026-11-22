@@ -96,6 +96,6 @@ private fun MoveRow(number: Int, move: Move, onOpen: (() -> Unit)?, modifier: Mo
             }
             Text(move.cue, style = IntervalTheme.type.meta, color = palette.textDim)
         }
-        move.demo?.let { MoveThumb(it) }
+        move.rep?.let { MoveThumb(it) }
     }
 }

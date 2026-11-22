@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.computedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -26,173 +26,201 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Constraints
 import dev.justinsmith.interval.platform.prefersReducedMotion
 import dev.justinsmith.interval.ui.Corners
+import dev.justinsmith.interval.ui.ExerciseDemoColors
+import dev.justinsmith.interval.ui.ExerciseDiagram
+import dev.justinsmith.interval.ui.ExerciseRep
 import dev.justinsmith.interval.ui.IntervalTheme
+import dev.justinsmith.interval.ui.KettlebellReps
 import dev.justinsmith.interval.ui.ListCard
 import dev.justinsmith.interval.ui.PreviewFormFactors
+import dev.justinsmith.interval.ui.RepPhase
+import dev.justinsmith.interval.ui.RepPlayer
 import dev.justinsmith.interval.ui.RowDivider
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
+import dev.justinsmith.interval.ui.rememberRepPlayer
+import dev.justinsmith.interval.ui.showingRepPlayer
 import dev.justinsmith.interval.ui.surfaceButton
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Fault
 import dev.justinsmith.lift.domain.faults
-import dev.justinsmith.lift.ui.demo.DemoPhase
-import dev.justinsmith.lift.ui.demo.DemoPlayer
-import dev.justinsmith.lift.ui.demo.DemoTimeline
-import dev.justinsmith.lift.ui.demo.ExerciseDemo
-import dev.justinsmith.lift.ui.demo.ExerciseFigure
-import dev.justinsmith.lift.ui.demo.FigureColors
-import dev.justinsmith.lift.ui.demo.TwoHandSwingDemo
 import dev.justinsmith.lift.ui.demo.doneWrong
-import dev.justinsmith.lift.ui.demo.rememberDemoPlayer
-import dev.justinsmith.lift.ui.demo.showingPlayer
+import dev.justinsmith.lift.ui.demo.repCues
 import dev.justinsmith.lift.ui.resources.Res
 import dev.justinsmith.lift.ui.resources.demo
 import dev.justinsmith.lift.ui.resources.demo_cue_jump
 import dev.justinsmith.lift.ui.resources.demo_done_wrong_figure
 import dev.justinsmith.lift.ui.resources.demo_each_rep
+import dev.justinsmith.lift.ui.resources.demo_path
+import dev.justinsmith.lift.ui.resources.demo_path_done_wrong
 import dev.justinsmith.lift.ui.resources.demo_set_up
 import dev.justinsmith.lift.ui.resources.demo_set_up_jump
-import dev.justinsmith.lift.ui.resources.demo_timeline
 import org.jetbrains.compose.resources.stringResource
 
 /**
- * A figure doing the exercise over and over, its rep laid out on a timeline under it and its [cues] under that,
- * each lit while the figure does what it says: all in one card. Dragging along the timeline stops the figure
- * there, and tapping a cue takes it to where the cue starts; Step takes it on to the next. Pause and Play sit in its
- * corner, since moving content that runs on is something a user must be able to stop, and Slow beside them halves
- * its speed; with reduced motion it stands still and offers neither, though it still moves where it is dragged or
- * stepped. Under the cues, the [faults] the lift is prone to, each by the words that put it right: one the figure can
- * show is tapped to have it done wrong, marked so, and tapped again to have it done right. An exercise's page
- * shows it, and a flow's move that is one of Lift's exercises.
+ * The unified exercise demonstration card used across Exercise Detail and Mobility MoveDetail: [rep] drawn on
+ * [ExerciseDiagram] with full detail telemetry (plumb line & dashed bell trajectory when applicable), phase badge
+ * and coaching cue for named-phase lifts, Step / speed / Pause controls, and a scrubbable `PhaseTrack`.
+ *
+ * Under the drawing (or beside it when width reaches [LiftSizes.pathBesideNotes]), the exercise's written [cues]
+ * light up in sync and jump the rep when tapped, followed by any [faults] under "Watch for" with an interactive
+ * "Done wrong" toggle where drawable.
  */
 @Composable
 fun Demonstration(
-    demo: ExerciseDemo,
+    rep: ExerciseRep,
     name: String,
     cues: List<String>,
     modifier: Modifier = Modifier,
+    cueOf: Map<RepPhase, Int> = emptyMap(),
     faults: List<Fault> = emptyList(),
 ) {
-    // Shown alone, the figure takes all the card's height its rep needs, not the room every standing lift shares.
-    FramedDemonstration(remember(demo) { demo.framed() }, name, cues, faults, modifier)
+    DemonstrationCard(rep, name, cues, cueOf, faults, modifier)
 }
 
 @Composable
-private fun FramedDemonstration(
-    demo: ExerciseDemo,
+private fun DemonstrationCard(
+    rep: ExerciseRep,
     name: String,
     cues: List<String>,
+    cueOf: Map<RepPhase, Int>,
     faults: List<Fault>,
     modifier: Modifier = Modifier,
     showing: Fault? = null,
+    progress: Float? = null,
 ) {
-    val player = rememberDemoPlayer(demo)
-    val colors = FigureColors.theme()
-    // Read as the phase changes, not every frame the figure moves.
-    val phase by remember(demo, player) { computedStateOf { demo.phaseAt(player.progress) } }
+    val player = rememberRepPlayer(rep)
+    val colors = ExerciseDemoColors.theme()
     val still = prefersReducedMotion()
-    // The fault shown, by its place among the lift's; -1 for none. The one player runs either figure.
-    var wrongAt by rememberSaveable(demo) { mutableIntStateOf(faults.indexOf(showing)) }
+    var wrongAt by rememberSaveable(rep) { mutableIntStateOf(faults.indexOf(showing)) }
     val wrong = faults.getOrNull(wrongAt)
-    val drawn = remember(demo, wrong) { wrong?.let(demo::doneWrong) ?: demo }
-    // The timeline and the cues follow the player too, so it runs while any of the card shows, not the figure alone.
-    ListCard(modifier.showingPlayer(player), fill = IntervalTheme.palette.surfaceVariant) {
-        Box(Modifier.fillMaxWidth()) {
-            ExerciseFigure(
-                drawn,
-                player,
-                contentDescription = stringResource(
-                    if (wrong == null) Res.string.demo else Res.string.demo_done_wrong_figure,
-                    name,
-                ),
-                modifier = Modifier.fillMaxWidth().height(Sizes.figurePage).padding(Spacing.space8),
-                colors = colors,
-                tracksView = false,
-            )
-            if (wrong != null) DoneWrongMark(Modifier.align(Alignment.BottomStart).padding(Spacing.space12))
-            DemoControls(demo, player, still, Modifier.align(Alignment.TopEnd))
-        }
-        DemoTimeline(
-            demo,
-            player,
-            label = stringResource(Res.string.demo_timeline),
-            modifier = Modifier.padding(horizontal = Spacing.space16),
-            colors = colors,
+    val drawn = remember(rep, wrong) { wrong?.let(rep::doneWrong) ?: rep }
+    val showable = remember(rep, faults) { faults.map { rep.doneWrong(it) != null } }
+    val descriptionRes = when {
+        rep.showsTrajectory && wrong != null -> Res.string.demo_path_done_wrong
+        rep.showsTrajectory -> Res.string.demo_path
+        wrong != null -> Res.string.demo_done_wrong_figure
+        else -> Res.string.demo
+    }
+    ListCard(modifier.showingRepPlayer(player), fill = IntervalTheme.palette.surfaceVariant) {
+        PathBesideNotes(
+            path = {
+                Box {
+                    ExerciseDiagram(
+                        drawn,
+                        Modifier
+                            .fillMaxWidth()
+                            .height(Sizes.figurePage + Sizes.iconButton * 2)
+                            .padding(horizontal = Spacing.space12, vertical = Spacing.space4),
+                        contentDescription = stringResource(descriptionRes, name),
+                        progress = progress,
+                        controls = true,
+                        player = player,
+                        colors = colors,
+                        tracksView = false,
+                    )
+                    if (wrong != null) {
+                        DoneWrongMark(
+                            Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = Spacing.space12, bottom = Sizes.iconButton + Spacing.space8),
+                        )
+                    }
+                }
+            },
+            notes = {
+                Column {
+                    DemonstrationCueRows(rep, player, cues, cueOf, colors, still)
+                    FaultRows(faults, showable, wrongAt, onToggle = { wrongAt = if (wrongAt == it) -1 else it })
+                }
+            },
         )
-        CueRows(demo, player, cues, phase, colors.of(phase.beat), still)
-        val showable = remember(demo, faults) { faults.map { demo.doneWrong(it) != null } }
-        FaultRows(faults, showable, wrongAt, onToggle = { wrongAt = if (wrongAt == it) -1 else it })
+    }
+}
+
+@Composable
+private fun DemonstrationCueRows(
+    rep: ExerciseRep,
+    player: RepPlayer,
+    cues: List<String>,
+    cueOf: Map<RepPhase, Int>,
+    colors: ExerciseDemoColors,
+    still: Boolean,
+) {
+    val current = player.phase?.let(cueOf::get) ?: player.cueIndex
+    val lit = colors.of(player.beat)
+    val setUp = rep.setUp?.cue?.takeIf { it in cues.indices }
+
+    @Composable
+    fun Cue(i: Int) {
+        val jumpTo = when {
+            i == setUp && still -> ({ player.hold(SET_UP_STILL) })
+
+            i == setUp -> player::replaySetUp
+
+            else -> (
+                rep.phases.firstOrNull { cueOf[it.phase] == i }?.start ?: rep.startOf(i)
+                )?.let { start -> { player.hold(start) } }
+        }
+        CueRow(
+            cues[i],
+            current = i == current,
+            lit = lit,
+            onShow = jumpTo,
+            showLabel = stringResource(if (i == setUp) Res.string.demo_set_up_jump else Res.string.demo_cue_jump),
+        )
+    }
+
+    if (setUp == null) {
+        cues.indices.forEach { i ->
+            if (i > 0) RowDivider()
+            Cue(i)
+        }
+    } else {
+        CueGroupLabel(stringResource(Res.string.demo_set_up))
+        Cue(setUp)
+        CueGroupLabel(stringResource(Res.string.demo_each_rep))
+        cues.indices.filter { it != setUp }.forEachIndexed { n, i ->
+            if (n > 0) RowDivider()
+            Cue(i)
+        }
     }
 }
 
 /**
- * The [cues] under a figure, each lit in [lit] while [phase] is its, and tapped to show its part: grouped as the
- * set-up then each rep when the demo sets up first.
+ * The [path] over its [notes] with a hairline between, or beside them where there is room for both
+ * ([LiftSizes.pathBesideNotes]), each half the width.
  */
 @Composable
-private fun CueRows(
-    demo: ExerciseDemo,
-    player: DemoPlayer,
-    cues: List<String>,
-    phase: DemoPhase,
-    lit: Color,
-    still: Boolean,
-) {
-    val setUp = demo.setUp?.cue?.takeIf { it in cues.indices }
-
-    @Composable
-    fun cue(i: Int) = CueRow(
-        cues[i],
-        current = i == phase.cue,
-        lit = lit,
-        onShow = when {
-            i == setUp && still -> { -> player.seek(SET_UP_STILL) }
-            i == setUp -> player::replaySetUp
-            else -> demo.startOf(i)?.let { start -> { player.show(start) } }
-        },
-        showLabel = stringResource(
-            if (i == setUp) Res.string.demo_set_up_jump else Res.string.demo_cue_jump,
-        ),
-    )
-    if (setUp == null) {
-        cues.indices.forEach { i ->
-            RowDivider()
-            cue(i)
-        }
-    } else {
-        CueGroupLabel(stringResource(Res.string.demo_set_up))
-        cue(setUp)
-        CueGroupLabel(stringResource(Res.string.demo_each_rep))
-        cues.indices.filter { it != setUp }.forEachIndexed { n, i ->
-            if (n > 0) RowDivider()
-            cue(i)
+private fun PathBesideNotes(path: @Composable () -> Unit, notes: @Composable () -> Unit) {
+    Layout(contents = listOf(path, { RowDivider() }, notes)) { (paths, dividers, rest), constraints ->
+        val width = constraints.maxWidth
+        val beside = constraints.hasBoundedWidth && width >= LiftSizes.pathBesideNotes.roundToPx()
+        val each = Constraints.fixedWidth(if (beside) width / 2 else width)
+        val drawing = paths.first().measure(each)
+        val divider = dividers.first().measure(each)
+        val others = rest.first().measure(each)
+        val between = if (beside || others.height == 0) 0 else divider.height
+        val height = if (beside) maxOf(drawing.height, others.height) else drawing.height + between + others.height
+        layout(width, height) {
+            drawing.placeRelative(0, 0)
+            if (beside) {
+                others.placeRelative(drawing.width, 0)
+            } else {
+                if (between > 0) divider.placeRelative(0, drawing.height)
+                others.placeRelative(0, drawing.height + between)
+            }
         }
     }
 }
 
-/** The card showing a swing squatted, its fault lit under the cues. */
-@PreviewFormFactors
-@Composable
-private fun DemonstrationDoneWrongPreview() {
-    IntervalTheme {
-        Box(Modifier.padding(Spacing.space16)) {
-            FramedDemonstration(
-                TwoHandSwingDemo.framed(),
-                "Two-hand swing",
-                listOf("Hike it high", "Snap the hips", "Let it float"),
-                BuiltInExercise.TwoHandSwing.faults,
-                showing = Fault.SquattedHinge,
-            )
-        }
-    }
-}
-
-/** What the cues under it are in a figure's card: the set-up, or each rep. */
+/** What the cues under a demonstration are grouped under: the set-up, each rep, or Watch for. */
 @Composable
 internal fun CueGroupLabel(text: String) {
     Text(
@@ -204,8 +232,8 @@ internal fun CueGroupLabel(text: String) {
 }
 
 /**
- * A cue under a figure: a bar beside it in [lit] while it is [current], dim otherwise; tapping it ([showLabel])
- * moves the figure to where the cue starts, through [onShow], when the figure has a stretch for it.
+ * A written cue under a demonstration: a bar beside it in [lit] while [current], dim otherwise; tapping it
+ * jumps the rep to its stretch via [onShow].
  */
 @Composable
 internal fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> Unit)?, showLabel: String) {
@@ -242,3 +270,37 @@ internal fun CueRow(line: String, current: Boolean, lit: Color, onShow: (() -> U
 
 /** With reduced motion a picked set-up shows still, halfway through it. */
 private const val SET_UP_STILL = -0.5f
+
+@PreviewFormFactors
+@Composable
+private fun DemonstrationPreview() {
+    IntervalTheme {
+        Box(Modifier.padding(Spacing.space16)) {
+            DemonstrationCard(
+                KettlebellReps.Swing,
+                "Two-hand swing",
+                listOf("Hike it high", "Snap the hips", "Let it float"),
+                BuiltInExercise.TwoHandSwing.repCues,
+                BuiltInExercise.TwoHandSwing.faults,
+            )
+        }
+    }
+}
+
+@PreviewFormFactors
+@Composable
+private fun DemonstrationDoneWrongPreview() {
+    IntervalTheme {
+        Box(Modifier.padding(Spacing.space16)) {
+            DemonstrationCard(
+                KettlebellReps.Swing,
+                "Two-hand swing",
+                listOf("Hike it high", "Snap the hips", "Let it float"),
+                BuiltInExercise.TwoHandSwing.repCues,
+                BuiltInExercise.TwoHandSwing.faults,
+                showing = Fault.SquattedHinge,
+                progress = 0f,
+            )
+        }
+    }
+}

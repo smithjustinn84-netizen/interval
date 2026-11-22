@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.Density
+import dev.justinsmith.interval.ui.Celebration
 import dev.justinsmith.interval.ui.Motion
 import dev.justinsmith.interval.ui.RecordingHaptics
 import dev.justinsmith.interval.ui.WithHaptics
@@ -32,7 +33,6 @@ import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Measure
 import dev.justinsmith.lift.domain.RestState
 import dev.justinsmith.lift.domain.SetLog
-import dev.justinsmith.lift.ui.demo.Celebration
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

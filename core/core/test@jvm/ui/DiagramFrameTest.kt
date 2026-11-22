@@ -19,7 +19,7 @@ class DiagramFrameTest {
         repeat(frames) { index ->
             val at = index % ROUND / ROUND.toFloat()
             rep.anglesAt(at, angles)
-            frame.place(angles)
+            frame.place(angles, rep.root, rep.anchor, rep.facing, rep.hold)
             if (rep.phaseAt(at) != null && frame.showsFarSide) reach += frame.farToe.x
             reach += frame.kettlebellCenter.x
         }
@@ -28,8 +28,15 @@ class DiagramFrameTest {
 
     @Test
     fun `a frame of a running diagram makes nothing`() {
-        // A swing, a get-up (its far side out, a hand on the floor) and a knee down, whose foot is laid along it.
-        listOf(KettlebellReps.Swing, KettlebellReps.GetUp, KettlebellReps.HalfKneelingPress).forEach { rep ->
+        val frontRep = KettlebellReps.Swing.copy(facing = RepFacing.Front, root = RepRoot.Hips)
+        val aboveRep = KettlebellReps.Swing.copy(facing = RepFacing.Above, root = RepRoot.Hips, hold = RepHold.Free)
+        listOf(
+            KettlebellReps.Swing,
+            KettlebellReps.GetUp,
+            KettlebellReps.HalfKneelingPress,
+            frontRep,
+            aboveRep,
+        ).forEach { rep ->
             val angles = FloatArray(BodyPose.JOINTS)
             val frame = BodyFrame()
             run(rep, angles, frame, FRAMES)

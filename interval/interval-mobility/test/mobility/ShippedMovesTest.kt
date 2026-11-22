@@ -3,7 +3,7 @@ package dev.justinsmith.interval.mobility
 import dev.justinsmith.interval.timer.builtInFlows
 import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.Exercise
-import dev.justinsmith.lift.ui.demo.demo
+import dev.justinsmith.lift.ui.demo.rep
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
@@ -18,7 +18,7 @@ class ShippedMovesTest {
         moves.forEach { move ->
             val key = assertNotNull(move.exercise, "${move.name} names no exercise")
             val exercise = assertNotNull(Exercise.parse(key) as? BuiltInExercise, key)
-            assertNotNull(exercise.demo, key)
+            assertNotNull(exercise.rep, key)
             assertEquals(move.sided, exercise.perSide, "${move.name} is sided as ${exercise.key} is not")
         }
     }
@@ -26,6 +26,6 @@ class ShippedMovesTest {
     @Test
     fun `every move the library offers has a figure`() {
         assertTrue(libraryMoves.isNotEmpty())
-        libraryMoves.forEach { assertNotNull(it.demo, it.key) }
+        libraryMoves.forEach { assertNotNull(it.rep, it.key) }
     }
 }

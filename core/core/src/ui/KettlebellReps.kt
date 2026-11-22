@@ -229,13 +229,50 @@ object KettlebellReps {
     val Swing = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Hinge),
-            through(KettlebellPoses.Drive, weight = 0.17f, RepPhase.HipSnap),
-            to(KettlebellPoses.Floating, weight = 0.25f, RepPhase.Float),
-            through(KettlebellPoses.Drive, weight = 0.345f, RepPhase.Backswing),
-            to(KettlebellPoses.Hinge, weight = 0.235f, RepPhase.HikePass),
+            through(KettlebellPoses.Drive, weight = 0.17f, RepPhase.HipSnap, RepBeat.Drive),
+            to(KettlebellPoses.Floating, weight = 0.25f, RepPhase.Float, RepBeat.Ease),
+            through(KettlebellPoses.Drive, weight = 0.345f, RepPhase.Backswing, RepBeat.Ease),
+            to(KettlebellPoses.Hinge, weight = 0.235f, RepPhase.HikePass, RepBeat.Set),
         ),
         seconds = 1.8f,
         stillAt = 2,
+        hold = RepHold.BothHands,
+        showsTrail = true,
+    )
+
+    /** A one-hand swing: the swing's hinge and float with the bell in the near hand and the far arm free. */
+    val OneHandSwing = ExerciseRep(
+        keyframes = listOf(
+            from(KettlebellPoses.Hinge.freeFarArm(shoulder = -10f, elbow = 10f)),
+            through(
+                KettlebellPoses.Drive.freeFarArm(shoulder = -6f, elbow = 8f),
+                weight = 0.17f,
+                RepPhase.HipSnap,
+                RepBeat.Drive,
+            ),
+            to(
+                KettlebellPoses.Floating.freeFarArm(shoulder = -16f, elbow = 12f),
+                weight = 0.25f,
+                RepPhase.Float,
+                RepBeat.Ease,
+            ),
+            through(
+                KettlebellPoses.Drive.freeFarArm(shoulder = -6f, elbow = 8f),
+                weight = 0.345f,
+                RepPhase.Backswing,
+                RepBeat.Ease,
+            ),
+            to(
+                KettlebellPoses.Hinge.freeFarArm(shoulder = -10f, elbow = 10f),
+                weight = 0.235f,
+                RepPhase.HikePass,
+                RepBeat.Set,
+            ),
+        ),
+        seconds = 1.8f,
+        stillAt = 2,
+        hold = RepHold.NearHand,
+        showsTrail = true,
     )
 
     /**
@@ -245,14 +282,16 @@ object KettlebellReps {
     val Clean = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Hinge),
-            through(KettlebellPoses.Pull, weight = 0.18f, RepPhase.Pull),
-            to(KettlebellPoses.Rack, weight = 0.14f, RepPhase.Rack),
-            to(KettlebellPoses.Rack, weight = 0.26f, RepPhase.Rack),
-            through(KettlebellPoses.Pull, weight = 0.18f, RepPhase.Drop),
-            to(KettlebellPoses.Hinge, weight = 0.24f, RepPhase.HikePass),
+            through(KettlebellPoses.Pull, weight = 0.18f, RepPhase.Pull, RepBeat.Drive),
+            to(KettlebellPoses.Rack, weight = 0.14f, RepPhase.Rack, RepBeat.Drive),
+            to(KettlebellPoses.Rack, weight = 0.26f, RepPhase.Rack, RepBeat.Set),
+            through(KettlebellPoses.Pull, weight = 0.18f, RepPhase.Drop, RepBeat.Ease),
+            to(KettlebellPoses.Hinge, weight = 0.24f, RepPhase.HikePass, RepBeat.Set),
         ),
         seconds = 2.6f,
         stillAt = 3,
+        hold = RepHold.NearHand,
+        showsTrail = true,
     )
 
     /**
@@ -262,17 +301,19 @@ object KettlebellReps {
     val Snatch = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Hinge),
-            through(KettlebellPoses.SnatchPull, weight = 0.13f, RepPhase.HipSnap),
-            through(KettlebellPoses.HighPull, weight = 0.08f, RepPhase.HighPull),
-            through(KettlebellPoses.Turnover, weight = 0.08f, RepPhase.PunchThrough),
-            to(KettlebellPoses.Lockout, weight = 0.1f, RepPhase.PunchThrough),
-            to(KettlebellPoses.Lockout, weight = 0.23f, RepPhase.Lockout),
-            through(KettlebellPoses.Turnover, weight = 0.1f, RepPhase.Drop),
-            through(KettlebellPoses.Pull, weight = 0.1f, RepPhase.Drop),
-            to(KettlebellPoses.Hinge, weight = 0.18f, RepPhase.HikePass),
+            through(KettlebellPoses.SnatchPull, weight = 0.13f, RepPhase.HipSnap, RepBeat.Drive),
+            through(KettlebellPoses.HighPull, weight = 0.08f, RepPhase.HighPull, RepBeat.Drive),
+            through(KettlebellPoses.Turnover, weight = 0.08f, RepPhase.PunchThrough, RepBeat.Drive),
+            to(KettlebellPoses.Lockout, weight = 0.1f, RepPhase.PunchThrough, RepBeat.Drive),
+            to(KettlebellPoses.Lockout, weight = 0.23f, RepPhase.Lockout, RepBeat.Ease),
+            through(KettlebellPoses.Turnover, weight = 0.1f, RepPhase.Drop, RepBeat.Ease),
+            through(KettlebellPoses.Pull, weight = 0.1f, RepPhase.Drop, RepBeat.Ease),
+            to(KettlebellPoses.Hinge, weight = 0.18f, RepPhase.HikePass, RepBeat.Set),
         ),
         seconds = 3.2f,
         stillAt = 5,
+        hold = RepHold.NearHand,
+        showsTrail = true,
     )
 
     /** A press, standing: from the rack up past the face to the lockout, held, and pulled back down to the rack. */
@@ -289,13 +330,14 @@ object KettlebellReps {
     val GobletSquat = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Goblet),
-            to(KettlebellPoses.GobletBottom, weight = 0.36f, RepPhase.Descend),
-            to(KettlebellPoses.GobletBottom, weight = 0.1f, RepPhase.Bottom),
-            to(KettlebellPoses.Goblet, weight = 0.26f, RepPhase.Drive),
-            to(KettlebellPoses.Goblet, weight = 0.28f, RepPhase.Stand),
+            to(KettlebellPoses.GobletBottom, weight = 0.36f, RepPhase.Descend, RepBeat.Ease),
+            to(KettlebellPoses.GobletBottom, weight = 0.1f, RepPhase.Bottom, RepBeat.Ease),
+            to(KettlebellPoses.Goblet, weight = 0.26f, RepPhase.Drive, RepBeat.Drive),
+            to(KettlebellPoses.Goblet, weight = 0.28f, RepPhase.Stand, RepBeat.Set),
         ),
         seconds = 4.2f,
         stillAt = 2,
+        hold = RepHold.BothHands,
     )
 
     /**
@@ -305,77 +347,86 @@ object KettlebellReps {
     val GetUp = ExerciseRep(
         keyframes = listOf(
             from(GetUpPoses.Floor),
-            to(GetUpPoses.Pressed, weight = 1.2f, RepPhase.FloorPress),
-            to(GetUpPoses.Elbow, weight = 1.4f, RepPhase.RollToElbow),
-            to(GetUpPoses.TallSit, weight = 1.2f, RepPhase.TallSit),
-            through(GetUpPoses.Rising, weight = 0.4f),
-            through(GetUpPoses.Risen, weight = 0.4f),
-            to(GetUpPoses.Bridge, weight = 0.4f, RepPhase.HighBridge),
-            through(GetUpPoses.Drawn, weight = 0.5f),
-            through(GetUpPoses.Tucked, weight = 0.5f),
-            to(GetUpPoses.Swept, weight = 0.5f),
-            to(GetUpPoses.Kneeling, weight = 1.2f, RepPhase.SweepToKneeling),
-            to(GetUpPoses.Standing, weight = 1.4f, RepPhase.StandUp),
-            to(GetUpPoses.Standing, weight = 0.8f, RepPhase.StandUp),
-            to(GetUpPoses.Kneeling, weight = 1.4f, RepPhase.StepBack),
-            to(GetUpPoses.Swept, weight = 1.2f, RepPhase.HandDown),
-            through(GetUpPoses.Tucked, weight = 0.5f),
-            through(GetUpPoses.Drawn, weight = 0.5f),
-            through(GetUpPoses.Bridge, weight = 0.4f),
-            through(GetUpPoses.Risen, weight = 0.3f),
-            through(GetUpPoses.Rising, weight = 0.3f),
-            to(GetUpPoses.TallSit, weight = 0.3f, RepPhase.SweepThrough),
-            to(GetUpPoses.Elbow, weight = 1.2f, RepPhase.DownToElbow),
-            to(GetUpPoses.Pressed, weight = 1.4f, RepPhase.RollDown),
-            to(GetUpPoses.Floor, weight = 1.2f, RepPhase.LowerBell),
+            to(GetUpPoses.Pressed, weight = 1.2f, RepPhase.FloorPress, RepBeat.Drive),
+            to(GetUpPoses.Elbow, weight = 1.4f, RepPhase.RollToElbow, RepBeat.Drive),
+            to(GetUpPoses.TallSit, weight = 1.2f, RepPhase.TallSit, RepBeat.Drive),
+            through(GetUpPoses.Rising, weight = 0.4f, beat = RepBeat.Drive),
+            through(GetUpPoses.Risen, weight = 0.4f, beat = RepBeat.Drive),
+            to(GetUpPoses.Bridge, weight = 0.4f, RepPhase.HighBridge, RepBeat.Drive),
+            through(GetUpPoses.Drawn, weight = 0.5f, beat = RepBeat.Drive),
+            through(GetUpPoses.Tucked, weight = 0.5f, beat = RepBeat.Drive),
+            to(GetUpPoses.Swept, weight = 0.5f, beat = RepBeat.Drive),
+            to(GetUpPoses.Kneeling, weight = 1.2f, RepPhase.SweepToKneeling, RepBeat.Drive),
+            to(GetUpPoses.Standing, weight = 1.4f, RepPhase.StandUp, RepBeat.Drive),
+            to(GetUpPoses.Standing, weight = 0.8f, RepPhase.StandUp, RepBeat.Drive),
+            to(GetUpPoses.Kneeling, weight = 1.4f, RepPhase.StepBack, RepBeat.Ease),
+            to(GetUpPoses.Swept, weight = 1.2f, RepPhase.HandDown, RepBeat.Ease),
+            through(GetUpPoses.Tucked, weight = 0.5f, beat = RepBeat.Ease),
+            through(GetUpPoses.Drawn, weight = 0.5f, beat = RepBeat.Ease),
+            through(GetUpPoses.Bridge, weight = 0.4f, beat = RepBeat.Ease),
+            through(GetUpPoses.Risen, weight = 0.3f, beat = RepBeat.Ease),
+            through(GetUpPoses.Rising, weight = 0.3f, beat = RepBeat.Ease),
+            to(GetUpPoses.TallSit, weight = 0.3f, RepPhase.SweepThrough, RepBeat.Ease),
+            to(GetUpPoses.Elbow, weight = 1.2f, RepPhase.DownToElbow, RepBeat.Ease),
+            to(GetUpPoses.Pressed, weight = 1.4f, RepPhase.RollDown, RepBeat.Ease),
+            to(GetUpPoses.Floor, weight = 1.2f, RepPhase.LowerBell, RepBeat.Set),
         ),
         seconds = 20f,
         stillAt = 6,
+        hold = RepHold.NearHand,
+        follows = true,
     )
 
     /** A clean and press: from the hinge to the rack, pressed to the lockout, and back the way it came. */
     val CleanAndPress = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Hinge),
-            through(KettlebellPoses.Pull, weight = 0.16f, RepPhase.Pull),
-            to(KettlebellPoses.Rack, weight = 0.1f, RepPhase.Rack),
-            to(KettlebellPoses.Rack, weight = 0.06f, RepPhase.Rack),
-            through(KettlebellPoses.Press, weight = 0.13f, RepPhase.Press),
-            to(KettlebellPoses.Lockout, weight = 0.13f, RepPhase.Press),
-            to(KettlebellPoses.Lockout, weight = 0.08f, RepPhase.Lockout),
-            through(KettlebellPoses.Press, weight = 0.12f, RepPhase.Lower),
-            to(KettlebellPoses.Rack, weight = 0.12f, RepPhase.Lower),
-            through(KettlebellPoses.Pull, weight = 0.09f, RepPhase.Drop),
-            to(KettlebellPoses.Hinge, weight = 0.15f, RepPhase.HikePass),
+            through(KettlebellPoses.Pull, weight = 0.16f, RepPhase.Pull, RepBeat.Drive),
+            to(KettlebellPoses.Rack, weight = 0.1f, RepPhase.Rack, RepBeat.Drive),
+            to(KettlebellPoses.Rack, weight = 0.06f, RepPhase.Rack, RepBeat.Set),
+            through(KettlebellPoses.Press, weight = 0.13f, RepPhase.Press, RepBeat.Drive),
+            to(KettlebellPoses.Lockout, weight = 0.13f, RepPhase.Press, RepBeat.Drive),
+            to(KettlebellPoses.Lockout, weight = 0.08f, RepPhase.Lockout, RepBeat.Ease),
+            through(KettlebellPoses.Press, weight = 0.12f, RepPhase.Lower, RepBeat.Ease),
+            to(KettlebellPoses.Rack, weight = 0.12f, RepPhase.Lower, RepBeat.Ease),
+            through(KettlebellPoses.Pull, weight = 0.09f, RepPhase.Drop, RepBeat.Ease),
+            to(KettlebellPoses.Hinge, weight = 0.15f, RepPhase.HikePass, RepBeat.Set),
         ),
         seconds = 4.6f,
         stillAt = 6,
+        hold = RepHold.NearHand,
+        showsTrail = true,
     )
 
     /** A press with each of its stances stood as [stance] has it. */
     private fun press(stance: BodyPose.() -> BodyPose) = ExerciseRep(
         keyframes = listOf(
             from(KettlebellPoses.Rack.stance()),
-            through(KettlebellPoses.Press.stance(), weight = 0.2f, RepPhase.Press),
-            to(KettlebellPoses.Lockout.stance(), weight = 0.18f, RepPhase.Press),
-            to(KettlebellPoses.Lockout.stance(), weight = 0.14f, RepPhase.Lockout),
-            through(KettlebellPoses.Press.stance(), weight = 0.2f, RepPhase.Lower),
-            to(KettlebellPoses.Rack.stance(), weight = 0.2f, RepPhase.Lower),
-            to(KettlebellPoses.Rack.stance(), weight = 0.08f, RepPhase.Rack),
+            through(KettlebellPoses.Press.stance(), weight = 0.2f, RepPhase.Press, RepBeat.Drive),
+            to(KettlebellPoses.Lockout.stance(), weight = 0.18f, RepPhase.Press, RepBeat.Drive),
+            to(KettlebellPoses.Lockout.stance(), weight = 0.14f, RepPhase.Lockout, RepBeat.Ease),
+            through(KettlebellPoses.Press.stance(), weight = 0.2f, RepPhase.Lower, RepBeat.Ease),
+            to(KettlebellPoses.Rack.stance(), weight = 0.2f, RepPhase.Lower, RepBeat.Ease),
+            to(KettlebellPoses.Rack.stance(), weight = 0.08f, RepPhase.Rack, RepBeat.Set),
         ),
         seconds = 3.6f,
         stillAt = 3,
+        hold = RepHold.NearHand,
     )
+
+    private fun BodyPose.freeFarArm(shoulder: Float, elbow: Float) =
+        copy(farShoulderAngleDeg = shoulder, farElbowAngleDeg = elbow)
 
     /** The keyframe a rep starts from. */
     private fun from(pose: BodyPose) = ExerciseKeyframe(pose)
 
     /** A keyframe the rep comes to rest in. */
-    private fun to(pose: BodyPose, weight: Float, phase: RepPhase? = null) = ExerciseKeyframe(pose, weight, phase)
+    private fun to(pose: BodyPose, weight: Float, phase: RepPhase? = null, beat: RepBeat = RepBeat.Drive) =
+        ExerciseKeyframe(pose, weight, phase, beat = beat)
 
     /** A keyframe the rep passes through. */
-    private fun through(pose: BodyPose, weight: Float, phase: RepPhase? = null) =
-        ExerciseKeyframe(pose, weight, phase, passing = true)
+    private fun through(pose: BodyPose, weight: Float, phase: RepPhase? = null, beat: RepBeat = RepBeat.Drive) =
+        ExerciseKeyframe(pose, weight, phase, passing = true, beat = beat)
 }
 
 /** How the bell lies on the back of the forearm once the arm is locked out. */

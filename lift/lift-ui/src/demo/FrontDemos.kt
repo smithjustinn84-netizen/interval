@@ -5,7 +5,8 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
-import dev.justinsmith.lift.ui.demo.KettlebellPoses.BOTTOMS_UP
+import dev.justinsmith.interval.ui.ExerciseRep
+import dev.justinsmith.interval.ui.nearestTurn
 import kotlin.math.PI
 import kotlin.math.acos
 import kotlin.math.atan2
@@ -36,7 +37,7 @@ private fun facing(stance: Float) = Pose(
  * upright and the free hand sliding down the inside of the leg, then stand. Its phases are its cues: Lock out
  * (0), Push the hip back (1), Stand (2).
  */
-val WindmillDemo: ExerciseDemo = run {
+val WindmillDemo: ExerciseRep = run {
     // The bell rests on the back of the forearm, a little to the outside of it.
     val tall = facing(stance = 14f).copy(
         upperArm = 180f,
@@ -47,7 +48,7 @@ val WindmillDemo: ExerciseDemo = run {
     )
     // The bell side long, the waist bowed out toward it.
     val down = tall.copy(torso = -60f, farUpperArm = 42f, farForearm = 42f, spine = -14f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = tall),
             Keyframe(at = 0.12f, pose = tall),
@@ -74,7 +75,7 @@ val WindmillDemo: ExerciseDemo = run {
  * behind the neck where it hangs, past the other ear and back. Its phases are its cues: Hold (0), Circle close
  * (1), Ribs down (2).
  */
-val HaloDemo: ExerciseDemo = run {
+val HaloDemo: ExerciseRep = run {
     val steps = 16
     var last: Pose? = null
     val round = List(steps + 1) { step ->
@@ -82,7 +83,7 @@ val HaloDemo: ExerciseDemo = run {
         last = pose
         Keyframe(at = step / steps.toFloat(), pose = pose)
     }
-    ExerciseDemo(
+    repOf(
         keyframes = round,
         phases = listOf(
             DemoPhase(until = 0.125f, beat = DemoBeat.Set, cue = 0),
@@ -118,7 +119,7 @@ private fun haloPose(turn: Float, after: Pose?): Pose {
         forearm = (after?.forearm ?: 180f).nearestTurn(near.second),
         farUpperArm = (after?.farUpperArm ?: 0f).nearestTurn(far.first),
         farForearm = (after?.farForearm ?: -180f).nearestTurn(far.second),
-        bell = BOTTOMS_UP - turn,
+        bell = BOTTOMS_UP_ANGLE - turn,
         reach = reach,
         behind = behind,
     )
@@ -152,7 +153,7 @@ private const val HALO_REACH_BEHIND = 0.95f
  * The band pull-apart: the arms straight ahead at shoulder height, toward the eye, then spread wide to the
  * sides with the band stretched across the chest.
  */
-val BandPullApartDemo: ExerciseDemo = run {
+val BandPullApartDemo: ExerciseRep = run {
     val ahead = facing(stance = 5f).copy(
         upperArm = 90f,
         forearm = 90f,
@@ -161,7 +162,7 @@ val BandPullApartDemo: ExerciseDemo = run {
         reach = 0.12f,
     )
     val apart = ahead.copy(reach = 1f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = ahead),
             Keyframe(at = 0.1f, pose = ahead),
@@ -183,7 +184,7 @@ val BandPullApartDemo: ExerciseDemo = run {
  * The lateral walk: in a half squat with a band round the knees, the near foot stepped out wide against the band
  * and the far one brought in after it. It walks on the spot, the hips staying put, as the carries do.
  */
-val BandLateralWalkDemo: ExerciseDemo = run {
+val BandLateralWalkDemo: ExerciseRep = run {
     val squat = Pose(
         shin = -4f,
         thigh = -38f,
@@ -198,7 +199,7 @@ val BandLateralWalkDemo: ExerciseDemo = run {
     val steppingOut = squat.copy(shin = 18f, thigh = -66f)
     val wide = squat.copy(shin = -10f, thigh = -48f, farShin = 10f, farThigh = 48f)
     val steppingIn = squat.copy(shin = -2f, thigh = -28f, farShin = -18f, farThigh = 62f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = squat),
             Keyframe(at = 0.18f, pose = steppingOut),
@@ -227,7 +228,7 @@ private const val HEAD_LEFT = -90f
  * knees bent toward the eye (so the legs look short) and the feet together; the top knee opens upward against
  * the band and closes.
  */
-val BandClamshellDemo: ExerciseDemo = run {
+val BandClamshellDemo: ExerciseRep = run {
     val closed = Pose(
         shin = 0f,
         thigh = 0f,
@@ -242,7 +243,7 @@ val BandClamshellDemo: ExerciseDemo = run {
     )
     // The knee swings up round the line from the hip to the feet, so more of the leg shows as it opens.
     val open = closed.copy(shin = 35f, thigh = -30.6f, legs = 0.84f, farLegs = 0.7f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = closed),
             Keyframe(at = 0.1f, pose = closed),
@@ -270,7 +271,7 @@ private val seatedAnchor = Offset(212f, Rig.FLOOR)
  * The butterfly: sitting tall with the soles of the feet together and the hands on them, each knee fallen open to
  * its side, then folded forward over the feet (toward the eye, so the back looks short) as the knees sink.
  */
-val ButterflyDemo: ExerciseDemo = run {
+val ButterflyDemo: ExerciseRep = run {
     val tall = Pose(
         shin = 80f,
         thigh = -101f,
@@ -294,7 +295,7 @@ val ButterflyDemo: ExerciseDemo = run {
         farForearm = 55f,
         trunk = 0.72f,
     )
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = tall),
             Keyframe(at = 0.1f, pose = tall),
@@ -319,7 +320,7 @@ val ButterflyDemo: ExerciseDemo = run {
  * until the legs lie on the floor, lifted over the top and dropped to the other. Each thigh goes over the top,
  * never down through the floor, so its angle runs on past a half turn.
  */
-val HipSwitchDemo: ExerciseDemo = run {
+val HipSwitchDemo: ExerciseRep = run {
     val up = Pose(
         shin = 0f,
         thigh = -135f,
@@ -334,7 +335,7 @@ val HipSwitchDemo: ExerciseDemo = run {
     )
     val right = up.copy(shin = 85f, thigh = -95f, torso = 5f, farShin = 75f, farThigh = 280f, legs = 0.7f)
     val left = up.copy(shin = -75f, thigh = -280f, torso = -5f, farShin = -85f, farThigh = 95f, legs = 0.7f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = right),
             Keyframe(at = 0.12f, pose = right),
@@ -367,7 +368,7 @@ private fun fromAbove(
     still: Float,
     root: Root = Root.Hips,
     anchor: Offset = aboveAnchor,
-) = ExerciseDemo(
+) = repOf(
     keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
     phases = phases,
     hold = Hold.Free,
@@ -387,7 +388,7 @@ private fun heldFromAbove(held: Pose, breath: Pose) =
  * The lying twist: on the back, one knee drawn up and across the body to the floor on the other side, the other
  * leg long, the arms out wide and both shoulders down.
  */
-val LyingTwistDemo: ExerciseDemo = run {
+val LyingTwistDemo: ExerciseRep = run {
     fun twisted(thigh: Float, shin: Float) = Pose(
         shin = shin,
         thigh = thigh,
@@ -409,7 +410,7 @@ val LyingTwistDemo: ExerciseDemo = run {
  * Thread the needle: on all fours, one arm slid under the chest and out the other side, that shoulder down, the
  * other arm long on the floor ahead. The thighs stand upright, so only the shins show of the legs.
  */
-val ThreadTheNeedleDemo: ExerciseDemo = run {
+val ThreadTheNeedleDemo: ExerciseRep = run {
     fun threaded(torso: Float, arm: Float) = Pose(
         shin = 0f,
         thigh = 0f,
@@ -430,7 +431,7 @@ val ThreadTheNeedleDemo: ExerciseDemo = run {
  * The frog: face down on the forearms with the knees wide, each thigh out to its side and the shin back from it,
  * the hips eased back toward the heels and forward again with each breath.
  */
-val FrogStretchDemo: ExerciseDemo = run {
+val FrogStretchDemo: ExerciseRep = run {
     fun frog(back: Float, reach: Float) = Pose(
         shin = 0f,
         thigh = -90f - back,
@@ -453,7 +454,7 @@ val FrogStretchDemo: ExerciseDemo = run {
  * pushed away from the feet and out to the side (the legs long, the hands framing), then the knees brought back in.
  * The near foot stays where it is planted.
  */
-val HipEscapeDemo: ExerciseDemo = run {
+val HipEscapeDemo: ExerciseRep = run {
     val bent = Pose(
         shin = 0f,
         thigh = 0f,
@@ -494,7 +495,7 @@ val HipEscapeDemo: ExerciseDemo = run {
  * Single-leg circles: on the back, one leg long on the mat, the other up at the ceiling (toward the eye, so it
  * looks short) and circling: across the body, down toward the feet, out to the side and back up.
  */
-val SingleLegCirclesDemo: ExerciseDemo = run {
+val SingleLegCirclesDemo: ExerciseRep = run {
     fun circling(leg: Float) = Pose(
         shin = leg,
         thigh = leg,

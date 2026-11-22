@@ -244,25 +244,17 @@ lift/                Lift, the strength side (packages `dev.justinsmith.lift.*`)
   lift-ui            Lift's words and widgets (`exerciseName`, `setLine`, `programName`, `LoadPicker`, `Stepper`,
                      `SessionStats`, `BalanceBars`, `Sparkline`: an exercise's trend, each session's best set by its kg × reps over
                      its latest 24, `exerciseTrend` in lift-domain), the built-ins' cues (`cues.xml`, mapped in `ExerciseCues.kt`), the
-                     figure every built-in is shown by (`demo/`: `ExerciseFigure`, an `ExerciseDemo` a lift through
-                     `Exercise.demo`, one of the user's own the built-in's it names, `CustomExercise.figure`, seen from the side or, for a lift that goes sideways or across the floor, from the front or
-                     from above on a mat: `Facing.Front`, `Facing.Above`, `FrontDemos.kt`; `rememberDemoPlayer`, `DemoTimeline`, and `Celebration`, the raised bell or bow
-                     a figure on its feet gives a record, a one-rep demo from where it stood; its body is `Build`'s,
-                     `FigureSilhouette.kt`, its back bowed round or arched by `Pose.spine`, its hands opened and turned at the wrist (`palm`, `wrist`; a wrist drill drawn close by `ExerciseDemo.crop`), each near part with a gap cut round it in a layer of its own, and beside
-                     its pose it breathes and its weight flares as a drive starts, `FigureMotion.kt`; a figure shown
-                     alone takes `ExerciseDemo.framed()`, which follows one that lies down and stands up, `follows`), and `Demonstration`,
-                     the card of the figure over its timeline and cues lit in turn (Step, Slow; under Watch for a
-                     lift's `faults`, squatting the hinge shown done wrong by `ExerciseDemo.doneWrong`), which the exercise page and a
-                     flow's move both show; the diagram the flagship kettlebell lifts' own pages show them by in place of the
-                     figure, from the side with the bell's path and the rep's phase named (`Exercise.diagram`,
-                     `Diagrams.kt`: core's `ExerciseRep` of `ExerciseKeyframe`s, the lifts in `KettlebellReps`, drawn by
-                     `ExerciseDiagram` under the phase's name and its cue, `RepPhase.cue`, with Step, a speed, Pause and a
-                     `PhaseTrack` to scrub it, all one `RepPlayer`'s; null for a lift with none yet), in the card
-                     `PathDemonstration`: the diagram over the lift's written cues, each lit while the rep is in a part
-                     of its (`Exercise.diagramCues`) and tapped to hold it there, and Watch for, squatting the hinge shown
-                     done wrong by `ExerciseRep.doneWrong`; beside them where the card is wide enough. A page has one
-                     drawing: a lift with a diagram is still its figure on the session card and in a thumbnail;
-                     most of Lift's strings
+                     unified exercise animation every built-in is shown by (`demo/`: built on `core`'s `BodyPose` /
+                     `BodyFrame` / `ExerciseRep` kinematics and organic-silhouette `ExerciseDemoCanvas` / `ExerciseDiagram`
+                     renderer — contoured torso, limbs, sculpted kettlebell/barbell shading, ground shadow, breathing,
+                     drive glow, tapered trail, cutaway halos, no joint dots, and `DemoDisplayMode.Detail` plumb line &
+                     dashed trajectory; `Exercise.rep` in `ExerciseReps.kt`, `CustomExercise.figure` for user exercises,
+                     `RepFacing.Side` / `Front` / `Above` in `FrontDemos.kt`, `RepSetUp`, `RepProp` benches/walls/rails/bands,
+                     `RepPlayer`, `PhaseTrack`, `Celebration` raised bell or bow on record sets, and `follows`/`crop` framing),
+                     shared across `Demonstration` (detail card over the scrubber and live cues, with `ExerciseRep.doneWrong`
+                     under Watch for, used by exercise pages and flow moves), `ExerciseBand` (`DemoDisplayMode.Compact`,
+                     shared by session cards and mobility workouts), and `ExerciseThumb` (`DemoDisplayMode.Thumb`, list row
+                     thumbnails); most of Lift's strings
   lift-testing       `FakeLiftStorage` and the fake DAOs, `FakeIntervalActivity`, `RecordingBeeper`,
                      `RecordingKeepAlive`, `LiftTestClock` (the wall clock and the timers' time, moved together),
                      `liftTestKoin`

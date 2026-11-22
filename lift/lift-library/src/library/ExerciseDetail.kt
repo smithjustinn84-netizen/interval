@@ -72,12 +72,10 @@ import dev.justinsmith.lift.library.resources.exercise_cues
 import dev.justinsmith.lift.library.resources.exercise_editor_edit
 import dev.justinsmith.lift.ui.Demonstration
 import dev.justinsmith.lift.ui.MusclesWorkedCard
-import dev.justinsmith.lift.ui.PathDemonstration
 import dev.justinsmith.lift.ui.RecordRow
 import dev.justinsmith.lift.ui.cues
-import dev.justinsmith.lift.ui.demo.demo
-import dev.justinsmith.lift.ui.demo.diagram
-import dev.justinsmith.lift.ui.demo.diagramCues
+import dev.justinsmith.lift.ui.demo.rep
+import dev.justinsmith.lift.ui.demo.repCues
 import dev.justinsmith.lift.ui.exerciseFacts
 import dev.justinsmith.lift.ui.exerciseName
 import dev.justinsmith.lift.ui.focusName
@@ -206,33 +204,24 @@ private fun ColumnScope.ExerciseHead(exercise: Exercise, onEdit: (() -> Unit)?) 
         is BuiltInExercise -> {
             val cues = stringArrayResource(exercise.cues())
             val name = exerciseName(exercise)
-            val rep = exercise.diagram
-            val demo = exercise.demo
-            // One drawing a page: a flagship lift's is its bell's path, any other's its figure.
-            when {
-                rep != null -> PathDemonstration(
+            val rep = exercise.rep
+            if (rep != null) {
+                Demonstration(
                     rep,
                     name,
                     cues,
-                    cueOf = exercise.diagramCues,
+                    cueOf = exercise.repCues,
                     faults = exercise.faults,
                 )
-
-                demo != null -> Demonstration(demo, name, cues, faults = exercise.faults)
-
-                else -> Cues(cues)
+            } else {
+                Cues(cues)
             }
             Works(exercise)
         }
 
         is CustomExercise -> {
             // The built-in's cues and faults are not the user's: its drawing alone, their own cues under it.
-            val rep = exercise.diagram
-            if (rep != null) {
-                PathDemonstration(rep, exercise.name, cues = emptyList())
-            } else {
-                exercise.demo?.let { Demonstration(it, exercise.name, cues = emptyList()) }
-            }
+            exercise.rep?.let { Demonstration(it, exercise.name, cues = emptyList()) }
             if (exercise.cues.isBlank()) {
                 Text(
                     stringResource(Res.string.detail_no_cues),

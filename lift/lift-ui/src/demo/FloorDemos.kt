@@ -5,6 +5,7 @@ package dev.justinsmith.lift.ui.demo
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
+import dev.justinsmith.interval.ui.ExerciseRep
 
 // The floor drills: Mark Wildman's foundations of the core, what a grappler drills before rolling, and the two hip
 // openers after it. Most rest on the mat by the hips, as the mat lifts do (lying on the back the head is to the
@@ -44,7 +45,7 @@ private val tucked = Pose(
  * The spinal rock: sitting with the chest up, rounded into a C and rocked back to the shoulder blades with the head
  * kept off the mat, then forward and all the way up to sitting tall.
  */
-val SpinalRockDemo: ExerciseDemo = run {
+val SpinalRockDemo: ExerciseRep = run {
     val tall = sitting(torso = -10f)
     val rounded = sitting(torso = 15f).copy(upperArm = 40f, forearm = 60f, spine = 26f)
     val back = tucked.copy(torso = 5f, spine = 18f).tipped(-75f)
@@ -71,7 +72,7 @@ val SpinalRockDemo: ExerciseDemo = run {
  * reaching on ahead, round and up to the crouch again, then all the way up to standing and back down. Grounded by
  * whatever of it is on the mat, so it tumbles over on the spot.
  */
-val ShoulderRollDemo: ExerciseDemo = run {
+val ShoulderRollDemo: ExerciseRep = run {
     // The chin tucked and the lead arm reaching on round ahead, so the arm and the back meet the mat, never the head.
     val ball = tucked.copy(torso = 15f, upperArm = 165f, forearm = 195f, farUpperArm = 50f, farForearm = 65f)
     val stood = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 0f, forearm = 8f).tipped(FULL_TURN)
@@ -98,7 +99,7 @@ val ShoulderRollDemo: ExerciseDemo = run {
  * The sit-up: from lying flat with the arms overhead and the ribs open, curled up and all the way up to sitting,
  * the spine extended tall at the top, and back down.
  */
-val SitUpDemo: ExerciseDemo = run {
+val SitUpDemo: ExerciseRep = run {
     val lying = bentKnees(torso = FLAT).arms(OVERHEAD)
     val curling = bentKnees(torso = -45f).arms(150f)
     val up = bentKnees(torso = 20f).arms(100f)
@@ -125,7 +126,7 @@ val SitUpDemo: ExerciseDemo = run {
  * The V-up across: from lying long, sat up into a V with one leg lifted and the opposite hand reaching to its foot,
  * lowered, then the other leg and the other hand.
  */
-val CrossVUpDemo: ExerciseDemo = run {
+val CrossVUpDemo: ExerciseRep = run {
     val lying = long(torso = -85f, arms = OVERHEAD)
     val nearLeg = long(torso = -35f, arms = 40f).copy(
         shin = 205f,
@@ -166,11 +167,11 @@ val CrossVUpDemo: ExerciseDemo = run {
  * turned over the shoulder, the near arm reaching across, and back down. It stands on the near foot, as the
  * shoulder bridge does.
  */
-val BridgeAndRollDemo: ExerciseDemo = run {
+val BridgeAndRollDemo: ExerciseRep = run {
     val lying = Pose(shin = BENT_SHIN, thigh = BENT_THIGH, torso = FLAT, upperArm = 90f, forearm = 90f)
     val bridged = Pose(shin = -27.9f, thigh = -102f, torso = -100f, upperArm = 90f, forearm = 90f)
     val turned = bridged.copy(upperArm = 200f, forearm = 210f, farThigh = -115f, farShin = -35f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = lying),
             Keyframe(at = 0.12f, pose = lying),
@@ -194,7 +195,7 @@ val BridgeAndRollDemo: ExerciseDemo = run {
  * near foot and hand, the far leg swung back under to kneel, then up into a stance; and every step back down. The
  * near foot stays planted, as the get-up's does, through the same solved steps.
  */
-val TechnicalStandUpDemo: ExerciseDemo = run {
+val TechnicalStandUpDemo: ExerciseRep = run {
     val guard = Pose(shin = 0f, thigh = 0f, torso = 0f, upperArm = 50f, forearm = 140f)
     fun guarding(pose: Pose) = pose.copy(upperArm = guard.upperArm, forearm = guard.forearm)
     val posted = guarding(
@@ -245,7 +246,7 @@ val TechnicalStandUpDemo: ExerciseDemo = run {
     val upTimes = listOf(0f, 0.08f, 0.14f, 0.2f, 0.26f, 0.34f, 0.41f, 0.48f)
     val climb = up.zip(upTimes) { pose, at -> Keyframe(at = at, pose = pose) }
     val descent = up.zip(upTimes) { pose, at -> Keyframe(at = 1f - at, pose = pose) }.reversed()
-    ExerciseDemo(
+    repOf(
         // Up by 0.48, a moment in the stance, then back down the same steps.
         keyframes = climb + descent,
         phases = listOf(
@@ -266,7 +267,7 @@ val TechnicalStandUpDemo: ExerciseDemo = run {
  * to lie long in front, the hips dropped over the near knee and the far arm up, then back. It leans on the near
  * hand, which stays where it is.
  */
-val SitOutDemo: ExerciseDemo = run {
+val SitOutDemo: ExerciseRep = run {
     val kneeling = Pose(
         shin = 90f,
         thigh = 0f,
@@ -292,7 +293,7 @@ val SitOutDemo: ExerciseDemo = run {
     // On the way the far knee comes up and over before the leg unfolds in front, so the foot never drags through.
     val drawn = kneeling.between(through, 0.3f).copy(farThigh = -100f, farShin = 100f, farFoot = 190f)
     val threading = kneeling.between(through, 0.7f).copy(farThigh = -140f, farShin = 0f, farFoot = 0f)
-    ExerciseDemo(
+    repOf(
         keyframes = listOf(
             Keyframe(at = 0f, pose = kneeling),
             Keyframe(at = 0.1f, pose = kneeling),
@@ -365,7 +366,7 @@ private fun onTheMat(
     seconds: Float,
     still: Float,
     view: Rect = matView,
-) = ExerciseDemo(
+) = repOf(
     keyframes = keys.map { (at, pose) -> Keyframe(at, pose) },
     phases = phases,
     hold = Hold.Free,
@@ -377,7 +378,7 @@ private fun onTheMat(
 )
 
 /** A position [held] on the mat, breathing to [breath] and back. */
-private fun held(held: Pose, breath: Pose) = ExerciseDemo(
+private fun held(held: Pose, breath: Pose) = repOf(
     keyframes = listOf(
         Keyframe(at = 0f, pose = held),
         Keyframe(at = 0.5f, pose = breath),

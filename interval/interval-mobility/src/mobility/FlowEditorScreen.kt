@@ -80,10 +80,10 @@ import dev.justinsmith.interval.ui.SecondaryButton
 import dev.justinsmith.interval.ui.SegmentedPicker
 import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
-import dev.justinsmith.interval.ui.demo
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.interval.ui.rememberReorderState
 import dev.justinsmith.interval.ui.reorderItem
+import dev.justinsmith.interval.ui.rep
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import org.koin.core.parameter.parametersOf
@@ -334,7 +334,7 @@ private fun EditorMoveRowBody(number: Int, move: Move, onOpen: () -> Unit, modif
             }
             if (move.cue.isNotBlank()) Text(move.cue, style = IntervalTheme.type.meta, color = palette.textDim)
         }
-        move.demo?.let { MoveThumb(it) }
+        move.rep?.let { MoveThumb(it) }
     }
 }
 

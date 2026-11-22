@@ -132,21 +132,29 @@ class ExerciseLibraryAcceptanceTest {
     }
 
     @Test
-    fun `a lift with no path keeps its figure which is slowed and stepped and shown done wrong`() = liftScenario {
+    fun `a deadlift uses the unified path diagram which is slowed stepped and shown done wrong`() = liftScenario {
         openExerciseLibrary()
         searchFor("deadlift")
         openExercise("Deadlift")
-        seeDemonstration("Deadlift")
+        seeBellPath("Deadlift", phase = "Hike pass", cue = "Hinge back, shins vertical")
+        pauseBellPath()
+        slowBellPath()
+        stepBellPath(to = "Drive up", cue = "Push the floor away and stand tall")
+        showPathCue("Lower it the way it came up, hips back first", part = "Sit down")
+        showFault("Hips back, shins stay vertical")
+        hideFault("Hips back, shins stay vertical")
+    }
+
+    @Test
+    fun `an unweighted exercise uses the unified demonstration with set up and each rep`() = liftScenario {
+        openExerciseLibrary()
+        searchFor("air squat")
+        openExercise("Air squat")
+        seeDemonstration("Air squat")
         seeNoBellPath()
         seeSetUpThenEachRep()
         pauseDemonstration()
         slowDemonstration()
-        stepDemonstration(to = "Push the floor away and stand tall")
-        stepDemonstration(to = "Lower it the way it came up, hips back first")
-        showCuePart("Push the floor away and stand tall")
-        showFault("Hips back, shins stay vertical")
-        hideFault("Hips back, shins stay vertical")
-        showSetUp("Bell between your feet, hinge with a flat back")
     }
 
     @Test
