@@ -83,6 +83,10 @@ data class AppSettings(
      * an epoch day: it falls on none earlier than the day after. Null while none is. Not exported.
      */
     val programPutOffDay: Long? = null,
+    /** When the whole log was last exported to keep (the file an import reads back); null for never. Not exported. */
+    val lastBackupEpochMillis: Long? = null,
+    /** When Today last asked to back up and was told Not now; null for never. Not exported. */
+    val backupAskedEpochMillis: Long? = null,
 ) {
     companion object {
         val WEEKLY_GOAL_RANGE = 1..7

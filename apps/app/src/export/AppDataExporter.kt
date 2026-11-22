@@ -1,5 +1,6 @@
 package dev.justinsmith.interval.export
 
+import dev.justinsmith.interval.data.DataExporter
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.model.AppSettings
 import dev.justinsmith.interval.model.CueSettings
@@ -11,7 +12,6 @@ import dev.justinsmith.interval.platform.AppInfo
 import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
-import dev.justinsmith.interval.settings.DataExporter
 import dev.justinsmith.interval.timer.Flow
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset

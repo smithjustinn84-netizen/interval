@@ -56,6 +56,7 @@ import dev.justinsmith.lift.ui.resources.session_title_two
 import dev.justinsmith.lift.ui.resources.side_left
 import dev.justinsmith.lift.ui.resources.side_right
 import org.jetbrains.compose.resources.DrawableResource
+import org.jetbrains.compose.resources.getString
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
 
@@ -65,6 +66,22 @@ fun exerciseName(exercise: Exercise): String = when (exercise) {
     is BuiltInExercise -> stringResource(exercise.label())
     is CustomExercise -> exercise.name
     is UnknownExercise -> stringResource(Res.string.exercise_unknown)
+}
+
+/** An exercise's name read outside a composition, as [exerciseName] says it: a spreadsheet's. */
+suspend fun exerciseNameOf(exercise: Exercise): String = when (exercise) {
+    is BuiltInExercise -> getString(exercise.label())
+    is CustomExercise -> exercise.name
+    is UnknownExercise -> getString(Res.string.exercise_unknown)
+}
+
+/** A lift's name read outside a composition, as [liftName] says it: "Press · Two bells". */
+suspend fun liftNameOf(exercise: Exercise, double: Boolean): String = if (double &&
+    exercise.doubles == Doubles.Optional
+) {
+    getString(Res.string.common_joined, exerciseNameOf(exercise), getString(Res.string.lift_double))
+} else {
+    exerciseNameOf(exercise)
 }
 
 /**

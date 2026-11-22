@@ -7,7 +7,11 @@ the [privacy policy](../privacy.md).
 
 **Settings › Export** puts everything in one JSON file: workouts, sport days, presets and sequences, the plan,
 settings, Lift's sessions, programs, exercises and gear, your own flows, and recorded classes. Share it wherever
-you keep files.
+you keep files. Under it, Settings says when you last did.
+
+**Export a spreadsheet** writes the log as a CSV file to open in a spreadsheet or send to a coach: a row for each
+workout, sport day, Lift session and set, with its date and time, name, lift, side, weight in the unit the app
+weighs in, reps, minutes, effort, note and heart rate. It's for reading: Import doesn't take it back.
 
 **Import** reads a file from any version of the app, shows what it holds before anything changes, skips what's
 already there, and checks every value is in range.
@@ -17,6 +21,10 @@ already there, and checks every value is in range.
 ## Backup
 
 On Android, the system's backup carries the app's data to a new phone with your other apps'.
+
+A month after you last exported (or after you first trained, if you never have), with something new in the log,
+Today asks you to back up: **Export** offers the file to keep somewhere else, and **Not now** asks again in a
+month.
 
 ## Widgets and shortcuts
 

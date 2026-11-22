@@ -7,6 +7,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
 ## [0.6.0] — Unreleased
 
 ### Added
+- The log as a spreadsheet, and a nudge to back it up. Settings' Export a spreadsheet writes a CSV with a row for
+  each workout, sport day, Lift session and set (date and time, name, lift, side, weight in your unit, reps,
+  minutes, effort, note, heart rate), to open in a spreadsheet or send to a coach; it isn't for importing. Export
+  now says when you last backed up, and a month after that (or after the first thing trained, never backed up)
+  with something new in the log, Today asks to back up: Export, or Not now for another month.
 - The lift in view while a timer runs in Lift. An EMOM's and a time cap's page show a small figure doing the lift,
   drawn as a quiet outline under the ring (beside the rounds on a time cap), through the count-in, the work and the
   rest. The rest after a set says what it leads to under its clock: the same figure doing the next lift, beside

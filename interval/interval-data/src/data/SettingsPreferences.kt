@@ -48,6 +48,8 @@ private val SESSION_MINUTES = intPreferencesKey("session_minutes")
 private val SETUP_OFFERED = booleanPreferencesKey("setup_offered")
 private val FIRST_WEEK = booleanPreferencesKey("first_week")
 private val PROGRAM_PUT_OFF = longPreferencesKey("program_put_off_day")
+private val LAST_BACKUP = longPreferencesKey("last_backup")
+private val BACKUP_ASKED = longPreferencesKey("backup_asked")
 
 private val BODY_WEIGHT_KG = doublePreferencesKey("body_weight_kg")
 private val BODY_UNIT = stringPreferencesKey("body_unit")
@@ -127,6 +129,8 @@ internal fun Preferences.toAppSettings(): AppSettings {
         setupOffered = this[SETUP_OFFERED] ?: defaults.setupOffered,
         firstWeek = this[FIRST_WEEK] ?: defaults.firstWeek,
         programPutOffDay = this[PROGRAM_PUT_OFF],
+        lastBackupEpochMillis = this[LAST_BACKUP],
+        backupAskedEpochMillis = this[BACKUP_ASKED],
     )
 }
 
@@ -143,6 +147,10 @@ internal fun MutablePreferences.write(app: AppSettings) {
     this[FIRST_WEEK] = app.firstWeek
     val putOff = app.programPutOffDay
     if (putOff == null) remove(PROGRAM_PUT_OFF) else this[PROGRAM_PUT_OFF] = putOff
+    val backup = app.lastBackupEpochMillis
+    if (backup == null) remove(LAST_BACKUP) else this[LAST_BACKUP] = backup
+    val asked = app.backupAskedEpochMillis
+    if (asked == null) remove(BACKUP_ASKED) else this[BACKUP_ASKED] = asked
     write(app.body)
 }
 

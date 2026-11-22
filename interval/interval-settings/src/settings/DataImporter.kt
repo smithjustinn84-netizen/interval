@@ -5,7 +5,7 @@ import dev.justinsmith.interval.platform.ShareableFile
 /**
  * Reads an export file back in: [review] weighs it against what is stored and writes nothing, [import] adds
  * what is new. The app does both, since only it sees the workout's storage and Lift's; Settings offers it
- * under Your data, after [Export][DataExporter].
+ * under Your data, after Export.
  */
 interface DataImporter {
     /** What importing [file] would add, or why it can't be imported. */

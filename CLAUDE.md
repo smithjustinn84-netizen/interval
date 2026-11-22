@@ -183,8 +183,10 @@ interval/            the interval timer
   interval-mobility  the flows by when each is for, a flow's sheet (its moves, then Start), and the editor of the
                      user's own (`FlowEditorScreen`, the library's moves in `LibraryMoves.kt`, over `lift-ui`'s names
                      and cues): Train's Mobility pillar, a tab's page (`MobilityPage`)
-  interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export, import and clearing the log
-                     (`DataExporter`, `DataImporter`, the review sheet); opened by every tab's gear
+  interval-settings  Settings (its groups in `SettingsGroups.kt`), the weight sheet, export (the file to keep, and the log as
+                     a spreadsheet, `AppSheetExporter` in app's export/; both through interval-data's `Backups`, which
+                     marks the last backup that Today's backup card asks after, `backupDue`), import and clearing the log
+                     (`DataImporter`, the review sheet); opened by every tab's gear
   interval-history   History (titled "Log" on screen; the code keeps History) (log, calendar, summaries, a finished
                      workout), Trends (`trends/`: `trends` pure, the last 12 weeks of both logs, recovery, records by
                      `recordMoments`, which the Log's Records filter takes too, and the tests; the `Trends` key, opened

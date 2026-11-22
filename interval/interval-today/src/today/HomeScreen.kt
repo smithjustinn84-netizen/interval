@@ -216,6 +216,8 @@ fun HomeRoute(
             onSetup = { setup() },
             onOpenMobility = { openMobility() },
             onHideFirstWeek = viewModel::hideFirstWeek,
+            onBackUp = viewModel::backUp,
+            onBackUpLater = viewModel::backUpLater,
             onRecordClass = { reaching(sensors::record) },
             onSyncClass = { sport -> reaching { sensors.sync(sport) } },
         )
@@ -280,6 +282,10 @@ class HomeActions(
     val onOpenMobility: () -> Unit = {},
     /** Puts the First week card away for good. */
     val onHideFirstWeek: () -> Unit = {},
+    /** Backs the log up from the ask on Today: the export file, to share or save. */
+    val onBackUp: () -> Unit = {},
+    /** Puts the ask to back up off for a month. */
+    val onBackUpLater: () -> Unit = {},
     /** Sets the heart-rate sensor recording a class. */
     val onRecordClass: () -> Unit = {},
     /** Syncs the class on the sensor, as one of this sport. */
@@ -364,6 +370,9 @@ fun HomeScreen(
             val first = plan.steps.firstOrNull()
             val leads = first is UpNextItem.Planned || first is UpNextItem.Lift
             item(key = "first-week") { FirstWeekCard(week, leads, actions, card) }
+        }
+        if (state.backupDue) {
+            item(key = "backup") { BackupCard(actions.onBackUp, actions.onBackUpLater, card) }
         }
         item(key = "picks") {
             if (plan.settled && !picking) {

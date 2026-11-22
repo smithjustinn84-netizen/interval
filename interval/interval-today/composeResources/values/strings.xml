@@ -128,4 +128,8 @@
     <string name="notice_sensor_not_found">Couldn’t find the sensor. Wear it and keep it close.</string>
     <string name="notice_sensor_failed">The sensor didn’t answer as expected. Try again.</string>
     <string name="notice_sensor_nothing">Nothing was recorded on the sensor.</string>
+    <string name="backup_title">Back up your log</string>
+    <string name="backup_body">Everything you've trained is kept on this phone. Export a copy to keep somewhere else, in case the phone goes.</string>
+    <string name="backup_export">Export</string>
+    <string name="backup_later">Not now</string>
 </resources>

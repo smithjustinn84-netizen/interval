@@ -10,6 +10,7 @@ import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasScrollToNodeAction
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isDialog
@@ -17,6 +18,7 @@ import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.isSelected
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTextReplacement
 import dev.justinsmith.interval.AppFixture
@@ -24,6 +26,7 @@ import dev.justinsmith.interval.appTest
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.RecordingCuePlayer
 import dev.justinsmith.interval.fakes.RecordingHealthStore
+import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.nav.Shortcut
 import dev.justinsmith.interval.platform.AppIconSwitcher
@@ -34,6 +37,7 @@ import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.HealthWorkoutKind
 import dev.justinsmith.interval.platform.HeartRate
 import dev.justinsmith.interval.platform.ShareableFile
+import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.tab
 import dev.justinsmith.interval.timer.ConfigField
@@ -701,6 +705,20 @@ class IntervalAcceptanceDriver(ui: DesktopComposeUiTest, val app: AppFixture) : 
         assertEquals(names.toList(), app.repository.presets.customPresets.value.map { it.name })
 
     // Settings
+
+    /** The file last offered to share, named [name]: its content. */
+    fun sharedFile(name: String): String {
+        val sharer = app.koin.koin.get<Sharer>() as RecordingSharer
+        waitFor("a file named $name offered to share") { sharer.files.lastOrNull()?.name == name }
+        return sharer.files.last().content
+    }
+
+    /** Scrolls to a line with [part] in it. */
+    fun scrollToPart(part: String) = waitFor("to scroll to a line with \"$part\"") {
+        runCatching {
+            ui.onNode(hasScrollToNodeAction()).performScrollToNode(hasText(part, substring = true))
+        }.isSuccess
+    }
 
     fun openSettings() {
         tapDescribed("Settings")

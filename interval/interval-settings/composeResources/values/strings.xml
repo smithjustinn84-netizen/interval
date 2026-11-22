@@ -70,7 +70,11 @@
     <string name="settings_data">Your data</string>
     <string name="settings_export">Export</string>
     <string name="settings_export_action">Export your data</string>
-    <string name="settings_export_hint">A file of your workouts, presets, plan, settings and lifting, to keep or move</string>
+    <string name="settings_export_never">Everything, as a file to keep or move. Not backed up yet</string>
+    <string name="settings_export_last">Everything, as a file to keep or move. Last backed up %1$s</string>
+    <string name="settings_export_sheet">Export a spreadsheet</string>
+    <string name="settings_export_sheet_action">Export the log as a spreadsheet</string>
+    <string name="settings_export_sheet_hint">Every workout, sport day and set, a row each, to open in a spreadsheet. It can't be imported</string>
     <string name="settings_import">Import</string>
     <string name="settings_import_action">Choose a file to import</string>
     <string name="settings_import_hint">Bring back what an export holds, adding to what is here</string>

@@ -5,6 +5,7 @@ package dev.justinsmith.interval.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.data.Backups
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
@@ -19,7 +20,6 @@ import dev.justinsmith.interval.platform.HealthStore
 import dev.justinsmith.interval.platform.MAX_BPM_RANGE
 import dev.justinsmith.interval.platform.RESTING_BPM_RANGE
 import dev.justinsmith.interval.platform.ShareableFile
-import dev.justinsmith.interval.platform.Sharer
 import dev.justinsmith.interval.platform.Speech
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.playCue
@@ -57,6 +57,8 @@ data class SettingsUiState(
     val healthWeightKg: Double? = null,
     /** The plan's reminder as a time of day, "7:00 AM"; null while reminders are off. It is set on Plan. */
     val reminderTime: String? = null,
+    /** The day the whole log was last exported, in words; null for never. */
+    val lastBackup: String? = null,
 ) {
     val body: BodySettings get() = app.body
 
@@ -92,8 +94,8 @@ enum class CueToggle { Sound, Voice, Halfway, Vibrate, HeartRateAlerts }
 
 /**
  * The set-once preferences. A cue switched on plays a sample through [player], so its volume can be checked.
- * Export builds the file with [exporter] and hands it to [sharer]; Import reads a file back with [importer], one
- * [ImportStep] after another ([import]). The [health] store is shown as it stands
+ * Export builds the file through [backups], marked as the last backup, or the log as a spreadsheet; Import reads
+ * a file back with [importer], one [ImportStep] after another ([import]). The [health] store is shown as it stands
  * and disconnected from here; connecting takes the platform's sheet, which the screen opens. Its latest
  * weight is read each time it connects, and taken only when the user asks ([useHealthWeight]): a weigh-in
  * nobody chose to take would change every estimate silently. The weekly goal and the reminder are shown as
@@ -104,8 +106,7 @@ class SettingsViewModel(
     private val settingsStore: SettingsStore,
     private val historyStore: HistoryStore,
     private val player: CuePlayer,
-    private val exporter: DataExporter,
-    private val sharer: Sharer,
+    private val backups: Backups,
     private val health: HealthStore,
     private val importer: DataImporter,
     private val timestamps: TimestampFormatter,
@@ -239,7 +240,17 @@ class SettingsViewModel(
         if (exporting?.isActive == true) return
         exporting = viewModelScope.launch {
             catchingFailures(onFailure = { e -> log.e(e) { "Couldn't export" } }) {
-                sharer.shareFile(exporter.export())
+                backups.backUp()
+            }
+        }
+    }
+
+    /** Offers the log as a spreadsheet to share or save, as [export] does its file; it is no backup. */
+    fun exportSheet() {
+        if (exporting?.isActive == true) return
+        exporting = viewModelScope.launch {
+            catchingFailures(onFailure = { e -> log.e(e) { "Couldn't export the spreadsheet" } }) {
+                backups.shareSheet()
             }
         }
     }
@@ -304,5 +315,6 @@ class SettingsViewModel(
         health,
         healthWeightKg,
         reminderTime = app.reminderMinuteOfDay?.let(timestamps::timeOfDay),
+        lastBackup = app.lastBackupEpochMillis?.let(timestamps::date),
     )
 }

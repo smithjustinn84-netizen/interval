@@ -5,6 +5,8 @@ package dev.justinsmith.interval.today
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
+import dev.justinsmith.interval.data.Backups
 import dev.justinsmith.interval.data.FlowStore
 import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PlanStore
@@ -32,12 +34,14 @@ import dev.justinsmith.interval.model.LoggedSport
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
+import dev.justinsmith.interval.model.backupDue
 import dev.justinsmith.interval.plan.MoveSheet
 import dev.justinsmith.interval.plan.moveSheet
 import dev.justinsmith.interval.platform.DAY_CHECK_MILLIS
 import dev.justinsmith.interval.platform.TimestampFormatter
 import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.platform.days
+import dev.justinsmith.interval.storage.catchingFailures
 import dev.justinsmith.interval.timer.IntervalConfig
 import dev.justinsmith.interval.timer.Preset
 import dev.justinsmith.lift.data.LiftActivity
@@ -61,6 +65,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 private const val KEY_MINUTES = "home_minutes"
+private val log = Logger.withTag("Today")
 private const val KEY_MOVING = "home_moving"
 
 /**
@@ -81,6 +86,8 @@ data class HomeUiState(
     val picks: List<QuickPick> = emptyList(),
     /** The First week card, while it is on: null for anyone it was never shown to, and once it is hidden. */
     val firstWeek: FirstWeek? = null,
+    /** Whether to ask to back up the log: a month since the last backup, with something new in it ([backupDue]). */
+    val backupDue: Boolean = false,
     /** What is done today, oldest first: the ticks on the day's card. */
     val done: List<DoneStep> = emptyList(),
     /** Why today is a day to take easier, as Lift reads it; null on any other. */
@@ -113,6 +120,7 @@ data class HomeUiState(
  * It starts nothing itself: [putOnTimer] and [startLift] set up what the page about to open runs, as History's
  * Up next does.
  */
+@Suppress("detekt.TooManyFunctions") // One function per thing Today can do, from Start to the ask to back up.
 class HomeViewModel(
     private val historyStore: HistoryStore,
     private val presetStore: PresetStore,
@@ -123,6 +131,7 @@ class HomeViewModel(
     private val readiness: LiftReadiness,
     private val timestamps: TimestampFormatter,
     private val clock: WallClock,
+    private val backups: Backups,
     private val savedState: SavedStateHandle = SavedStateHandle(),
     dayCheckMillis: Long = DAY_CHECK_MILLIS,
     computation: CoroutineDispatcher = Dispatchers.Default,
@@ -262,6 +271,19 @@ class HomeViewModel(
         settingsStore.updateAppSettings { it.copy(firstWeek = false) }
     }
 
+    /**
+     * Backs the log up from the ask on Today: the export file offered to share or save, which marks it backed up
+     * and so takes the card away. One that can't be written is logged, and the card stays.
+     */
+    fun backUp() {
+        viewModelScope.launch {
+            catchingFailures(onFailure = { e -> log.e(e) { "Couldn't back up" } }) { backups.backUp() }
+        }
+    }
+
+    /** Puts the ask to back up off for another month. */
+    fun backUpLater() = backups.notNow()
+
     /** The app's locale, as a language tag: the days are named again when it changes. */
     fun setLocale(languageTag: String) {
         locale.value = languageTag
@@ -340,6 +362,13 @@ class HomeViewModel(
                 null
             },
             moveSheet = planned.firstOrNull { it.id == moving }?.let { moveSheet(it, today, today, log) },
+            backupDue = backupDue(
+                app.lastBackupEpochMillis,
+                app.backupAskedEpochMillis,
+                history.map { it.finishedAtEpochMillis } + sports.map { it.loggedAtEpochMillis } +
+                    lifting.sessions.mapNotNull { it.finishedAtEpochMillis },
+                clock.nowMillis(),
+            ),
         )
     }
 }

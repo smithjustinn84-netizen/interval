@@ -2,6 +2,8 @@
 
 package dev.justinsmith.interval.settings
 
+import dev.justinsmith.interval.data.Backups
+import dev.justinsmith.interval.data.DataExporter
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
@@ -33,11 +35,20 @@ class SettingsViewModelTest : MainDispatcherTest() {
     private val sharer = RecordingSharer()
     private val health = RecordingHealthStore()
     private val importer = FakeImporter()
-    private val viewModel by lazy {
-        SettingsViewModel(repository.settings, repository.history, player, {
-            export
-        }, sharer, health, importer, FixedTimestampFormatter)
-    }
+    private val sheet = ShareableFile("interval-log-2026-10-15.csv", "text/csv", "Date")
+    private val now = 1_000_000L
+
+    private fun settings(exporter: DataExporter = DataExporter { export }) = SettingsViewModel(
+        repository.settings,
+        repository.history,
+        player,
+        Backups(exporter, { sheet }, sharer, repository.settings) { now },
+        health,
+        importer,
+        FixedTimestampFormatter,
+    )
+
+    private val viewModel by lazy { settings() }
 
     @Test
     fun `the plan's reminder shows as a time of day and as none while it is off`() {
@@ -53,20 +64,24 @@ class SettingsViewModelTest : MainDispatcherTest() {
     }
 
     @Test
+    fun `an export marks the log backed up and says when`() {
+        assertNull(viewModel.state.value.lastBackup)
+        viewModel.export()
+        assertEquals(now, repository.settings.appSettings.value.lastBackupEpochMillis)
+        assertEquals(FixedTimestampFormatter.date(now), viewModel.state.value.lastBackup)
+    }
+
+    @Test
+    fun `the spreadsheet is offered to share and is no backup`() {
+        viewModel.exportSheet()
+        assertEquals(listOf(sheet), sharer.files)
+        assertNull(repository.settings.appSettings.value.lastBackupEpochMillis)
+    }
+
+    @Test
     fun `an export that fails is dropped and the next one goes`() {
         var failing = true
-        val exporter = DataExporter { if (failing) error("disk full") else export }
-        val viewModel =
-            SettingsViewModel(
-                repository.settings,
-                repository.history,
-                player,
-                exporter,
-                sharer,
-                health,
-                importer,
-                FixedTimestampFormatter,
-            )
+        val viewModel = settings(DataExporter { if (failing) error("disk full") else export })
         viewModel.export()
         assertTrue(sharer.files.isEmpty())
         failing = false
@@ -77,10 +92,7 @@ class SettingsViewModelTest : MainDispatcherTest() {
     @Test
     fun `a second tap while an export is under way exports nothing more`() {
         val built = CompletableDeferred<ShareableFile>()
-        val viewModel =
-            SettingsViewModel(repository.settings, repository.history, player, {
-                built.await()
-            }, sharer, health, importer, FixedTimestampFormatter)
+        val viewModel = settings(DataExporter { built.await() })
         viewModel.export()
         viewModel.export()
         built.complete(export)

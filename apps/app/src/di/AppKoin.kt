@@ -1,11 +1,14 @@
 package dev.justinsmith.interval.di
 
+import dev.justinsmith.interval.data.Backups
+import dev.justinsmith.interval.data.DataExporter
 import dev.justinsmith.interval.data.IntervalRepository
 import dev.justinsmith.interval.data.RepositoryIntervalActivity
+import dev.justinsmith.interval.data.SheetExporter
 import dev.justinsmith.interval.data.WeekStandingSource
 import dev.justinsmith.interval.export.AppDataExporter
 import dev.justinsmith.interval.export.AppDataImporter
-import dev.justinsmith.interval.settings.DataExporter
+import dev.justinsmith.interval.export.AppSheetExporter
 import dev.justinsmith.interval.settings.DataImporter
 import dev.justinsmith.interval.weeksetup.WeekSetupViewModel
 import dev.justinsmith.lift.data.IntervalActivity
@@ -56,6 +59,8 @@ private val intervalFeatureModules =
  */
 private val appModule = module {
     single<DataExporter> { AppDataExporter(get(), get(), get(), get(), get()) }
+    single<SheetExporter> { AppSheetExporter(get(), get(), get(), get()) }
+    single { Backups(get(), get(), get(), get(), get()) }
     single<DataImporter> { AppDataImporter(get(), get()) }
     single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(), get(), get(StorageScope)) }
     single { WeekStandingSource(get(), get(), get(), get(), get(StorageScope)) }

@@ -44,7 +44,11 @@ import dev.justinsmith.interval.settings.resources.settings_effort
 import dev.justinsmith.interval.settings.resources.settings_effort_hint
 import dev.justinsmith.interval.settings.resources.settings_export
 import dev.justinsmith.interval.settings.resources.settings_export_action
-import dev.justinsmith.interval.settings.resources.settings_export_hint
+import dev.justinsmith.interval.settings.resources.settings_export_last
+import dev.justinsmith.interval.settings.resources.settings_export_never
+import dev.justinsmith.interval.settings.resources.settings_export_sheet
+import dev.justinsmith.interval.settings.resources.settings_export_sheet_action
+import dev.justinsmith.interval.settings.resources.settings_export_sheet_hint
 import dev.justinsmith.interval.settings.resources.settings_goal
 import dev.justinsmith.interval.settings.resources.settings_goal_hint
 import dev.justinsmith.interval.settings.resources.settings_halfway
@@ -178,7 +182,7 @@ internal fun settingsGroups(
     onSetTheme: (ThemeMode) -> Unit,
     appIcon: AppIcon?,
     onSetAppIcon: (AppIcon) -> Unit,
-    onExport: () -> Unit,
+    exports: ExportActions,
     onImport: () -> Unit,
     onClearLog: () -> Unit,
     health: HealthActions,
@@ -209,9 +213,17 @@ internal fun settingsGroups(
         ListCard {
             LinkRow(
                 stringResource(Res.string.settings_export),
-                stringResource(Res.string.settings_export_hint),
-                onClick = onExport,
+                state.lastBackup?.let { stringResource(Res.string.settings_export_last, it) }
+                    ?: stringResource(Res.string.settings_export_never),
+                onClick = exports.onExport,
                 onClickLabel = stringResource(Res.string.settings_export_action),
+            )
+            RowDivider()
+            LinkRow(
+                stringResource(Res.string.settings_export_sheet),
+                stringResource(Res.string.settings_export_sheet_hint),
+                onClick = exports.onExportSheet,
+                onClickLabel = stringResource(Res.string.settings_export_sheet_action),
             )
             RowDivider()
             LinkRow(
@@ -674,3 +686,6 @@ private fun SensorGroupPreview() {
         }
     }
 }
+
+/** Your data's exports: the whole log to keep ([onExport]), or as a spreadsheet ([onExportSheet]). */
+internal data class ExportActions(val onExport: () -> Unit, val onExportSheet: () -> Unit)

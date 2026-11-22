@@ -1,0 +1,17 @@
+<journey name="Backing up the log, and the log as a spreadsheet">
+  <description>
+    A month after the first thing trained with no backup (or a month after the last one, with something new since),
+    Today asks to back up the log: Export offers the export file to share or save and the ask goes; Not now asks
+    again in a month. Settings' Export says when the log was last backed up. Export a spreadsheet offers the log as a
+    CSV, a row for each workout, sport day, Lift session and set, which opens in a spreadsheet and is no backup.
+    Needs a log with something trained more than 30 days ago and no export since (adb shell's date, or a fresh
+    install with an imported file of old workouts).
+  </description>
+  <actions>
+    <action>Open the app on Today and verify that a card "Back up your log" shows with "Export" and "Not now"</action>
+    <action>Tap "Export" and verify that the share sheet offers interval-YYYY-MM-DD.json; save it to Files or Drive</action>
+    <action>Go back to Today and verify that the card is gone</action>
+    <action>Open Settings and, under "Your data", verify that Export reads "Last backed up" with today's date</action>
+    <action>Tap "Export a spreadsheet" and verify that the share sheet offers interval-log-YYYY-MM-DD.csv; open it in a spreadsheet app and verify a header row (Date, Time, Kind, Name, Exercise, …) and a row for each workout, session and set, weights in the unit the app weighs in</action>
+  </actions>
+</journey>

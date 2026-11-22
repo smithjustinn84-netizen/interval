@@ -1,10 +1,12 @@
 package dev.justinsmith.interval.today
 
 import androidx.lifecycle.SavedStateHandle
+import dev.justinsmith.interval.data.Backups
 import dev.justinsmith.interval.fakes.DAY_MILLIS
 import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.FixedTimestampFormatter
 import dev.justinsmith.interval.fakes.MainDispatcherTest
+import dev.justinsmith.interval.fakes.RecordingSharer
 import dev.justinsmith.interval.fakes.TODAY
 import dev.justinsmith.interval.fakes.hiitPreset
 import dev.justinsmith.interval.fakes.noonOf
@@ -15,6 +17,7 @@ import dev.justinsmith.interval.history.UpNextItem
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
+import dev.justinsmith.interval.platform.ShareableFile
 import dev.justinsmith.interval.timer.weekdayOf
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -33,8 +36,10 @@ import kotlin.test.assertTrue
 private val tabata = tabataPreset.config
 
 class HomeViewModelTest : MainDispatcherTest() {
-    private val clock = noonOf(TODAY)
+    private var clock = noonOf(TODAY)
     private val repository = FakeStorage().repository(now = { clock })
+    private val sharer = RecordingSharer()
+    private val backupFile = ShareableFile("interval-2026-10-15.json", "application/json", "{}")
     private val lift = FakeLiftStorage()
     private val bells = lift.repository(now = { clock })
     private val readiness = FakeLiftReadiness()
@@ -50,6 +55,7 @@ class HomeViewModelTest : MainDispatcherTest() {
         readiness,
         FixedTimestampFormatter,
         clock = { clock },
+        backups = Backups({ backupFile }, { backupFile }, sharer, repository.settings) { clock },
         savedState = savedState,
         computation = dispatcher,
     )
@@ -68,6 +74,32 @@ class HomeViewModelTest : MainDispatcherTest() {
         viewModel.hideFirstWeek()
         assertNull(viewModel.state.value.firstWeek)
         assertFalse(repository.settings.appSettings.value.firstWeek)
+    }
+
+    @Test
+    fun `a month after the first workout with no backup Today asks and an export answers it`() {
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        clock += 31 * DAY_MILLIS
+        assertTrue(viewModel.state.value.backupDue)
+
+        viewModel.backUp()
+        assertEquals(listOf(backupFile), sharer.files)
+        assertFalse(viewModel.state.value.backupDue)
+    }
+
+    @Test
+    fun `not now puts the ask off`() {
+        repository.history.recordWorkout(tabata, tabata.totalSeconds)
+        clock += 31 * DAY_MILLIS
+        viewModel.backUpLater()
+        assertFalse(viewModel.state.value.backupDue)
+        assertEquals(clock, repository.settings.appSettings.value.backupAskedEpochMillis)
+    }
+
+    @Test
+    fun `nothing trained and nothing to back up`() {
+        clock += 400 * DAY_MILLIS
+        assertFalse(viewModel.state.value.backupDue)
     }
 
     @Test

@@ -11,6 +11,6 @@ import org.koin.dsl.module
  * and the card's that records a class on a sensor and syncs it.
  */
 val todayModule: Module = module {
-    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { HomeViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ClassSensorViewModel(get(), get(), get(), get(), get()) }
 }
