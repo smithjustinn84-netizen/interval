@@ -94,10 +94,6 @@ Neither phone had an ANR or a crash on record, and frames were smooth on the Pix
 These are what reading the code found worth doing, none of them felt yet. *Brings them in:* a sprint on
 performance, or one of them felt on a phone (a missed reminder, a hitch, a hot phone through a workout).
 
-- **The plan reminder's receiver waits without a limit.** `PlanReminderReceiver` (goAsync) waits on both
-  repositories' `ready` (`PlanReminderScheduler.awaitReady`), which on a cold start, at boot most of all, opens both
-  databases and decodes every recorded class; past the broadcast's deadline the system calls it an ANR, and a
-  `ready` that never turns true holds it for good. Wrap the work in `withTimeoutOrNull`.
 - **The widget's receiver can leave its broadcast open.** `WeekWidgetReceiver` calls `result.finish()` after
   `WidgetDayAlarm.arm`, not in a `finally`, so a throw before it holds the broadcast to its deadline.
 - **Import maps every row on the main thread.** `SettingsViewModel.confirmImport` reaches both repositories'

@@ -15,9 +15,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.compose.resources.getString
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Where a reminder's alarm lands. It words the day's reminder from the plan as it now stands ([PlanReminderSource],
@@ -30,7 +32,10 @@ import org.koin.core.component.inject
  *
  * Neither job runs on the main thread, where a receiver has seconds before the system gives up on it: the plan and
  * the record are read from disk and the words suspend, and at boot the system is at its slowest to answer. Each
- * broadcast is held open ([goAsync]) and finished as its work ends.
+ * broadcast is held open ([goAsync]) and finished as its work ends, or given up on at [WORK_LIMIT]: held open no
+ * longer extends the system's deadline, and a cold start waits for both stores to be read, every recorded class
+ * among them. Given up on, the reminder isn't shown here, and the alarms are moved on by the container's own
+ * scheduler as both stores come in, if the process lives that long, else as the app next starts.
  */
 class PlanReminderReceiver :
     BroadcastReceiver(),
@@ -84,7 +89,9 @@ class PlanReminderReceiver :
         val pending = goAsync()
         scope.launch {
             try {
-                catchingFailures(onFailure = { e -> log.w(e) { "Couldn't $what" } }) { work() }
+                withTimeoutOrNull(WORK_LIMIT) {
+                    catchingFailures(onFailure = { e -> log.w(e) { "Couldn't $what" } }) { work() }
+                } ?: log.w { "Gave up trying to $what after $WORK_LIMIT" }
             } finally {
                 pending.finish()
             }
@@ -105,6 +112,12 @@ class PlanReminderReceiver :
     private companion object {
         const val CHANNEL_ID = "plan_reminders"
         const val REQUEST_OPEN = 0
+
+        /**
+         * How long a broadcast's work may run: under the ten seconds a foreground broadcast has before the system
+         * calls it an ANR, the least of the deadlines it may land under.
+         */
+        val WORK_LIMIT = 8.seconds
 
         /** No day: an alarm without one finds no reminder. */
         const val NO_DAY = Long.MIN_VALUE
