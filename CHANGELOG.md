@@ -344,6 +344,10 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   safeties set, and the snatch, overhead squat, snatch balance and jerk how to let a missed lift go. The
   kettlebell snatch loosens the grip near the top rather than opening the hand, and the row braces on a bench or
   your knee, since the one-bell programs ask for no bench.
+- A flow you build says "Move" over the moves done moving that the library offers (the 90/90 hip switch, the
+  world's greatest stretch, the circles, finger pulls, cat-cow, downward dog and swimming), not "Hold". Core for
+  falls' shoulder roll goes from the shoulder to the opposite hip, never over the head, and the seal rolls back to
+  the shoulder blades, never the neck.
 - Today has a picture at the top of its card for the kind of day it is: a strength day, conditioning, mobility,
   BJJ, climbing, running, another sport, a rest day, a day done, or nothing planned. In dark mode it fades into the
   card; in light it is a dark plate over the card. It's left out with large text, so Start stays in view. The week

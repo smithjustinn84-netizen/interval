@@ -108,7 +108,7 @@ val builtInFlows: List<Flow> = listOf(
             Move(
                 "Shoulder roll",
                 seconds = 40,
-                cue = "Same hand and foot forward. Tuck the head, roll over the shoulder and come all the way up.",
+                cue = "Same hand and foot forward. Tuck the head, roll shoulder to opposite hip, never over the head.",
                 sided = true,
                 held = false,
                 exercise = "ShoulderRoll",

@@ -20,6 +20,8 @@ class ShippedMovesTest {
             val exercise = assertNotNull(Exercise.parse(key) as? BuiltInExercise, key)
             assertNotNull(exercise.rep, key)
             assertEquals(move.sided, exercise.perSide, "${move.name} is sided as ${exercise.key} is not")
+            // The library offers it held or moved as the shipped flow has it.
+            assertEquals(move.held, exercise.heldInAFlow, "${move.name} is held unlike the library's ${exercise.key}")
         }
     }
 

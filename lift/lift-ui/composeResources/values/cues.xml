@@ -517,7 +517,7 @@
     </string-array>
     <string-array name="cues_seal">
         <item>Sit balanced, the hands holding the ankles from inside</item>
-        <item>Clap the feet three times, then roll back</item>
+        <item>Clap the feet three times, then roll back to the shoulder blades, never the neck</item>
         <item>Roll up and clap again</item>
     </string-array>
     <string-array name="cues_leg_pull_front">
@@ -627,7 +627,7 @@
     </string-array>
     <string-array name="cues_shoulder_roll">
         <item>Crouch low with the same hand and foot forward</item>
-        <item>Tuck the head and roll over that shoulder</item>
+        <item>Tuck the head and roll from that shoulder to the opposite hip, never over the head</item>
         <item>Come all the way back up</item>
     </string-array>
     <string-array name="cues_sit_up">

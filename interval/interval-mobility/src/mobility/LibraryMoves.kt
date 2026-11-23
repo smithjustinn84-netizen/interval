@@ -16,13 +16,31 @@ internal val libraryMoves: List<BuiltInExercise> = BuiltInExercise.entries.filte
     it.equipment == Equipment.Mat || (it.equipment == Equipment.Bodyweight && it.measure == Measure.Time)
 }
 
+/**
+ * The timed mat moves done moving rather than held still: circles, a switch from side to side, a flow through
+ * positions. A flow says "Move" over them, not "Hold".
+ */
+private val movedThrough: Set<BuiltInExercise> = setOf(
+    BuiltInExercise.HipSwitch,
+    BuiltInExercise.WorldsGreatestStretch,
+    BuiltInExercise.ShoulderCircles,
+    BuiltInExercise.WristCircles,
+    BuiltInExercise.FingerPulls,
+    BuiltInExercise.CatCow,
+    BuiltInExercise.DownwardDog,
+    BuiltInExercise.Swimming,
+)
+
+/** Whether this, as a move of a flow, is a position held still: a timed lift, unless it is [movedThrough]. */
+internal val BuiltInExercise.heldInAFlow: Boolean get() = measure == Measure.Time && this !in movedThrough
+
 /** How long a move from the library starts out. */
 private const val LIBRARY_MOVE_SECONDS = 30
 
 /**
  * [exercise] as a move of a flow, in the words of the moment: its name and the first line of how it is done,
  * copied, so the flow keeps them as its own (and can say them aloud), and its key, so the flow shows it by Lift's
- * figure and cues. Done a side at a time when the lift is; a hold is held still, a mat move moved through.
+ * figure and cues. Done a side at a time when the lift is; held still only when it is [heldInAFlow].
  */
 @Composable
 internal fun libraryMove(exercise: BuiltInExercise): Move = Move(
@@ -30,6 +48,6 @@ internal fun libraryMove(exercise: BuiltInExercise): Move = Move(
     seconds = LIBRARY_MOVE_SECONDS,
     cue = stringArrayResource(exercise.cues()).firstOrNull().orEmpty().take(Move.CUE_MAX_LENGTH),
     sided = exercise.perSide,
-    held = exercise.measure == Measure.Time,
+    held = exercise.heldInAFlow,
     exercise = exercise.key,
 )
