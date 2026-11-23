@@ -1,9 +1,9 @@
 package dev.justinsmith.lift.ui
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,12 +13,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.CacheDrawScope
+import androidx.compose.ui.draw.DrawResult
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
@@ -75,14 +77,17 @@ private fun KettlebellSlot(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(Spacing.space4),
     ) {
-        Canvas(Modifier.fillMaxWidth().height(LiftSizes.kettlebellRack)) {
-            drawKettlebell(scale, bodyColor, bandColor)
-        }
+        Spacer(
+            Modifier.fillMaxWidth().height(LiftSizes.kettlebellRack).drawWithCache {
+                kettlebell(scale, bodyColor, bandColor)
+            },
+        )
         Text(bellNumber(kg), style = IntervalTheme.type.caption, color = IntervalTheme.palette.textDim)
     }
 }
 
-private fun DrawScope.drawKettlebell(scale: Float, bodyColor: Color, bandColor: Color) {
+/** The bell drawn at [scale] of the slot's height: its paths built once a size, then drawn as they stand. */
+private fun CacheDrawScope.kettlebell(scale: Float, bodyColor: Color, bandColor: Color): DrawResult {
     val bellHeight = size.height * scale
     val maxWidth = size.width * BELL_WIDTH_SHARE
     val bodyRadius = minOf(bellHeight * BODY_RADIUS_SHARE, maxWidth / 2f)
@@ -105,7 +110,7 @@ private fun DrawScope.drawKettlebell(scale: Float, bodyColor: Color, bandColor: 
             bodyCenterY - bodyRadius * HANDLE_JOIN_RATIO,
         )
     }
-    drawPath(handlePath, color = bodyColor, style = Stroke(width = handleStroke, cap = StrokeCap.Round))
+    val handleStyle = Stroke(width = handleStroke, cap = StrokeCap.Round)
 
     // Spherical body with flat resting base
     val baseHalfWidth = bodyRadius * BASE_HALF_RATIO
@@ -129,16 +134,17 @@ private fun DrawScope.drawKettlebell(scale: Float, bodyColor: Color, bandColor: 
         )
         close()
     }
-    drawPath(bodyPath, color = bodyColor)
 
     // Subtle accent band across the middle of the bell
     val bandHeight = (bodyRadius * BAND_HEIGHT_RATIO).coerceAtLeast(MIN_BAND_PX)
     val bandHalf = bodyRadius * BAND_HALF_WIDTH_RATIO
-    drawRect(
-        color = bandColor,
-        topLeft = Offset(centerX - bandHalf, bodyCenterY - bandHeight / 2f),
-        size = Size(bandHalf * 2f, bandHeight),
-    )
+    val bandAt = Offset(centerX - bandHalf, bodyCenterY - bandHeight / 2f)
+    val bandSize = Size(bandHalf * 2f, bandHeight)
+    return onDrawBehind {
+        drawPath(handlePath, color = bodyColor, style = handleStyle)
+        drawPath(bodyPath, color = bodyColor)
+        drawRect(color = bandColor, topLeft = bandAt, size = bandSize)
+    }
 }
 
 private const val MIN_BELL_SCALE = 0.56f

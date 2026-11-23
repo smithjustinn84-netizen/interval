@@ -19,7 +19,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.semantics.Role
@@ -188,21 +188,21 @@ private fun HeatmapTile(
         modifier
             .aspectRatio(1f)
             .clip(TileShape)
-            .drawBehind {
-                when (colors.size) {
-                    1 -> drawRect(colors[0])
-
-                    else -> {
-                        // Diagonal split for multi-pillar training days.
-                        drawRect(colors[0])
-                        val lower = Path().apply {
-                            moveTo(size.width, 0f)
-                            lineTo(size.width, size.height)
-                            lineTo(0f, size.height)
-                            close()
-                        }
-                        drawPath(lower, color = colors[1])
+            .drawWithCache {
+                // Diagonal split for multi-pillar training days: its lower half built once a size, not each draw.
+                val lower = if (colors.size > 1) {
+                    Path().apply {
+                        moveTo(size.width, 0f)
+                        lineTo(size.width, size.height)
+                        lineTo(0f, size.height)
+                        close()
                     }
+                } else {
+                    null
+                }
+                onDrawBehind {
+                    drawRect(colors[0])
+                    if (lower != null) drawPath(lower, color = colors[1])
                 }
             }
             .then(todayRing)

@@ -18,8 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.Icon
-import androidx.compose.material3.Text
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
@@ -84,7 +86,7 @@ fun <T> SegmentedPicker(
     ) {
         options.forEach { option ->
             val isSelected = option == selected
-            val textColor by animateColorAsState(
+            val textColor = animateColorAsState(
                 if (isSelected) palette.text else palette.textDim,
                 tween(Motion.STATE_MILLIS),
                 label = "segmentText",
@@ -115,11 +117,12 @@ fun <T> SegmentedPicker(
                         modifier = Modifier.size(Sizes.icon),
                     )
                 }
-                Text(
+                // The colour as a producer, read as the text is drawn: a change of pick fades it without
+                // composing the segment at every frame. Material's Text would read it in composition.
+                BasicText(
                     label(option),
-                    style = textStyle,
-                    color = textColor,
-                    textAlign = TextAlign.Center,
+                    style = LocalTextStyle.current.merge(textStyle).merge(TextStyle(textAlign = TextAlign.Center)),
+                    color = { textColor.value },
                     maxLines = maxLines,
                     overflow = TextOverflow.Ellipsis,
                 )

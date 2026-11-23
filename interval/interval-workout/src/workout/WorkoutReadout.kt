@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -34,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.liveRegion
@@ -162,7 +162,7 @@ internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Mod
                 else -> IntervalTheme.workout.upcoming
             }
             val color by animateColorAsState(target, tween(Motion.STATE_MILLIS, easing = StandardEasing), label = "dot")
-            val width by animateDpAsState(
+            val width = animateDpAsState(
                 if (round == marks.active) IntervalSizes.roundMarkActiveWidth else IntervalSizes.roundMarkWidth,
                 tween(Motion.STATE_MILLIS, easing = StandardEasing),
                 label = "dotWidth",
@@ -170,7 +170,12 @@ internal fun RoundDots(state: WorkoutUiState, accent: () -> Color, modifier: Mod
             Box(
                 Modifier
                     .weight(1f, fill = false)
-                    .width(width)
+                    // Read as the mark is measured: its widening relays the row out and recomposes none of it.
+                    .layout { measurable, constraints ->
+                        val px = width.value.roundToPx().coerceIn(constraints.minWidth, constraints.maxWidth)
+                        val placeable = measurable.measure(constraints.copy(minWidth = px, maxWidth = px))
+                        layout(placeable.width, placeable.height) { placeable.place(0, 0) }
+                    }
                     .height(IntervalSizes.roundMarkHeight)
                     .clip(Corners.full)
                     .drawBehind { drawRect(color) },

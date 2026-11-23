@@ -63,16 +63,17 @@ fun HeartRateChart(
     surfaceColor: Color = if (onWorkoutGround) IntervalTheme.workout.control else IntervalTheme.palette.surface,
     liveReading: Boolean = false,
 ) {
-    val valid = samples.filter { it in HeartRate.BPM_RANGE }
-    if (valid.size < 2) return
+    // Its range, worked out as the samples change rather than at each composition: a live trace's parent
+    // recomposes every second, the samples only every five.
+    val range = remember(samples) { ChartRange.of(samples) } ?: return
     val zones = if (onWorkoutGround) IntervalTheme.workout.heartZones else IntervalTheme.palette.heartZones
     val lineColor = if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text
     val markColor = (if (onWorkoutGround) IntervalTheme.workout.onGround else IntervalTheme.palette.text)
         .copy(alpha = MARK_ALPHA)
     val description = stringResource(Res.string.heart_rate_chart_cd)
     val resting = LocalRestingHeartRate.current
-    val minY = (valid.min().toFloat() - CHART_PADDING_BPM).coerceAtLeast(MIN_CHART_BPM)
-    val maxY = (valid.max().toFloat() + CHART_PADDING_BPM).coerceAtLeast(minY + MIN_CHART_SPAN)
+    val minY = range.minY
+    val maxY = range.maxY
     val thresholds = remember(maxBpm, resting) { heartZoneThresholds(maxBpm, resting) }
     val program = remember { shaderProgram(HEART_RATE_CHART_SHADER) }
 
@@ -100,6 +101,18 @@ fun HeartRateChart(
                 onDrawBehind { drawHeartChartScene(scene) }
             },
     )
+}
+
+/** The beats a chart is drawn between: its readings' lowest and highest, padded; null under two readings. */
+private class ChartRange(val minY: Float, val maxY: Float) {
+    companion object {
+        fun of(samples: List<Int>): ChartRange? {
+            val valid = samples.filter { it in HeartRate.BPM_RANGE }
+            if (valid.size < 2) return null
+            val minY = (valid.min().toFloat() - CHART_PADDING_BPM).coerceAtLeast(MIN_CHART_BPM)
+            return ChartRange(minY, (valid.max().toFloat() + CHART_PADDING_BPM).coerceAtLeast(minY + MIN_CHART_SPAN))
+        }
+    }
 }
 
 @Suppress("detekt.LongParameterList")

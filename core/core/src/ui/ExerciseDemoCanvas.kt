@@ -181,7 +181,7 @@ fun ExerciseDemoCanvas(
     val celebration = rememberCelebrationInterlude(rep, position, held, mode, celebrating)
     val activeRep = celebration.rep ?: rep
     val celebratingNow = celebration.rep != null
-    RunLoop(rep, position, if (celebratingNow) position.share else staticProgress, inView || !tracksView, speed)
+    RunLoop(rep, position, if (celebratingNow) position.share else staticProgress, inView || !tracksView, speed, mode)
     ReportProgress(rep, position, held, onPhase, onSpan)
     val celebrationState = celebration.rep?.celebration?.let {
         stringResource(if (it == Celebration.RaisedBell) Res.string.rep_raising_bell else Res.string.rep_bowing)
@@ -223,6 +223,9 @@ private fun BodyFrame.celebrated(hold: RepHold): Offset = if (hold == RepHold.Fr
 
 private class CelebrationInterlude(val rep: ExerciseRep?, val progress: Animatable<Float, *>)
 
+/** A figure's interlude where none is ever played: never under way, its progress never run. */
+private val NoCelebration = CelebrationInterlude(null, Animatable(0f))
+
 @Composable
 private fun rememberCelebrationInterlude(
     rep: ExerciseRep,
@@ -231,6 +234,9 @@ private fun rememberCelebrationInterlude(
     mode: DemoDisplayMode,
     celebrating: Any?,
 ): CelebrationInterlude {
+    // A thumb is a still and a ghost never celebrates: neither starts the effect, nor holds the animation, for a
+    // gesture it can't play. A list of them makes none.
+    if (mode == DemoDisplayMode.Thumb || mode == DemoDisplayMode.Ghost) return NoCelebration
     val key by rememberUpdatedState(celebrating)
     val stillMotion = prefersReducedMotion()
     var interlude by remember { mutableStateOf<ExerciseRep?>(null) }
@@ -325,7 +331,16 @@ class RepPosition internal constructor(start: Float) {
 fun rememberRepPosition(rep: ExerciseRep): RepPosition = remember(rep) { RepPosition(rep.still) }
 
 @Composable
-private fun RunLoop(rep: ExerciseRep, position: RepPosition, held: Float?, inView: Boolean, speed: Float) {
+private fun RunLoop(
+    rep: ExerciseRep,
+    position: RepPosition,
+    held: Float?,
+    inView: Boolean,
+    speed: Float,
+    mode: DemoDisplayMode,
+) {
+    // A thumb has no loop to run: it is drawn at its still, held, and never reads the position.
+    if (mode == DemoDisplayMode.Thumb) return
     val still = prefersReducedMotion()
     LaunchedEffect(rep, position, held, still, inView, speed) {
         if (held != null) position.share = held.coerceIn(rep.earliest, 1f)
