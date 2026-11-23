@@ -209,6 +209,8 @@ internal fun RingReadout(
     modifier: Modifier = Modifier,
 ) {
     val dial = ringDial(state)
+    // Worked out once a state, not in the ring's draw: the rounds behind walk the whole course.
+    val laps = remember(state) { ringLaps(state) }
     Box(modifier.size(diameter), contentAlignment = Alignment.Center) {
         PhaseBurst(state, Modifier.matchParentSize())
         ProgressRing(
@@ -216,7 +218,7 @@ internal fun RingReadout(
             accent,
             Modifier.fillMaxSize(),
             pulse = rememberCountdownPulse(state.clock, state.countingDown),
-            laps = { ringLaps(state) },
+            laps = { laps },
             dial = dial,
             zone = rememberRingZone(state.liveHeartRate, state.maxHeartRate),
         )
@@ -255,6 +257,7 @@ internal fun LandscapeReadout(
     onToggleHeart: () -> Unit = {},
 ) {
     val dial = ringDial(state)
+    val laps = remember(state) { ringLaps(state) }
     Row(
         modifier,
         verticalAlignment = Alignment.CenterVertically,
@@ -267,7 +270,7 @@ internal fun LandscapeReadout(
                 accent,
                 Modifier.fillMaxSize(),
                 pulse = rememberCountdownPulse(state.clock, state.countingDown),
-                laps = { ringLaps(state) },
+                laps = { laps },
                 dial = dial,
                 zone = rememberRingZone(state.liveHeartRate, state.maxHeartRate),
             )
