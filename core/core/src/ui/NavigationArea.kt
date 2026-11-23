@@ -40,6 +40,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.scene.Scene
@@ -70,6 +71,9 @@ class NavigationArea internal constructor(type: NavigationSuiteType) {
     var thickness: Int by mutableIntStateOf(0)
         internal set
 
+    /** The area's own room, read in layout: see [AreaRoom]. */
+    private val room = AreaRoom(this)
+
     /**
      * What a tab's scene keeps inside: on a phone ([bar]), the horizontal safe area and the bar's own height
      * (leaving the top status bar open so [TabGrid] draws its lanes and scrolls content edge-to-edge behind it);
@@ -77,14 +81,27 @@ class NavigationArea internal constructor(type: NavigationSuiteType) {
      */
     @Composable
     fun tabInsets(): WindowInsets = if (bar) {
-        WindowInsets.safeDrawing
-            .only(WindowInsetsSides.Horizontal)
-            .add(WindowInsets(bottom = thickness))
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal).add(room)
     } else {
-        WindowInsets.safeDrawing
-            .only(WindowInsetsSides.Vertical + WindowInsetsSides.End)
-            .add(WindowInsets(left = thickness, right = thickness).only(WindowInsetsSides.Start))
+        WindowInsets.safeDrawing.only(WindowInsetsSides.Vertical + WindowInsetsSides.End).add(room)
     }
+}
+
+/**
+ * [area]'s [NavigationArea.thickness] as insets: the bar's along the foot, the rail's along the start. Read as the
+ * padding is measured, not as it is composed, so the area laying out at a new size (written from its
+ * `onSizeChanged`, in layout) lays the tabs out again and recomposes none of them.
+ */
+private class AreaRoom(private val area: NavigationArea) : WindowInsets {
+    override fun getBottom(density: Density): Int = if (area.bar) area.thickness else 0
+
+    override fun getTop(density: Density): Int = 0
+
+    override fun getLeft(density: Density, layoutDirection: LayoutDirection): Int =
+        if (!area.bar && layoutDirection == LayoutDirection.Ltr) area.thickness else 0
+
+    override fun getRight(density: Density, layoutDirection: LayoutDirection): Int =
+        if (!area.bar && layoutDirection == LayoutDirection.Rtl) area.thickness else 0
 }
 
 /** The window's [NavigationArea], of [type]: one instance, following the type as the window resizes. */

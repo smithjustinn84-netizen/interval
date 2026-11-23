@@ -26,6 +26,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -128,7 +129,8 @@ internal fun SummaryLayout(
     var draft by rememberPresetDraft()
     var sharing by rememberSaveable { mutableStateOf(false) }
     val healthNotes = healthNotes(state)
-    LaunchedEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
+    // Synchronous, and the notes change with each letter of the note typed: no coroutine to start and cancel.
+    SideEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
     val onSave = { draft = PresetDraft.saveCurrent(state.config) }
     val shareText = workoutShareText(state)
     val share = { sharing = true }

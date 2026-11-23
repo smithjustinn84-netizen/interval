@@ -17,7 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -101,7 +101,8 @@ fun SummaryScreen(
     val palette = IntervalTheme.palette
     val session = finished.session
     val healthNotes = healthNotes(finished)
-    LaunchedEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
+    // Synchronous, and the notes change with each letter of the note typed: no coroutine to start and cancel.
+    SideEffect(healthNotes) { reflection.onDescribeForHealth(healthNotes) }
     val shareText = sessionShareText(session, finished.records)
     val choices = rememberChangesChoices()
     val entrance = rememberEntrance()

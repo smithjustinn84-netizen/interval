@@ -16,7 +16,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntryDecorator
 import androidx.navigation3.scene.Scene
@@ -70,14 +71,19 @@ private fun BackPreviewCorners(content: @Composable () -> Unit) {
             .distinctUntilChanged()
     }.collectAsState(initial = false)
     val swiping = leaving && inProgress
-    val corner by animateDpAsState(
+    val corner = animateDpAsState(
         if (swiping) Radius.radius24 else 0.dp,
         backPreviewSpring(),
         label = "backPreviewCorner",
     )
-    // A page at rest is not clipped at all, so nothing drawn past its bounds is cut off.
+    // The corner is read in the page's layer, so a swipe's frames redraw the layer and compose nothing. A page at
+    // rest is not clipped at all, so nothing drawn past its bounds is cut off.
     Box(
-        modifier = if (corner > 0.dp) Modifier.clip(RoundedCornerShape(corner)) else Modifier,
+        modifier = Modifier.graphicsLayer {
+            val radius = corner.value.toPx()
+            clip = radius > 0f
+            shape = if (radius > 0f) RoundedCornerShape(radius) else RectangleShape
+        },
         propagateMinConstraints = true,
     ) { content() }
 }
