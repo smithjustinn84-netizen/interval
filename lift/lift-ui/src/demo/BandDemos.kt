@@ -140,7 +140,10 @@ val BandSquatDemo: ExerciseRep = run {
     )
 }
 
-/** The good morning: stood on the band, its loop behind the neck, a hinge with a flat back and up. */
+/**
+ * The good morning: stood on the band, its loop across the upper back (the band's end between the shoulders, never
+ * the neck), a hinge with a flat back and up.
+ */
 val BandGoodMorningDemo: ExerciseRep = pull(
     from = standing.copy(upperArm = 20f, forearm = 170f).bothArms(),
     // The upper body tipped over as one, so the hands stay at the shoulders.

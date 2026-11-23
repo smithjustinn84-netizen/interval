@@ -22,7 +22,7 @@
     </string-array>
     <string-array name="cues_snatch">
         <item>Hike the bell high, drive the hips and pull the elbow back to keep the arc close</item>
-        <item>Open the hand near the top and punch through so the bell settles softly overhead</item>
+        <item>Loosen the grip near the top and punch through so the bell settles softly overhead</item>
         <item>Pause locked out, then let the handle turn in a loose hook grip into the next swing</item>
     </string-array>
     <string-array name="cues_get_up">
@@ -36,7 +36,7 @@
         <item>Push the knees out and drive up through the whole foot</item>
     </string-array>
     <string-array name="cues_row">
-        <item>Brace a hand on a bench with a flat back</item>
+        <item>Brace a hand on a bench or your knee with a flat back</item>
         <item>Pull the elbow back towards the hip, not up to the shoulder</item>
         <item>Lower under control to a long arm</item>
     </string-array>
@@ -153,7 +153,7 @@
     <string-array name="cues_barbell_snatch">
         <item>Start with a wide grip and the hips higher than the knees</item>
         <item>Push the floor away, then extend hard through hips and knees</item>
-        <item>Pull yourself under and catch it locked overhead in a squat</item>
+        <item>Pull under to catch it in a squat; if it goes, push it away and step out</item>
     </string-array>
     <string-array name="cues_barbell_clean_and_jerk">
         <item>Clean the bar to the shoulders and stand up out of the squat</item>
@@ -168,7 +168,7 @@
     <string-array name="cues_barbell_jerk">
         <item>Dip straight down with the bar on the shoulders</item>
         <item>Drive up and split the feet as you punch under</item>
-        <item>Recover the front foot first, then the back</item>
+        <item>Miss it in front: let the bar fall away and step back</item>
     </string-array>
     <string-array name="cues_barbell_power_snatch">
         <item>Snatch grip, the bar close to the shins</item>
@@ -203,12 +203,12 @@
     <string-array name="cues_barbell_overhead_squat">
         <item>Lock the bar overhead with a wide grip</item>
         <item>Squat down with the bar over the middle of the foot</item>
-        <item>Push up into the bar as you stand</item>
+        <item>If the bar drifts, push it away and step out from under it</item>
     </string-array>
     <string-array name="cues_barbell_snatch_balance">
         <item>Bar on the back, snatch grip</item>
         <item>Dip, then drive yourself down under the bar fast</item>
-        <item>Catch in a full squat with the arms locked, then stand</item>
+        <item>Catch locked out in a full squat; miss it and push the bar away</item>
     </string-array>
     <string-array name="cues_barbell_push_press">
         <item>Bar in the front rack, elbows a little forward</item>
@@ -216,12 +216,12 @@
         <item>Press it the rest of the way and lock out over the head</item>
     </string-array>
     <string-array name="cues_barbell_back_squat">
-        <item>Bar on the upper back, hands tight</item>
+        <item>In a rack, safeties just below your bottom, bar on the upper back</item>
         <item>Brace, then sit down between the heels</item>
         <item>Keep the knees over the toes and drive up</item>
     </string-array>
     <string-array name="cues_barbell_front_squat">
-        <item>Bar on the front of the shoulders, elbows high</item>
+        <item>In a rack with the safeties set, bar on the shoulders, elbows high</item>
         <item>Sit straight down with the chest up</item>
         <item>Drive the elbows up as you stand</item>
     </string-array>
@@ -238,7 +238,7 @@
     <string-array name="cues_barbell_bench_press">
         <item>Eyes under the bar, feet planted, shoulder blades pinched</item>
         <item>Lower the bar to the lower chest, elbows under the bar</item>
-        <item>Press up and slightly back</item>
+        <item>Set the safety arms just under the chest, or bench with a spotter</item>
     </string-array>
     <string-array name="cues_barbell_overhead_press">
         <item>Bar on the front of the shoulders, grip just outside them</item>
@@ -416,7 +416,7 @@
         <item>Drive up against the band</item>
     </string-array>
     <string-array name="cues_band_good_morning">
-        <item>Stand on the band, the loop behind the neck</item>
+        <item>Stand on the band, the loop across the upper back, never the neck</item>
         <item>Hinge forward with a flat back</item>
         <item>Drive the hips forward to stand</item>
     </string-array>

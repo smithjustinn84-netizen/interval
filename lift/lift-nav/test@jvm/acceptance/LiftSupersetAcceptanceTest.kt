@@ -26,7 +26,7 @@ class LiftSupersetAcceptanceTest {
         seeUpNext("2 of 9 sets")
         see("A2 · with Goblet squat · rest after the pair")
         seeNo("1:30")
-        hear("Brace a hand on a bench with a flat back")
+        hear("Brace a hand on a bench or your knee with a flat back")
 
         openTodaysPlan()
         see("A1 · with Row · rest after the pair")

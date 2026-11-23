@@ -12,7 +12,7 @@
     <action>Verify that the goblet squat's row reads "A1 · with Row · rest after the pair" and the row's "A2 · with Goblet squat · rest after the pair"</action>
     <action>Tap "Save program", go back, and tap "Start day 1"</action>
     <action>Verify that Up next reads "1 of 9 sets", the goblet squat, with "A1 · straight on to Row"</action>
-    <action>Tap "Log set" and verify that no rest counts down, that Up next is the row's left side ("2 of 9 sets", "A2 · with Goblet squat · rest after the pair") and that the row's set-up ("Brace a hand on a bench with a flat back") is said at once</action>
+    <action>Tap "Log set" and verify that no rest counts down, that Up next is the row's left side ("2 of 9 sets", "A2 · with Goblet squat · rest after the pair") and that the row's set-up ("Brace a hand on a bench or your knee with a flat back") is said at once</action>
     <action>Log the row's two sides and verify that a rest counts down after the right, then that Up next is the goblet squat again ("4 of 9 sets")</action>
     <action>Tap "Today's plan" and verify that both blocks are marked A1 and A2</action>
   </actions>

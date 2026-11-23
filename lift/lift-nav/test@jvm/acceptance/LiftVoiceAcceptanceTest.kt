@@ -39,7 +39,7 @@ class LiftVoiceAcceptanceTest {
         emomSetDone()
         hear("Hips back, shins stay vertical")
         secondsPass(50)
-        hear("Open the hand near the top and punch through so the bell settles softly overhead")
+        hear("Loosen the grip near the top and punch through so the bell settles softly overhead")
     }
 
     @Test
