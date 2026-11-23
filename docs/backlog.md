@@ -88,6 +88,46 @@ Full findings, cleanup items, and the 3-phase `0.6.0 → 1.0.0` roadmap live in 
 - **Clean up & dead weight (C1–C6).** Batch `ExportBundle.SCHEMA` bumps once per release (the rule is in CLAUDE.md's Storage and release.md's pre-flight from 2026-11-22; Room stays one bump a change); prune the `Presets` route (and its `subclass` in `navConfiguration`, its line in `NavKeyRoundTripTest`) and `timerUnderTrain`/`rootAtToday` only after a release past `v0.4.0`, the last build with the Timer as a tab, is tagged and installed (no tag holds them yet; `Timer`'s `@SerialName` stays, it is the name every build saves under); curate the built-in program catalogue.
 - **Next-level `1.0` features (F5–F7; F1 to F4 are done).** Superset / paired blocks in Lift; CSV export & gentle offline backup nudges; audio ducking & OEM battery-optimization check.
 
+### From the 2026-11-22 performance audit
+
+Neither phone had an ANR or a crash on record, and frames were smooth on the Pixel (0.44% janky on a debug build).
+These are what reading the code found worth doing, none of them felt yet. *Brings them in:* a sprint on
+performance, or one of them felt on a phone (a missed reminder, a hitch, a hot phone through a workout).
+
+- **The plan reminder's receiver waits without a limit.** `PlanReminderReceiver` (goAsync) waits on both
+  repositories' `ready` (`PlanReminderScheduler.awaitReady`), which on a cold start, at boot most of all, opens both
+  databases and decodes every recorded class; past the broadcast's deadline the system calls it an ANR, and a
+  `ready` that never turns true holds it for good. Wrap the work in `withTimeoutOrNull`.
+- **The widget's receiver can leave its broadcast open.** `WeekWidgetReceiver` calls `result.finish()` after
+  `WidgetDayAlarm.arm`, not in a `finally`, so a throw before it holds the broadcast to its deadline.
+- **Import maps every row on the main thread.** `SettingsViewModel.confirmImport` reaches both repositories'
+  `importAll`, which build and JSON-encode every entry, class (up to 17,280 samples each), session and set on the
+  caller's thread before the writer takes them; only the file's read is off it. Jank on a large backup.
+- **A Verity Sense sync is worked out on the main thread.** From `ClassSensorViewModel` nothing on the path moves
+  thread, so after the SDK's calls the accelerometer's magnitudes, `classSamples` and `encodeSamples` run on Main:
+  roughly 50 to 300 ms for a class of an hour or two.
+- **What is left of the workout's state per tick.** It is worked out once a shown second now (`shownKey`), but
+  `WorkoutSession` still makes the notification's `status()` (another walk of the course and an outline) at every
+  100 ms tick while the workout is kept, `WorkoutActions` is new at each composition, so nothing handed it skips,
+  and `ProgressRing` makes a new `RingColors` at each, so its draw cache (strokes, dash effect, shader paint) is
+  rebuilt with every recomposition.
+- **Android compiles each shader as its composable appears.** `shaderProgram` on Android makes a `RuntimeShader`
+  at every call, where Skia's keeps one effect a source; so the rest's clock compiles at each rest and a record's
+  burst and figure at each record. Keep one a source.
+- **The figure's shading allocates every frame.** `BodyShading` and `BodyProps` make a gradient brush a limb, form
+  and prop each frame of the compact and detail figures (the session card's band, a flow's move), a native shader
+  each on Android. `ExerciseDemoCanvas`'s cache takes a new `CelebrationInterlude` at each composition, so each
+  recomposition samples the rep's 121 poses again.
+- **The workout's lanes never rest.** `WorkoutLanes` keeps its clock running paused and on the summary, a frame
+  every vsync for as long as either is up; `SetupLanes` stops. Pass it `paused`.
+- **Lift's session page recomposes four times a second.** `SessionFoot` (`heart = clocks().restHeart`),
+  `SessionTiles` and the title bar's actions read `clocks()` in composition, and the hold's state keeps a
+  `progress` its countdown never reads (rest, EMOM and density strip theirs), so the page and the Log sheet follow
+  the timers' 250 ms ticks for text that changes once a second.
+- **The screen's state is worked with the screen off.** `WorkoutViewModel.state` and `progress` and
+  `SessionViewModel.clocks` are `SharingStarted.Eagerly`, so the screen's mapping runs with the phone locked; the
+  session must keep ticking, the mapping need not.
+
 ## Left out on purpose
 
 - **Import atomicity across both databases (E5** in the [2026-10-31 review](archive/architecture-review.md)).
