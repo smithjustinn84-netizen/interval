@@ -73,11 +73,11 @@ import dev.justinsmith.interval.ui.Sizes
 import dev.justinsmith.interval.ui.Spacing
 import dev.justinsmith.interval.ui.WorkoutColors
 import dev.justinsmith.interval.ui.WorkoutLanes
-import dev.justinsmith.interval.ui.isLandscape
 import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.laneRing
 import dev.justinsmith.interval.ui.of
 import dev.justinsmith.interval.ui.rememberLaneAnchor
+import dev.justinsmith.interval.ui.windowIsLandscape
 import dev.justinsmith.interval.workout.resources.Res
 import dev.justinsmith.interval.workout.resources.workout_pause
 import dev.justinsmith.interval.workout.resources.workout_resume
@@ -222,7 +222,9 @@ fun WorkoutScreen(
         onUndoRound = onUndoRound,
         onToggleHeart = onToggleHeart,
     )
-    BoxWithConstraints(
+    // Sideways by the window: the workout fills it, so nothing need measure to know.
+    val landscape = windowIsLandscape()
+    Box(
         modifier
             .fillMaxSize()
             .background(IntervalTheme.workout.ground)
@@ -231,7 +233,6 @@ fun WorkoutScreen(
             .focusable()
             .workoutKeys(enabled = !confirmingEnd, state, rootFocused, actions, onExit),
     ) {
-        val landscape = isLandscape
         WorkoutLanes(anchor, accent, Modifier.matchParentSize())
         PhaseBand(accent, landscape)
         if (state.isDone) {

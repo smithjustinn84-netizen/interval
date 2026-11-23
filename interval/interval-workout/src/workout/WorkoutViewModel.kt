@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
@@ -68,7 +69,12 @@ class WorkoutViewModel(
     // Followed rather than read once: a preset saved from the summary lands later, and the summary must then
     // name it. Matched once per change of either, not only on a tick.
     val state: StateFlow<WorkoutUiState> = combine(
-        combine(session.state.filterNotNull().filter { it.id == id }, session.liveHeartRateState, heartTrace) {
+        combine(
+            // A tick within the second the screen shows changes nothing on it: the run's key is the same.
+            session.state.filterNotNull().filter { it.id == id }.distinctUntilChangedBy { it.shownKey },
+            session.liveHeartRateState,
+            heartTrace,
+        ) {
                 run,
                 liveHr,
                 trace,

@@ -5,7 +5,6 @@ package dev.justinsmith.interval
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
@@ -99,6 +98,7 @@ import dev.justinsmith.interval.ui.rememberNavigationArea
 import dev.justinsmith.interval.ui.rememberNotices
 import dev.justinsmith.interval.ui.rememberTrainPillar
 import dev.justinsmith.interval.ui.tabScenes
+import dev.justinsmith.interval.ui.windowDpSize
 import dev.justinsmith.interval.weeksetup.isSetupTurn
 import dev.justinsmith.interval.weeksetup.nothingYet
 import dev.justinsmith.interval.weeksetup.opensOnSetup
@@ -309,11 +309,11 @@ private fun AppShell(backStack: NavBackStack<NavKey>, notices: Notices) {
     val pendingHistoryDay: MutableState<Long?> = rememberSaveable { mutableStateOf(null) }
     val pillar = rememberTrainPillar(backStack)
     val palette = IntervalTheme.palette
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    Box(Modifier.fillMaxSize()) {
         // The bar or rail is decided by the window alone and lies over the pages: NavDisplay fills the window
         // whatever is on top, so a page lays out once, at its size. A tab's scene keeps the area's room clear
         // itself and holds it while it leaves, so the tab under a push stays still as the area slides off.
-        val area = rememberNavigationArea(navigationSuiteType(maxWidth, maxHeight))
+        val area = rememberNavigationArea(windowDpSize().let { navigationSuiteType(it.width, it.height) })
         val tabScenes = remember(area) { area.tabScenes<NavKey>() }
         // The area still names the tab it leaves with.
         val shown = remember { ShownTab(currentTab ?: TodayTab) }

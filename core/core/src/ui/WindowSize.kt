@@ -5,8 +5,25 @@ import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.unit.DpSize
 import androidx.window.core.layout.WindowSizeClass
+
+/**
+ * The window's size in dp, read live: what a page filling the window is laid out in, known in composition without
+ * a `BoxWithConstraints` measuring for it. For a decision of the whole window (the bar or the rail, a screen's
+ * side); a part of a page asks its own constraints.
+ */
+@Composable
+fun windowDpSize(): DpSize {
+    val size = LocalWindowInfo.current.containerSize
+    return with(LocalDensity.current) { DpSize(size.width.toDp(), size.height.toDp()) }
+}
+
+/** Whether the window is wider than tall, as [isLandscape] says of a box that fills it. */
+@Composable
+fun windowIsLandscape(): Boolean = LocalWindowInfo.current.containerSize.let { it.width > it.height }
 
 /**
  * Whether an [IntervalSheet] opened now rises over a window wider than it is tall: a phone on its side. Its

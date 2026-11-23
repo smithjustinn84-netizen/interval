@@ -26,6 +26,7 @@ import dev.justinsmith.interval.timer.Step
 import dev.justinsmith.interval.timer.WeekStanding
 import dev.justinsmith.interval.timer.WorkoutOutline
 import dev.justinsmith.interval.timer.WorkoutState
+import dev.justinsmith.interval.timer.ceilSeconds
 import dev.justinsmith.interval.timer.matching
 import dev.justinsmith.interval.timer.nameOf
 import dev.justinsmith.interval.timer.stepAt
@@ -324,5 +325,31 @@ data class WorkoutRun(
         }
     }
 }
+
+/**
+ * What of a run [WorkoutRun.toUiState] can show, its time as the whole seconds the screen counts in: the interval's
+ * clock as it rounds up, the time run and worked as they round, and a cap's round so far in whole seconds. Ticks
+ * within one of those seconds have the same key, so the screen's state is worked out once a second, not at every
+ * tick; anything else that changes (a pause, a tap, a sample) is a new key at once. The ring's progress, which moves
+ * every tick, is read from the run itself.
+ */
+internal data class ShownKey(val run: WorkoutRun, val capSecond: Long?)
+
+internal val WorkoutRun.shownKey: ShownKey
+    get() {
+        val capSecond = if (engine.inCap && !over) {
+            val into = engine.phaseMillis - engine.remainingMillis
+            val last = capRounds.lastOrNull { it.block == engine.block }?.atMillis ?: 0L
+            (into - last) / MILLIS_PER_SECOND
+        } else {
+            null
+        }
+        val run = copy(
+            engine = engine.copy(remainingMillis = ceilSeconds(engine.remainingMillis) * MILLIS_PER_SECOND),
+            activeMillis = activeSeconds.toLong(),
+            workMillis = workSeconds.toLong(),
+        )
+        return ShownKey(run, capSecond)
+    }
 
 private fun Long.roundedSeconds(): Int = ((this + MILLIS_PER_SECOND / 2) / MILLIS_PER_SECOND).toInt()

@@ -9,7 +9,6 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.SpringSpec
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -23,8 +22,6 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
-import androidx.compose.foundation.interaction.InteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
@@ -34,7 +31,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.TextStyle
 import dev.justinsmith.interval.platform.prefersReducedMotion
 
@@ -65,25 +61,6 @@ private const val RISE_SHARE = 0.25f
 
 /** A rolling value travels this share of its height. */
 private const val ROLL_SHARE = 0.4f
-
-/**
- * Shrinks a control to [Motion.PRESS_SCALE] while [interaction] reports it pressed, springing back
- * on release: the touch feedback every button and stepper shares, under its ripple.
- */
-@Composable
-fun Modifier.pressScale(interaction: InteractionSource): Modifier {
-    val pressed by interaction.collectIsPressedAsState()
-    val reducedMotion = prefersReducedMotion()
-    val scale by animateFloatAsState(
-        if (pressed && !reducedMotion) Motion.PRESS_SCALE else 1f,
-        pressSpring(),
-        label = "press",
-    )
-    return graphicsLayer {
-        scaleX = scale
-        scaleY = scale
-    }
-}
 
 /** Something arriving: it fades in as it rises from a little below its place, after [delayMillis]. */
 fun enterRising(delayMillis: Int = 0, reducedMotion: Boolean = false): EnterTransition {
