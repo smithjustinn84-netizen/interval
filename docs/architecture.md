@@ -446,8 +446,8 @@ flowchart TD
     or the program's day lighter on the grip (`Program.lighterDayThan`), never imposed.
   - `Density.kt` reads reps a minute from sets logged as they were done; where the next bell is a big jump, a
     block's own rest (`Block.rest`) shortens before the bell goes up, and a best pace is a record.
-  - `Benchmarks.kt` works out the challenges (10,000 swings, the snatch test, the ABC's best twenty minutes, a
-    get-up at body weight) shown in `lift-today`'s `ChallengesCard`, and each lift's lifetime reps and milestones.
+  - `Benchmarks.kt` works out the challenges (10,000 swings, the snatch test, and the ABC's best twenty
+    minutes) shown in `lift-today`'s `ChallengesCard`, and each lift's lifetime reps and milestones.
 - **Exercise figures (Lift)**: `lift-ui`'s `demo/` draws every built-in lift as a figure seen from the side
   (`ExerciseFigure`, joint angles per `ExerciseDemo` pose, the bell turning with the hand), keyed by `Exercise.demo`.
   `rememberDemoPlayer` sets up once then loops the reps, standing still under `prefersReducedMotion()`;

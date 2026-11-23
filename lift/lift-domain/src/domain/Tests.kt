@@ -100,7 +100,7 @@ val Challenge.test: TestId?
     get() = when (this) {
         is Challenge.SnatchTest -> TestId.SnatchTest
         is Challenge.ArmorBuilding -> TestId.ArmorBuilding
-        is Challenge.TenThousandSwings, is Challenge.BodyweightGetUp -> null
+        is Challenge.TenThousandSwings -> null
     }
 
 /** One attempt at a test: the session it was, when it finished, the [load] it was done at and what it came to. */

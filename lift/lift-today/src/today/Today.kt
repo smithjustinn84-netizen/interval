@@ -639,7 +639,6 @@ private fun TodayScreenPreview() {
                 programDay = active.dayAfter(2),
                 challenges = listOf(
                     Challenge.ArmorBuilding(best = 15, protocol = AbcProtocol.OnTheMinute),
-                    Challenge.BodyweightGetUp(kg = 16.0, share = 0.23),
                 ),
             ),
             onStartSession = {},

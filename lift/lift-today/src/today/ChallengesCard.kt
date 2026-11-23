@@ -42,7 +42,6 @@ import dev.justinsmith.interval.ui.isLargeText
 import dev.justinsmith.interval.ui.pressScale
 import dev.justinsmith.lift.domain.AbcProtocol
 import dev.justinsmith.lift.domain.Challenge
-import dev.justinsmith.lift.domain.Equipment
 import dev.justinsmith.lift.domain.SNATCH_TEST_REPS
 import dev.justinsmith.lift.domain.TEN_THOUSAND
 import dev.justinsmith.lift.domain.TestId
@@ -52,8 +51,6 @@ import dev.justinsmith.lift.today.resources.today_challenge_abc
 import dev.justinsmith.lift.today.resources.today_challenge_abc_best
 import dev.justinsmith.lift.today.resources.today_challenge_abc_best_as_many
 import dev.justinsmith.lift.today.resources.today_challenge_abc_best_on_the_minute
-import dev.justinsmith.lift.today.resources.today_challenge_get_up
-import dev.justinsmith.lift.today.resources.today_challenge_get_up_best
 import dev.justinsmith.lift.today.resources.today_challenge_snatch
 import dev.justinsmith.lift.today.resources.today_challenge_snatch_best
 import dev.justinsmith.lift.today.resources.today_challenge_snatch_best_from
@@ -63,7 +60,6 @@ import dev.justinsmith.lift.today.resources.today_challenge_swings_count
 import dev.justinsmith.lift.today.resources.today_challenge_swings_program
 import dev.justinsmith.lift.today.resources.today_challenge_test_cd
 import dev.justinsmith.lift.ui.LiftSizes
-import dev.justinsmith.lift.ui.weightValue
 import org.jetbrains.compose.resources.StringResource
 import org.jetbrains.compose.resources.stringResource
 import org.jetbrains.compose.resources.vectorResource
@@ -123,17 +119,6 @@ internal fun ChallengesCard(
                         challenge.best,
                     ),
                     share = null,
-                    onClick = open,
-                )
-
-                is Challenge.BodyweightGetUp -> ChallengeRow(
-                    Res.string.today_challenge_get_up,
-                    stringResource(
-                        Res.string.today_challenge_get_up_best,
-                        weightValue(challenge.kg, Equipment.Kettlebell),
-                        (challenge.share * PERCENT).roundToInt(),
-                    ),
-                    share = challenge.share.toFloat(),
                     onClick = open,
                 )
             }

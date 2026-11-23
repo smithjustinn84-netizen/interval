@@ -66,17 +66,17 @@ class BenchmarksTest {
                 ),
             ),
         )
-        val loose = challenges(sessions, now, following = null, followedSince = null, bodyWeightKg = 80.0)
-        assertEquals(Challenge.TenThousandSwings(1_200, ofProgram = false), loose[0])
-        assertEquals(Challenge.BodyweightGetUp(40.0, 0.5), loose.last())
+        val loose = challenges(sessions, now, following = null, followedSince = null)
+        // A get-up, however heavy, is no challenge: nothing chases one toward the body weight.
+        assertEquals(listOf<Challenge>(Challenge.TenThousandSwings(1_200, ofProgram = false)), loose)
 
         val program = ProgramKey.BuiltIn(ProgramId.TenThousandSwings)
-        val following = challenges(sessions, now, program, followedSince = 0, bodyWeightKg = null)
+        val following = challenges(sessions, now, program, followedSince = 0)
         assertEquals(Challenge.TenThousandSwings(1_700, ofProgram = true), following.single())
         // A few swings off the program are no challenge yet.
         val few = listOf(session("few", set(BuiltInExercise.TwoHandSwing, 300, 30 * DAY)))
-        assertTrue(challenges(few, now, null, null, null).isEmpty())
-        assertTrue(challenges(emptyList(), now, null, null, null).isEmpty())
+        assertTrue(challenges(few, now, null, null).isEmpty())
+        assertTrue(challenges(emptyList(), now, null, null).isEmpty())
     }
 
     @Test
@@ -85,7 +85,7 @@ class BenchmarksTest {
         val rounds = (0 until 14).map {
             SetLog.of(0, BuiltInExercise.ArmorBuildingComplex, 24.0, 1, null, 30_000L + it * 85_000L, double = true)
         }
-        val abc = challenges(listOf(session("abc", *rounds.toTypedArray())), 40 * DAY, null, null, null)
+        val abc = challenges(listOf(session("abc", *rounds.toTypedArray())), 40 * DAY, null, null)
         assertEquals(Challenge.ArmorBuilding(14), abc.single())
     }
 
@@ -101,11 +101,11 @@ class BenchmarksTest {
         val asMany = session("cap", *rounds(14, 85_000L).toTypedArray()).copy(program = abf, day = 1, plan = capped)
         assertEquals(
             Challenge.ArmorBuilding(14, AbcProtocol.AsManyAsYouCan),
-            challenges(listOf(onTheMinute, asMany), 40 * DAY, null, null, null).single(),
+            challenges(listOf(onTheMinute, asMany), 40 * DAY, null, null).single(),
         )
         assertEquals(
             Challenge.ArmorBuilding(12, AbcProtocol.OnTheMinute),
-            challenges(listOf(onTheMinute), 40 * DAY, null, null, null).single(),
+            challenges(listOf(onTheMinute), 40 * DAY, null, null).single(),
         )
     }
 
@@ -139,7 +139,7 @@ class BenchmarksTest {
         assertEquals(Challenge.SnatchTest(50), snatchTest(listOf(lifted), emptyList()))
         val unnamed = intervalSets(listOf(IntervalSnatches(8, 16.0, fifteenFifteen, source = null)))
         assertEquals(Challenge.SnatchTest(80, fromIntervals = true), snatchTest(emptyList(), unnamed))
-        val challenges = challenges(emptyList(), 40 * DAY, null, null, null, intervals = intervals)
+        val challenges = challenges(emptyList(), 40 * DAY, null, null, intervals = intervals)
         assertEquals(listOf(Challenge.SnatchTest(80, fromIntervals = true, preset = "15:15 MVO2")), challenges)
     }
 

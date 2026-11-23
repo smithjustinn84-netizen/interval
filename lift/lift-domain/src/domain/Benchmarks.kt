@@ -93,11 +93,6 @@ sealed interface Challenge {
      * session it came from (null for a free session's).
      */
     data class ArmorBuilding(val best: Int, val protocol: AbcProtocol? = null) : Challenge
-
-    /** The heaviest get-up, [kg], as a [share] of the body weight; a whole one is the goal. */
-    data class BodyweightGetUp(val kg: Double, val share: Double) : Challenge {
-        val done: Boolean get() = share >= 1.0
-    }
 }
 
 /**
@@ -126,8 +121,8 @@ fun snatchTest(sessions: List<LiftSession>, intervals: List<IntervalSetGroup>): 
  * The challenges under way over [sessions] by [nowMillis]: 10,000 Swings with [SWING_CHALLENGE_FROM] swings in its
  * window (or while its program, [following], is followed, from [followedSince]), the snatch test and the ABC once
  * either has been done as it was logged (the ABC's by the protocol of its best, its day found among [programs]; the
- * snatch test's from the [intervals]' snatches too), and the bodyweight get-up once there is a get-up and a
- * [bodyWeightKg].
+ * snatch test's from the [intervals]' snatches too). A get-up has no goal among them: it is done light to
+ * moderate for the shoulder's sake, and one chased toward the body weight risks the shoulder and the face under it.
  */
 @Suppress("detekt.LongParameterList") // What the challenges are counted from.
 fun challenges(
@@ -135,7 +130,6 @@ fun challenges(
     nowMillis: Long,
     following: ProgramKey?,
     followedSince: Long?,
-    bodyWeightKg: Double?,
     programs: List<Program> = builtInPrograms,
     intervals: List<IntervalSetGroup> = emptyList(),
 ): List<Challenge> {
@@ -143,13 +137,9 @@ fun challenges(
     val since = if (ofProgram) followedSince else nowMillis - SWING_CHALLENGE_DAYS * MILLIS_PER_DAY
     val sets = sessions.flatMap { it.workingSets }
     val swung = lifetimeReps(BuiltInExercise.TwoHandSwing, sets.filter { it.loggedAtEpochMillis >= since })
-    val getUps = sets.filter { it.exercise == BuiltInExercise.GetUp }
     return listOfNotNull(
         Challenge.TenThousandSwings(swung, ofProgram).takeIf { swung >= SWING_CHALLENGE_FROM || ofProgram },
         snatchTest(sessions, intervals),
         armorBuildingBest(sessions, programs),
-        bodyWeightKg?.takeIf { it > 0 }?.let { weight ->
-            getUps.maxOfOrNull { it.load.kg }?.takeIf { it > 0 }?.let { Challenge.BodyweightGetUp(it, it / weight) }
-        },
     )
 }

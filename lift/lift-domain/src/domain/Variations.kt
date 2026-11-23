@@ -22,11 +22,16 @@ val harderLifts: Map<BuiltInExercise, BuiltInExercise> = mapOf(
 /**
  * The harder lift [exercise], done with two bells or one ([double]) at [kg] a bell, moves to at the same bell: with
  * one bell, its harder lift ([harderLifts]); else, a lift that can be done with two bells, the same with two, once
- * [pairs] (the bells owned two of) has [kg]. Null for a lift the user made, any but a counted bell lift, or none.
+ * [pairs] (the bells owned two of) has [kg], unless it is thrown overhead. Null for a lift the user made, any but a
+ * counted bell lift, or none.
  */
 fun variationOf(exercise: Exercise, double: Boolean, kg: Double, pairs: Set<Double>): Variation? {
     if (exercise !is BuiltInExercise || exercise.equipment != Equipment.Kettlebell) return null
     if (exercise.measure != Measure.Reps || double) return null
     harderLifts[exercise]?.let { return Variation(it, double = false) }
-    return Variation(exercise, double = true).takeIf { exercise.doubles == Doubles.Optional && kg in pairs }
+    return Variation(exercise, double = true)
+        .takeIf { exercise.doubles == Doubles.Optional && kg in pairs && exercise !in overheadThrows }
 }
+
+/** The lifts thrown overhead, which never go to two bells on their own: a double snatch is a lift to choose. */
+private val overheadThrows = setOf(BuiltInExercise.Snatch, BuiltInExercise.HalfSnatch)

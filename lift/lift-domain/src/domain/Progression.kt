@@ -37,9 +37,8 @@ const val ADDED_KG_STEP = 2.5
 /** What weight added to bodyweight goes up by in pounds. */
 const val ADDED_LB_STEP = 5.0
 
-/** A hold goes up by five seconds, up to ten minutes, as the Log sheet steps it. */
-private const val HOLD_STEP = 5
-private const val HOLD_MAX = 600
+/** A hold goes up by five seconds, as the Log sheet steps it. */
+internal const val HOLD_STEP = 5
 
 /** An EMOM runs no longer than an hour, as the Log sheet allows. */
 private const val EMOM_MAX_MINUTES = 60
@@ -73,16 +72,21 @@ fun nextStep(
  * [gear]'s bells is ([SMALL_JUMP], [BIG_JUMP]), each rung tried in turn:
  * 1. a block building within a [Block.ranged] range, a rep more until its top;
  * 2. denser, before a medium or big jump: rest [RestClock.STEP_SECONDS] shorter (its own, else [rest]), down to 30
- *    seconds for a thrown lift and 60 for any other; an EMOM a rep more a minute instead, up to 10 or 5;
- * 3. more, before a medium or big jump: a set, up to 10 or 5; an EMOM a minute, up to 30; a ladder another, up to 5,
+ *    seconds for a thrown lift and 60 for any other; an unranged EMOM a rep more a minute instead, up to 10 or 5
+ *    and only while the minute's work fits [EMOM_WORK_SECONDS], never a complex's;
+ * 3. more, before a medium or big jump: a set, up to 10 or 5; an unranged EMOM a minute, up to half as many again
+ *    as it started at ([EMOM_MINUTES_GROWTH]) and never past 30, a ranged one none; a ladder another, up to 5,
  *    then one that climbs from 1 a rung, up to 5;
  * 4. before a big jump, or with none heavier owned, a harder lift at the same bell ([variationOf]), once;
  * 5. the next bell, back as the block started ([Block.origin]), its own lift again, at the bottom of its range.
- * With no bell heavier and nothing left, it has [Rung.ToppedOut], except sets with no range, which take a rep more.
+ * With no bell heavier and nothing left, it has [Rung.ToppedOut], except sets with no range, which take a rep more
+ * up to [BALLISTIC_MAX_SET_REPS] or [GRIND_MAX_SET_REPS]: never a get-up, done a rep at a time. A carry or hold of a
+ * bell goes five seconds more up to [CARRY_MAX_SECONDS], then the next bell back at its seconds.
  *
- * Every other load keeps its own steps: a hold five seconds more; within a range a rep more, then the next load at
- * its bottom; else the next load: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more added to bodyweight, the next of
- * [gear]'s bands heavier, else a rep more; an EMOM a minute more; a ladder another, then a rung.
+ * Every other load keeps its own steps: a hold five seconds more, up to [CORE_HOLD_MAX_SECONDS]; within a range a
+ * rep more, then the next load at its bottom; else the next load: [BAR_KG_STEP] more on the bar, [ADDED_KG_STEP] more
+ * added to bodyweight, the next of [gear]'s bands heavier, else a rep more up to [PLAIN_MAX_SET_REPS]; an EMOM a
+ * minute more, up to half as many again; a ladder another, then a rung.
  *
  * A block done with two bells steps only to a weight of [Gear.pairs], the bells owned two of, once the user has said
  * which those are; with none said, to any of [Gear.bells]. It moves to two bells at the same bell only once
@@ -99,8 +103,11 @@ fun rungOf(
     val sets = doneInFull(block, done) ?: return null
     val at = loadDone(block, sets, gear.bands) ?: return null
     return when {
+        block.exercise.measure == Measure.Time && at is Load.Bell ->
+            bellHoldRung(block, at, gear.bells, gear.pairs, HOLD_STEP)
+
         block.exercise.measure == Measure.Time ->
-            block.copy(reps = (block.reps + HOLD_STEP).coerceAtMost(HOLD_MAX)).takeIf { it != block }?.let(Rung::Step)
+            block.copy(reps = block.reps + HOLD_STEP).takeIf { it.reps <= CORE_HOLD_MAX_SECONDS }?.let(Rung::Step)
 
         at is Load.Bell -> bellRung(block, at, gear.bells, gear.pairs, rest)
 
@@ -117,13 +124,13 @@ private fun otherRung(block: Block, at: Load, bands: List<Band>, unit: WeightUni
         range != null -> return heavier(block, at, bands, unit)?.copy(reps = range.bottom, rest = null)?.let(Rung::Step)
             ?: Rung.ToppedOut
 
-        block.kind == BlockKind.Emom ->
-            block.copy(rounds = (block.rounds + 1).coerceAtMost(EMOM_MAX_MINUTES)).takeIf { it != block }
+        block.kind == BlockKind.Emom -> block.copy(rounds = block.rounds + 1, origin = block.origin ?: block)
+            .takeIf { block.rounds < block.mostMinutes(EMOM_MAX_MINUTES) }
 
         block.kind == BlockKind.Ladder -> moreLadder(block)
 
         block.kind == BlockKind.Sets -> heavier(block, at, bands, unit)?.copy(rest = null)
-            ?: block.copy(reps = block.reps + 1)
+            ?: block.copy(reps = block.reps + 1).takeIf { block.reps < PLAIN_MAX_SET_REPS }
 
         else -> null
     }

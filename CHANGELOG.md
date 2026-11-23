@@ -328,6 +328,12 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   is finished and empties at Monday's midnight without the app.
 
 ### Changed
+- Safer progressions and no body-weight get-up. Strength no longer sets a goal of a get-up at your body weight:
+  a get-up loaded that heavy has no safe way out, so it stays a lift done light to moderate. A program's step up
+  now stays within sense. An EMOM keeps its minutes, or adds a few at most, and takes another rep a minute only
+  while the minute can hold it (never another Armor Building Complex). Get-ups never go to two a set. Carries go
+  to a heavier bell after a minute rather than getting longer. Planks stop stepping at two minutes, and the snatch
+  never moves to two bells on its own.
 - Today has a picture at the top of its card for the kind of day it is: a strength day, conditioning, mobility,
   BJJ, climbing, running, another sport, a rest day, a day done, or nothing planned. In dark mode it fades into the
   card; in light it is a dark plate over the card. It's left out with large text, so Start stays in view. The week

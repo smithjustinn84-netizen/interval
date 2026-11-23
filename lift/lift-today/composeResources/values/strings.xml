@@ -63,8 +63,6 @@
     <string name="today_challenge_abc_best">Best: %1$d complexes in 20 minutes</string>
     <string name="today_challenge_abc_best_on_the_minute">Best: %1$d complexes in 20 minutes, on the minute</string>
     <string name="today_challenge_abc_best_as_many">Best: %1$d complexes in 20 minutes, as many as you can</string>
-    <string name="today_challenge_get_up">A get-up at your body weight</string>
-    <string name="today_challenge_get_up_best">Heaviest: %1$s, %2$d% of your weight</string>
     <string name="today_grip_week">Grip this week: %1$d</string>
     <string name="today_grip_thrown">%1$d% of it swings, cleans and snatches</string>
     <string name="today_grip_weeks">The last four weeks</string>

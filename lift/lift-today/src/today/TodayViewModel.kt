@@ -92,7 +92,7 @@ data class TodayUiState(
     val easier: Boolean = false,
     /** How ready for today's training, from the last session, the mat and the grip. */
     val readiness: ReadinessCheck = ReadinessCheck(Readiness.Normal),
-    /** The benchmarks under way: 10,000 swings, the snatch test, the ABC's best, a bodyweight get-up. */
+    /** The benchmarks under way: 10,000 swings, the snatch test, and the ABC's best. */
     val challenges: List<Challenge> = emptyList(),
 ) {
     /** How far through the program followed: the days done of all of them, 1 once it is over. */
@@ -149,13 +149,12 @@ class TodayViewModel(
                 },
             ) { state, with -> with(state) }
             .combine(
-                combine(sessionStore.sessions, programStore.followed, intervals.bodyWeightKg, intervals.workouts) {
+                combine(sessionStore.sessions, programStore.followed, intervals.workouts) {
                         sessions,
                         followed,
-                        weight,
                         workouts,
                     ->
-                    { state: TodayUiState -> state.withChallenges(sessions, followed, weight, workouts) }
+                    { state: TodayUiState -> state.withChallenges(sessions, followed, workouts) }
                 },
             ) { state, with -> with(state) }
             // The programs beside the mat and the wall only for someone who trains there.
@@ -187,19 +186,17 @@ class TodayViewModel(
                 ).withChallenges(
                     sessionStore.sessions.value,
                     programStore.followed.value,
-                    intervals.bodyWeightKg.value,
                     intervals.workouts.value,
                 ).let { if (intervals.matOrWall.value) it else it.copy(suggested = emptyList()) },
             )
 
     /**
      * [state] with the challenges under way over [sessions] and the interval [workouts]' snatches, the program
-     * [followed], and the body [weight].
+     * and the program [followed].
      */
     private fun TodayUiState.withChallenges(
         sessions: List<LiftSession>,
         followed: Followed?,
-        weight: Double?,
         workouts: List<IntervalWorkout>,
     ) = copy(
         challenges = challenges(
@@ -207,7 +204,6 @@ class TodayViewModel(
             clock.nowMillis(),
             followed?.program?.key,
             followed?.startedAtEpochMillis,
-            weight,
             shippedPrograms + programStore.customPrograms.value,
             intervals = workouts.snatchSets,
         ),

@@ -99,10 +99,14 @@ The rungs, tried in order. The first with room left is the step:
 1. **Reps** up the range.
 2. **Denser.**
    - Sets: rest shortens 15 s at a time, down to 30 s for ballistics and 60 s for grinds.
-   - An EMOM: a rep more a minute, up to 10 for ballistics and 5 for grinds.
+   - An EMOM with no range: a rep more a minute, up to 10 for ballistics and 5 for grinds, and only while the
+     minute's work by the lift's pace (`secondsPerRep`) fits 45 s of it (`EMOM_WORK_SECONDS`). A complex of three
+     lifts or more to a rep (Iron Cardio, the ABC) keeps its reps a minute.
 3. **More.**
    - Sets: a set more, up to 10 for ballistics and 5 for grinds.
-   - An EMOM: a minute more, up to 30.
+   - An EMOM with no range: a minute more, up to half as many again as it started at (`EMOM_MINUTES_GROWTH`), never
+     past 30. A ranged EMOM keeps its minutes: the range, then a harder lift or the bell. So a program's
+     six-minute round stays a round, and 20 snatches a minute never grows into half an hour of them.
    - A ladder: another ladder, up to 5. If its rungs climb from 1, a rung more after that, up to 5. That is the
      Rite of Passage's 3 ladders of 1-2-3, then 5, then 5 of 1-2-3-4-5.
 4. **A harder lift at the same bell**, once (`Variations.kt`):
@@ -113,14 +117,19 @@ The rungs, tried in order. The first with room left is the step:
    | High pull, half snatch | Snatch |
    | Push press | Strict press |
    | Goblet squat | Front squat |
-   | A lift that can take two bells | The same lift with two, once a pair of that bell is owned |
+   | A lift that can take two bells | The same lift with two, once a pair of that bell is owned; never the snatch |
 
    It starts where the block started and climbs rungs 2 and 3 itself. A lift the user made has none, nor does a
    ladder of set counts that doesn't climb from 1 (10,000 Swings' 10-15-25-50), which is volume, not strength.
 5. **The next bell**, back where the block started: its own lift again, the reps at the bottom of the range, and
    Lift's rest.
 
-With nothing left and no heavier bell, the summary says Top of the range. Sets with no range then take a rep more.
+With nothing left and no heavier bell, the summary says Top of the range. Sets with no range then take a rep more,
+up to 20 for ballistics and 12 for grinds (30 for bodyweight, the mat or a band), except the get-up: it is done a
+rep at a time, so at the heaviest bell it is topped out. A carry or hold of a bell goes five seconds more up to a
+minute (`CARRY_MAX_SECONDS`), then the next bell back at its seconds, so the grip is loaded more rather than hung on
+for longer; a hold with no bell stops at two minutes. `ProgramSafetyTest` walks every built-in block sixty steps
+under three sets of gear and holds all of this.
 
 `Block.origin` keeps the block as it stood before its first step at the bell that wasn't a rep. That is what the
 bell step goes back to. A block keeps its own rest (`Block.rest`) once it has stepped.
@@ -190,7 +199,9 @@ All of these are worked out from the logged sets, with nothing new stored (`Benc
   from: on the minute, or as many as you can (`AbcProtocol`, from the session's plan or its program's day). A
   program's ABC on the minute can be taken the other way for a day from today's plan ("As many as you can", the
   same minutes as a density block); the program keeps its own.
-- **Bodyweight get-up**: the heaviest get-up as a share of the body weight set in Settings.
+
+There is no get-up goal. A get-up is done light to moderate for the shoulder and the trunk: one chased toward the
+body weight has no way to bail out, with the load over the face on one arm, so Lift sets no target for its weight.
 
 **Lifetime totals** for each lift appear on the lift's page, with milestones at 1,000, 5,000, 10,000 and 25,000 named on the summary.
 

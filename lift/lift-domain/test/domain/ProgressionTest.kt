@@ -122,7 +122,7 @@ class ProgressionTest {
     }
 
     @Test
-    fun `a hold goes up five seconds and an EMOM of a bell lift a minute once its reps are at their most`() {
+    fun `a hold goes up five seconds and an EMOM of a bell lift a few minutes once its reps are at their most`() {
         val plank = Block(BuiltInExercise.Plank, rounds = 1, reps = 30)
         val held = listOf(set(BuiltInExercise.Plank, reps = 0, seconds = 30))
         assertEquals(plank.copy(reps = 35), nextStep(plank, held, gear))
@@ -135,12 +135,75 @@ class ProgressionTest {
         // Fewer than ten a minute: a rep more a minute first.
         val eight = emom.copy(reps = 8)
         assertEquals(eight.copy(reps = 9, origin = eight), nextStep(eight, doneFor(eight, 24.0), gear))
-        // Half an hour of minutes: the next bell, as it started.
-        val long = emom.copy(rounds = 30, origin = eight)
+        // Half as many minutes again as it started at: the next bell, as it started.
+        val long = emom.copy(rounds = 3, origin = eight)
         assertEquals(eight.copy(load = Load.Bell(28.0)), nextStep(long, doneFor(long, 24.0), gear))
-        // An EMOM of no bell keeps adding minutes.
+        // An EMOM of no bell adds minutes up to half as many again, then nothing.
         val burpees = Block(BuiltInExercise.Burpee, rounds = 10, reps = 5, kind = BlockKind.Emom)
-        assertEquals(burpees.copy(rounds = 11), nextStep(burpees, doneFor(burpees, 0.0), gear))
+        assertEquals(burpees.copy(rounds = 11, origin = burpees), nextStep(burpees, doneFor(burpees, 0.0), gear))
+        val fifteen = burpees.copy(rounds = 15, origin = burpees)
+        assertNull(nextStep(fifteen, doneFor(fifteen, 0.0), gear))
+    }
+
+    @Test
+    fun `a hold stops at two minutes and a carry goes to the next bell after one`() {
+        val plank = Block(BuiltInExercise.Plank, rounds = 1, reps = CORE_HOLD_MAX_SECONDS)
+        assertNull(nextStep(plank, listOf(set(BuiltInExercise.Plank, reps = 0, seconds = plank.reps)), gear))
+
+        val carry = Block(BuiltInExercise.SuitcaseCarry, rounds = 1, reps = 55, load = Load.Bell(16.0))
+        val carried = { block: Block ->
+            listOf(Side.Left, Side.Right).map { set(block.exercise, 16.0, 0, it, block.reps) }
+        }
+        val minute = carry.copy(reps = CARRY_MAX_SECONDS, origin = carry)
+        assertEquals(minute, nextStep(carry, carried(carry), gear))
+        // Past a minute: the next bell, back at the seconds it started at.
+        assertEquals(carry.copy(load = Load.Bell(24.0)), nextStep(minute, carried(minute), gear))
+        assertEquals(Rung.ToppedOut, rungOf(minute, carried(minute), Gear(listOf(16.0))))
+    }
+
+    @Test
+    fun `an EMOM takes no rep a minute its minute can't hold and a ranged one keeps its minutes`() {
+        // Two complexes a minute is 40 s of the ABC: a complex keeps its one.
+        val abc = Block(
+            BuiltInExercise.ArmorBuildingComplex,
+            rounds = 20,
+            reps = 1,
+            kind = BlockKind.Emom,
+            double = true,
+            load = Load.Bell(24.0, double = true),
+        )
+        val pairs = Gear(bells, pairs = setOf(16.0, 24.0, 28.0))
+        val abcDone = abc.plannedSets().map { SetLog.of(0, it.exercise, 24.0, 1, null, 0, double = true) }
+        assertEquals(abc.copy(rounds = 21, origin = abc), nextStep(abc, abcDone, pairs))
+        // Twenty snatches a minute is 40 s: none more, a few minutes more instead.
+        val snatches =
+            Block(BuiltInExercise.Snatch, rounds = 5, reps = 20, kind = BlockKind.Emom, load = Load.Bell(24.0))
+        assertEquals(snatches.copy(rounds = 6, origin = snatches), nextStep(snatches, doneFor(snatches, 24.0), gear))
+        val eight = snatches.copy(rounds = 8, origin = snatches)
+        assertEquals(snatches.copy(load = Load.Bell(28.0)), nextStep(eight, doneFor(eight, 24.0), gear))
+        // A ranged EMOM at the top of its range, no bell heavier: a harder lift, never more minutes.
+        val swings = Block(
+            BuiltInExercise.TwoHandSwing,
+            rounds = 8,
+            reps = 15,
+            kind = BlockKind.Emom,
+            load = Load.Bell(28.0),
+        )
+            .withRange(RepRange(10, 15))
+        val next = nextStep(swings, doneFor(swings, 28.0), gear)
+        assertEquals(BuiltInExercise.OneHandSwing, next?.exercise)
+        assertEquals(8, next?.rounds)
+    }
+
+    @Test
+    fun `a get-up at the heaviest bell is topped out rather than done twice a set`() {
+        val getUps = Block(BuiltInExercise.GetUp, rounds = 5, reps = 1, load = Load.Bell(28.0), rest = FLOOR)
+        assertEquals(Rung.ToppedOut, rungOf(getUps, doneFor(getUps, 28.0), gear))
+        // Any other lift with no range takes a rep more up to its ceiling.
+        val presses = Block(BuiltInExercise.Press, rounds = 5, reps = 5, load = Load.Bell(28.0), rest = FLOOR)
+        assertEquals(presses.copy(reps = 6), nextStep(presses, doneFor(presses, 28.0), gear))
+        val twelve = presses.copy(reps = GRIND_MAX_SET_REPS)
+        assertEquals(Rung.ToppedOut, rungOf(twelve, doneFor(twelve, 28.0), gear))
     }
 
     @Test

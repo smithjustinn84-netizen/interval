@@ -3,6 +3,8 @@ package dev.justinsmith.lift.domain
 // The ladder a bell lift climbs at the bell it has before the next, which comes in fixed sizes (rungOf, in
 // Progression.kt; docs/kettlebell-coaching.md, section 4).
 
+import kotlin.math.ceil
+
 /** The next bell up to this much heavier is a small jump: taken as soon as the block has earned a step. */
 const val SMALL_JUMP = 1.1
 
@@ -26,6 +28,31 @@ private const val GRIND_MAX_EMOM_REPS = 5
 
 /** An EMOM of a bell lift adds minutes up to half an hour before the next bell. */
 private const val BELL_EMOM_MAX_MINUTES = 30
+
+/**
+ * The most of a minute an EMOM's work may take, by the lift's pace ([secondsPerRep]): the rest of it is the rest. A
+ * rep more a minute goes no further.
+ */
+const val EMOM_WORK_SECONDS = 45
+
+/** How much an EMOM's minutes may grow on its starting ones before the next bell: half as many again. */
+const val EMOM_MINUTES_GROWTH = 1.5
+
+/** The lifts a rep of a complex is, from which an EMOM of it keeps its reps a minute: Iron Cardio's 3, the ABC's 6. */
+const val COMPLEX_LIFTS = 3
+
+/** The longest a bell is carried or held before the next bell: a minute, so the grip is never hung on for long. */
+const val CARRY_MAX_SECONDS = 60
+
+/** The longest a hold with no bell steps to: two minutes, past which a plank says nothing more. */
+const val CORE_HOLD_MAX_SECONDS = 120
+
+/** The most reps a set of a bell lift with no range grows to at the heaviest bell: a thrown lift's, any other's. */
+const val BALLISTIC_MAX_SET_REPS = 20
+const val GRIND_MAX_SET_REPS = 12
+
+/** The most reps a set with no range and nothing heavier to go to grows to: bodyweight, the mat, a band. */
+const val PLAIN_MAX_SET_REPS = 30
 
 /** A ladder adds ladders up to five, and one that climbs from 1 adds rungs up to five, as the Rite of Passage. */
 private const val MAX_LADDERS = 5
@@ -76,11 +103,49 @@ internal fun bellRung(block: Block, at: Load.Bell, bells: List<Double>, pairs: S
     val climb = reps ?: atThisBell
     return when {
         climb != null -> Rung.Step(climb)
+
         next != null -> Rung.Step(start.withLoad(Load.Bell(next, start.double)))
-        block.kind == BlockKind.Sets && block.ranged == null -> Rung.Step(block.copy(reps = block.reps + 1))
+
+        block.kind == BlockKind.Sets && block.ranged == null && block.addsARep -> Rung.Step(
+            block.copy(
+                reps =
+                block.reps + 1,
+            ),
+        )
+
         else -> Rung.ToppedOut
     }
 }
+
+/**
+ * Whether a set of this bell lift with no range, at the heaviest bell, may take a rep more: never a get-up, which
+ * is done a rep at a time however strong the lifter (Simple & Sinister's singles), and any other only up to
+ * [BALLISTIC_MAX_SET_REPS] or [GRIND_MAX_SET_REPS].
+ */
+private val Block.addsARep: Boolean
+    get() = exercise.movement.pattern != Pattern.GetUp &&
+        reps < if (exercise.movement.tempo == Tempo.Ballistic) BALLISTIC_MAX_SET_REPS else GRIND_MAX_SET_REPS
+
+/**
+ * [block], a hold or carry of a bell done at [at], a rung up: [step] seconds more up to [CARRY_MAX_SECONDS], then the
+ * next bell, back at the seconds it started at, so the grip is loaded more rather than hung on for longer. Topped
+ * out at a minute with no bell heavier.
+ */
+internal fun bellHoldRung(block: Block, at: Load.Bell, bells: List<Double>, pairs: Set<Double>, step: Int): Rung {
+    if (block.reps + step <= CARRY_MAX_SECONDS) {
+        return Rung.Step(block.copy(reps = block.reps + step, origin = block.origin ?: block))
+    }
+    val start = block.startingShape()
+    val next = bellsFor(start, bells, pairs).filter { it > at.kg }.minOrNull() ?: return Rung.ToppedOut
+    return Rung.Step(start.withLoad(Load.Bell(next, start.double)))
+}
+
+/**
+ * The most minutes this EMOM, unranged, grows to: [EMOM_MINUTES_GROWTH] times those it started at ([Block.origin]'s,
+ * else its own), never past [ceiling].
+ */
+internal fun Block.mostMinutes(ceiling: Int): Int =
+    minOf(ceiling, ceil((origin ?: this).rounds * EMOM_MINUTES_GROWTH).toInt())
 
 /**
  * [block] denser, else doing more, at the same bell, its [Block.origin] kept, or set to it as it stands: rungs 2
@@ -96,10 +161,15 @@ private fun denserOrMore(block: Block, rest: Int): Block? {
                 ?: block.copy(rounds = block.rounds + 1).takeIf { block.rounds < maxSets }
         }
 
-        BlockKind.Emom -> {
+        // A ranged EMOM keeps its minutes: the range, then the bell. An unranged one takes a rep more a minute while
+        // the work fits the minute (never a complex's, whose one is several lifts), then a few minutes more.
+        BlockKind.Emom -> if (block.ranged != null) {
+            null
+        } else {
             val maxReps = if (ballistic) BALLISTIC_MAX_EMOM_REPS else GRIND_MAX_EMOM_REPS
-            block.copy(reps = block.reps + 1).takeIf { block.ranged == null && block.reps < maxReps }
-                ?: block.copy(rounds = block.rounds + 1).takeIf { block.rounds < BELL_EMOM_MAX_MINUTES }
+            block.copy(reps = block.reps + 1).takeIf { block.reps < maxReps && block.takesARepAMinute }
+                ?: block.copy(rounds = block.rounds + 1)
+                    .takeIf { block.rounds < block.mostMinutes(BELL_EMOM_MAX_MINUTES) }
         }
 
         BlockKind.Ladder -> moreLadder(block)
@@ -108,6 +178,13 @@ private fun denserOrMore(block: Block, rest: Int): Block? {
     }
     return stepped?.copy(origin = block.origin ?: block)
 }
+
+/**
+ * Whether an EMOM of this lift can take a rep more a minute: its work, by the lift's pace, still within
+ * [EMOM_WORK_SECONDS] of the minute, and the lift no complex ([COMPLEX_LIFTS] or more lifts to a rep).
+ */
+internal val Block.takesARepAMinute: Boolean
+    get() = exercise.movement.perRep < COMPLEX_LIFTS && (reps + 1) * exercise.secondsPerRep <= EMOM_WORK_SECONDS
 
 /** [block], a ladder, another ladder, up to five; then, climbing from 1, a rung more, up to five. Else null. */
 internal fun moreLadder(block: Block): Block? = when {

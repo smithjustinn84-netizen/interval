@@ -126,6 +126,5 @@ class TestsTest {
         assertEquals(TestId.SnatchTest, Challenge.SnatchTest(50).test)
         assertEquals(TestId.ArmorBuilding, Challenge.ArmorBuilding(12).test)
         assertNull(Challenge.TenThousandSwings(1_200, ofProgram = false).test)
-        assertNull(Challenge.BodyweightGetUp(24.0, 0.3).test)
     }
 }
