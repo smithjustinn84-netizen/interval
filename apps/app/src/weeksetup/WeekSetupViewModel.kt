@@ -3,22 +3,28 @@ package dev.justinsmith.interval.weeksetup
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dev.justinsmith.interval.data.HistoryStore
 import dev.justinsmith.interval.data.PlanStore
 import dev.justinsmith.interval.data.SettingsStore
 import dev.justinsmith.interval.model.AppSettings
+import dev.justinsmith.interval.model.HistoryEntry
 import dev.justinsmith.interval.model.PlanSchedule
 import dev.justinsmith.interval.model.PlanWorkout
 import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.WeightUnit
+import dev.justinsmith.interval.timer.sameShape
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.ui.weekdayMask
 import dev.justinsmith.interval.ui.weekdaysOf
 import dev.justinsmith.lift.data.GearStore
 import dev.justinsmith.lift.data.LiftActivity
 import dev.justinsmith.lift.data.ProgramStore
+import dev.justinsmith.lift.domain.BuiltInExercise
 import dev.justinsmith.lift.domain.DEFAULT_BAR_KG
 import dev.justinsmith.lift.domain.Equipment
+import dev.justinsmith.lift.domain.LiftSession
 import dev.justinsmith.lift.domain.Program
 import dev.justinsmith.lift.domain.ProgramId
 import dev.justinsmith.lift.domain.ProgramKey
@@ -110,6 +116,7 @@ class WeekSetupViewModel(
     private val gearStore: GearStore,
     private val programStore: ProgramStore,
     lift: LiftActivity,
+    historyStore: HistoryStore,
     private val savedState: SavedStateHandle,
 ) : ViewModel() {
     /** The sport planned every week as the page opened: its days are the ones building replaces. */
@@ -126,11 +133,21 @@ class WeekSetupViewModel(
     /** Built once: the plan follows its writes a moment late, and a second tap would plan the week twice. */
     private var built = false
 
+    /** Whether the user has snatched: a set in Lift or a 15:15 finished, which the grappler's intervals wait for. */
+    private val snatched: StateFlow<Boolean> = combine(lift.sessions, historyStore.history, ::hasSnatched)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, hasSnatched(lift.sessions.value, historyStore.history.value))
+
     val state: StateFlow<WeekSetupUiState> =
-        combine(answers, planStore.planned, programStore.following, lift.restSeconds, ::uiState).stateIn(
+        combine(answers, planStore.planned, programStore.following, lift.restSeconds, snatched, ::uiState).stateIn(
             viewModelScope,
             SharingStarted.Eagerly,
-            uiState(answers.value, planStore.planned.value, programStore.following.value, lift.restSeconds.value),
+            uiState(
+                answers.value,
+                planStore.planned.value,
+                programStore.following.value,
+                lift.restSeconds.value,
+                snatched.value,
+            ),
         )
 
     /** Answers the first question: a place among [Sport.named], [Sport.OTHER] or [SPORT_NONE]. */
@@ -335,6 +352,7 @@ class WeekSetupViewModel(
         planned: List<PlannedWorkout>,
         following: Program?,
         restSeconds: Int,
+        snatched: Boolean,
     ): WeekSetupUiState {
         val state = WeekSetupUiState(
             sport = answers.sport,
@@ -356,10 +374,15 @@ class WeekSetupViewModel(
             pairs = answers.pairs,
             equipment = answers.equipment,
         )
-        val week = buildWeek(asked, planned, following, restSeconds, was)
+        val week = buildWeek(asked, planned, following, restSeconds, was, snatched)
         return state.copy(week = week, programMinutes = week.program?.dayMinutes(restSeconds))
     }
 }
+
+/** Whether any of [sessions] holds a snatch done, or any of [history] is a 15:15. */
+private fun hasSnatched(sessions: List<LiftSession>, history: List<HistoryEntry>): Boolean =
+    sessions.any { session -> session.workingSets.any { it.exercise == BuiltInExercise.Snatch } } ||
+        history.any { it.config.sameShape(snatchIntervals.config) }
 
 private const val ITEM_SEPARATOR = ","
 

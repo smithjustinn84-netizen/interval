@@ -192,6 +192,7 @@ val builtInFlows: List<Flow> = listOf(
                 "Downward dog",
                 seconds = 60,
                 cue = "Hips high, back long. Bend one knee, then the other, to walk the heels down.",
+                held = false,
                 exercise = "DownwardDog",
             ),
             halfSplit(seconds = 60),

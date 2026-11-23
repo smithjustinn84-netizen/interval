@@ -6,7 +6,6 @@ import dev.justinsmith.interval.model.PlannedWorkout
 import dev.justinsmith.interval.model.Sport
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.timer.IntervalConfig
-import dev.justinsmith.interval.timer.hangboardIntervals
 import dev.justinsmith.interval.timer.hiitIntervals
 import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.interval.timer.tabataIntervals
@@ -37,7 +36,8 @@ class BuiltWeekTest {
         planned: List<PlannedWorkout> = emptyList(),
         followed: ProgramId? = null,
         was: Sport? = null,
-    ) = buildWeek(answers, planned, followed?.let(::program), rest, was)
+        snatched: Boolean = true,
+    ) = buildWeek(answers, planned, followed?.let(::program), rest, was, snatched)
 
     private fun weekly(id: Long, workout: PlanWorkout, weekday: Int) =
         PlannedWorkout(id, workout, PlanSchedule.Weekly(weekday))
@@ -301,9 +301,23 @@ class BuiltWeekTest {
                 equipment = setOf(SetupEquipment.ConditioningOnly),
             ),
         )
-        assertEquals(hangboardIntervals, climbing.conditioning)
+        // Never the hangboard: Set up can't tell fingers new to the wall.
+        assertEquals(hiitIntervals, climbing.conditioning)
         assertEquals(2, climbing.conditioningDays.size)
         assertEquals(4, climbing.goal)
+    }
+
+    @Test
+    fun `a grappler who has never snatched gets no intervals beside the program`() {
+        val answers = WeekAnswers(Sport.Bjj, setOf(MON, WED), bell, minutes = 20)
+        val first = build(answers, snatched = false)
+        assertEquals(2, first.liftDays.size)
+        assertNull(first.conditioning)
+        assertTrue(first.conditioningDays.isEmpty())
+        // Once snatched they go on a third day; one planned every week already stays planned on a rebuild.
+        assertEquals(snatchIntervals, build(answers).conditioning)
+        val planned = listOf(weekly(9, PlanWorkout.Interval(snatchIntervals.name, snatchIntervals.config), SAT))
+        assertEquals(snatchIntervals, build(answers, planned, snatched = false).conditioning)
     }
 
     @Test

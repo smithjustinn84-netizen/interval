@@ -698,7 +698,10 @@ which the toolchain can't name, so `compose-material3` and the nav suite are cat
   day fits the session, a grappler's first for BJJ (`BjjKettlebell` with a pair, else `BjjOneBell`, once it fits), then a beginner's,
   then any; `buildWeek` (`BuiltWeek.kt`) puts the sport on its days and the program's on the free ones, spread
   evenly with a rest day left (`spreadWeekdays`, interval-domain, the Plan sheet's too), beside either of those two (`grapplersPrograms`)
-  with the sport on two days or fewer the 15:15 preset (`snatchIntervals`) on a third (`conditioningDay`), and
+  with the sport on two days or fewer the 15:15 preset (`snatchIntervals`) on a third (`conditioningDay`), only
+  for someone who has snatched (a snatch set in Lift, a 15:15 in History, or one planned every week already:
+  `buildWeek`'s `snatched`, which `WeekSetupViewModel` reads from both sides; a conditioning-only climber gets an
+  ordinary preset, never the hangboard), and
   says which plans a rebuild takes off first (the weekly days of the sport it opened with and of the program, and
   beside that program the weekly 15:15; everything else planned stays and its weekdays are taken). `WeekSetupViewModel` keeps the answers in its entry's
   `SavedStateHandle`, opens on what stands, and builds once: it never calls `ProgramStore.follow` while a program

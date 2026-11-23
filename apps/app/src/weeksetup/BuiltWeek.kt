@@ -96,9 +96,12 @@ private val setupConditioningPresets: List<Preset> = listOf(
     twentyMinuteCapIntervals,
 )
 
-/** The conditioning preset Set up schedules for a conditioning-only user, matched to [sport] and [minutes]. */
+/**
+ * The conditioning preset Set up schedules for a conditioning-only user, matched to [sport] and [minutes]. Never the
+ * hangboard for a climber: fingers new to the wall tear a pulley on it, and Set up can't tell how long they have
+ * climbed. It stays on Conditioning for whoever picks it.
+ */
 fun conditioningPreset(sport: Sport?, minutes: Int): Preset = when {
-    sport == Sport.Climbing -> hangboardIntervals
     sport == Sport.Bjj && minutes >= LONG_SESSION_MINUTES -> matRoundsIntervals
     minutes <= SHORT_SESSION_MINUTES -> tabataIntervals
     minutes <= MEDIUM_SESSION_MINUTES -> hiitIntervals
@@ -110,8 +113,10 @@ fun conditioningPreset(sport: Sport?, minutes: Int): Preset = when {
  * The week [answers] build, over what is [planned] now. The sport goes on its days. The program is the one
  * [followed], else the one that suits the equipment owned and the session's length ([starterProgram], timed at the
  * [restSeconds] the user takes). For conditioning-only users (with no program followed), weekly conditioning
- * intervals go on free days instead. Its days go on weekdays with nothing planned every week, as many as it asks
- * for while a rest day is left, spread as evenly as they go; with no day free it isn't taken up.
+ * intervals go on free days instead. A grappler's 15:15 goes beside the program only for someone who has [snatched]
+ * (or has it planned every week already): forty rounds of snatches are no first meeting with the lift. Its days go
+ * on weekdays with nothing planned every week, as many as it asks for while a rest day is left, spread as evenly as
+ * they go; with no day free it isn't taken up.
  */
 fun buildWeek(
     answers: WeekAnswers,
@@ -119,6 +124,7 @@ fun buildWeek(
     followed: Program?,
     restSeconds: Int,
     was: Sport? = null,
+    snatched: Boolean = false,
 ): BuiltWeek {
     val sport = answers.sport?.takeIf { answers.sportDays.isNotEmpty() }
     val sportDays = if (sport == null) emptySet() else answers.sportDays
@@ -127,6 +133,8 @@ fun buildWeek(
     val wanted = followed ?: if (conditioningOnly) null else starter(answers, restSeconds)
     val grappler = (wanted?.key as? ProgramKey.BuiltIn)?.id in grapplersPrograms
     val weekly = planned.filter { it.schedule is PlanSchedule.Weekly }
+    val snatching = snatched ||
+        weekly.any { (it.workout as? PlanWorkout.Interval)?.config?.sameShape(snatchIntervals.config) == true }
     val remove = weekly.filter { plan ->
         when (val workout = plan.workout) {
             is PlanWorkout.SportDay -> workout.sport in replaced
@@ -148,7 +156,7 @@ fun buildWeek(
     val program = wanted?.takeIf { followed != null || liftDays.isNotEmpty() }
     val (conditioning, conditioningDays) = planConditioning(
         conditioningOnly = conditioningOnly,
-        grappler = grappler,
+        grappler = grappler && snatching,
         sport = sport,
         sportDays = sportDays,
         minutes = answers.minutes,

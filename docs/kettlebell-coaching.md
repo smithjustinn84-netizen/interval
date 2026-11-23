@@ -168,7 +168,8 @@ The built-ins are curated for someone who trains a sport as well, BJJ first, and
   getting up off the floor. A carry ends each day (`StrongForLife`, `BjjOneBell`).
 - **Beside a sport, two strength days of about twenty minutes**, nothing to failure. `BjjKettlebell` is the one for
   a pair, `BjjOneBell` for a single bell (`grapplersPrograms`); Set up starts a grappler on whichever the bells suit
-  and plans 15:15 on a third day while the mat takes two days or fewer.
+  and plans 15:15 on a third day while the mat takes two days or fewer, once a snatch is in the log (a set in Lift or
+  a 15:15 done): forty rounds of snatches are no first meeting with the lift.
 - **A program is retired, never deleted or edited.** A built-in is stored by its id and a past session is planned
   again from its blocks, so a shipped day never changes: a better version is a new id, and the old one joins
   `retiredPrograms`, which `programCatalogue` leaves out for everyone but whoever follows it. Retired so far: the

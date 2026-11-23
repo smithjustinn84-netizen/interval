@@ -4,8 +4,10 @@ import dev.justinsmith.interval.fakes.FakeStorage
 import dev.justinsmith.interval.fakes.tabataPreset
 import dev.justinsmith.interval.model.asPlan
 import dev.justinsmith.interval.nav.Shortcut
+import dev.justinsmith.interval.platform.WallClock
 import dev.justinsmith.interval.timer.WeightUnit
 import dev.justinsmith.interval.timer.hiitIntervals
+import dev.justinsmith.interval.timer.snatchIntervals
 import dev.justinsmith.lift.data.FollowingEntity
 import dev.justinsmith.lift.data.LiftRepository
 import dev.justinsmith.lift.domain.ProgramId
@@ -20,7 +22,14 @@ import kotlin.test.assertEquals
  * offered while Today has nothing planned, and is always in Settings, where it shows what stands and builds again
  * without starting the program over.
  */
+private const val WEEK_MILLIS = 7 * 86_400_000L
+
 class WeekSetupAcceptanceTest {
+    /** A 15:15 done weeks before the clock's start: snatched before, so Set up plans the grappler's intervals. */
+    private fun snatchedBefore() = FakeStorage().apply {
+        repository(WallClock { -WEEK_MILLIS }).history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
+    }
+
     // The app's clock starts on Thursday 1 January 1970.
     @Test
     fun `four answers build the week and today leads with it`() = acceptanceScenario {
@@ -51,7 +60,26 @@ class WeekSetupAcceptanceTest {
     }
 
     @Test
-    fun `a grappler with a pair gets twenty minutes beside the mat and the intervals between`() = acceptanceScenario {
+    fun `a grappler who has never snatched gets the program beside the mat and no intervals`() = acceptanceScenario {
+        openSetUpFromToday()
+        answerSport("BJJ")
+        trainOn("Tuesday", "Thursday")
+        trainWith("Kettlebells")
+        ownBells(16)
+        sessionOf(20)
+
+        seeYourWeek("One bell beside BJJ", "Mon, Fri")
+        seeNo("15:15 MVO2")
+        seeGoalToBe(4)
+        buildMyWeek()
+
+        weekHolds(sportDays = 2, programDays = 2, program = ProgramId.BjjOneBell, bells = listOf(16.0), goal = 4)
+    }
+
+    @Test
+    fun `a grappler with a pair gets twenty minutes beside the mat and the intervals between`() = acceptanceScenario(
+        storage = snatchedBefore(),
+    ) {
         openSetUpFromToday()
         answerSport("BJJ")
         trainOn("Tuesday", "Thursday")
@@ -77,7 +105,7 @@ class WeekSetupAcceptanceTest {
 
     @Test
     fun `a grappler with one bell gets the program for one beside the mat and the intervals between`() =
-        acceptanceScenario {
+        acceptanceScenario(storage = snatchedBefore()) {
             openSetUpFromToday()
             answerSport("BJJ")
             trainOn("Tuesday", "Thursday")
@@ -254,9 +282,9 @@ class WeekSetupAcceptanceTest {
             programDays = 2,
             program = ProgramId.BjjKettlebell,
             bells = listOf(16.0, 24.0),
-            goal = 5,
+            // Nothing snatched yet, so no 15:15 beside it.
+            goal = 4,
             pairs = setOf(24.0),
-            intervalDays = 1,
         )
         assertEquals(WeightUnit.Lb, app.repository.settings.appSettings.value.body.unit)
         openTab("Train")

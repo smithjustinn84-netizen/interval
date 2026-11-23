@@ -27,7 +27,8 @@ It shows the week those answers come to before it builds anything. Then it:
   (or bands and bells) beside climbing, two days a week at most beside running;
 - with conditioning only, follows no program and plans conditioning presets on the free days;
 - puts your sport on its days and the program's days on the free ones, spread evenly with a rest day left;
-- with BJJ on two days or fewer and a grappler's program, adds **15:15 MVO2** snatch intervals on a third day;
+- with BJJ on two days or fewer and a grappler's program, adds **15:15 MVO2** snatch intervals on a third day,
+  once you have snatched (a snatch set in Lift, or a 15:15 done): run Set up again after your first;
 - saves your equipment and sets your weekly goal.
 
 Running it again replaces only what it built last time (the sport's weekly days, the program's, and its 15:15).

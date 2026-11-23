@@ -40,6 +40,7 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
         lift.gear,
         lift.programs,
         lift.sessions,
+        repository.history,
         savedState,
     )
 
@@ -106,6 +107,7 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
 
     @Test
     fun `a grappler with a pair builds the program around the mat with the intervals and keeps the pair`() {
+        repository.history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
         viewModel.pickSport(Sport.named.indexOf(Sport.Bjj))
         viewModel.setWeekdays(weekdayMask(setOf(TUE, THU)))
         viewModel.toggleBell(24.0)
@@ -119,6 +121,18 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
         assertEquals(setOf(WED), weekly(snatchIntervals.asPlan()))
         assertEquals(setOf(24.0), lift.gear.pairs.value)
         assertEquals(5, repository.settings.appSettings.value.weeklyGoal)
+    }
+
+    @Test
+    fun `a grappler who has never snatched is planned no intervals until one of snatches is done`() {
+        viewModel.pickSport(Sport.named.indexOf(Sport.Bjj))
+        viewModel.setWeekdays(weekdayMask(setOf(TUE, THU)))
+        viewModel.toggleBell(24.0)
+        viewModel.setMinutes(20)
+        assertNull(viewModel.state.value.week.conditioning)
+
+        repository.history.recordWorkout(snatchIntervals.config, elapsedSeconds = 1_195)
+        assertEquals(snatchIntervals, viewModel.state.value.week.conditioning)
     }
 
     @Test
@@ -210,6 +224,7 @@ class WeekSetupViewModelTest : MainDispatcherTest() {
             lift.gear,
             lift.programs,
             lift.sessions,
+            repository.history,
             SavedStateHandle(),
         )
         assertTrue(again.state.value.week.keepsProgram)

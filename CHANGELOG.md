@@ -334,6 +334,11 @@ The version is `versionName` in `androidApp/module.yaml`; the iOS marketing vers
   while the minute can hold it (never another Armor Building Complex). Get-ups never go to two a set. Carries go
   to a heavier bell after a minute rather than getting longer. Planks stop stepping at two minutes, and the snatch
   never moves to two bells on its own.
+- Set up plans 15:15 MVO2 beside a grappler's program only once you have snatched (a snatch set in Lift, or a 15:15
+  done), since forty rounds of snatches are no first meeting with the lift; run Set up again after your first. A
+  climber training conditioning alone is planned an ordinary preset rather than the hangboard, which fingers new
+  to the wall can tear a pulley on; it is still on Conditioning to pick. The downward dog in Spine and hamstrings
+  is said as a move, not a hold, as its cue has it.
 - Today has a picture at the top of its card for the kind of day it is: a strength day, conditioning, mobility,
   BJJ, climbing, running, another sport, a rest day, a day done, or nothing planned. In dark mode it fades into the
   card; in light it is a dark plate over the card. It's left out with large text, so Start stays in view. The week

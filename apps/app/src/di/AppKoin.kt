@@ -64,7 +64,7 @@ private val appModule = module {
     single<DataImporter> { AppDataImporter(get(), get()) }
     single<IntervalActivity> { RepositoryIntervalActivity(get(), get(), get(), get(), get(StorageScope)) }
     single { WeekStandingSource(get(), get(), get(), get(), get(StorageScope)) }
-    viewModel { WeekSetupViewModel(get(), get(), get(), get(), get(), get()) }
+    viewModel { WeekSetupViewModel(get(), get(), get(), get(), get(), get(), get()) }
 }
 
 /**
